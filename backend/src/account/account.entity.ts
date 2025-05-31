@@ -4,7 +4,7 @@ import { Role } from "../auth/role.entity";
 
 @Entity()
 export class Account extends BaseEntity{
-    @Column({nullable: false})
+    @Column({nullable: false, unique: true})
     username!: string;
 
     @Column({nullable: false})
