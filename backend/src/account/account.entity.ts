@@ -4,12 +4,12 @@ import { Role } from "../auth/role.entity";
 
 @Entity()
 export class Account extends BaseEntity{
-    @Column({nullable: false})
-    username!: string;
+    @Column({nullable: false, unique: true})
+    username: string;
 
     @Column({nullable: false})
-    password!: string;
+    password: string;
 
     @ManyToOne(() => Role, (role) => role.accounts)
-    role!: Role;
+    role: Role;
 }
