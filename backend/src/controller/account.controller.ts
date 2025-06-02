@@ -3,7 +3,7 @@ import { Account } from '../account/account.entity';
 import { AppDataSource } from '../database/dbConnection';
 
 export const getAccounts = async (_req: Request, res: Response) => {
-// await AppDataSource.initialize();
+// await AppDataSource.initialize(); 
   const accountRepo = AppDataSource.getRepository(Account);
   const accounts = await accountRepo.find({ relations: ['role'] });
   res.json(accounts);
