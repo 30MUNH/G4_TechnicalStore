@@ -1,164 +1,88 @@
 import React from 'react';
-import { Container, Grid, Card, CardMedia, CardContent, Typography, Button } from '@mui/material';
-import { Link } from 'react-router-dom';
+import Header from '../components/Header';
+import Navigation from '../components/Navigation';
 import ProductCard from '../components/ProductCard';
 
+const categories = [
+  { name: 'Phones', icon: '📱' },
+  { name: 'Computers', icon: '💻' },
+  { name: 'Accessories', icon: '🎧' },
+  { name: 'Laptop', icon: '🖥️' },
+  { name: 'Networking', icon: '🌐' },
+  { name: 'Video Games', icon: '🎮' },
+];
+
+const products = [
+  { id: 1, name: 'Logitech Streamcam Headphone', price: 35, oldPrice: 66, image: 'https://via.placeholder.com/200', rating: 4 },
+  { id: 2, name: 'Logitech Streamcam Headphone', price: 35, oldPrice: 66, image: 'https://via.placeholder.com/200', rating: 4 },
+  { id: 3, name: 'Logitech Streamcam Headphone', price: 35, oldPrice: 66, image: 'https://via.placeholder.com/200', rating: 4 },
+  { id: 4, name: 'Logitech Streamcam Headphone', price: 35, oldPrice: 66, image: 'https://via.placeholder.com/200', rating: 4 },
+  { id: 5, name: 'Logitech Streamcam Headphone', price: 35, oldPrice: 66, image: 'https://via.placeholder.com/200', rating: 4 },
+  { id: 6, name: 'Logitech Streamcam Headphone', price: 35, oldPrice: 66, image: 'https://via.placeholder.com/200', rating: 4 },
+];
+
+const blogs = [
+  { id: 1, title: 'Well illum qui dolorem eum fugiat?', image: 'https://via.placeholder.com/200', desc: 'Quis autem vel eum iure reprehenderit...', link: '#' },
+  { id: 2, title: 'Well illum qui dolorem eum fugiat?', image: 'https://via.placeholder.com/200', desc: 'Quis autem vel eum iure reprehenderit...', link: '#' },
+  { id: 3, title: 'Well illum qui dolorem eum fugiat?', image: 'https://via.placeholder.com/200', desc: 'Quis autem vel eum iure reprehenderit...', link: '#' },
+];
+
+const testimonials = [
+  { id: 1, name: 'Jack Johan', role: 'Designer', content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', avatar: '' },
+  { id: 2, name: 'Jack Johan', role: 'Designer', content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', avatar: '' },
+];
+
 const HomePage = () => {
-  const shops = [
-    {
-      id: 1,
-      image: '/img/shop01.png',
-      title: 'Laptops',
-      description: 'New Arrivals',
-    },
-    {
-      id: 2,
-      image: '/img/shop02.png',
-      title: 'Smartphones',
-      description: 'New Arrivals',
-    },
-    {
-      id: 3,
-      image: '/img/shop03.png',
-      title: 'Cameras',
-      description: 'New Arrivals',
-    },
-  ];
-
-  const featuredProducts = [
-    {
-      id: 1,
-      image: '/img/product01.png',
-      name: 'HP Laptop Pro',
-      price: 999.99,
-      oldPrice: 1299.99,
-      discount: 23,
-    },
-    {
-      id: 2,
-      image: '/img/product02.png',
-      name: 'Samsung Galaxy S21',
-      price: 799.99,
-      oldPrice: 899.99,
-      discount: 11,
-    },
-    {
-      id: 3,
-      image: '/img/product03.png',
-      name: 'Canon EOS R5',
-      price: 3499.99,
-      oldPrice: 3999.99,
-      discount: 13,
-    },
-    {
-      id: 4,
-      image: '/img/product04.png',
-      name: 'Apple MacBook Air',
-      price: 1299.99,
-      oldPrice: 1499.99,
-      discount: 13,
-    },
-  ];
-
-  const newProducts = [
-    {
-      id: 5,
-      image: '/img/product05.png',
-      name: 'Sony WH-1000XM4',
-      price: 349.99,
-      oldPrice: 399.99,
-      discount: 13,
-    },
-    {
-      id: 6,
-      image: '/img/product06.png',
-      name: 'Dell XPS 13',
-      price: 1199.99,
-      oldPrice: 1299.99,
-      discount: 8,
-    },
-    {
-      id: 7,
-      image: '/img/product07.png',
-      name: 'iPhone 13 Pro',
-      price: 999.99,
-      oldPrice: 1099.99,
-      discount: 9,
-    },
-    {
-      id: 8,
-      image: '/img/product08.png',
-      name: 'Nikon Z6 II',
-      price: 1999.99,
-      oldPrice: 2199.99,
-      discount: 9,
-    },
-  ];
-
   return (
-    <div>
-      {/* Shops Section */}
-      <Container sx={{ py: 4 }}>
-        <Grid container spacing={4}>
-          {shops.map((shop) => (
-            <Grid item key={shop.id} xs={12} sm={6} md={4}>
-              <Card>
-                <CardMedia
-                  component="img"
-                  height="200"
-                  image={shop.image}
-                  alt={shop.title}
-                />
-                <CardContent>
-                  <Typography gutterBottom variant="h5" component="div">
-                    {shop.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {shop.description}
-                  </Typography>
-                  <Button
-                    component={Link}
-                    to={`/${shop.title.toLowerCase()}`}
-                    variant="contained"
-                    color="primary"
-                    sx={{ mt: 2 }}
-                  >
-                    Shop Now
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
+    <div className="home-page">
+      {/* <Header /> */}
+      <div style={{background: '#1976d2', color: 'white', textAlign: 'center', padding: '0.5rem 0', fontSize: '0.95rem'}}>Open Doors To A World Of Tech! <a href="#" style={{color: '#fff', textDecoration: 'underline'}}>Discover More</a></div>
+      <Navigation />
+      <main className="main-content" style={{maxWidth: 1200, margin: '0 auto', padding: '2rem 0'}}>
+        {/* Banner Section */}
+        <section className="hero-section" style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(90deg, #e3e8ee 60%, #fff 100%)', padding: '2.5rem 2rem', borderRadius: '18px', marginBottom: '2.5rem', minHeight: 340}}>
+          <div style={{maxWidth: '44%'}}>
+            <div style={{color: '#1976d2', fontWeight: 600, marginBottom: 10, fontSize: 18}}>Up To 20% Off</div>
+            <h1 style={{fontSize: '2.7rem', fontWeight: 700, marginBottom: 12, lineHeight: 1.15, color: '#1a237e'}}>Smart And <br/> <span style={{color: '#1976d2'}}>Digital Speakers</span></h1>
+            <p style={{marginBottom: 22, fontSize: 17, color: '#555'}}>Seek Adventure With Bluetooth Speakers</p>
+            <button style={{background: '#1976d2', color: '#fff', border: 'none', padding: '0.85rem 2.2rem', borderRadius: 8, fontWeight: 600, fontSize: 17, boxShadow: '0 2px 8px #b3c6e6'}}>Shop Now</button>
+          </div>
+          <div style={{flex: 1, display: 'flex', justifyContent: 'flex-end'}}>
+            <img src="https://i.imgur.com/8Km9tLL.png" alt="banner" style={{width: 370, borderRadius: 20, objectFit: 'cover', boxShadow: '0 4px 24px #b3c6e6'}} />
+          </div>
+        </section>
 
-      {/* Featured Products Section */}
-      <Container sx={{ py: 4 }}>
-        <Typography variant="h4" component="h2" gutterBottom>
-          Featured Products
-        </Typography>
-        <Grid container spacing={4}>
-          {featuredProducts.map((product) => (
-            <Grid item key={product.id} xs={12} sm={6} md={3}>
-              <ProductCard product={product} />
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
+        {/* Category Section */}
+        <section style={{margin: '2.5rem 0'}}>
+          <h2 style={{fontSize: '1.25rem', fontWeight: 700, marginBottom: 18, color: '#1a237e'}}>Browse By Category</h2>
+          <div style={{display: 'flex', gap: 28, flexWrap: 'wrap', background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px #e3e8ee', padding: '1.2rem 1.5rem', justifyContent: 'center'}}>
+            {categories.map((cat, idx) => (
+              <div key={idx} style={{flex: '1 0 120px', background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px #e3e8ee', padding: 18, textAlign: 'center', minWidth: 110, margin: '0 8px', border: '1.5px solid #e3e8ee'}}>
+                <div style={{fontSize: 38, marginBottom: 10, color: '#1976d2'}}>{cat.icon}</div>
+                <div style={{fontWeight: 600, fontSize: 15, color: '#1a237e'}}>{cat.name}</div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      {/* New Products Section */}
-      <Container sx={{ py: 4 }}>
-        <Typography variant="h4" component="h2" gutterBottom>
-          New Products
-        </Typography>
-        <Grid container spacing={4}>
-          {newProducts.map((product) => (
-            <Grid item key={product.id} xs={12} sm={6} md={3}>
-              <ProductCard product={product} />
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
+        {/* Latest Products Section */}
+        <section style={{margin: '2.5rem 0'}}>
+          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18}}>
+            <h2 style={{fontSize: '1.25rem', fontWeight: 700, color: '#1a237e', margin: 0}}>Latest Products</h2>
+            <div style={{display: 'flex', gap: 18, fontSize: 15, color: '#888'}}>
+              <span style={{color: '#1976d2', fontWeight: 600, cursor: 'pointer'}}>All</span>
+              <span style={{cursor: 'pointer'}}>Audio/Video</span>
+              <span style={{cursor: 'pointer'}}>Gaming</span>
+              <span style={{cursor: 'pointer'}}>Headphone</span>
+            </div>
+          </div>
+          <div className="products-grid" style={{gap: '2.2rem'}}>
+            {products.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
   );
 };
