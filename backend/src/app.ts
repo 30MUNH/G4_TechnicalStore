@@ -5,9 +5,7 @@ import { useExpressServer, getMetadataArgsStorage, useContainer, Action } from '
 import { routingControllersToSpec } from 'routing-controllers-openapi';
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 import swaggerUi from 'swagger-ui-express';
-import { AppDataSource, DbConnection } from '@/database/dbConnection';
-import accountRoutes from './route/account.routes';
-
+import { DbConnection } from '@/database/dbConnection';
 
 export default class App {
   public app: express.Application;
@@ -18,6 +16,7 @@ export default class App {
     this.app = express();
     this.port = process.env.PORT || 4000;
     this.connectToDatabase();
+    this.initializeMiddlewares();
     this.initializeRoutes();
     this.initializeSwagger();
   }
@@ -27,44 +26,62 @@ export default class App {
   }
 
   public listen() {
+    console.log();
     this.app.listen(this.port, () => {
-      console.log(`🚀 App listening on port ${this.port}`);
+      console.log(`🚀 Backend listening on port ${this.port}`);
       console.log(`📘 Api docs at: http://localhost:${this.port}/api-docs`);
     });
   }
 
+  private initializeMiddlewares() {
+    this.app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+      if (req.originalUrl.toString().includes('webhook')) {
+        next();
+      } else {
+        express.json()(req, res, next);
+      }
+    });
+    this.app.use(express.urlencoded({ extended: true }));
+    this.app.use(express.static('public'));
+  }
+
   private async connectToDatabase() {
     await DbConnection.createConnection();
-    await AppDataSource.initialize();
   }
 
   private initializeRoutes() {
     useContainer(Container);
     useExpressServer(this.app, {
-      routePrefix: '/api',
-      controllers: [__dirname + '/controllers/*{.ts,.js}']
+      routePrefix: "/api",
+      controllers: [__dirname + "/**/*.controller.{ts,js}"],
+      interceptors: [ResponseInterceptor],
+      middlewares: [__dirname + '/middlewares/**/*.middleware.{ts,js}'],
     });
 
     this.app.use('/api/accounts', accountRoutes);
   }
 
   private initializeSwagger() {
-    const { defaultMetadataStorage } = require('class-transformer/cjs/storage');
+    const { defaultMetadataStorage } = require("class-transformer/cjs/storage");
 
     const schemas = validationMetadatasToSchemas({
       classTransformerMetadataStorage: defaultMetadataStorage,
-      refPointerPrefix: '#/components/schemas/',
+      refPointerPrefix: "#/components/schemas/",
     });
 
     const storage = getMetadataArgsStorage();
-    const spec = routingControllersToSpec(storage, { routePrefix: '/api' }, {
-      components: {
-        securitySchemes: {
-          ApiKeyAuth: {
-            type: 'apiKey',
-            name: 'Authorization',
-            in: 'header',
-            description: 'API key for authorization',
+    const spec = routingControllersToSpec(
+      storage,
+      { routePrefix: "/api" },
+      {
+        components: {
+          securitySchemes: {
+            ApiKeyAuth: {
+              type: "apiKey",
+              name: "Authorization",
+              in: "header",
+              description: "API key for authorization",
+            },
           },
         },
         schemas,
@@ -76,6 +93,6 @@ export default class App {
         description: 'Generated with routing-controllers-openapi',
       },
     });
-    // this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
+    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
   }
 }

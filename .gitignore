@@ -3,7 +3,6 @@ dist/
 dist-ssr/
 build/
 out/
-*.js
 *.js.map
 *.d.ts
 logs/
