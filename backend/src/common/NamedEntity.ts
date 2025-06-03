@@ -1,5 +1,6 @@
 import { AfterLoad, BeforeInsert, BeforeUpdate, Column } from "typeorm";
 import { BaseEntity } from "./BaseEntity";
+import { Exclude } from "class-transformer";
 
 export abstract class NamedEntity extends BaseEntity {
   @Column({ type: "varchar", length: 255, nullable: true })
@@ -9,6 +10,7 @@ export abstract class NamedEntity extends BaseEntity {
   slug?: string;
 
   //slugify names
+  @Exclude()
   private previousName?: string;
 
   @AfterLoad()

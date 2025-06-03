@@ -1,25 +1,23 @@
+import { Exclude } from 'class-transformer';
 import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
   BaseEntity as TypeORMBaseEntity,
   DeleteDateColumn,
-  Column,
-  BeforeInsert,
-  BeforeUpdate,
-  AfterLoad,
 } from 'typeorm';
 
 export abstract class BaseEntity extends TypeORMBaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp with time zone', name: "created-at" })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  @UpdateDateColumn({ type: 'timestamp with time zone', name: "updated-at" })
   updatedAt: Date;
 
-  @DeleteDateColumn({ type: 'timestamp with time zone'})
+  @Exclude()
+  @DeleteDateColumn({ type: 'timestamp with time zone', name: "deleted-at"})
   deletedAt?: Date;
 }
