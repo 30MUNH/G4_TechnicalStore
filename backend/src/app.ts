@@ -5,7 +5,9 @@ import { useExpressServer, getMetadataArgsStorage, useContainer, Action } from '
 import { routingControllersToSpec } from 'routing-controllers-openapi';
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 import swaggerUi from 'swagger-ui-express';
-import { DbConnection } from '@/database/dbConnection';
+import { AppDataSource, DbConnection } from '@/database/dbConnection';
+import accountRoutes from './route/account.routes';
+
 
 export default class App {
   public app: express.Application;
@@ -33,6 +35,7 @@ export default class App {
 
   private async connectToDatabase() {
     await DbConnection.createConnection();
+    await AppDataSource.initialize();
   }
 
   private initializeRoutes() {
@@ -41,6 +44,8 @@ export default class App {
       routePrefix: '/api',
       controllers: [__dirname + '/controllers/*{.ts,.js}']
     });
+
+    this.app.use('/api/accounts', accountRoutes);
   }
 
   private initializeSwagger() {
@@ -71,6 +76,6 @@ export default class App {
         description: 'Generated with routing-controllers-openapi',
       },
     });
-    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
+    // this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
   }
 }
