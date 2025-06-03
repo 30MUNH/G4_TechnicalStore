@@ -1,9 +1,9 @@
 import { Entity, OneToMany } from "typeorm";
-import { BaseEntity } from "../common/BaseEntity";
-import { Account } from "../account/account.entity";
+import { NamedEntity } from "@/common/NamedEntity";
+import { Account } from "@/account/account.entity";
 
 @Entity()
-export class Role extends BaseEntity{
+export class Role extends NamedEntity{
     @OneToMany(() => Account, (account) => account.role)
     accounts: Account[];
 }
