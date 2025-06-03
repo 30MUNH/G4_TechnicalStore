@@ -43,7 +43,7 @@ export default class App {
       await DbConnection.createConnection();
       console.log("✅ Database connection established successfully.");
     } catch (error) {
-      console.error("❌ Failed to connect to the database:", error);
+      console.error("❌ Failed to connect to the database: ", error);
       throw error;
     }
   }
