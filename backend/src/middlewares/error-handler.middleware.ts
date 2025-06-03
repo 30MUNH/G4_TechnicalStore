@@ -1,18 +1,22 @@
-import { HttpMessages } from '@/exceptions/http-messages.constant';
-import { instanceToPlain } from 'class-transformer';
-import { JsonWebTokenError } from 'jsonwebtoken';
+import { HttpMessages } from "@/exceptions/http-messages.constant";
+import { instanceToPlain } from "class-transformer";
+import { JsonWebTokenError } from "jsonwebtoken";
 import {
   Middleware,
   ExpressErrorMiddlewareInterface,
-} from 'routing-controllers';
-import { Service } from 'typedi';
+} from "routing-controllers";
+import { Service } from "typedi";
 
 @Service()
-@Middleware({ type: 'after' })
+@Middleware({ type: "after" })
 export class ErrorHandler implements ExpressErrorMiddlewareInterface {
   error(error: any, req: any, res: any, next: (err?: any) => any): void {
+    if (res.headersSent) return next(error);
+
+    console.log("Error object:", error);
+    console.log("Error message:", error.message);
     let status: number = error.httpCode || error.status || 500;
-    let message: string | string[] = error.message || 'Something went wrong';
+    let message: string | string[] = error.message || "Something went wrong";
 
     if (error instanceof JsonWebTokenError) {
       status = 401;
@@ -31,6 +35,10 @@ export class ErrorHandler implements ExpressErrorMiddlewareInterface {
       }
       message = [...validatorErrors];
     }
-    res.status(status).json({ success: false, message });
+    res.status(status).json({
+      success: false,
+      message,
+      ...(error.toJSON ? error.toJSON() : {}),
+    });
   }
 }

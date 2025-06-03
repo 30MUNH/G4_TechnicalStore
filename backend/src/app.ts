@@ -22,6 +22,7 @@ export default class App {
     this.app = express();
     this.port = process.env.PORT || 4000;
     this.connectToDatabase();
+    this.initializeMiddlewares();
     this.initializeRoutes();
     this.initializeSwagger();
   }
@@ -36,6 +37,18 @@ export default class App {
       console.log(`🚀 Backend listening on port ${this.port}`);
       console.log(`📘 Api docs at: http://localhost:${this.port}/api-docs`);
     });
+  }
+
+  private initializeMiddlewares() {
+    this.app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+      if (req.originalUrl.toString().includes('webhook')) {
+        next();
+      } else {
+        express.json()(req, res, next);
+      }
+    });
+    this.app.use(express.urlencoded({ extended: true }));
+    this.app.use(express.static('public'));
   }
 
   private async connectToDatabase() {
