@@ -1,8 +1,8 @@
 import { Column, Entity, ManyToOne } from "typeorm";
 import { NamedEntity } from "@/common/NamedEntity";
-import { Role } from "@/auth/role.entity";
+import { Role } from "@/auth/role/role.entity";
 
-@Entity()
+@Entity('accounts')
 export class Account extends NamedEntity{
     @Column({nullable: false, unique: true})
     username: string;

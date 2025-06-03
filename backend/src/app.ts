@@ -11,6 +11,7 @@ import { routingControllersToSpec } from "routing-controllers-openapi";
 import { validationMetadatasToSchemas } from "class-validator-jsonschema";
 import swaggerUi from "swagger-ui-express";
 import { DbConnection } from "@/database/dbConnection";
+import { ResponseInterceptor } from "./utils/interceptor/interceptor";
 
 export default class App {
   public app: express.Application;
@@ -30,8 +31,9 @@ export default class App {
   }
 
   public listen() {
+    console.log();
     this.app.listen(this.port, () => {
-      console.log(`🚀 App listening on port ${this.port}`);
+      console.log(`🚀 Backend listening on port ${this.port}`);
       console.log(`📘 Api docs at: http://localhost:${this.port}/api-docs`);
     });
   }
@@ -50,7 +52,9 @@ export default class App {
     useContainer(Container);
     useExpressServer(this.app, {
       routePrefix: "/api",
-      controllers: [__dirname + "/controllers/*{.ts,.js}"],
+      controllers: [__dirname + "/**/*.controller.{ts,js}"],
+      interceptors: [ResponseInterceptor],
+      middlewares: [__dirname + '/middlewares/**/*.middleware.{ts,js}'],
     });
   }
 
