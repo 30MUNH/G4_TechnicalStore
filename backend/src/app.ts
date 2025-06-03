@@ -1,11 +1,17 @@
 // app.ts
-import express from 'express';
-import { Container } from 'typedi';
-import { useExpressServer, getMetadataArgsStorage, useContainer, Action } from 'routing-controllers';
-import { routingControllersToSpec } from 'routing-controllers-openapi';
-import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
-import swaggerUi from 'swagger-ui-express';
-import { DbConnection } from '@/database/dbConnection';
+import express from "express";
+import { Container } from "typedi";
+import {
+  useExpressServer,
+  getMetadataArgsStorage,
+  useContainer,
+  Action,
+} from "routing-controllers";
+import { routingControllersToSpec } from "routing-controllers-openapi";
+import { validationMetadatasToSchemas } from "class-validator-jsonschema";
+import swaggerUi from "swagger-ui-express";
+import { AppDataSource, DbConnection } from "@/database/dbConnection";
+import { ResponseInterceptor } from "./utils/interceptor/interceptor";
 
 export default class App {
   public app: express.Application;
@@ -46,7 +52,19 @@ export default class App {
   }
 
   private async connectToDatabase() {
-    await DbConnection.createConnection();
+    try {
+      await DbConnection.createConnection();
+      console.log("✅ Database connection established successfully.");
+      if (!AppDataSource.isInitialized) {
+        await AppDataSource.initialize();
+      }
+      // console.log('Entities:', AppDataSource.options.entities);
+      console.log(AppDataSource.entityMetadatas.map(e => e.name));
+
+    } catch (error) {
+      console.error("❌ Failed to connect to the database: ", error);
+      throw error;
+    }
   }
 
   private initializeRoutes() {
@@ -57,8 +75,6 @@ export default class App {
       interceptors: [ResponseInterceptor],
       middlewares: [__dirname + '/middlewares/**/*.middleware.{ts,js}'],
     });
-
-    this.app.use('/api/accounts', accountRoutes);
   }
 
   private initializeSwagger() {
@@ -83,16 +99,16 @@ export default class App {
               description: "API key for authorization",
             },
           },
+          schemas,
         },
-        schemas,
-      },
-      security: [{ ApiKeyAuth: [] }],
-      info: {
-        title: 'A sample API',
-        version: '1.0.0',
-        description: 'Generated with routing-controllers-openapi',
-      },
-    });
-    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
+        security: [{ ApiKeyAuth: [] }],
+        info: {
+          title: "A sample API",
+          version: "1.0.0",
+          description: "Generated with routing-controllers-openapi",
+        },
+      }
+    );
+    // this.app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(spec));
   }
 }
