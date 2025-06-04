@@ -1,4 +1,5 @@
-import { IsString } from "class-validator";
+import { IsObject, IsString } from "class-validator";
+import { Role } from "../role/role.entity";
 
 export class LoginDto {
     @IsString()
@@ -17,4 +18,15 @@ export class CreateAccountDto {
 
     @IsString()
     roleSlug: string;
+}
+
+export class AccountDetailsDto {
+    @IsString()
+    username: string;
+
+    @IsString()
+    phone: string;
+
+    @IsObject()
+    role: Role;
 }
