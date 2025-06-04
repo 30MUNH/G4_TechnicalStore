@@ -1,9 +1,9 @@
 import React from 'react';
 
-const Footer = () => {
+const Footer: React.FC = () => {
   return (
-    <footer className="footer" style={{background: '#222', color: '#fff', padding: '3rem 0 1rem', marginTop: '3rem'}}>
-      <div className="footer-container" style={{maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 32, padding: '0 1rem'}}>
+    <footer className="footer" style={{background: '#222', color: '#fff', padding: '3rem 0 1rem', marginTop: '3rem', width: '100%'}}>
+      <div className="footer-container" style={{width: '100%', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 32, padding: '0 1rem'}}>
         <div className="footer-section">
           <h3 style={{marginBottom: 12}}>SEE INFORMATION</h3>
           <p>123, 2nd Road, 21st, Main City, Your address goes here</p>
