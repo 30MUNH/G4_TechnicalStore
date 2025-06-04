@@ -4,7 +4,6 @@ dist-ssr/
 build/
 out/
 *.js.map
-*.d.ts
 logs/
 *.log
 npm-debug.log*

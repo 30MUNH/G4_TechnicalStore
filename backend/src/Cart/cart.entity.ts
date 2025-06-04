@@ -1,5 +1,6 @@
-import { Column, Entity} from "typeorm";
+import { Column, Entity, OneToMany} from "typeorm";
 import { BaseEntity } from "@/common/BaseEntity";
+import { CartItem } from "./cartItem.entity";
 
 @Entity()
 export class Cart extends BaseEntity {
@@ -11,4 +12,7 @@ export class Cart extends BaseEntity {
 
     @Column({  nullable: false })
     created_at: Date;
+
+    @OneToMany(() => CartItem, (cartItem) => cartItem.cart)
+    cartItems: CartItem[];
 }

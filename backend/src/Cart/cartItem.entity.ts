@@ -1,5 +1,6 @@
-import { Column, Entity, ManyToOne, BaseEntity } from "typeorm";
+import { Column, Entity, ManyToOne } from "typeorm";
 import { Cart } from "./cart.entity";
+import { BaseEntity } from "@/common/BaseEntity";
 
 @Entity()
 export class CartItem extends BaseEntity {
