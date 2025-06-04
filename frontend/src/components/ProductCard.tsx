@@ -1,6 +1,19 @@
 import React from 'react';
 
-const ProductCard = ({ product }) => {
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  oldPrice?: number;
+  image: string;
+  rating?: number;
+}
+
+interface ProductCardProps {
+  product: Product;
+}
+
+const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
     <div className="product-card" style={{background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #eee', padding: 20, textAlign: 'center', position: 'relative'}}>
       <div className="product-image" style={{marginBottom: 16}}>
