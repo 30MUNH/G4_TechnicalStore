@@ -4,7 +4,7 @@ import { Column, Entity, OneToMany } from "typeorm";
 
 @Entity('products')
 export class Product extends NamedEntity{
-    @Column()
+    @Column({type: 'double precision'})
     price: number;
 
     @Column()
