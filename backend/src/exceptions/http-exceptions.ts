@@ -1,5 +1,5 @@
-import { HttpError } from 'routing-controllers';
-import { HttpMessages } from './http-messages.constant';
+import { HttpError } from "routing-controllers";
+import { HttpMessages } from "./http-messages.constant";
 
 export class HttpException extends HttpError {
   constructor(status: number, message: string) {
@@ -17,16 +17,28 @@ export class HttpException extends HttpError {
   }
 }
 
-
 export class EntityNotFoundException extends HttpException {
-  constructor(entityName = 'Resource') {
+  constructor(entityName = "Resource") {
     super(404, `${entityName} not found`);
   }
 }
 
 export class AccountNotFoundException extends HttpException {
-    constructor(){
-        console.log('Throwing AccountNotFoundException with message:', HttpMessages._WRONG_CREDENTIALS);
-        super(401, HttpMessages._WRONG_CREDENTIALS);
-    }
+  constructor() {
+    console.log(
+      "Throwing AccountNotFoundException with message:",
+      HttpMessages._WRONG_CREDENTIALS
+    );
+    super(401, HttpMessages._WRONG_CREDENTIALS);
+  }
+}
+
+export class WrongOldPasswordException extends HttpException {
+  constructor() {
+    console.log(
+      "Throwing WrongOldPasswordException with message:",
+      HttpMessages._WRONG_OLD_PASSWORD
+    );
+    super(400, HttpMessages._WRONG_OLD_PASSWORD);
+  }
 }

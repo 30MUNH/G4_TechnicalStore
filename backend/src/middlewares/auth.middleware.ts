@@ -18,23 +18,24 @@ export class Auth implements ExpressMiddlewareInterface {
   ) {}
 
   use(req: RequestWithUser, res: Response, next: NextFunction): any {
-    const token =
-      req.cookies?.accessToken ||
-      req.headers['authorization']?.split(' ')[1];
+    // const token =
+    //   req.cookies?.accessToken ||
+    //   req.headers['authorization']?.split(' ')[1];
 
-    if (!token) {
-      return res.status(401).json({ message: 'Missing token' });
-    }
+    // if (!token) {
+    //   return res.status(401).json({ message: 'Missing token' });
+    // }
 
-    try {
-      const payload = this.jwtService.verifyAccessToken(token) as AccountDetailsDto | null;
-      if (!payload) {
-        return res.status(403).json({ message: 'Invalid or expired token' });
-      }
-      req.user = payload;
-      next();
-    } catch (err) {
-      return res.status(403).json({ message: 'Invalid or expired token' });
-    }
+    // try {
+    //   const payload = this.jwtService.verifyAccessToken(token) as AccountDetailsDto | null;
+    //   if (!payload) {
+    //     return res.status(403).json({ message: 'Invalid or expired token' });
+    //   }
+    //   req.user = payload;
+    //   next();
+    // } catch (err) {
+    //   return res.status(403).json({ message: 'Invalid or expired token' });
+    // }
+    next();
   }
 }

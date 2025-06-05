@@ -11,7 +11,7 @@ export class Account extends NamedEntity{
     @Column({nullable: false})
     password: string;
 
-    @Column()
+    @Column({nullable: false})
     phone: string;
 
     @ManyToOne(() => Role, (role) => role.accounts)

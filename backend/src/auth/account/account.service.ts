@@ -1,9 +1,9 @@
 import { Service } from "typedi";
 import { Account } from "./account.entity";
 import { Role } from "@/auth/role/role.entity";
-import { AccountNotFoundException, EntityNotFoundException, HttpException } from "@/exceptions/http-exceptions";
+import { AccountNotFoundException, EntityNotFoundException, HttpException, WrongOldPasswordException } from "@/exceptions/http-exceptions";
 import * as bcrypt from 'bcrypt';
-import { AccountDetailsDto, CreateAccountDto, LoginDto } from "../dtos/account.dto";
+import { AccountDetailsDto, CreateAccountDto, CredentialsDto } from "../dtos/account.dto";
 import { JwtService } from "../jwt/jwt.service";
 
 @Service()
@@ -11,6 +11,7 @@ export class AccountService{
     constructor(
         private readonly jwtService: JwtService
     ){}
+    
     async createAccount(request: CreateAccountDto): Promise<Account>{
         const role = await Role.findOne({
             where: {
@@ -27,13 +28,9 @@ export class AccountService{
         return account;
     }
 
-    async login(credentials: LoginDto): Promise<Account>{
-        const account = await Account.findOne({
-            where:{
-                username: credentials.username,
-            }
-        });
-        if(!account || !(await bcrypt.compare(credentials.password, account.password))) throw new AccountNotFoundException();
+    async login(credentials: CredentialsDto): Promise<Account>{
+        const account = await this.findAccountByUsername(credentials.username);
+        if(!await bcrypt.compare(credentials.password, account.password)) throw new AccountNotFoundException();
         const accountDetails: AccountDetailsDto = {
             username: account.username,
             phone: account.phone,
@@ -43,13 +40,23 @@ export class AccountService{
         return account;
     }
 
-    async viewAccountDetails(username: string): Promise<Account>{
+    async findAccountByUsername(username: string): Promise<Account>{
         const account = await Account.findOne({
             where: {
                 username
             }
         });
         if(!account) throw new AccountNotFoundException();
+        return account;
+    }
+
+    async checkOldPassword(account: Account, oldPassword: string): Promise<boolean>{
+        return await bcrypt.compare(account.password, oldPassword);
+    }
+
+    async changePassword(account: Account, newPassword: string){
+        account.password = newPassword;
+        await account.save();
         return account;
     }
 }

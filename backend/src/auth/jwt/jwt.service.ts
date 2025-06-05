@@ -4,24 +4,23 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import { RefreshToken } from "./refreshToken.entity";
 import { Account } from "../account/account.entity";
 import { AccountNotFoundException } from "@/exceptions/http-exceptions";
+import { AccountService } from "../account/account.service";
 
 const JWT_SECRET = process.env.JWT_SECRET || "";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "";
 
 @Service()
 export class JwtService {
+  constructor(
+    private readonly accountService: AccountService,
+  ){}
   generateAccessToken(payload: AccountDetailsDto): string {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: "1d" });
   }
 
   async generateRefreshToken(payload: AccountDetailsDto): Promise<string> {
     const token = jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
-    const account = await Account.findOne({
-      where: {
-        username: payload.username,
-      },
-    });
-    if (!account) throw new AccountNotFoundException();
+    const account = await this.accountService.findAccountByUsername(payload.username);
     const oldRefreshToken = await RefreshToken.find({
       where: {
         account,
@@ -42,12 +41,7 @@ export class JwtService {
       const decoded = jwt.verify(token, REFRESH_TOKEN_SECRET) as {
         username: string;
       };
-      const account = await Account.findOne({
-        where: {
-          username: decoded.username,
-        },
-      });
-      if (!account) throw new AccountNotFoundException();
+      const account = await this.accountService.findAccountByUsername(decoded.username);
       const refreshToken = await RefreshToken.findOne({
         where: {
           token,
