@@ -86,7 +86,7 @@ export class AccountService{
     }
 
     async checkOldPassword(account: Account, oldPassword: string): Promise<boolean>{
-        return await bcrypt.compare(account.password, oldPassword);
+        return await bcrypt.compare(oldPassword, account.password);
     }
 
     async changePassword(account: Account, newPassword: string){

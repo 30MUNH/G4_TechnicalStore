@@ -63,14 +63,13 @@ export class AccountController{
     @Post('/change-password')
     @UseBefore(Auth)
     async preChangePassword(@Req() req: any,
-    @BodyParam('oldPassword') oldPassword: string,
-    @BodyParam('newPassword') newPassword: string){
+    @BodyParam('oldPassword') oldPassword: string){
         const user = req.user as AccountDetailsDto
         const account = await this.accountService.findAccountByUsername(user.username);
         const checkOldPassword = await this.accountService.checkOldPassword(account, oldPassword);
         if(!checkOldPassword) return "Wrong old password";
         await this.twilioService.sendOtp(account.username);
-        return "Check OTP message to complete login";
+        return "Check OTP message to complete password change";
     }
 
     @Post('/verify-change-password')
