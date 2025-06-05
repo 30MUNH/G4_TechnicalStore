@@ -3,7 +3,7 @@ import { Account } from "./account.entity";
 import { Role } from "@/auth/role/role.entity";
 import { AccountNotFoundException, EntityNotFoundException, TokenNotFoundException } from "@/exceptions/http-exceptions";
 import * as bcrypt from 'bcrypt';
-import { AccountDetailsDto, CreateAccountDto, CredentialsDto } from "../dtos/account.dto";
+import { CreateAccountDto, CredentialsDto } from "../dtos/account.dto";
 import { JwtService } from "../jwt/jwt.service";
 import { RefreshToken } from "../jwt/refreshToken.entity";
 import { MoreThan } from "typeorm";
