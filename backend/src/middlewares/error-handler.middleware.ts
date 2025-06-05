@@ -13,8 +13,10 @@ export class ErrorHandler implements ExpressErrorMiddlewareInterface {
   error(error: any, req: any, res: any, next: (err?: any) => any): void {
     if (res.headersSent) return next(error);
 
+    console.log("🔴 ERROR HANDLER TRIGGERED");
     console.log("Error object:", error);
     console.log("Error message:", error.message);
+    
     let status: number = error.httpCode || error.status || 500;
     let message: string | string[] = error.message || "Something went wrong";
 
@@ -35,10 +37,11 @@ export class ErrorHandler implements ExpressErrorMiddlewareInterface {
       }
       message = [...validatorErrors];
     }
+
     res.status(status).json({
       success: false,
+      statusCode: status,
       message,
-      ...(error.toJSON ? error.toJSON() : {}),
     });
   }
 }
