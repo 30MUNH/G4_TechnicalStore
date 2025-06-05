@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { DataSourceOptions } from 'typeorm';
 import { Account } from '@/auth/account/account.entity';
 import { Role } from '@/auth/role/role.entity';
+import { Product } from '@/product/product.entity';
 
 export default {
   type: 'postgres',
@@ -15,7 +16,7 @@ export default {
   synchronize: process.env.DB_SYNCHRONIZE || true,
 
   // entities: [path.join(__dirname, '../*/**/*.entity.{ts,js}')],
-  entities: [Account, Role],
+  entities: [Account, Role, Product],
   
   cli: {
     entitiesDir: 'src',
