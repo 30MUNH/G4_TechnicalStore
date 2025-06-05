@@ -5,7 +5,6 @@ import {
   useExpressServer,
   getMetadataArgsStorage,
   useContainer,
-  Action,
 } from "routing-controllers";
 import { routingControllersToSpec } from "routing-controllers-openapi";
 import { validationMetadatasToSchemas } from "class-validator-jsonschema";

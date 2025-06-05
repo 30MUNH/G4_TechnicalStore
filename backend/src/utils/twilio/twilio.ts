@@ -31,4 +31,20 @@ export class TwilioService {
 
     return result.status === 'approved';
   }
+
+  async sendOtpRegister(username: string, phone: string): Promise<String>{
+    await twilioClient.verify.v2.services(verifyServiceSid).verifications.create({
+      to: phone,
+      channel: 'sms',
+    });
+    return "OTP sent";
+  }
+
+  async verifyOtpRegister(phone: string, otp: string): Promise<boolean>{
+    const result = await twilioClient.verify.v2.services(verifyServiceSid).verificationChecks.create({
+        to: phone,
+        code: otp,
+        });
+    return result.status === 'approved';
+  }
 }

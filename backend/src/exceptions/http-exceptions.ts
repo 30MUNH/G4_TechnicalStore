@@ -42,3 +42,13 @@ export class WrongOldPasswordException extends HttpException {
     super(400, HttpMessages._WRONG_OLD_PASSWORD);
   }
 }
+
+export class TokenNotFoundException extends HttpException {
+  constructor() {
+    console.log(
+      "Throwing TokenNotFoundException with message:",
+      HttpMessages._NO_TOKEN
+    );
+    super(400, HttpMessages._NO_TOKEN);
+  }
+}

@@ -14,6 +14,9 @@ export class Account extends NamedEntity{
     @Column({nullable: false})
     phone: string;
 
+    @Column({nullable: false, default: false})
+    isRegistered: boolean;
+
     @ManyToOne(() => Role, (role) => role.accounts)
     role: Role;
 
