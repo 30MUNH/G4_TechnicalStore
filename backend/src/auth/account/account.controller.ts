@@ -3,7 +3,6 @@ import { Service } from "typedi";
 import { AccountService } from "./account.service";
 import { AccountDetailsDto, CreateAccountDto, CredentialsDto } from "../dtos/account.dto";
 import { TwilioService } from "@/utils/twilio/twilio";
-import { JwtService } from "../jwt/jwt.service";
 import { Auth } from "@/middlewares/auth.middleware";
 
 @Service()
@@ -12,7 +11,6 @@ export class AccountController{
     constructor(
         private readonly accountService: AccountService,
         private readonly twilioService: TwilioService,
-        private readonly jwtService: JwtService,
     ){}
 
     @Post("/register")
@@ -37,7 +35,17 @@ export class AccountController{
 
     @Post('/login')
     async login(@Body() body: CredentialsDto){
-        return await this.accountService.login(body);
+        const account = await this.accountService.login(body);
+        await this.twilioService.sendOtp(account.username);
+        return "Check OTP message to complete login";
+    }
+
+    @Post('/verify-login')
+    async verifyLogin(@BodyParam("username") username: string, @BodyParam("otp") otp: string){
+        const result = await this.twilioService.verifyOtp(username, otp);
+        if(!result) return "OTP is wrong or is expired";
+        const token = await this.accountService.finalizeLogin(username);
+        return token;
     }
 
     @Post('/logout')
@@ -53,14 +61,35 @@ export class AccountController{
     }
 
     @Post('/change-password')
-    // @UseBefore(Auth)
-    async changePassword(@BodyParam('username') username: string,
+    @UseBefore(Auth)
+    async preChangePassword(@Req() req: any,
     @BodyParam('oldPassword') oldPassword: string,
     @BodyParam('newPassword') newPassword: string){
-        const account = await this.accountService.findAccountByUsername(username);
+        const user = req.user as AccountDetailsDto
+        const account = await this.accountService.findAccountByUsername(user.username);
         const checkOldPassword = await this.accountService.checkOldPassword(account, oldPassword);
-        if(!checkOldPassword) return false;
-        return !!await this.accountService.changePassword(account, newPassword);
+        if(!checkOldPassword) return "Wrong old password";
+        await this.twilioService.sendOtp(account.username);
+        return "Check OTP message to complete login";
+    }
+
+    @Post('/verify-change-password')
+    async verifyChangePassword(@BodyParam("username") username: string, 
+    @BodyParam("otp") otp: string, 
+    @BodyParam('newPassword') newPassword: string){
+        const result = await this.twilioService.verifyOtp(username, otp);
+        if(!result) return "OTP is wrong or is expired";
+        const account = await this.accountService.findAccountByUsername(username);
+        const token = await this.accountService.changePassword(account, newPassword);
+        return token;
+    }
+
+    @Post('/forgot-password')
+    async forgotPassword(@BodyParam("username") username: string){
+        const account = await this.accountService.findAccountByUsername(username);
+        if(!account) return "This user does not exist";
+        await this.twilioService.sendOtp(account.username);
+        return "Check OTP message to reset password";
     }
 
     @Post('/send-otp')

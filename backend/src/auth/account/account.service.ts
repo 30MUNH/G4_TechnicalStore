@@ -8,6 +8,7 @@ import { JwtService } from "../jwt/jwt.service";
 import { RefreshToken } from "../jwt/refreshToken.entity";
 import { MoreThan } from "typeorm";
 
+const SALT_ROUNDS = 8;
 @Service()
 export class AccountService{
     constructor(
@@ -23,8 +24,7 @@ export class AccountService{
         if(role == null) throw new EntityNotFoundException("Role");
         const account = new Account();
         account.username = request.username;
-        const saltRounds = 8;
-        account.password = await bcrypt.hash(request.password, saltRounds);
+        account.password = await bcrypt.hash(request.password, SALT_ROUNDS);
         account.role = role;
         account.phone = request.phone;
         await account.save();
@@ -47,9 +47,14 @@ export class AccountService{
         if(accounts.length > 0) await Promise.all(accounts.map((account) => account.softRemove()));
     }
 
-    async login(credentials: CredentialsDto): Promise<string>{
+    async login(credentials: CredentialsDto): Promise<Account>{
         const account = await this.findAccountByUsername(credentials.username);
         if(!await bcrypt.compare(credentials.password, account.password)) throw new AccountNotFoundException();
+        return account;
+    }
+
+    async finalizeLogin(username: string){
+        const account = await this.findAccountByUsername(username);
         const token = await RefreshToken.findOne({
             where: {
                 account,
@@ -85,7 +90,7 @@ export class AccountService{
     }
 
     async changePassword(account: Account, newPassword: string){
-        account.password = newPassword;
+        account.password = await bcrypt.hash(newPassword, SALT_ROUNDS);
         await account.save();
         return account;
     }
