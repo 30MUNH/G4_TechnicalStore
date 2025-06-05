@@ -1,17 +1,13 @@
-import { Column, Entity, OneToMany} from "typeorm";
+import { Entity, JoinColumn, OneToMany, OneToOne } from "typeorm";
 import { BaseEntity } from "@/common/BaseEntity";
 import { CartItem } from "./cartItem.entity";
+import { Account } from "@/auth/account/account.entity";
 
 @Entity()
 export class Cart extends BaseEntity {
-    @Column({nullable: false, unique: true })
-    cart_id: string;
-
-    @Column({  nullable: false })
-    customer_id: string;
-
-    @Column({  nullable: false })
-    created_at: Date;
+    @OneToOne(() => Account)
+    @JoinColumn()
+    account: Account;
 
     @OneToMany(() => CartItem, (cartItem) => cartItem.cart)
     cartItems: CartItem[];
