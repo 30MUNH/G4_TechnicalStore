@@ -2,34 +2,47 @@ import React, { useRef, useState } from 'react';
 import emailjs from '@emailjs/browser';
 import './ContactUs.css';
 
-const ContactUs = () => {
+const ContactUs = ({ compact }) => {
     const form = useRef();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitStatus, setSubmitStatus] = useState(null);
 
     const sendEmail = (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-        setSubmitStatus(null);
 
-
+        emailjs.sendForm(
+            'service_rqshknr', // EmailJS service ID
+            'template_tj8a3xn', //  EmailJS template ID
+            form.current,
+            'N_MB7gWT5V-WSfWBY' //  EmailJS public key
+        )
+            .then((result) => {
+                alert('Thank you for your message. We will get back to you soon!');
+                form.current.reset();
+            })
+            .catch((error) => {
+                alert('Sorry, something went wrong. Please try again later.');
+            })
+            .finally(() => {
+                setIsSubmitting(false);
+            });
     };
 
     return (
-        <div className="contact-us-container">
-            <div className="contact-content">
+        <div className={`contact-us-container${compact ? ' compact' : ''}`} >
+            <div className="contact-content" style={compact ? { height: '420px', maxWidth: '700px' } : { height: '600px' }}>
                 <div className="contact-image">
                     <img src="/contact.png" alt="Customer Service Team" />
                 </div>
                 <div className="contact-form-section">
-                    <h2 style={{ display: 'flex', justifyContent: 'center' }}>CONTACT US</h2>
+                    <h2 style={{ display: 'flex', justifyContent: 'center', fontSize: compact ? '1.5rem' : undefined }}>CONTACT US</h2>
                     <form ref={form} onSubmit={sendEmail} className="contact-form">
                         <div className="form-group">
                             <label>Name</label>
                             <input
                                 type="text"
                                 name="user_name"
-                                placeholder="Francisco Andrade"
+                                placeholder="abcxyz"
                                 required
                             />
                         </div>
@@ -39,7 +52,7 @@ const ContactUs = () => {
                                 <input
                                     type="email"
                                     name="user_email"
-                                    placeholder="hello@reallygreasite.com"
+                                    placeholder="abcxyz@gmail.com"
                                     required
                                 />
                             </div>
@@ -48,7 +61,7 @@ const ContactUs = () => {
                                 <input
                                     type="tel"
                                     name="phone_number"
-                                    placeholder="+123-456-7890"
+                                    placeholder="+84 1234567890"
                                     required
                                 />
                             </div>
@@ -57,7 +70,7 @@ const ContactUs = () => {
                             <label>Message</label>
                             <textarea
                                 name="message"
-                                placeholder="Hi..."
+                                placeholder="text here"
                                 required
                             ></textarea>
                         </div>
@@ -67,15 +80,9 @@ const ContactUs = () => {
                                 className="submit-btn"
                                 disabled={isSubmitting}
                             >
-                                SUBMIT
+                                {isSubmitting ? 'SENDING...' : 'SUBMIT'}
                             </button>
                         </div>
-
-                        {submitStatus && (
-                            <div className={`submit-status ${submitStatus.success ? 'success' : 'error'}`}>
-                                {submitStatus.message}
-                            </div>
-                        )}
                     </form>
                 </div>
             </div>
