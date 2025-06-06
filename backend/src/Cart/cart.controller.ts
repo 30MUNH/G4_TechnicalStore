@@ -4,9 +4,9 @@ import { CartService } from "./cart.service";
 import { AddToCartDto } from "../auth/dtos/cart.dto";
 import { Auth } from "@/middlewares/auth.middleware";
 
-// Định nghĩa interface cho AccountDetailsDto
+
 interface AccountDetailsDto {
-    id: number;
+    id: string;
     username: string;
     role: string;
 }
@@ -61,7 +61,7 @@ export class CartController {
     @UseBefore(Auth)
     async increaseQuantity(
         @Req() req: any,
-        @BodyParam("productId") productId: number,
+        @BodyParam("productId") productId: string,
         @BodyParam("amount") amount: number = 1
     ) {
         const user = req.user as AccountDetailsDto;
@@ -83,7 +83,7 @@ export class CartController {
     @UseBefore(Auth)
     async decreaseQuantity(
         @Req() req: any,
-        @BodyParam("productId") productId: number,
+        @BodyParam("productId") productId:string,
         @BodyParam("amount") amount: number = 1
     ) {
         const user = req.user as AccountDetailsDto;
@@ -105,7 +105,7 @@ export class CartController {
     @UseBefore(Auth)
     async removeItem(
         @Req() req: any,
-        @BodyParam("productId") productId: number
+        @BodyParam("productId") productId: string,
     ) {
         const user = req.user as AccountDetailsDto;
         try {

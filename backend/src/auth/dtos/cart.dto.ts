@@ -1,10 +1,10 @@
 export class AddToCartDto {
-  productId: number;
+  productId: string;
   quantity: number;
 }
 
 export class CartItemDto {
-  productId: number;
+  productId: string;
   quantity: number;
   price: number;
 }
