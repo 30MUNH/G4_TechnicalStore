@@ -1,70 +1,183 @@
 import React from "react";
+import { Line, Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import "./SalesDashboard.css";
 
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
 const SalesDashboard = () => {
+  const customerTrafficData = {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    datasets: [
+      {
+        label: "Unique Customers",
+        data: [200, 300, 250, 400, 350, 500],
+        borderColor: "#ff6384",
+        fill: false,
+      },
+      {
+        label: "New Customers",
+        data: [150, 200, 180, 300, 280, 400],
+        borderColor: "#36a2eb",
+        fill: false,
+      },
+      {
+        label: "Returning Customers",
+        data: [50, 100, 70, 100, 70, 100],
+        borderColor: "#cc65fe",
+        fill: false,
+      },
+    ],
+  };
+
+  const salesTargetVsActualData = {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    datasets: [
+      {
+        label: "Target Sales",
+        data: [300, 400, 350, 500, 450, 600],
+        backgroundColor: "#36a2eb",
+      },
+      {
+        label: "Actual Sales",
+        data: [250, 350, 300, 450, 400, 550],
+        backgroundColor: "#ffce56",
+      },
+    ],
+  };
+
+  const inventoryLevelsData = {
+    labels: ["Level 1", "Level 2", "Level 3", "Level 4"],
+    datasets: [
+      {
+        label: "Inventory",
+        data: [400, 300, 200, 100],
+        backgroundColor: "#36a2eb",
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      title: {
+        display: true,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
+  };
+
   return (
-    <div className="dashboard">
-      {/* Sidebar */}
+    <div className="dashboard-container">
       <div className="sidebar">
-        <div className="icon">🖥️</div>
-        <div className="icon">💻</div>
-        <div className="icon">📷</div>
-        <div className="icon">🧩</div>
+        <h2>
+          <span style={{ color: "#6b48ff" }}>T</span>echnical Store
+        </h2>
+        <a href="#" className="active">
+          <span className="icon" style={{ background: "#6b48ff" }}></span>
+          Dashboard
+        </a>
+        <a href="#">
+          <span className="icon"></span>Leaderboard
+        </a>
+        <a href="#">
+          <span className="icon"></span>Order
+        </a>
+        <a href="#">
+          <span className="icon"></span>Products
+        </a>
+        <a href="#">
+          <span className="icon"></span>Sales Report
+        </a>
+        <a href="#">
+          <span className="icon"></span>Messages
+        </a>
+        <a href="#">
+          <span className="icon"></span>Settings
+        </a>
+        <a href="#">
+          <span className="icon"></span>Sign Out
+        </a>
       </div>
-
-      {/* Content */}
       <div className="content">
-        <h2>Technical Store Dashboard</h2>
-
-        {/* Top Summary Cards */}
-        <div className="top-row">
-          <div className="card">
-            <h3>Monthly Sales</h3>
-            <div className="chart-line">
-              <div className="line"></div>
-            </div>
-            <p>$23,000</p>
-          </div>
-          <div className="card">
-            <h3>Profits</h3>
-            <div className="pie-chart"></div>
-            <p>$5,000</p>
-          </div>
-          <div className="card">
-            <h3>Visitors</h3>
-            <div className="chart-line">
-              <div className="line half"></div>
-            </div>
-            <p>12,345</p>
+        <div className="header">
+          <h1>Dashboard</h1>
+          <input type="text" placeholder="Search here..." />
+          <div className="profile">
+            <span>Muqif</span>
+            <img src="https://via.placeholder.com/30" alt="Profile" />
           </div>
         </div>
-
-        {/* Daily Visitors Chart */}
-        <div className="card">
-          <h3>Daily Store Visitors</h3>
-          <div className="bar-chart">
-            {Array.from({ length: 20 }).map((_, idx) => (
-              <div
-                key={idx}
-                className="bar"
-                style={{ height: `${40 + (idx % 5) * 10}px` }}
-              ></div>
-            ))}
+        <div className="card-container">
+          <div className="card">
+            <h3>Today’s Sales</h3>
+            <p>$1k</p>
+          </div>
+          <div className="card">
+            <h3>Sales Summary</h3>
+            <p>300</p>
+          </div>
+          <div className="card">
+            <h3>Total Order</h3>
+            <p>5</p>
+          </div>
+          <div className="card">
+            <h3>New Customers</h3>
+            <p>8</p>
           </div>
         </div>
-
-        {/* Category Summary */}
-        <div className="categories">
-          <h3>Categories</h3>
-          <div className="grid">
-            {["CPU: 50", "Computer: 70", "Laptop: 90", "Camera: 30"].map(
-              (item, idx) => (
-                <div key={idx} className="mini-card">
-                  <h4>{item.split(":")[0]}</h4>
-                  <p>{item.split(":")[1]}</p>
-                </div>
-              )
-            )}
+        <div className="chart-container">
+          <div className="chart">
+            <Line
+              data={customerTrafficData}
+              options={{
+                ...chartOptions,
+                plugins: { title: { text: "Customer Traffic" } },
+              }}
+            />
+          </div>
+          <div className="chart">
+            <Bar
+              data={salesTargetVsActualData}
+              options={{
+                ...chartOptions,
+                plugins: { title: { text: "Sales Target vs Actual" } },
+              }}
+            />
+          </div>
+          <div className="chart">
+            <Bar
+              data={inventoryLevelsData}
+              options={{
+                ...chartOptions,
+                indexAxis: "y",
+                plugins: { title: { text: "Inventory Levels" } },
+              }}
+            />
           </div>
         </div>
       </div>
