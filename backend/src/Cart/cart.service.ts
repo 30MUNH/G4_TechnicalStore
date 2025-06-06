@@ -9,10 +9,7 @@ import { Service } from 'typedi';
 export class CartService {
 
   private async getOrCreateCart(username: string): Promise<Cart> {
-    const account = await Account.findOne({ 
-      where: { username },
-      relations: ['role']
-    });
+    const account = await Account.findOne({ where: { username } });
     if (!account) throw new Error('Account not found');
     const cart = await Cart.findOne({
       where: { account: { id: account.id } },
@@ -32,10 +29,10 @@ export class CartService {
   async addToCart(username: string, addToCartDto: AddToCartDto): Promise<Cart> {
     const cart = await this.getOrCreateCart(username);
     
-    const productId = String(addToCartDto.productId);
+    const productSlug = addToCartDto.productSlug;
     
     const existingItem = cart.cartItems?.find(
-      item => item.product?.id === productId
+      item => item.product?.slug === productSlug
     );
 
     if (existingItem) {
@@ -43,7 +40,7 @@ export class CartService {
       await existingItem.save();
     } else {
 
-      const product = await Product.findOne({ where: { id: productId } });
+      const product = await Product.findOne({ where: { slug: productSlug } });
       if (!product) throw new Error('Product not found');
 
       const newItem = new CartItem();
@@ -77,9 +74,9 @@ export class CartService {
     return cart;
   }
 
-  async increaseQuantity(username: string, productId: string, amount: number = 1): Promise<Cart> {
+  async increaseQuantity(username: string, productSlug: string, amount: number = 1): Promise<Cart> {
     const cart = await this.viewCart(username);
-    const item = cart.cartItems?.find(item => item.product?.id === String(productId));
+    const item = cart.cartItems?.find(item => item.product?.slug === productSlug);
     
     if (!item) throw new Error('Product not in cart');
     
@@ -89,9 +86,9 @@ export class CartService {
     return this.viewCart(username);
   }
 
-  async decreaseQuantity(username: string, productId: string, amount: number = 1): Promise<Cart> {
+  async decreaseQuantity(username: string, productSlug: string, amount: number = 1): Promise<Cart> {
     const cart = await this.viewCart(username);
-    const item = cart.cartItems?.find(item => item.product?.id === String(productId));
+    const item = cart.cartItems?.find(item => item.product?.slug === productSlug);
     
     if (!item) throw new Error('Product not in cart');
     
@@ -105,9 +102,9 @@ export class CartService {
     return this.viewCart(username);
   }
 
-  async removeItem(username: string, productId: string): Promise<Cart> {
+  async removeItem(username: string, productSlug: string): Promise<Cart> {
     const cart = await this.viewCart(username);
-    const item = cart.cartItems?.find(item => item.product?.id === String(productId));
+    const item = cart.cartItems?.find(item => item.product?.slug === productSlug);
     
     if (!item) throw new Error('Product not in cart');
     

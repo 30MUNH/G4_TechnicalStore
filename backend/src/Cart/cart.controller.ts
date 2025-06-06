@@ -55,12 +55,12 @@ export class CartController {
     @UseBefore(Auth)
     async increaseQuantity(
         @Req() req: any,
-        @BodyParam("productId") productId: string,
+        @BodyParam("productSlug") productSlug: string,
         @BodyParam("amount") amount: number = 1
     ) {
         const user = req.user as AccountDetailsDto;
         try {
-            const cart = await this.cartService.increaseQuantity(user.username, productId, amount);
+            const cart = await this.cartService.increaseQuantity(user.username, productSlug, amount);
             return {
                 message: "Product quantity increased successfully",
                 cart
@@ -77,12 +77,12 @@ export class CartController {
     @UseBefore(Auth)
     async decreaseQuantity(
         @Req() req: any,
-        @BodyParam("productId") productId:string,
+        @BodyParam("productSlug") productSlug: string,
         @BodyParam("amount") amount: number = 1
     ) {
         const user = req.user as AccountDetailsDto;
         try {
-            const cart = await this.cartService.decreaseQuantity(user.username, productId, amount);
+            const cart = await this.cartService.decreaseQuantity(user.username, productSlug, amount);
             return {
                 message: "Product quantity decreased successfully",
                 cart
@@ -99,11 +99,11 @@ export class CartController {
     @UseBefore(Auth)
     async removeItem(
         @Req() req: any,
-        @BodyParam("productId") productId: string,
+        @BodyParam("productSlug") productSlug: string,
     ) {
         const user = req.user as AccountDetailsDto;
         try {
-            const cart = await this.cartService.removeItem(user.username, productId);
+            const cart = await this.cartService.removeItem(user.username, productSlug);
             return {
                 message: "Product removed from cart successfully",
                 cart
