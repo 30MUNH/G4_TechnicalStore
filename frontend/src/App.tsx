@@ -1,11 +1,9 @@
 import './App.css'
-import HomePage from './Page/HomePage.tsx'
+import HomePageHTML from './Page/HomePage.html?raw'
 
 function App() {
   return (
-    <>
-      <HomePage />
-    </>
+    <div dangerouslySetInnerHTML={{ __html: HomePageHTML }} />
   )
 }
 
