@@ -2,7 +2,7 @@ import { IsString } from "class-validator";
 export class UpdateAccountDto {
   username?: string;
   password?: string;
-  roleSlug?: string;
+  roleId?: string;
 }
 export class LoginDto {
     @IsString()
@@ -20,5 +20,5 @@ export class CreateAccountDto {
     password: string;
 
     @IsString()
-    roleSlug: string;
+    roleId: string;
 }

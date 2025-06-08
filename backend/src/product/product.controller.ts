@@ -9,6 +9,7 @@ import {
   Body,
   HttpCode,
   OnUndefined,
+  Req,
 } from 'routing-controllers';
 import { Inject } from 'typedi';
 import { ProductService } from './product.service';
@@ -26,8 +27,8 @@ export class ProductController {
 
   @Post()
   @HttpCode(201)
-  async create(@Body() body: CreateProductDto): Promise<Product> {
-    return this.productService.createProduct(body);
+  async create(@Req() req: any): Promise<Product> {
+    return this.productService.createProduct(req.body);
   }
 
   @Get()
@@ -43,9 +44,9 @@ export class ProductController {
   @Put('/:id')
   async update(
     @Param('id') id: string,
-    @Body() body: UpdateProductDto,
+    @Req() req: any,
   ): Promise<Product> {
-    return this.productService.updateProduct(id, body);
+    return this.productService.updateProduct(id, req.body);
   }
 
   @Delete('/:id')

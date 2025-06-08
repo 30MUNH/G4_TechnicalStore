@@ -8,8 +8,9 @@ export class ProductService {
     async createProduct(request: CreateProductDto): Promise<Product> {
         const product = new Product();
         product.name = request.name;
-        product.code = request.code;
-        product.categoryName = request.categoryName;
+        product.category = request.category;
+        product.price = request.price;
+        product.stock = request.stock;
         product.url = request.url+'';
         product.active = request.active ?? true;
         await product.save();
@@ -31,8 +32,9 @@ export class ProductService {
         if (!product) throw new EntityNotFoundException("Product");
 
         product.name = request.name ?? product.name;
-        product.code = request.code ?? product.code;
-        product.categoryName = request.categoryName ?? product.categoryName;
+        product.category = request.category ?? product.category;
+        product.price = request.price ?? product.price;
+        product.stock = request.stock ?? product.stock;
         product.url = request.url ?? product.url;
         if (request.active !== undefined) product.active = request.active;
 

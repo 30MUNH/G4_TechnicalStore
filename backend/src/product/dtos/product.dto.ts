@@ -1,15 +1,17 @@
 export class CreateProductDto {
     name: string;
-    code: string;
-    categoryName: string;
+    category: string;
+    price: number;
+    stock: number;
     url?: string;
     active?: boolean;
 }
 
 export class UpdateProductDto {
     name?: string;
-    code?: string;
-    categoryName?: string;
+    category?: string;
+    price?: number;
+    stock?: number;
     url?: string;
     active?: boolean;
 }

@@ -5,6 +5,8 @@ import { Account } from "../auth/account/account.entity";
 import { Role } from "../auth/role/role.entity";
 import { Product } from "../product/product.entity";
 import { RefreshToken } from "@/auth/jwt/refreshToken.entity";
+import { CartItem } from '@/Cart/cartItem.entity';
+import { Cart } from '@/Cart/cart.entity';
 
 export default {
   type: "postgres",
@@ -17,7 +19,7 @@ export default {
   synchronize: process.env.DB_SYNCHRONIZE || true,
 
   // entities: [path.join(__dirname, '../*/**/*.entity.{ts,js}')],
-  entities: [Account, Role, Product, RefreshToken],
+  entities: [Account, Role, Product, RefreshToken, Cart, CartItem],
 
   cli: {
     entitiesDir: "src",

@@ -9,6 +9,7 @@ import {
   Body,
   HttpCode,
   OnUndefined,
+  Req,
 } from 'routing-controllers';
 import { Inject } from 'typedi';
 import { UserManagementService } from './userManagement.service';
@@ -26,8 +27,8 @@ export class AccountController {
 
   @Post()
   @HttpCode(201)
-  async create(@Body() body: CreateAccountDto): Promise<Account> {
-    return this.userManagementService.createAccount(body);
+  async create(@Req() req: any): Promise<Account> {
+    return this.userManagementService.createAccount(req.body);
   }
 
   @Get()
@@ -40,9 +41,9 @@ export class AccountController {
     return this.userManagementService.getAccountById(id);
   }
 
-  @Put('/:id')
-  async update(@Param('id') id: string, @Body() body: UpdateAccountDto): Promise<Account> {
-    return this.userManagementService.updateAccount(id, body);
+  @Put('/:id')  
+  async update(@Param('id') id: string, @Req() req: any): Promise<Account> {
+    return this.userManagementService.updateAccount(id, req.body);
   }
 
   @Delete('/:id')

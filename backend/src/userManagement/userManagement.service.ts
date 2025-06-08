@@ -20,7 +20,7 @@ export class UserManagementService {
 
   async createAccount(request: CreateAccountDto): Promise<Account> {
     const role = await this.roleRepo.findOne({
-      where: { slug: request.roleSlug },
+      where: { id: request.roleId },
     });
     if (!role) throw new EntityNotFoundException('Role');
 
@@ -53,9 +53,9 @@ export class UserManagementService {
     if (request.password)
       account.password = await bcrypt.hash(request.password, 8);
 
-    if (request.roleSlug) {
+    if (request.roleId) {
       const role = await this.roleRepo.findOne({
-        where: { slug: request.roleSlug },
+        where: { id: request.roleId },
       });
       if (!role) throw new EntityNotFoundException('Role');
       account.role = role;
