@@ -1,4 +1,5 @@
 import { Column, Entity } from "typeorm";
+import { CartItem } from "@/Cart/cartItem.entity";
 import { NamedEntity } from "@/common/NamedEntity";
 
 @Entity('products')
