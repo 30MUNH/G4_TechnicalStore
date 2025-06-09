@@ -160,7 +160,7 @@ const ProductList: React.FC = () => {
                     }}
                   />
                 </td>
-                <td>{product.price}</td>
+                <td>{product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</td>
                 <td>{product.stock}</td>
                 <td>{product.active ? "Hoạt động" : "Không hoạt động"}</td>
                 <td>

@@ -271,7 +271,17 @@ input:checked + .slider {
 input:checked + .slider:before {
   transform: translateX(24px);
 }
-
+.add-button {
+  padding: 8px 16px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.add-button:hover {
+  background-color: #218838;
+}
 /* Responsive design */
 @media (max-width: 768px) {
   .product-list-container {

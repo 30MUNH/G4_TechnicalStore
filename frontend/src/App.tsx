@@ -5,6 +5,7 @@ import ProductList from "./components/product_manager/product_list.tsx";
 import UserList from "./components/user_manager/user_list.tsx";
 // import HomePage from "../Page/HomePage.tsx";
 // import HomePage from './Page/HomePage.tsx'
+// import HomePageHTML from "./Page/HomePage.html?raw";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Router>
         <Routes>
           {/* <Route path="/" element={<HomePage />} /> */}
+          {/* <div dangerouslySetInnerHTML={{ __html: HomePageHTML }} /> */}
           <Route path="/userList" element={<UserList />} />
           <Route path="/products" element={<ProductList />} />
           <Route path="/products/:id" element={<ProductDetail />} />

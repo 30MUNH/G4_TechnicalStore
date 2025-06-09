@@ -18,13 +18,22 @@ interface Product {
   description: string;
   stock: number;
 }
-
+const formatVND = (value: number | string) => {
+  if (!value && value !== 0) return '';
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    minimumFractionDigits: 0,
+  }).format(Number(value));
+};
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+const [validationErrors, setValidationErrors] = useState<Partial<Product>>({});
   const navigate = useNavigate();
 
   const isAddMode = !id; // Kiểm tra nếu không có id thì là chế độ thêm mới
@@ -77,26 +86,54 @@ const ProductDetail: React.FC = () => {
       fetchProduct();
     }
   }, [id, isAddMode]);
-
+const validateForm = (data: Product): Record<string, string> => {
+  const errors: Record<string, string> = {};
+  if (!data.name.trim()) errors.name = "Tên sản phẩm là bắt buộc";
+  if (!data.category.trim()) errors.category = "Danh mục là bắt buộc";
+  if (!data.url.trim()) errors.url = "URL hình ảnh là bắt buộc";
+  if (!data.description.trim()) errors.description = "Mô tả là bắt buộc";
+  if (data.price <= 0) errors.price = "Giá phải lớn hơn 0";
+  if (data.stock < 0) errors.stock = "Số lượng tồn kho không được âm";
+  return errors;
+};
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
-    setFormData((prev) =>
-      prev
-        ? {
-            ...prev,
-            [name]: type === "checkbox" ? checked : value,
-          }
-        : prev
-    );
+
+    if (name === 'price') {
+      // Loại bỏ ký tự không phải số để lưu giá trị dạng số
+      const rawValue = value.replace(/[^0-9]/g, '');
+      setFormData((prev) =>
+        prev
+          ? {
+              ...prev,
+              [name]: rawValue ? Number(rawValue) : 0,
+            }
+          : prev
+      );
+    } else {
+      setFormData((prev) =>
+        prev
+          ? {
+              ...prev,
+              [name]: type === 'checkbox' ? checked : value,
+            }
+          : prev
+      );
+    }
+        setValidationErrors((prev) => ({ ...prev, [name]: undefined }));
+
   };
 
   const handleSave = async () => {
     if (!formData) return;
+     const errors = validateForm(formData);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
     try {
       // Tạo đối tượng chỉ chứa các trường cần thiết
       const payload = {
@@ -116,8 +153,10 @@ const ProductDetail: React.FC = () => {
           payload
         );
         if (response.data.success) {
-          navigate("/products");
-          console.log("tạo mới oki: ");
+           setSuccessMessage("Tạo sản phẩm thành công!");
+          setTimeout(() => {
+            navigate("/products");
+          }, 3000);
         } else {
           setError("Không thể tạo sản phẩm");
         }
@@ -129,7 +168,10 @@ const ProductDetail: React.FC = () => {
         );
         if (response.data.success) {
           setProduct({ ...product, ...payload });
-          navigate("/products");
+          setSuccessMessage("Cập nhật sản phẩm thành công!");
+          setTimeout(() => {
+            navigate("/products");
+          }, 3000);
           // console.log("payload: ", payload);
         } else {
           setError("Không thể cập nhật sản phẩm");
@@ -145,7 +187,10 @@ const ProductDetail: React.FC = () => {
   const handleDelete = async () => {
     try {
       await axios.delete(`http://localhost:4000/api/products/${id}`);
-      navigate("/products");
+     setSuccessMessage("Xóa sản phẩm thành công!");
+      setTimeout(() => {
+        navigate("/products");
+      }, 3000);
     } catch (err: any) {
       setError("Lỗi khi xóa sản phẩm: " + err.message);
     } finally {
@@ -164,7 +209,12 @@ const ProductDetail: React.FC = () => {
   return (
     <div className="product-detail-container">
       <h2>{isAddMode ? "Thêm Sản Phẩm Mới" : "Chi Tiết Sản Phẩm"}</h2>
-      <div className="product-detail-card">
+       {successMessage && (
+        <div className="success-notification">
+          {successMessage}
+        </div>
+      )}
+        <div className="product-detail-card">
         <div className="product-detail-image-wrapper">
           <div className="form-group">
             <label>URL Hình ảnh:</label>
@@ -173,8 +223,11 @@ const ProductDetail: React.FC = () => {
               name="url"
               value={formData.url}
               onChange={handleInputChange}
-              className="form-input"
+              className={`form-input ${validationErrors.url ? 'border-red-500' : ''}`}
             />
+            {validationErrors.url && (
+              <p className="text-red-500 text-sm">{validationErrors.url}</p>
+            )}
           </div>
           {formData.url && (
             <img
@@ -196,8 +249,11 @@ const ProductDetail: React.FC = () => {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="form-input"
+              className={`form-input ${validationErrors.name ? 'border-red-500' : ''}`}
             />
+            {validationErrors.name && (
+              <p className="text-red-500 text-sm">{validationErrors.name}</p>
+            )}
           </div>
           <div className="form-group">
             <label>Danh mục:</label>
@@ -206,8 +262,11 @@ const ProductDetail: React.FC = () => {
               name="category"
               value={formData.category}
               onChange={handleInputChange}
-              className="form-input"
+              className={`form-input ${validationErrors.category ? 'border-red-500' : ''}`}
             />
+            {validationErrors.category && (
+              <p className="text-red-500 text-sm">{validationErrors.category}</p>
+            )}
           </div>
           <div className="form-group">
             <label>Giá:</label>
@@ -216,8 +275,11 @@ const ProductDetail: React.FC = () => {
               name="price"
               value={formData.price}
               onChange={handleInputChange}
-              className="form-input"
+              className={`form-input ${validationErrors.price ? 'border-red-500' : ''}`}
             />
+            {validationErrors.price && (
+              <p className="text-red-500 text-sm">{validationErrors.price}</p>
+            )}
           </div>
           <div className="form-group">
             <label>Mô tả:</label>
@@ -225,8 +287,11 @@ const ProductDetail: React.FC = () => {
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              className="form-input"
+              className={`form-input ${validationErrors.description ? 'border-red-500' : ''}`}
             />
+            {validationErrors.description && (
+              <p className="text-red-500 text-sm">{validationErrors.description}</p>
+            )}
           </div>
           <div className="form-group">
             <label>Hàng tồn kho:</label>
@@ -235,20 +300,12 @@ const ProductDetail: React.FC = () => {
               name="stock"
               value={formData.stock}
               onChange={handleInputChange}
-              className="form-input"
+              className={`form-input ${validationErrors.stock ? 'border-red-500' : ''}`}
             />
+            {validationErrors.stock && (
+              <p className="text-red-500 text-sm">{validationErrors.stock}</p>
+            )}
           </div>
-          {/* <div className="form-group">
-            <label>Slug:</label>
-            <input
-              type="text"
-              name="slug"
-              value={formData.slug || ""}
-              onChange={handleInputChange}
-              className="form-input"
-              disabled={!isAddMode} // Chỉ cho phép chỉnh sửa slug khi thêm mới
-            />
-          </div> */}
           <div className="form-group">
             <label>
               <input
@@ -260,37 +317,6 @@ const ProductDetail: React.FC = () => {
               Trạng thái: {formData.active ? "Hoạt động" : "Không hoạt động"}
             </label>
           </div>
-          {/* {!isAddMode && (
-            <>
-              <div className="form-group">
-                <label>Ngày tạo:</label>
-                <input
-                  type="text"
-                  value={formData.createdAt || ""}
-                  className="form-input"
-                  disabled
-                />
-              </div>
-              <div className="form-group">
-                <label>Ngày cập nhật:</label>
-                <input
-                  type="text"
-                  value={formData.updatedAt || ""}
-                  className="form-input"
-                  disabled
-                />
-              </div>
-              <div className="form-group">
-                <label>Ngày xóa:</label>
-                <input
-                  type="text"
-                  value={formData.deletedAt || "Chưa xóa"}
-                  className="form-input"
-                  disabled
-                />
-              </div>
-            </>
-          )} */}
         </div>
       </div>
 

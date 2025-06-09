@@ -29,6 +29,7 @@ const UserList: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [filterRole, setFilterRole] = useState<string>("");
   const [filterKeyword, setFilterKeyword] = useState<string>("");
@@ -45,6 +46,7 @@ const UserList: React.FC = () => {
               id: user.id,
               name: user.name,
               username: user.username,
+              password : user.password,
               createdAt: user.createdAt,
               phone: user.phone,
               role: user.role.name.toLowerCase(),
@@ -55,6 +57,7 @@ const UserList: React.FC = () => {
         } else {
           setError("Không thể lấy dữ liệu từ API");
         }
+       
       } catch (err: any) {
         setError("Đã có lỗi xảy ra khi gọi API: " + err.message);
       } finally {
@@ -118,18 +121,20 @@ const UserList: React.FC = () => {
       }
 
       // Make the PUT request to update the user's role
-      await axios.put(`http://localhost:4000/api/userManagement/${id}`, {
-        username: user.username,
-        password: user.password,
-        roleId: selectedRole.id,
-      });
-
+      // await axios.put(`http://localhost:4000/api/userManagement/${id}`, {
+      //   username: user.username,
+      //   password: user.password,
+      //   roleId: selectedRole.id,
+      // });
+console.log("user : ",user);
       // Update the local state only after successful API call
       setFilteredUsers((prevUsers) =>
         prevUsers.map((user) =>
           user.id === id ? { ...user, role: newRole } : user
         )
       );
+       setSuccessMessage(`Cập nhật role thành công cho người dùng ${user.username}`);
+       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err: any) {
       setError("Đã có lỗi xảy ra khi cập nhật role: " + err.message);
     }
@@ -145,6 +150,11 @@ const UserList: React.FC = () => {
   return (
     <div className="user-list-container">
       <h2>Danh Sách Người Dùng</h2>
+      {successMessage && (
+        <div className="success-notification">
+          {successMessage}
+        </div>
+      )}
       <div className="filter-section">
         <div className="filter-group">
           <label htmlFor="filter-role">Role:</label>
