@@ -5,197 +5,309 @@ import { useParams, useNavigate } from 'react-router-dom';
 import './productDetail.css';
 
 interface Product {
-  // id: string;
+  id?: string;
   name: string;
-  code: string;
-  categoryName: string;
+  category: string;
   url: string;
   active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+  slug?: string;
+  price: number;
+  description: string;
+  stock: number;
 }
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<Product | null>(null);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const navigate = useNavigate();
 
+  const isAddMode = !id; // Kiểm tra nếu không có id thì là chế độ thêm mới
+
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const response = await axios.get(`http://localhost:4000/api/products/${id}`);
-        if (response.data.success) {
-          const productData: Product = {
-            // id: response.data.data.id,
-            name: response.data.data.name,
-            code: response.data.data.code,
-            categoryName: response.data.data.categoryName,
-            url: response.data.data.url,
-            active: response.data.data.active,
-          };
-          setProduct(productData);
-          setFormData(productData);
-        } else {
-          setError('Không thể lấy dữ liệu sản phẩm');
+    if (isAddMode) {
+      // Chế độ thêm mới: Khởi tạo form rỗng
+      const initialFormData: Product = {
+        name: "",
+        category: "",
+        url: "",
+        active: true,
+        price: 0,
+        description: "",
+        stock: 0,
+      };
+      setFormData(initialFormData);
+    } else {
+      // Chế độ chỉnh sửa: Lấy dữ liệu sản phẩm
+      const fetchProduct = async () => {
+        try {
+          const response = await axios.get(
+            `http://localhost:4000/api/products/${id}`
+          );
+          if (response.data.success) {
+            const productData: Product = {
+              id: response.data.data.id,
+              name: response.data.data.name,
+              category: response.data.data.category,
+              url: response.data.data.url,
+              active: response.data.data.active,
+              createdAt: response.data.data.createdAt,
+              updatedAt: response.data.data.updatedAt,
+              deletedAt: response.data.data.deletedAt,
+              slug: response.data.data.slug,
+              price: response.data.data.price,
+              description: response.data.data.description,
+              stock: response.data.data.stock,
+            };
+            setProduct(productData);
+            setFormData(productData);
+          } else {
+            setError("Không thể lấy dữ liệu sản phẩm");
+          }
+        } catch (err: any) {
+          setError("Đã có lỗi xảy ra khi gọi API: " + err.message);
         }
-      } catch (err: any) {
-        setError('Đã có lỗi xảy ra khi gọi API: ' + err.message);
-      }
-    };
+      };
 
-    fetchProduct();
-  }, [id]);
+      fetchProduct();
+    }
+  }, [id, isAddMode]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
-    setFormData((prev) => (prev ? {
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    } : prev));
+    setFormData((prev) =>
+      prev
+        ? {
+            ...prev,
+            [name]: type === "checkbox" ? checked : value,
+          }
+        : prev
+    );
   };
 
   const handleSave = async () => {
     if (!formData) return;
     try {
-      await axios.put(`http://localhost:4000/api/products/${id}`, formData);
-      setProduct(formData);
-      setIsEditing(false);
+      // Tạo đối tượng chỉ chứa các trường cần thiết
+      const payload = {
+        name: formData.name,
+        category: formData.category,
+        price: formData.price,
+        stock: formData.stock,
+        url: formData.url,
+        description: formData.description,
+        active: formData.active,
+      };
+
+      if (isAddMode) {
+        // Chế độ thêm mới: Gửi POST request
+        const response = await axios.post(
+          "http://localhost:4000/api/products",
+          payload
+        );
+        if (response.data.success) {
+          navigate("/products");
+          console.log("tạo mới oki: ");
+        } else {
+          setError("Không thể tạo sản phẩm");
+        }
+      } else {
+        // Chế độ chỉnh sửa: Gửi PUT request với payload
+        const response = await axios.put(
+          `http://localhost:4000/api/products/${id}`,
+          payload
+        );
+        if (response.data.success) {
+          setProduct({ ...product, ...payload });
+          navigate("/products");
+          // console.log("payload: ", payload);
+        } else {
+          setError("Không thể cập nhật sản phẩm");
+        }
+      }
     } catch (err: any) {
-      setError('Lỗi khi cập nhật sản phẩm: ' + err.message);
+      setError(
+        `Lỗi khi ${isAddMode ? "tạo" : "cập nhật"} sản phẩm: ${err.message}`
+      );
     }
   };
 
   const handleDelete = async () => {
     try {
       await axios.delete(`http://localhost:4000/api/products/${id}`);
-      navigate('/products');
+      navigate("/products");
     } catch (err: any) {
-      setError('Lỗi khi xóa sản phẩm: ' + err.message);
+      setError("Lỗi khi xóa sản phẩm: " + err.message);
     } finally {
       setShowDeleteModal(false);
     }
   };
 
-  const handleEditToggle = () => {
-    if (isEditing && product) {
-      setFormData(product);
-    }
-    setIsEditing(!isEditing);
-  };
-
-  const handleBack = () => navigate('/products');
+  const handleBack = () => navigate("/products");
 
   const openDeleteModal = () => setShowDeleteModal(true);
   const closeDeleteModal = () => setShowDeleteModal(false);
 
   if (error) return <div>{error}</div>;
-  if (!formData || !product) return <p>Đang tải dữ liệu sản phẩm...</p>;
+  if (!formData) return <p>Đang tải dữ liệu...</p>;
 
   return (
     <div className="product-detail-container">
-      <h2>Chi Tiết Sản Phẩm</h2>
+      <h2>{isAddMode ? "Thêm Sản Phẩm Mới" : "Chi Tiết Sản Phẩm"}</h2>
       <div className="product-detail-card">
         <div className="product-detail-image-wrapper">
-          {isEditing ? (
-            <div className="form-group">
-              <label>URL Hình ảnh:</label>
-              <input
-                type="text"
-                name="url"
-                value={formData.url}
-                onChange={handleInputChange}
-                className="form-input"
-              />
-            </div>
-          ) : (
+          <div className="form-group">
+            <label>URL Hình ảnh:</label>
+            <input
+              type="text"
+              name="url"
+              value={formData.url}
+              onChange={handleInputChange}
+              className="form-input"
+            />
+          </div>
+          {formData.url && (
             <img
               src={formData.url}
               alt={formData.name}
               className="product-detail-image"
-              onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/150')}
+              onError={(e) =>
+                (e.currentTarget.src = "https://via.placeholder.com/150")
+              }
             />
           )}
         </div>
 
         <div className="product-detail-info">
-          {isEditing ? (
+          <div className="form-group">
+            <label>Tên sản phẩm:</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className="form-input"
+            />
+          </div>
+          <div className="form-group">
+            <label>Danh mục:</label>
+            <input
+              type="text"
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              className="form-input"
+            />
+          </div>
+          <div className="form-group">
+            <label>Giá:</label>
+            <input
+              type="number"
+              name="price"
+              value={formData.price}
+              onChange={handleInputChange}
+              className="form-input"
+            />
+          </div>
+          <div className="form-group">
+            <label>Mô tả:</label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              className="form-input"
+            />
+          </div>
+          <div className="form-group">
+            <label>Hàng tồn kho:</label>
+            <input
+              type="number"
+              name="stock"
+              value={formData.stock}
+              onChange={handleInputChange}
+              className="form-input"
+            />
+          </div>
+          {/* <div className="form-group">
+            <label>Slug:</label>
+            <input
+              type="text"
+              name="slug"
+              value={formData.slug || ""}
+              onChange={handleInputChange}
+              className="form-input"
+              disabled={!isAddMode} // Chỉ cho phép chỉnh sửa slug khi thêm mới
+            />
+          </div> */}
+          <div className="form-group">
+            <label>
+              <input
+                type="checkbox"
+                name="active"
+                checked={formData.active}
+                onChange={handleInputChange}
+              />
+              Trạng thái: {formData.active ? "Hoạt động" : "Không hoạt động"}
+            </label>
+          </div>
+          {/* {!isAddMode && (
             <>
               <div className="form-group">
-                <label>Tên sản phẩm:</label>
+                <label>Ngày tạo:</label>
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
+                  value={formData.createdAt || ""}
                   className="form-input"
+                  disabled
                 />
               </div>
               <div className="form-group">
-                <label>Mã sản phẩm:</label>
+                <label>Ngày cập nhật:</label>
                 <input
                   type="text"
-                  name="code"
-                  value={formData.code}
-                  onChange={handleInputChange}
+                  value={formData.updatedAt || ""}
                   className="form-input"
+                  disabled
                 />
               </div>
               <div className="form-group">
-                <label>Danh mục:</label>
+                <label>Ngày xóa:</label>
                 <input
                   type="text"
-                  name="categoryName"
-                  value={formData.categoryName}
-                  onChange={handleInputChange}
+                  value={formData.deletedAt || "Chưa xóa"}
                   className="form-input"
+                  disabled
                 />
-              </div>
-              <div className="form-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    name="active"
-                    checked={formData.active}
-                    onChange={handleInputChange}
-                  />
-                  Trạng thái: {formData.active ? 'Hoạt động' : 'Không hoạt động'}
-                </label>
               </div>
             </>
-          ) : (
-            <>
-              <h3>{product.name}</h3>
-              <p><strong>Mã sản phẩm:</strong> {product.code}</p>
-              <p><strong>Danh mục:</strong> {product.categoryName}</p>
-              <p><strong>Trạng thái:</strong> {product.active ? 'Hoạt động' : 'Không hoạt động'}</p>
-            </>
-          )}
+          )} */}
         </div>
       </div>
 
       <div className="product-detail-actions">
         <button onClick={handleBack}>Quay lại</button>
-        {isEditing ? (
-          <>
-            <button onClick={handleSave}>Lưu</button>
-            <button onClick={handleEditToggle}>Hủy</button>
-          </>
-        ) : (
-          <>
-            <button onClick={handleEditToggle}>Chỉnh sửa</button>
-            <button onClick={openDeleteModal}>Xóa</button>
-          </>
-        )}
+        <button onClick={handleSave}>{isAddMode ? "Lưu" : "Chỉnh sửa"}</button>
+        {!isAddMode && <button onClick={openDeleteModal}>Xóa</button>}
       </div>
 
-      {showDeleteModal && (
+      {showDeleteModal && !isAddMode && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
             <h3 className="text-lg font-semibold mb-4">Xác nhận xóa</h3>
-            <p className="mb-6">Bạn có chắc chắn muốn xóa sản phẩm <strong>{product.name}</strong>?</p>
+            <p className="mb-6">
+              Bạn có chắc chắn muốn xóa sản phẩm{" "}
+              <strong>{product?.name}</strong>?
+            </p>
             <div className="flex justify-end space-x-4">
               <button
                 onClick={closeDeleteModal}

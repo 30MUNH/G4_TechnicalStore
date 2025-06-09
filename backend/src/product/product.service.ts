@@ -12,6 +12,7 @@ export class ProductService {
         product.price = request.price;
         product.stock = request.stock;
         product.url = request.url+'';
+        product.description = request.description+'';
         product.active = request.active ?? true;
         await product.save();
         return product;
@@ -36,6 +37,7 @@ export class ProductService {
         product.price = request.price ?? product.price;
         product.stock = request.stock ?? product.stock;
         product.url = request.url ?? product.url;
+        product.description = request.description ?? product.description;
         if (request.active !== undefined) product.active = request.active;
 
         await product.save();

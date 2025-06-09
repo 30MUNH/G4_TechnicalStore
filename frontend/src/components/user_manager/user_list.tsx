@@ -4,72 +4,139 @@ import axios from 'axios';
 import './UserList.css';
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   username: string;
+  password: string;
   createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  slug: string;
+  phone: string;
   role: string;
+  isRegistered: boolean;
+  roleId: string;
+}
+
+interface Role {
+  id: number;
+  name: string;
 }
 
 const UserList: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [filterRole, setFilterRole] = useState<string>('');
-  const [filterKeyword, setFilterKeyword] = useState<string>('');
+  const [filterRole, setFilterRole] = useState<string>("");
+  const [filterKeyword, setFilterKeyword] = useState<string>("");
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('http://localhost:4000/api/userManagement');
+        const response = await axios.get(
+          "http://localhost:4000/api/userManagement"
+        );
         if (response.data.success) {
-          const formattedUsers: User[] = response.data.data.map((user: any) => ({
-            id: user.id,
-            name: user.name,
-            username: user.username,
-            createdAt: user.createdAt,
-            role: user.role.name.toLowerCase(),
-          }));
+          const formattedUsers: User[] = response.data.data.map(
+            (user: any) => ({
+              id: user.id,
+              name: user.name,
+              username: user.username,
+              createdAt: user.createdAt,
+              phone: user.phone,
+              role: user.role.name.toLowerCase(),
+            })
+          );
           setUsers(formattedUsers);
           setFilteredUsers(formattedUsers);
         } else {
-          setError('Không thể lấy dữ liệu từ API');
+          setError("Không thể lấy dữ liệu từ API");
         }
       } catch (err: any) {
-        setError('Đã có lỗi xảy ra khi gọi API: ' + err.message);
+        setError("Đã có lỗi xảy ra khi gọi API: " + err.message);
       } finally {
         setLoading(false);
       }
     };
 
+    const fetchRoles = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:4000/api/auth/roles"
+        );
+        if (response.data.success) {
+          const formattedRoles: Role[] = response.data.data.map(
+            (role: any) => ({
+              id: role.id,
+              name: role.name.toLowerCase(),
+            })
+          );
+          setRoles(formattedRoles);
+        } else {
+          setError("Không thể lấy danh sách role từ API");
+        }
+      } catch (err: any) {
+        setError("Đã có lỗi xảy ra khi gọi API roles: " + err.message);
+      }
+    };
+
     fetchUsers();
+    fetchRoles();
   }, []);
 
   const handleFilter = () => {
     const keyword = filterKeyword.toLowerCase().trim();
     const filtered = users.filter((user) => {
-      const matchesRole = filterRole === '' || user.role === filterRole;
+      const matchesRole = filterRole === "" || user.role === filterRole;
       const matchesKeyword =
-        keyword === '' ||
+        keyword === "" ||
         user.name.toLowerCase().includes(keyword) ||
-        user.username.toLowerCase().includes(keyword);
+        user.username.toLowerCase().includes(keyword) ||
+        user.phone.toLowerCase().includes(keyword);
       return matchesRole && matchesKeyword;
     });
     setFilteredUsers(filtered);
   };
 
-  const handleRoleChange = (id: number, newRole: string) => {
-    setFilteredUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === id ? { ...user, role: newRole } : user
-      )
-    );
+  const handleRoleChange = async (id: string, newRole: string) => {
+    try {
+      // Find the role ID for the selected role name
+      const selectedRole = roles.find((role) => role.name === newRole);
+      if (!selectedRole) {
+        setError("Không tìm thấy role được chọn");
+        return;
+      }
+
+      // Find the user to get the username
+      const user = users.find((u) => u.id === id);
+      if (!user) {
+        setError("Không tìm thấy người dùng");
+        return;
+      }
+
+      // Make the PUT request to update the user's role
+      await axios.put(`http://localhost:4000/api/userManagement/${id}`, {
+        username: user.username,
+        password: user.password,
+        roleId: selectedRole.id,
+      });
+
+      // Update the local state only after successful API call
+      setFilteredUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === id ? { ...user, role: newRole } : user
+        )
+      );
+    } catch (err: any) {
+      setError("Đã có lỗi xảy ra khi cập nhật role: " + err.message);
+    }
   };
 
   const formatDate = (dateStr: string): string => {
-    return new Date(dateStr).toLocaleString('vi-VN');
+    return new Date(dateStr).toLocaleString("vi-VN");
   };
 
   if (loading) return <div>Đang tải dữ liệu...</div>;
@@ -88,17 +155,20 @@ const UserList: React.FC = () => {
             onChange={(e) => setFilterRole(e.target.value)}
           >
             <option value="">Tất cả</option>
-            <option value="admin">Admin</option>
-            <option value="user">Người dùng</option>
+            {roles.map((role) => (
+              <option key={role.id} value={role.name}>
+                {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="filter-group">
-          <label htmlFor="filter-search">Tên/Tên đăng nhập:</label>
+          <label htmlFor="filter-search">Dữ liệu tìm kiếm:</label>
           <input
             id="filter-search"
             type="text"
-            placeholder="Nhập tên hoặc tên đăng nhập"
+            placeholder="Nhập dữ liệu tìm kiếm"
             className="filter-input"
             value={filterKeyword}
             onChange={(e) => setFilterKeyword(e.target.value)}
@@ -116,6 +186,7 @@ const UserList: React.FC = () => {
             <th>STT</th>
             <th>Tên</th>
             <th>Tên đăng nhập</th>
+            <th>Số điện thoại</th>
             <th>Thời gian tạo</th>
             <th>Role</th>
           </tr>
@@ -127,6 +198,7 @@ const UserList: React.FC = () => {
                 <td>{index + 1}</td>
                 <td>{user.name}</td>
                 <td>{user.username}</td>
+                <td>{user.phone}</td>
                 <td>{formatDate(user.createdAt)}</td>
                 <td>
                   <select
@@ -134,15 +206,18 @@ const UserList: React.FC = () => {
                     onChange={(e) => handleRoleChange(user.id, e.target.value)}
                     className="role-select"
                   >
-                    <option value="admin">Admin</option>
-                    <option value="user">Người dùng</option>
+                    {roles.map((role) => (
+                      <option key={role.id} value={role.name}>
+                        {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+                      </option>
+                    ))}
                   </select>
                 </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={5} style={{ textAlign: 'center' }}>
+              <td colSpan={5} style={{ textAlign: "center" }}>
                 Không có dữ liệu hiển thị
               </td>
             </tr>
