@@ -1,38 +1,67 @@
-
 import React from 'react';
-import './CartItem.css';
+import { Plus, Minus, Trash2, Star } from 'lucide-react';
+import '../styles/CartItem.css';
 
-const CartItem = ({ item, onQtyChange, onRemove }) => {
+export const CartItem = ({ item, onQuantityChange, onRemove }) => {
+    const { product, quantity } = item;
+    const totalPrice = product.price * quantity;
+
     return (
         <div className="cart-item">
-            <div className="product-section">
-                <div className="product-image">
-                    <img src={item.images} alt={item.item.name} />
+            <div className="cart-item-content">
+                <div className="cart-item-image">
+                    <img
+                        src={product.image}
+                        alt={product.name}
+                    />
                 </div>
-                <div className="product-details">
-                    <h3>{item.item.name}</h3>
-                    <div className="product-price">Đ{item.item.price.toFixed(2)}</div>
-                </div>
-            </div>
 
-            <div className="quantity-section">
-                <div className="quantity-controls">
-                    <button onClick={() => onQtyChange(item.item._id, -1)}>−</button>
-                    <span className="quantity">{item.qty}</span>
-                    <button onClick={() => onQtyChange(item.item._id, 1)}>+</button>
-                </div>
-            </div>
+                <div className="cart-item-details">
+                    <div className="cart-item-header">
+                        <div className="cart-item-info">
+                            <h3>{product.name}</h3>
+                            <p>{product.brand} • {product.category}</p>
+                            <div className="cart-item-rating">
+                                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                <span className="cart-item-rating-text">{product.rating}</span>
+                                <span className="cart-item-rating-reviews">({product.reviews} reviews)</span>
+                            </div>
+                        </div>
 
-            <div className="total-section">
-                <div className="total-price">
-                    ${(item.price * item.qty).toFixed(2)}
+                        <button
+                            onClick={onRemove}
+                            className="cart-item-remove-btn"
+                        >
+                            <Trash2 className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <div className="cart-item-actions">
+                        <div className="cart-item-quantity">
+                            <button
+                                onClick={() => onQuantityChange(product.id, Math.max(1, quantity - 1))}
+                                className="cart-item-qty-btn"
+                            >
+                                <Minus className="w-4 h-4" />
+                            </button>
+
+                            <span className="cart-item-qty-display">{quantity}</span>
+
+                            <button
+                                onClick={() => onQuantityChange(product.id, quantity + 1)}
+                                className="cart-item-qty-btn"
+                            >
+                                <Plus className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="cart-item-pricing">
+                            <div className="cart-item-total">{totalPrice.toLocaleString()}đ</div>
+                            <div className="cart-item-unit-price">{product.price.toLocaleString()}đ mỗi sản phẩm</div>
+                        </div>
+                    </div>
                 </div>
-                <button className="remove-btn" onClick={() => onRemove(item.item._id)}>
-                    🗑️
-                </button>
             </div>
         </div>
     );
-};
-
-export default CartItem;
+}; 
