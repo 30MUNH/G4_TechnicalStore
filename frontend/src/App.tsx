@@ -1,10 +1,27 @@
 import './App.css'
-import HomePageHTML from './Page/HomePage.html?raw'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import ProductDetail from "./components/product_manager/product_detail.tsx";
+import ProductList from "./components/product_manager/product_list.tsx";
+import UserList from "./components/user_manager/user_list.tsx";
+// import HomePage from "../Page/HomePage.tsx";
+// import HomePage from './Page/HomePage.tsx'
+// import HomePageHTML from "./Page/HomePage.html?raw";
 
 function App() {
   return (
-    <div dangerouslySetInnerHTML={{ __html: HomePageHTML }} />
-  )
+    <>
+      <Router>
+        <Routes>
+          {/* <Route path="/" element={<HomePage />} /> */}
+          {/* <div dangerouslySetInnerHTML={{ __html: HomePageHTML }} /> */}
+          <Route path="/userList" element={<UserList />} />
+          <Route path="/products" element={<ProductList />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/products/add" element={<ProductDetail />} />
+        </Routes>
+      </Router>
+    </>
+  );
 }
 
 export default App

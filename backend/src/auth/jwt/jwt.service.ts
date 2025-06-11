@@ -14,8 +14,8 @@ export class JwtService {
   private accountToPayload(account: Account): AccountDetailsDto{
     return {
       username: account.username,
-      phone: account.phone,
-      role: account.role
+      phone: "01234567878989", // Add lại cors đi
+      role: account.role,
     };
   }
 

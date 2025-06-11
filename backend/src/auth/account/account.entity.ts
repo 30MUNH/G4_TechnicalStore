@@ -4,24 +4,24 @@ import { Role } from "@/auth/role/role.entity";
 import { RefreshToken } from "../jwt/refreshToken.entity";
 import { Exclude } from "class-transformer";
 
-@Entity('accounts')
-export class Account extends NamedEntity{
-    @Column({nullable: false, unique: true})
-    username: string;
+@Entity("accounts")
+export class Account extends NamedEntity {
+  @Column({ nullable: false, unique: true })
+  username: string;
 
-    @Exclude()
-    @Column({nullable: false})
-    password: string;
+  @Exclude()
+  @Column({ nullable: false })
+  password: string;
 
-    @Column({nullable: false})
-    phone: string;
+  @Column({nullable: true})
+  phone: string;
 
-    @Column({nullable: false, default: false})
-    isRegistered: boolean;
+  @Column({ nullable: false, default: false })
+  isRegistered: boolean;
 
-    @ManyToOne(() => Role, (role) => role.accounts)
-    role: Role;
+  @ManyToOne(() => Role, (role) => role.accounts)
+  role: Role;
 
-    @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.account)
-    refreshTokens: RefreshToken[];
+  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.account)
+  refreshTokens: RefreshToken[];
 }
