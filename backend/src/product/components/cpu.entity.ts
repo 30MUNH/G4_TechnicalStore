@@ -1,8 +1,9 @@
-import { Column, JoinColumn, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne } from "typeorm";
 import { Product } from "../product.entity";
 import { BaseEntity } from "@/common/BaseEntity";
 
-export class Cpu extends BaseEntity{
+@Entity('cpus')
+export class CPU extends BaseEntity{
     @OneToOne(() => Product)
     @JoinColumn()
     product: Product;

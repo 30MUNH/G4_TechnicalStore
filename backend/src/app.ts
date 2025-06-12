@@ -1,6 +1,4 @@
-// app.ts
 import express from "express";
-import cors from "cors";
 import { Container } from "typedi";
 import {
   useExpressServer,
@@ -10,7 +8,7 @@ import {
 import { routingControllersToSpec } from "routing-controllers-openapi";
 import { validationMetadatasToSchemas } from "class-validator-jsonschema";
 import swaggerUi from "swagger-ui-express";
-import { AppDataSource, DbConnection } from "@/database/dbConnection";
+import { DbConnection } from "@/database/dbConnection";
 import { ResponseInterceptor } from "./utils/interceptor/interceptor";
 
 export default class App {
@@ -40,41 +38,21 @@ export default class App {
   }
 
   private initializeMiddlewares() {
-    this.app.use(
-      cors({
-        origin: "http://localhost:5173",
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        credentials: true,
-      })
-    );
-
-    this.app.use(
-      (
-        req: express.Request,
-        res: express.Response,
-        next: express.NextFunction
-      ) => {
-        if (req.originalUrl.toString().includes("webhook")) {
-          next();
-        } else {
-          express.json()(req, res, next);
-        }
+    this.app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+      if (req.originalUrl.toString().includes('webhook')) {
+        next();
+      } else {
+        express.json()(req, res, next);
       }
-    );
-
+    });
     this.app.use(express.urlencoded({ extended: true }));
-    this.app.use(express.static("public"));
+    this.app.use(express.static('public'));
   }
 
   private async connectToDatabase() {
     try {
       await DbConnection.createConnection();
       console.log("✅ Database connection established successfully.");
-      if (!AppDataSource.isInitialized) {
-        await AppDataSource.initialize();
-      }
-      // console.log('Entities:', AppDataSource.options.entities);
-      console.log(AppDataSource.entityMetadatas.map((e) => e.name));
     } catch (error) {
       console.error("❌ Failed to connect to the database: ", error);
       throw error;
@@ -87,7 +65,7 @@ export default class App {
       routePrefix: "/api",
       controllers: [__dirname + "/**/*.controller.{ts,js}"],
       interceptors: [ResponseInterceptor],
-      middlewares: [__dirname + "/middlewares/**/*.middleware.{ts,js}"],
+      middlewares: [__dirname + '/middlewares/**/*.middleware.{ts,js}'],
     });
   }
 
@@ -123,6 +101,6 @@ export default class App {
         },
       }
     );
-    // this.app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(spec));
+    this.app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(spec));
   }
 }

@@ -61,10 +61,12 @@ export class AccountService{
                 expiredAt: MoreThan (new Date()),
             }
         });
+        let newRefreshToken: string = "";
         if(!token){
-            await this.jwtService.generateRefreshToken(account);
+            newRefreshToken = await this.jwtService.generateRefreshToken(account);
         }
-        return this.jwtService.generateAccessToken(account);
+        const accessToken = this.jwtService.generateAccessToken(account);
+        return {newRefreshToken, accessToken};
     }
 
     async logout(username: string): Promise<string>{
