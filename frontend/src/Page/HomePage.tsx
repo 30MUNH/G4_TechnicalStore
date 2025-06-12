@@ -1,5 +1,4 @@
 import React from 'react';
-import Header from '../components/Header';
 import Navigation from '../components/Navigation';
 import ProductCard from '../components/ProductCard';
 
@@ -17,21 +16,22 @@ interface Product {
   rating: number;
 }
 
-interface Blog {
-  id: number;
-  title: string;
-  image: string;
-  desc: string;
-  link: string;
-}
+// Future interfaces for upcoming features
+// interface Blog {
+//   id: number;
+//   title: string;
+//   image: string;
+//   desc: string;
+//   link: string;
+// }
 
-interface Testimonial {
-  id: number;
-  name: string;
-  role: string;
-  content: string;
-  avatar: string;
-}
+// interface Testimonial {
+//   id: number;
+//   name: string;
+//   role: string;
+//   content: string;
+//   avatar: string;
+// }
 
 const categories: Category[] = [
   { name: 'Phones', icon: '📱' },
@@ -51,16 +51,17 @@ const products: Product[] = [
   { id: 6, name: 'Logitech Streamcam Headphone', price: 35, oldPrice: 66, image: 'https://via.placeholder.com/200', rating: 4 },
 ];
 
-const blogs: Blog[] = [
-  { id: 1, title: 'Well illum qui dolorem eum fugiat?', image: 'https://via.placeholder.com/200', desc: 'Quis autem vel eum iure reprehenderit...', link: '#' },
-  { id: 2, title: 'Well illum qui dolorem eum fugiat?', image: 'https://via.placeholder.com/200', desc: 'Quis autem vel eum iure reprehenderit...', link: '#' },
-  { id: 3, title: 'Well illum qui dolorem eum fugiat?', image: 'https://via.placeholder.com/200', desc: 'Quis autem vel eum iure reprehenderit...', link: '#' },
-];
+// Future implementation: blogs and testimonials sections
+// const blogs: Blog[] = [
+//   { id: 1, title: 'Well illum qui dolorem eum fugiat?', image: 'https://via.placeholder.com/200', desc: 'Quis autem vel eum iure reprehenderit...', link: '#' },
+//   { id: 2, title: 'Well illum qui dolorem eum fugiat?', image: 'https://via.placeholder.com/200', desc: 'Quis autem vel eum iure reprehenderit...', link: '#' },
+//   { id: 3, title: 'Well illum qui dolorem eum fugiat?', image: 'https://via.placeholder.com/200', desc: 'Quis autem vel eum iure reprehenderit...', link: '#' },
+// ];
 
-const testimonials: Testimonial[] = [
-  { id: 1, name: 'Jack Johan', role: 'Designer', content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', avatar: '' },
-  { id: 2, name: 'Jack Johan', role: 'Designer', content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', avatar: '' },
-];
+// const testimonials: Testimonial[] = [
+//   { id: 1, name: 'Jack Johan', role: 'Designer', content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', avatar: '' },
+//   { id: 2, name: 'Jack Johan', role: 'Designer', content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', avatar: '' },
+// ];
 
 const HomePage: React.FC = () => {
   return (
