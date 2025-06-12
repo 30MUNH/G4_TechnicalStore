@@ -1,8 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { authService } from "../../services/authService";
 import "./Login.css";
 
 const Login = () => {
+    const { login } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const from = location.state?.from?.pathname || "/";
+
     const [isRegister, setIsRegister] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [apiMessage, setApiMessage] = useState('');
@@ -30,21 +37,14 @@ const Login = () => {
     const validateRegister = () => {
         const newErrors = {};
         if (!namePattern.test(formData.registerName)) {
-            newErrors.registerName = "Name must contain at least 3 letters ";
+            newErrors.registerName = "Name must contain at least 3 letters";
         }
         if (!emailPattern.test(formData.registerEmail)) {
             newErrors.registerEmail = "Please enter a valid email address";
         }
-        
-        // Enhanced password validation
-        if (!formData.registerPassword) {
-            newErrors.registerPassword = "Password is required";
-        } else if (formData.registerPassword.length < 8) {
-            newErrors.registerPassword = "Password must be at least 8 characters long";
-        } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.registerPassword)) {
-            newErrors.registerPassword = "Password must contain at least one uppercase letter, one lowercase letter, and one number";
+        if (!formData.registerPassword || formData.registerPassword.length < 8) {
+            newErrors.registerPassword = "Password must be at least 8 characters";
         }
-        
         setErrors((prev) => ({ ...prev, ...newErrors }));
         return Object.keys(newErrors).length === 0;
     };
@@ -74,36 +74,24 @@ const Login = () => {
             setApiMessage('');
             
             try {
-                // TODO: Replace with actual API call
-                const response = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        name: formData.registerName,
-                        email: formData.registerEmail,
-                        password: formData.registerPassword,
-                    }),
+                const result = await authService.register({
+                    name: formData.registerName,
+                    email: formData.registerEmail,
+                    password: formData.registerPassword,
                 });
                 
-                const data = await response.json();
+                setApiMessage('Registration successful! Please check your email for verification.');
+                setFormData({
+                    ...formData,
+                    registerName: '',
+                    registerEmail: '',
+                    registerPassword: '',
+                });
                 
-                if (response.ok) {
-                    setApiMessage('Registration successful! Please check your email for verification.');
-                    // Reset form
-                    setFormData({
-                        ...formData,
-                        registerName: '',
-                        registerEmail: '',
-                        registerPassword: '',
-                    });
-                } else {
-                    setApiMessage(data.message || 'Registration failed. Please try again.');
-                }
+                // Switch to login form
+                setIsRegister(false);
             } catch (error) {
-                console.error('Registration error:', error);
-                setApiMessage('Network error. Please check your connection and try again.');
+                setApiMessage(error.response?.data?.message || 'Registration failed. Please try again.');
             } finally {
                 setIsLoading(false);
             }
@@ -117,34 +105,15 @@ const Login = () => {
             setApiMessage('');
             
             try {
-                // TODO: Replace with actual API call
-                const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email: formData.loginEmail,
-                        password: formData.loginPassword,
-                    }),
+                const result = await authService.login({
+                    email: formData.loginEmail,
+                    password: formData.loginPassword,
                 });
                 
-                const data = await response.json();
-                
-                if (response.ok) {
-                    setApiMessage('Login successful! Redirecting...');
-                    // TODO: Store token and redirect to dashboard
-                    localStorage.setItem('authToken', data.token);
-                    setTimeout(() => {
-                        // window.location.href = '/dashboard';
-                        setApiMessage('Login successful! (Redirect functionality not implemented yet)');
-                    }, 1500);
-                } else {
-                    setApiMessage(data.message || 'Login failed. Please check your credentials.');
-                }
+                login(result.user, result.token);
+                navigate(from, { replace: true });
             } catch (error) {
-                console.error('Login error:', error);
-                setApiMessage('Network error. Please check your connection and try again.');
+                setApiMessage(error.response?.data?.message || 'Login failed. Please check your credentials.');
             } finally {
                 setIsLoading(false);
             }

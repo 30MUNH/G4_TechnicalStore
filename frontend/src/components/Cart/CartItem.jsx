@@ -1,10 +1,42 @@
 import React from 'react';
 import { Plus, Minus, Trash2, Star } from 'lucide-react';
+import { cartService } from '../../services/cartService';
 import './CartItem.css';
 
-export const CartItem = ({ item, onQuantityChange, onRemove }) => {
+export const CartItem = ({ item, onUpdate }) => {
     const { product, quantity } = item;
     const totalPrice = product.price * quantity;
+
+    const MAX_QUANTITY = 10;
+    const MIN_QUANTITY = 1;
+
+    const validateQuantity = (quantity) => {
+        return quantity >= MIN_QUANTITY && quantity <= MAX_QUANTITY;
+    };
+
+    const handleQuantityChange = async (productId, newQuantity) => {
+        try {
+            if (newQuantity < 1) return;
+            const difference = newQuantity - quantity;
+            const result = await cartService.updateQuantity(productId, difference);
+            if (result.cart) {
+                onUpdate(result.cart);
+            }
+        } catch (error) {
+            console.error('Failed to update quantity:', error);
+        }
+    };
+
+    const handleRemove = async () => {
+        try {
+            const result = await cartService.removeItem(product.id);
+            if (result.cart) {
+                onUpdate(result.cart);
+            }
+        } catch (error) {
+            console.error('Failed to remove item:', error);
+        }
+    };
 
     return (
         <div className="cart-item">
@@ -29,7 +61,7 @@ export const CartItem = ({ item, onQuantityChange, onRemove }) => {
                         </div>
 
                         <button
-                            onClick={onRemove}
+                            onClick={handleRemove}
                             className="cart-item-remove-btn"
                         >
                             <Trash2 className="w-5 h-5" />
@@ -39,8 +71,9 @@ export const CartItem = ({ item, onQuantityChange, onRemove }) => {
                     <div className="cart-item-actions">
                         <div className="cart-item-quantity">
                             <button
-                                onClick={() => onQuantityChange(product.id, Math.max(1, quantity - 1))}
+                                onClick={() => handleQuantityChange(product.id, quantity - 1)}
                                 className="cart-item-qty-btn"
+                                disabled={quantity <= 1}
                             >
                                 <Minus className="w-4 h-4" />
                             </button>
@@ -48,7 +81,7 @@ export const CartItem = ({ item, onQuantityChange, onRemove }) => {
                             <span className="cart-item-qty-display">{quantity}</span>
 
                             <button
-                                onClick={() => onQuantityChange(product.id, quantity + 1)}
+                                onClick={() => handleQuantityChange(product.id, quantity + 1)}
                                 className="cart-item-qty-btn"
                             >
                                 <Plus className="w-4 h-4" />
