@@ -1,6 +1,7 @@
 import { Column, Entity, OneToMany } from "typeorm";
-import { CartItem } from "@/Cart/cartItem.entity";
 import { NamedEntity } from "@/common/NamedEntity";
+import { CartItem } from "@/Cart/cartItem.entity";
+import { OrderDetail } from "@/order/orderDetail.entity";
 
 @Entity('products')
 export class Product extends NamedEntity {
@@ -23,4 +24,7 @@ export class Product extends NamedEntity {
 
     @OneToMany(() => CartItem, (cartItem) => cartItem.product)
     cartItems: CartItem[];
+
+    @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.product)
+    orderDetails: OrderDetail[];
 }

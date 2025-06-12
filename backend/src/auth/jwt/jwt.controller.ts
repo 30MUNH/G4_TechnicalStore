@@ -17,14 +17,12 @@ export class JwtController {
     }
 
     try {
-      const newAccessToken = await this.jwtService.refreshAccessToken(
-        refreshToken
-      );
+      const newAccessToken = await this.jwtService.refreshAccessToken(refreshToken);
 
       if (!newAccessToken) {
         res.clearCookie("refreshToken", {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
+          secure: true,
           sameSite: "strict",
         });
         return res
@@ -36,7 +34,7 @@ export class JwtController {
     } catch (error) {
       res.clearCookie("refreshToken", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "strict",
       });
       return res.status(401).json({ message: "Invalid refresh token" });
