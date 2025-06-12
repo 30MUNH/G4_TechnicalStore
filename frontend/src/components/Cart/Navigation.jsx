@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Package, ShoppingCart } from 'lucide-react';
-import { useCartContext } from '../hooks/useCart';
+import { useCartContext } from '../../Hook/useCart';
 
 export const Navigation = () => {
     const location = useLocation();

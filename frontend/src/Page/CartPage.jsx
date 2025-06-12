@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CartItem } from '../components';
-import { useCartContext } from '../hooks/useCart';
+import { CartItem } from '../components/Cart/CartItem';
+import { useCartContext } from '../Hook/useCart';
 
 export const CartPage = () => {
     const navigate = useNavigate();

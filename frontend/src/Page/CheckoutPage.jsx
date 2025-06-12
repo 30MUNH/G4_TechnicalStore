@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckoutForm } from '../components';
-import { useCartContext } from '../hooks/useCart';
+import { CheckoutForm } from '../components/Cart/CheckoutForm';
+import { useCartContext } from '../Hook/useCart';
 
 export const CheckoutPage = () => {
     const navigate = useNavigate();
