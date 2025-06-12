@@ -18,14 +18,14 @@ interface Product {
   description: string;
   stock: number;
 }
-const formatVND = (value: number | string) => {
-  if (!value && value !== 0) return '';
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    minimumFractionDigits: 0,
-  }).format(Number(value));
-};
+// const formatVND = (value: number | string) => {
+//   if (!value && value !== 0) return '';
+//   return new Intl.NumberFormat('vi-VN', {
+//     style: 'currency',
+//     currency: 'VND',
+//     minimumFractionDigits: 0,
+//   }).format(Number(value));
+// };
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
