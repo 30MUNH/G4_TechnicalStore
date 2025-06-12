@@ -125,21 +125,20 @@ h2 {
   }
 
   .filter-group {
-    width: 100%; /* Full width for filter groups */
+    width: 100%;
   }
 
   .filter-group input,
   .filter-group select {
-    width: 100%; /* Full width for inputs and selects */
+    width: 100%;
     box-sizing: border-box;
   }
 
   .search-button {
-    width: 100%; /* Full width for button */
+    width: 100%;
     padding: 10px;
   }
 }
-/* Table styles */
 .product-table {
   width: 100%;
   border-collapse: separate;

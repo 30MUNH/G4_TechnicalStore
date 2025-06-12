@@ -106,14 +106,12 @@ const UserList: React.FC = () => {
 
   const handleRoleChange = async (id: string, newRole: string) => {
     try {
-      // Find the role ID for the selected role name
       const selectedRole = roles.find((role) => role.name === newRole);
       if (!selectedRole) {
         setError("Không tìm thấy role được chọn");
         return;
       }
 
-      // Find the user to get the username
       const user = users.find((u) => u.id === id);
       if (!user) {
         setError("Không tìm thấy người dùng");
@@ -126,15 +124,17 @@ const UserList: React.FC = () => {
       //   password: user.password,
       //   roleId: selectedRole.id,
       // });
-console.log("user : ",user);
+      console.log("user : ", user);
       // Update the local state only after successful API call
       setFilteredUsers((prevUsers) =>
         prevUsers.map((user) =>
           user.id === id ? { ...user, role: newRole } : user
         )
       );
-       setSuccessMessage(`Cập nhật role thành công cho người dùng ${user.username}`);
-       setTimeout(() => setSuccessMessage(null), 3000);
+      setSuccessMessage(
+        `Cập nhật role thành công cho người dùng ${user.username}`
+      );
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err: any) {
       setError("Đã có lỗi xảy ra khi cập nhật role: " + err.message);
     }

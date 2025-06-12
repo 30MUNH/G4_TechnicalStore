@@ -18,14 +18,14 @@ interface Product {
   description: string;
   stock: number;
 }
-const formatVND = (value: number | string) => {
-  if (!value && value !== 0) return '';
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    minimumFractionDigits: 0,
-  }).format(Number(value));
-};
+// const formatVND = (value: number | string) => {
+//   if (!value && value !== 0) return '';
+//   return new Intl.NumberFormat('vi-VN', {
+//     style: 'currency',
+//     currency: 'VND',
+//     minimumFractionDigits: 0,
+//   }).format(Number(value));
+// };
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
@@ -97,14 +97,15 @@ const validateForm = (data: Product): Record<string, string> => {
   return errors;
 };
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
-    if (name === 'price') {
-      // Loại bỏ ký tự không phải số để lưu giá trị dạng số
-      const rawValue = value.replace(/[^0-9]/g, '');
+    if (name === "price") {
+      const rawValue = value.replace(/[^0-9]/g, "");
       setFormData((prev) =>
         prev
           ? {
@@ -118,24 +119,22 @@ const validateForm = (data: Product): Record<string, string> => {
         prev
           ? {
               ...prev,
-              [name]: type === 'checkbox' ? checked : value,
+              [name]: type === "checkbox" ? checked : value,
             }
           : prev
       );
     }
-        setValidationErrors((prev) => ({ ...prev, [name]: undefined }));
-
+    setValidationErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
   const handleSave = async () => {
     if (!formData) return;
-     const errors = validateForm(formData);
+    const errors = validateForm(formData);
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       return;
     }
     try {
-      // Tạo đối tượng chỉ chứa các trường cần thiết
       const payload = {
         name: formData.name,
         category: formData.category,
@@ -153,7 +152,7 @@ const validateForm = (data: Product): Record<string, string> => {
           payload
         );
         if (response.data.success) {
-           setSuccessMessage("Tạo sản phẩm thành công!");
+          setSuccessMessage("Tạo sản phẩm thành công!");
           setTimeout(() => {
             navigate("/products");
           }, 3000);
