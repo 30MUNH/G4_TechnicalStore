@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Minus, Trash2, Star } from 'lucide-react';
-import '../styles/CartItem.css';
+import './CartItem.css';
 
 export const CartItem = ({ item, onQuantityChange, onRemove }) => {
     const { product, quantity } = item;

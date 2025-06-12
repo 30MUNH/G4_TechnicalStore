@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { OrderHistory } from '../components';
-import { useCartContext } from '../hooks/useCart';
+import { OrderHistory } from '../components/Cart/OrderHistory';
+import { useCartContext } from '../Hook/useCart';
 
 export const OrderHistoryPage = () => {
     const navigate = useNavigate();
