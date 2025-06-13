@@ -63,7 +63,6 @@ const ContactUs = () => {
                         <div className="contactus-info-content">
                             <div className="contactus-info-title">Địa chỉ</div>
                             <div className="contactus-info-main"> Khu Công Nghệ Cao Hòa Lạc, Hà Nội</div>
-                            <div className="contactus-info-desc">TP.Hà Nội </div>
                         </div>
                     </div>
                 </div>
@@ -124,7 +123,7 @@ const ContactUs = () => {
                             <FontAwesomeIcon icon={faTruck} className="contactus-whyus-icon" />
                             <div>
                                 <div className="contactus-whyus-item-title">Giao hàng nhanh</div>
-                                <div className="contactus-whyus-item-desc">Giao hàng trong 2-4 giờ tại TPHCM</div>
+                                <div className="contactus-whyus-item-desc">Giao hàng trong 2-4 giờ tại TP Hà Nội </div>
                             </div>
                         </div>
                         <div className="contactus-whyus-item">
