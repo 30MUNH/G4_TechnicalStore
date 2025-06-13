@@ -58,7 +58,7 @@ function Aboutus() {
                                 }}
                             >
                                 <img
-                                    src="pc.png"
+                                    src="/img/pc.png"
                                     alt="Team collaboration"
                                     className="w-100 h-100"
                                     style={{
@@ -137,22 +137,22 @@ function Aboutus() {
                                 <div className="row">
                                     <div className="col-3">
                                         <a href="#">
-                                            <img className="brand-img" src="intel.png" alt="Intel Logo" />
+                                            <img className="brand-img" src="/img/intel.png" alt="Intel Logo" />
                                         </a>
                                     </div>
                                     <div className="col-3">
                                         <a href="#">
-                                            <img className="brand-img" src="Ryzen.png" alt="Ryzen Logo" />
+                                            <img className="brand-img" src="/img/Ryzen.png" alt="Ryzen Logo" />
                                         </a>
                                     </div>
                                     <div className="col-3">
                                         <a href="#">
-                                            <img className="brand-img" src="ASUS.png" alt="ASUS Logo" />
+                                            <img className="brand-img" src="/img/ASUS.png" alt="ASUS Logo" />
                                         </a>
                                     </div>
                                     <div className="col-3">
                                         <a href="#">
-                                            <img className="brand-img" src="Gigabyte.png" alt="Gigabyte Logo" />
+                                            <img className="brand-img" src="/img/Gigabyte.png" alt="Gigabyte Logo" />
                                         </a>
                                     </div>
                                 </div>
@@ -161,22 +161,22 @@ function Aboutus() {
                                 <div className="row">
                                     <div className="col-3">
                                         <a href="#">
-                                            <img className="brand-img" src="MSI.png" alt="MSI Logo" />
+                                            <img className="brand-img" src="/img/MSI.png" alt="MSI Logo" />
                                         </a>
                                     </div>
                                     <div className="col-3">
                                         <a href="#">
-                                            <img className="brand-img" src="NVIDIA.png" alt="NVIDIA Logo" />
+                                            <img className="brand-img" src="/img/NVIDIA.png" alt="NVIDIA Logo" />
                                         </a>
                                     </div>
                                     <div className="col-3">
                                         <a href="#">
-                                            <img className="brand-img" src="corsair.png" alt="Corsair Logo" />
+                                            <img className="brand-img" src="/img/corsair.png" alt="Corsair Logo" />
                                         </a>
                                     </div>
                                     <div className="col-3">
                                         <a href="#">
-                                            <img className="brand-img" src="intel.png" alt="Intel Logo" />
+                                            <img className="brand-img" src="/img/intel.png" alt="Intel Logo" />
                                         </a>
                                     </div>
                                 </div>
