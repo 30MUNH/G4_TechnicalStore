@@ -6,13 +6,11 @@ body,
 }
 
 .contactus-header {
-  background: radial-gradient(
-      ellipse at 60% 40%,
-      #00e0ff33 0%,
-      #0a1e4a 60%,
-      #181a1b 100%
-    ),
-    linear-gradient(120deg, #0a1e4a 0%, #1976d2 60%, #00e0ff 100%);
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+    url("/img/ctnen.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   padding: 80px 0 56px 0;
   text-align: center;
   margin-bottom: 56px;
@@ -26,7 +24,8 @@ body,
   text-transform: uppercase;
   letter-spacing: 2px;
   margin-bottom: 22px;
-  text-shadow: 0 6px 32px #00e0ff99, 0 2px 8px #1976d288;
+  text-shadow: 0 6px 32px rgba(255, 0, 255, 0.6),
+    0 2px 8px rgba(255, 0, 255, 0.4);
   position: relative;
   z-index: 1;
 }
@@ -35,17 +34,17 @@ body,
   height: 7px;
   margin: 0 auto 22px auto;
   border-radius: 4px;
-  background: linear-gradient(90deg, #00e0ff 0%, #1976d2 100%);
-  box-shadow: 0 0 32px #00e0ffcc, 0 0 8px #1976d288;
+  background: linear-gradient(90deg, #ff00ff 0%, #9900ff 100%);
+  box-shadow: 0 0 32px rgba(255, 0, 255, 0.8), 0 0 8px rgba(153, 0, 255, 0.6);
   filter: blur(0.5px);
 }
 .contactus-header p {
-  color: #b3e0ff;
+  color: #fff;
   font-size: 1.18rem;
   margin: 0;
   font-weight: 500;
   margin-top: 16px;
-  text-shadow: 0 2px 8px #0a1e4a44;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   opacity: 0.95;
 }
 .contactus-header::after {
@@ -55,7 +54,11 @@ body,
   top: 60%;
   width: 600px;
   height: 200px;
-  background: radial-gradient(circle, #00e0ff33 0%, transparent 80%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 0, 255, 0.2) 0%,
+    transparent 80%
+  );
   transform: translate(-50%, -50%);
   z-index: 0;
   pointer-events: none;
@@ -360,10 +363,11 @@ body,
   border: 1.5px solid #23272a;
 }
 .contactus-whyus-title {
-  color: #00e0ff;
-  font-size: 1.2rem;
+  color: #f4f4f4;
+  font-size: 2rem;
   font-weight: 700;
   margin-bottom: 18px;
+  text-align: left;
 }
 .contactus-whyus-list {
   display: flex;
@@ -376,18 +380,20 @@ body,
   gap: 14px;
 }
 .contactus-whyus-icon {
-  font-size: 1.7rem;
+  font-size: 2rem;
   color: #ff9800;
   margin-top: 2px;
 }
 .contactus-whyus-item-title {
   color: #fff;
-  font-size: 1.05rem;
+  font-size: 1.25rem;
   font-weight: 600;
+  text-align: left;
 }
 .contactus-whyus-item-desc {
   color: #b3c6f7;
-  font-size: 0.97rem;
+  font-size: 1rem;
+  text-align: left;
 }
 
 @media (max-width: 1100px) {
