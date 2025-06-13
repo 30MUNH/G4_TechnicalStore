@@ -3,7 +3,10 @@ import { Plus, Minus, Trash2, Star } from 'lucide-react';
 import { cartService } from '../../services/cartService';
 import './CartItem.css';
 
-export const CartItem = ({ item, onUpdate }) => {
+export default function CartItem({ item, onUpdate }) {
+    if (!item) {
+        return null; // Or render a placeholder if preferred
+    }
     const { product, quantity } = item;
     const totalPrice = product.price * quantity;
 
@@ -97,4 +100,4 @@ export const CartItem = ({ item, onUpdate }) => {
             </div>
         </div>
     );
-}; 
+} 

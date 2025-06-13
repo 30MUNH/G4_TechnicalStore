@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CartItem } from '../components/Cart/CartItem';
+import CartItem from '../components/Cart/CartItem';
 import { useCartContext } from '../Hook/useCart';
 
-export const CartPage = () => {
+const CartPage = () => {
     const navigate = useNavigate();
     const {
         cartItems,
@@ -32,7 +32,6 @@ export const CartPage = () => {
         document.body.classList.add('cart-page-active');
         return () => document.body.classList.remove('cart-page-active');
     }, []);
-
 
     if (cartItems.length === 0) {
         return (
@@ -297,15 +296,21 @@ export const CartPage = () => {
                                 <h5 className="card-title mb-0">Sản phẩm trong giỏ hàng</h5>
                             </div>
                             <div className="card-body p-0">
-                                {cartItems.map(item => (
-                                    <div key={item.product.id} className="border-bottom p-3">
-                                        <CartItem
-                                            item={item}
-                                            onQuantityChange={handleQuantityChange}
-                                            onRemove={() => removeFromCart(item.product.id)}
-                                        />
+                                <div className="row">
+                                    <div className="col-lg-12">
+                                        <div className="cart-items-list">
+                                            {cartItems
+                                                .filter(item => item && item.product)
+                                                .map(item => (
+                                                    <CartItem
+                                                        key={item.product.id}
+                                                        item={item}
+                                                        onUpdate={handleQuantityChange}
+                                                    />
+                                                ))}
+                                        </div>
                                     </div>
-                                ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -356,11 +361,11 @@ export const CartPage = () => {
                                 </div>
                             </div>
                         </div>
-
-
                     </div>
                 </div>
             </div>
         </div>
     );
-}; 
+};
+
+export default CartPage; 

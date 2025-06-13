@@ -162,7 +162,7 @@ input:invalid:focus {
 }
 
 .overlay {
-  background-image: url("/img/anh1.gif");
+  background-image: url("./anh1.gif");
   background-repeat: no-repeat;
   background-size: cover;
   background-position: 90% 50%;

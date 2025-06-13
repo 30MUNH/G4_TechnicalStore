@@ -1,0 +1,21 @@
+/* Import your existing CSS files */
+@import url('/css/bootstrap.min.css');
+@import url('/css/slick.css');
+@import url('/css/slick-theme.css');
+@import url('/css/nouislider.min.css');
+@import url('/css/style.css');
+@import url('https://fonts.googleapis.com/css?family=Montserrat:400,500,700');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
+
+.header-ctn > div > a {
+  display: flex;
+  align-items: center;
+}
+
+.wishlist-icon {
+  margin-right: 5px; /* Adjust as needed for spacing */
+}
+
+.wishlist-text {
+  white-space: nowrap;
+} 
