@@ -107,8 +107,8 @@ const SalesDashboard = () => {
         <a href="#">
           <span className="icon"></span>Order
         </a>
-        <a href="#">
-          <span className="icon"></span>Products
+        <a href="Homepage.html" target="_blank" rel="noopener noreferrer">
+          <span className="icon"></span>Homepage
         </a>
         <a href="#">
           <span className="icon"></span>Sales Report
