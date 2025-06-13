@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, OneToOne } from "typeorm";
 import { Product } from "../product.entity";
 import { BaseEntity } from "@/common/BaseEntity";
 
-@Entity('psu')
+@Entity('psus')
 export class PSU extends BaseEntity {
   @OneToOne(() => Product)
   @JoinColumn()
