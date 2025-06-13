@@ -10,6 +10,7 @@ import { validationMetadatasToSchemas } from "class-validator-jsonschema";
 import swaggerUi from "swagger-ui-express";
 import { DbConnection } from "@/database/dbConnection";
 import { ResponseInterceptor } from "./utils/interceptor/interceptor";
+import cors from "cors";
 
 export default class App {
   public app: express.Application;
@@ -45,6 +46,7 @@ export default class App {
         express.json()(req, res, next);
       }
     });
+    this.app.use(cors());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(express.static('public'));
   }
