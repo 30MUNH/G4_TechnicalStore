@@ -63,6 +63,12 @@ export class AccountController{
         return tokens.accessToken;
     }
 
+    @Post('/resend-otp')
+    async resendOtp(@BodyParam('username') username: string){
+        await this.twilioService.sendOtp(username);
+        return "OTP resent";
+    }
+
     @Post('/logout')
     async logout(@BodyParam("username") username: string){
         return await this.accountService.logout(username);
@@ -101,7 +107,6 @@ export class AccountController{
     @Post('/forgot-password')
     async forgotPassword(@BodyParam("username") username: string){
         const account = await this.accountService.findAccountByUsername(username);
-        if(!account) return "This user does not exist";
         await this.twilioService.sendOtp(account.username);
         return "Check OTP message to reset password";
     }
