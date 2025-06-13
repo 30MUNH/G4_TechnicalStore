@@ -1,49 +1,43 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
-import { authService } from "../../services/authService";
-import "./Login.css";
+import { Link } from "react-router-dom";
+import "./login.css";
 
 const Login = () => {
-    const { login } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
-    const from = location.state?.from?.pathname || "/";
-
     const [isRegister, setIsRegister] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [apiMessage, setApiMessage] = useState('');
+    const [showOTP, setShowOTP] = useState(false);
+    const [otp, setOTP] = useState("");
     const containerRef = useRef(null);
 
     const namePattern = /^[A-Za-z\s]{3,}$/;
-    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const phonePattern = /^[0-9]{10}$/;
 
     const [formData, setFormData] = useState({
         registerName: "",
-        registerEmail: "",
+        registerPhone: "",
         registerPassword: "",
-        loginEmail: "",
+        loginPhone: "",
         loginPassword: "",
     });
 
     const [errors, setErrors] = useState({
         registerName: "",
-        registerEmail: "",
+        registerPhone: "",
         registerPassword: "",
-        loginEmail: "",
+        loginPhone: "",
         loginPassword: "",
+        otp: "",
     });
 
     const validateRegister = () => {
         const newErrors = {};
         if (!namePattern.test(formData.registerName)) {
-            newErrors.registerName = "Name must contain at least 3 letters";
+            newErrors.registerName = "Name must contain at least 3 letters ";
         }
-        if (!emailPattern.test(formData.registerEmail)) {
-            newErrors.registerEmail = "Please enter a valid email address";
+        if (!phonePattern.test(formData.registerPhone)) {
+            newErrors.registerPhone = "Please enter a valid 10-digit phone number";
         }
-        if (!formData.registerPassword || formData.registerPassword.length < 8) {
-            newErrors.registerPassword = "Password must be at least 8 characters";
+        if (!formData.registerPassword) {
+            newErrors.registerPassword = "Password is required";
         }
         setErrors((prev) => ({ ...prev, ...newErrors }));
         return Object.keys(newErrors).length === 0;
@@ -51,8 +45,8 @@ const Login = () => {
 
     const validateLogin = () => {
         const newErrors = {};
-        if (!emailPattern.test(formData.loginEmail)) {
-            newErrors.loginEmail = "Please enter a valid email address";
+        if (!phonePattern.test(formData.loginPhone)) {
+            newErrors.loginPhone = "Please enter a valid 10-digit phone number";
         }
         if (!formData.loginPassword) {
             newErrors.loginPassword = "Password is required";
@@ -61,62 +55,50 @@ const Login = () => {
         return Object.keys(newErrors).length === 0;
     };
 
+    const validateOTP = () => {
+        const newErrors = {};
+        if (!otp || otp.length !== 6) {
+            newErrors.otp = "Please enter a valid 6-digit OTP";
+            setErrors((prev) => ({ ...prev, ...newErrors }));
+            return false;
+        }
+        return true;
+    };
+
     const handleInput = (e) => {
         const { id, value } = e.target;
         setFormData({ ...formData, [id]: value });
         setErrors({ ...errors, [id]: "" });
     };
 
-    const handleRegister = async (e) => {
+    const handleOTPInput = (e) => {
+        const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+        setOTP(value);
+        setErrors({ ...errors, otp: "" });
+    };
+
+    const handleRegister = (e) => {
         e.preventDefault();
         if (validateRegister()) {
-            setIsLoading(true);
-            setApiMessage('');
-            
-            try {
-                const result = await authService.register({
-                    name: formData.registerName,
-                    email: formData.registerEmail,
-                    password: formData.registerPassword,
-                });
-                
-                setApiMessage('Registration successful! Please check your email for verification.');
-                setFormData({
-                    ...formData,
-                    registerName: '',
-                    registerEmail: '',
-                    registerPassword: '',
-                });
-                
-                // Switch to login form
-                setIsRegister(false);
-            } catch (error) {
-                setApiMessage(error.response?.data?.message || 'Registration failed. Please try again.');
-            } finally {
-                setIsLoading(false);
-            }
+            setShowOTP(true);
+            // Here you would typically make an API call to send OTP
         }
     };
 
-    const handleLogin = async (e) => {
+    const handleLogin = (e) => {
         e.preventDefault();
         if (validateLogin()) {
-            setIsLoading(true);
-            setApiMessage('');
-            
-            try {
-                const result = await authService.login({
-                    email: formData.loginEmail,
-                    password: formData.loginPassword,
-                });
-                
-                login(result.user, result.token);
-                navigate(from, { replace: true });
-            } catch (error) {
-                setApiMessage(error.response?.data?.message || 'Login failed. Please check your credentials.');
-            } finally {
-                setIsLoading(false);
-            }
+            setShowOTP(true);
+            // Here you would typically make an API call to send OTP
+        }
+    };
+
+    const handleVerifyOTP = () => {
+        if (validateOTP()) {
+            // Here you would typically make an API call to verify OTP
+            alert("Verification successful!");
+            setShowOTP(false);
+            setOTP("");
         }
     };
 
@@ -162,21 +144,6 @@ const Login = () => {
                 <div className="form-container register-container">
                     <form onSubmit={handleRegister} noValidate>
                         <h1>Register</h1>
-                        
-                        {/* API Message Display */}
-                        {apiMessage && (
-                            <div style={{
-                                padding: '10px',
-                                borderRadius: '5px',
-                                marginBottom: '10px',
-                                backgroundColor: apiMessage.includes('successful') ? '#d4edda' : '#f8d7da',
-                                color: apiMessage.includes('successful') ? '#155724' : '#721c24',
-                                fontSize: '14px',
-                                border: `1px solid ${apiMessage.includes('successful') ? '#c3e6cb' : '#f5c6cb'}`
-                            }}>
-                                {apiMessage}
-                            </div>
-                        )}
                         <input
                             type="text"
                             id="registerName"
@@ -188,14 +155,14 @@ const Login = () => {
                         <div className="error-message">{errors.registerName}</div>
 
                         <input
-                            type="email"
-                            id="registerEmail"
-                            placeholder="Email"
-                            value={formData.registerEmail}
+                            type="tel"
+                            id="registerPhone"
+                            placeholder="Phone Number"
+                            value={formData.registerPhone}
                             onChange={handleInput}
                             required
                         />
-                        <div className="error-message">{errors.registerEmail}</div>
+                        <div className="error-message">{errors.registerPhone}</div>
 
                         <input
                             type="password"
@@ -207,47 +174,41 @@ const Login = () => {
                         />
                         <div className="error-message">{errors.registerPassword}</div>
 
-                        <button 
-                            type="submit" 
-                            style={{
-                                ...buttonStyle,
-                                opacity: isLoading ? 0.7 : 1,
-                                cursor: isLoading ? 'not-allowed' : 'pointer'
-                            }}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? 'Registering...' : 'Register'}
-                        </button>
+                        {showOTP && isRegister && (
+                            <>
+                                <input
+                                    type="text"
+                                    value={otp}
+                                    onChange={handleOTPInput}
+                                    placeholder="Enter 6-digit OTP"
+                                    maxLength="6"
+                                    required
+                                />
+                                <div className="error-message">{errors.otp}</div>
+                                <button type="button" onClick={handleVerifyOTP} style={buttonStyle}>
+                                    Verify OTP
+                                </button>
+                            </>
+                        )}
+
+                        {!showOTP && (
+                            <button type="submit" style={buttonStyle}>Register</button>
+                        )}
                     </form>
                 </div>
 
                 <div className="form-container login-container">
                     <form onSubmit={handleLogin} noValidate>
                         <h1>Login</h1>
-                        
-                        {/* API Message Display */}
-                        {apiMessage && (
-                            <div style={{
-                                padding: '10px',
-                                borderRadius: '5px',
-                                marginBottom: '10px',
-                                backgroundColor: apiMessage.includes('successful') ? '#d4edda' : '#f8d7da',
-                                color: apiMessage.includes('successful') ? '#155724' : '#721c24',
-                                fontSize: '14px',
-                                border: `1px solid ${apiMessage.includes('successful') ? '#c3e6cb' : '#f5c6cb'}`
-                            }}>
-                                {apiMessage}
-                            </div>
-                        )}
                         <input
-                            type="email"
-                            id="loginEmail"
-                            placeholder="Email"
-                            value={formData.loginEmail}
+                            type="tel"
+                            id="loginPhone"
+                            placeholder="Phone Number"
+                            value={formData.loginPhone}
                             onChange={handleInput}
                             required
                         />
-                        <div className="error-message">{errors.loginEmail}</div>
+                        <div className="error-message">{errors.loginPhone}</div>
 
                         <input
                             type="password"
@@ -259,20 +220,30 @@ const Login = () => {
                         />
                         <div className="error-message">{errors.loginPassword}</div>
 
+                        {showOTP && !isRegister && (
+                            <>
+                                <input
+                                    type="text"
+                                    value={otp}
+                                    onChange={handleOTPInput}
+                                    placeholder="Enter 6-digit OTP"
+                                    maxLength="6"
+                                    required
+                                />
+                                <div className="error-message">{errors.otp}</div>
+                                <button type="button" onClick={handleVerifyOTP} style={buttonStyle}>
+                                    Verify OTP
+                                </button>
+                            </>
+                        )}
+
                         <div className="pass-link">
                             <Link to="/forgot-password">Forgot password?</Link>
                         </div>
-                        <button 
-                            type="submit" 
-                            style={{
-                                ...buttonStyle,
-                                opacity: isLoading ? 0.7 : 1,
-                                cursor: isLoading ? 'not-allowed' : 'pointer'
-                            }}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? 'Logging in...' : 'Login'}
-                        </button>
+
+                        {!showOTP && (
+                            <button type="submit" style={buttonStyle}>Login</button>
+                        )}
                     </form>
                 </div>
 

@@ -862,16 +862,16 @@ textarea.input {
 .product {
   position: relative;
   margin: 15px 0px;
-  -webkit-box-shadow: 0px 0px 0px 0px #E4E7ED, 0px 0px 0px 1px #E4E7ED;
-  box-shadow: 0px 0px 0px 0px #E4E7ED, 0px 0px 0px 1px #E4E7ED;
+  border: 1px solid #E4E7ED;
   -webkit-transition: 0.2s all;
   transition: 0.2s all;
-  overflow: hidden;
 }
 
 .product:hover {
-  -webkit-box-shadow: 0px 0px 6px 0px #E4E7ED, 0px 0px 0px 2px #D10024;
-  box-shadow: 0px 0px 6px 0px #E4E7ED, 0px 0px 0px 2px #D10024;
+  border: 2px solid #D10024;
+  -webkit-box-shadow: 0px 0px 6px 0px #E4E7ED;
+  box-shadow: 0px 0px 6px 0px #E4E7ED;
+  margin: 15px -1px;
 }
 
 .product .product-img {
@@ -1026,13 +1026,13 @@ textarea.input {
   position: absolute;
   left: 1px;
   right: 1px;
-  bottom: 0;
+  bottom: -50px;
   padding: 15px;
   background: #1e1f29;
   text-align: center;
-  -webkit-transform: translateY(100%);
-  -ms-transform: translateY(100%);
-  transform: translateY(100%);
+  -webkit-transform: translateY(0%);
+  -ms-transform: translateY(0%);
+  transform: translateY(0%);
   -webkit-transition: 0.2s all;
   transition: 0.2s all;
   z-index: 25;
@@ -1041,9 +1041,7 @@ textarea.input {
 }
 
 .product:hover .add-to-cart {
-  -webkit-transform: translateY(0%);
-  -ms-transform: translateY(0%);
-  transform: translateY(0%);
+  bottom: 0;
   opacity: 1;
   visibility: visible;
 }
@@ -1185,17 +1183,15 @@ textarea.input {
 .products-slick {
   display: flex;
   flex-wrap: nowrap;
-  overflow: hidden;
-  margin: 0 -15px;
+  margin: 0 -16px;
 }
 
 .products-slick .slick-list {
-  overflow: hidden;
-  margin: 0 -15px;
+  margin: 0 -16px;
 }
 
 .products-slick .product.slick-slide {
-  padding: 0 15px;
+  padding: 0 16px;
   width: 25%;
   float: left;
 }
@@ -2113,8 +2109,14 @@ textarea.input {
 ===========================================================*/
 
 #footer {
-  background: #15161D;
-  color: #B9BABC;
+  padding-top: 60px;
+  padding-bottom: 30px;
+  background-color: #15161D;
+  color: #FFF;
+}
+
+#footer .footer-links {
+  text-align: left;
 }
 
 #bottom-footer {
@@ -2123,6 +2125,7 @@ textarea.input {
 
 .footer {
   margin: 30px 0px;
+  text-align: left;
 }
 
 .footer .footer-title {

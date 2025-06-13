@@ -1,187 +1,122 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import './ForgotPassword.css';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import "./ForgotPassword.css";
 
 const ForgotPassword = () => {
-    const [email, setEmail] = useState('');
-    const [message, setMessage] = useState('');
+    const [phone, setPhone] = useState("");
+    const [otp, setOTP] = useState("");
+    const [message, setMessage] = useState("");
     const [isSuccess, setIsSuccess] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [showOtpInput, setShowOtpInput] = useState(false);
-    const [otp, setOtp] = useState('');
-    const [newPassword, setNewPassword] = useState('');
+    const [showOTP, setShowOTP] = useState(false);
     const navigate = useNavigate();
 
-    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const phonePattern = /^[0-9]{10}$/;
 
-    const validateEmail = (value) => {
-        if (!emailPattern.test(value)) {
-            setMessage('Please enter a valid email address');
+    const validatePhone = (value) => {
+        if (!phonePattern.test(value)) {
+            setMessage("Please enter a valid 10-digit phone number");
             setIsSuccess(false);
             return false;
         }
-        setMessage('');
+        setMessage("");
         return true;
     };
 
-    const handleInputChange = (e) => {
-        setEmail(e.target.value);
-        validateEmail(e.target.value);
+    const validateOTP = (value) => {
+        if (!value || value.length !== 6) {
+            setMessage("Please enter a valid 6-digit OTP");
+            setIsSuccess(false);
+            return false;
+        }
+        setMessage("");
+        return true;
     };
 
-    const handleSubmit = async (e) => {
+    const handlePhoneInput = (e) => {
+        const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
+        setPhone(value);
+        validatePhone(value);
+    };
+
+    const handleOTPInput = (e) => {
+        const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+        setOTP(value);
+        validateOTP(value);
+    };
+
+    const handleSubmitPhone = (e) => {
         e.preventDefault();
-        if (validateEmail(email)) {
-            setIsLoading(true);
-            setMessage('');
-            
-            try {
-                const response = await fetch('http://localhost:8080/api/account/forgot-password', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username: email }),
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    setMessage('OTP has been sent to your email!');
-                    setIsSuccess(true);
-                    setShowOtpInput(true);
-                } else {
-                    setMessage(data.message || 'Failed to send OTP. Please try again.');
-                    setIsSuccess(false);
-                }
-            } catch (error) {
-                console.error('Forgot password error:', error);
-                setMessage('Network error. Please check your connection and try again.');
-                setIsSuccess(false);
-            } finally {
-                setIsLoading(false);
-            }
+        if (validatePhone(phone)) {
+            setShowOTP(true);
+            setMessage("OTP has been sent to your phone number!");
+            setIsSuccess(true);
+            // Here you would typically make an API call to send OTP
         }
     };
 
-    const handleVerifyOtp = async (e) => {
+    const handleVerifyOTP = (e) => {
         e.preventDefault();
-        if (!otp || !newPassword) {
-            setMessage('Please enter both OTP and new password');
-            setIsSuccess(false);
-            return;
-        }
+        if (validateOTP(otp)) {
+            setMessage("Password reset link has been sent to your phone!");
+            setIsSuccess(true);
+            // Here you would typically make an API call to verify OTP and reset password
 
-        setIsLoading(true);
-        setMessage('');
-
-        try {
-            const response = await fetch('http://localhost:8080/api/account/verify-change-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: email,
-                    otp: otp,
-                    newPassword: newPassword
-                }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setMessage('Password has been reset successfully!');
-                setIsSuccess(true);
-                setTimeout(() => {
-                    navigate('/login');
-                }, 2000);
-            } else {
-                setMessage(data.message || 'Failed to verify OTP. Please try again.');
+            setTimeout(() => {
+                setPhone("");
+                setOTP("");
+                setMessage("");
                 setIsSuccess(false);
-            }
-        } catch (error) {
-            console.error('Verify OTP error:', error);
-            setMessage('Network error. Please check your connection and try again.');
-            setIsSuccess(false);
-        } finally {
-            setIsLoading(false);
+                navigate("/login");
+            }, 3000);
         }
     };
 
     return (
         <div className="forgot-container">
             <div className="forgot-box">
-                {!showOtpInput ? (
-                    <form onSubmit={handleSubmit} noValidate>
-                        <h1>Forgot Password</h1>
-                        <p>Enter your email address to reset your password.</p>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={handleInputChange}
-                            placeholder="Email"
-                            required
-                        />
-                        <div
-                            className="error-message"
-                            style={{ color: isSuccess ? '#4CAF50' : 'red' }}
-                        >
-                            {message}
-                        </div>
-                        <button 
-                            type="submit"
-                            disabled={isLoading}
-                            style={{
-                                opacity: isLoading ? 0.7 : 1,
-                                cursor: isLoading ? 'not-allowed' : 'pointer'
-                            }}
-                        >
-                            {isLoading ? 'Sending...' : 'Send OTP'}
-                        </button>
-                        <div className="back-link">
-                            <Link to="/login">Back to Login</Link>
-                        </div>
-                    </form>
-                ) : (
-                    <form onSubmit={handleVerifyOtp} noValidate>
-                        <h1>Reset Password</h1>
-                        <p>Enter the OTP sent to your email and your new password.</p>
+                <form
+                    onSubmit={showOTP ? handleVerifyOTP : handleSubmitPhone}
+                    noValidate
+                >
+                    <h1>Forgot Password</h1>
+                    <p>Enter your phone number to reset your password.</p>
+                    <input
+                        type="tel"
+                        value={phone}
+                        onChange={handlePhoneInput}
+                        placeholder="Phone Number"
+                        required
+                        disabled={showOTP}
+                    />
+
+                    {showOTP && (
                         <input
                             type="text"
                             value={otp}
-                            onChange={(e) => setOtp(e.target.value)}
-                            placeholder="Enter OTP"
+                            onChange={handleOTPInput}
+                            placeholder="Enter 6-digit OTP"
+                            maxLength="6"
                             required
                         />
-                        <input
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="Enter New Password"
-                            required
-                        />
-                        <div
-                            className="error-message"
-                            style={{ color: isSuccess ? '#4CAF50' : 'red' }}
-                        >
-                            {message}
-                        </div>
-                        <button 
-                            type="submit"
-                            disabled={isLoading}
-                            style={{
-                                opacity: isLoading ? 0.7 : 1,
-                                cursor: isLoading ? 'not-allowed' : 'pointer'
-                            }}
-                        >
-                            {isLoading ? 'Verifying...' : 'Reset Password'}
-                        </button>
-                        <div className="back-link">
-                            <Link to="/login">Back to Login</Link>
-                        </div>
-                    </form>
-                )}
+                    )}
+
+                    <div
+                        className="error-message"
+                        style={{ color: isSuccess ? "#4CAF50" : "red" }}
+                    >
+                        {message}
+                    </div>
+
+                    {!showOTP ? (
+                        <button type="submit">Send OTP</button>
+                    ) : (
+                        <button type="submit">Verify OTP</button>
+                    )}
+
+                    <div className="back-link">
+                        <Link to="/login">Back to Login</Link>
+                    </div>
+                </form>
             </div>
         </div>
     );
