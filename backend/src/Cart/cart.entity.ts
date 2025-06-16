@@ -1,4 +1,4 @@
-import { Entity, JoinColumn, OneToMany, OneToOne } from "typeorm";
+import { Entity, JoinColumn, OneToMany, OneToOne, Column } from "typeorm";
 import { BaseEntity } from "@/common/BaseEntity";
 import { CartItem } from "./cartItem.entity";
 import { Account } from "@/auth/account/account.entity";
@@ -11,4 +11,10 @@ export class Cart extends BaseEntity {
 
     @OneToMany(() => CartItem, (cartItem) => cartItem.cart)
     cartItems: CartItem[];
+    
+    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+    totalAmount: number;
+
+    @Column({ type: 'timestamp', nullable: true })
+    lastUpdated: Date;
 }
