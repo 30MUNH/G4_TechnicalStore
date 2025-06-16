@@ -31,15 +31,33 @@ export class CartService {
 
   private async calculateTotalAmount(cart: Cart): Promise<number> {
     let total = 0;
-    if (cart.cartItems) {
-      for (const item of cart.cartItems) {
-        const product = await Product.findOne({ where: { id: item.product.id } });
-        if (product) {
-          total += product.price * item.quantity;
-        }
-      }
+    const itemsToRemove: CartItem[] = [];
+
+    if (!cart.cartItems) {
+        return Number(total.toFixed(2));
     }
-    return Number(total.toFixed(2)); 
+
+    for (const item of cart.cartItems) {
+        const product = await Product.findOne({ where: { id: item.product.id } });
+        
+        if (!product || !product.active) {
+            itemsToRemove.push(item);
+        } else if (product.stock < item.quantity) {
+            itemsToRemove.push(item);
+        } else {
+            total += product.price * item.quantity;
+        }
+    }
+
+    if (itemsToRemove.length > 0) {
+        cart.cartItems = cart.cartItems.filter(item => !itemsToRemove.includes(item));
+        await cart.save();
+
+        const removedProducts = itemsToRemove.map(item => item.product.name).join(', ');
+        throw new Error(`Các sản phẩm sau đã bị xóa khỏi giỏ hàng do không còn tồn tại hoặc không đủ số lượng: ${removedProducts}`);
+    }
+
+    return Number(total.toFixed(2));
   }
 
   private async updateCartTotals(cart: Cart): Promise<Cart> {
