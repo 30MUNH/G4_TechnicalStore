@@ -1,8 +1,9 @@
 import React from "react";
 import { BsArrowDown } from "react-icons/bs";
-import { FaTruck, FaExchangeAlt, FaPercent, FaUserClock } from 'react-icons/fa';
+import { FaTruck, FaExchangeAlt, FaPercent, FaClock } from 'react-icons/fa';
+import { BsPeople, BsBox, BsStar, BsEmojiSmile } from 'react-icons/bs';
 import { Carousel } from 'react-bootstrap';
-import "./Aboutus.css";
+import styles from './Aboutus.module.css';
 
 function Aboutus() {
     const scrollToMission = (e) => {
@@ -11,59 +12,122 @@ function Aboutus() {
         missionElement.scrollIntoView({ behavior: "smooth" });
     };
 
+    const stats = [
+        { number: "2M+", label: "Happy Customers", icon: BsPeople },
+        { number: "15K+", label: "Products", icon: BsBox },
+        { number: "4.9", label: "Rating", icon: BsStar },
+        { number: "99%", label: "Satisfaction", icon: BsEmojiSmile }
+    ];
+
+    const services = [
+        { 
+            icon: FaTruck, 
+            title: "Free Delivery",
+            desc: "Free shipping on orders over $99",
+            iconClass: "delivery"
+        },
+        { 
+            icon: FaExchangeAlt, 
+            title: "Easy Returns",
+            desc: "30-day hassle-free returns",
+            iconClass: "returns"
+        },
+        { 
+            icon: FaPercent, 
+            title: "Best Prices",
+            desc: "Price match guarantee",
+            iconClass: "prices"
+        },
+        { 
+            icon: FaClock, 
+            title: "24/7 Support",
+            desc: "Round-the-clock assistance",
+            iconClass: "support"
+        }
+    ];
+
+    const brands = [
+        {
+            name: "MSI",
+            category: "Gaming Hardware",
+            logo: "MSI"
+        },
+        {
+            name: "NVIDIA",
+            category: "Graphics Cards",
+            logo: "NVIDIA"
+        },
+        {
+            name: "CORSAIR",
+            category: "PC Components",
+            logo: "CORSAIR"
+        },
+        {
+            name: "Intel",
+            category: "Processors",
+            logo: "intel"
+        },
+        {
+            name: "AMD",
+            category: "CPUs & GPUs",
+            logo: "AMD"
+        },
+        {
+            name: "ASUS",
+            category: "Motherboards",
+            logo: "ASUS"
+        }
+    ];
+
     return (
         <>
-            <section className="about-section py-5">
+            <section className={styles.aboutSection}>
                 <div className="container">
-                    <div className="row g-4">
+                    <div className="row align-items-center g-4">
                         <div className="col-lg-6">
-                            <div
-                                className="content-wrapper h-100 p-5"
-                                style={{
-                                    backgroundColor: "rgb(172, 203, 238)",
-                                    borderRadius: "10px"
-                                }}
-                            >
-                                <div className="content-box">
-                                    <h2 className="display-6 fw-bold mb-4">
-                                        Cartzilla - More than a retailer
+                            <div className={styles.contentWrapper}>
+                                <div className={styles.contentBox}>
+                                    <h2>
+                                        More than a
+                                        <span>retailer</span>
                                     </h2>
-                                    <p className="lead text-muted mb-4">
-                                        Since 2015, we have been fulfilling the small dreams and big plans of millions of people.
-                                        You can find literally everything here.
+                                    <p>
+                                        Since 2015, we've been fulfilling the tech dreams and big
+                                        plans of millions of people. You can find literally
+                                        everything here for your perfect gaming setup.
                                     </p>
-                                    <a
-                                        className="btn btn-lg btn-outline-dark"
-                                        href="#mission"
-                                        onClick={scrollToMission}
-                                        style={{
-                                            border: "2px solid #000",
-                                            color: "rgb(3, 8, 15)",
-                                            fontWeight: "bold"
-                                        }}
-                                    >
-                                        See more
-                                        <BsArrowDown className="bounce-arrow ms-2 fs-5" />
-                                    </a>
+                                    <div className="d-flex gap-3">
+                                        <a href="#" className={`${styles.seeMoreBtn} ${styles.primary}`}>
+                                            Explore Products
+                                        </a>
+                                        <a
+                                            href="#mission"
+                                            onClick={scrollToMission}
+                                            className={styles.seeMoreBtn}
+                                        >
+                                            See More
+                                            <BsArrowDown className={styles.bounceArrow} />
+                                        </a>
+                                    </div>
+                                    <div className={styles.statsContainer}>
+                                        {stats.map((stat, index) => (
+                                            <div key={index} className={styles.statItem}>
+                                                <stat.icon className={styles.statIcon} />
+                                                <div className={styles.statNumber}>{stat.number}</div>
+                                                <div className={styles.statLabel}>{stat.label}</div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div className="col-lg-6">
-                            <div
-                                className="image-wrapper h-100"
-                                style={{
-                                    borderRadius: "10px",
-                                    overflow: "hidden"
-                                }}
-                            >
+                            <div className={styles.imageWrapper}>
                                 <img
-                                    src="/img/pc.png"
-                                    alt="Team collaboration"
-                                    className="w-100 h-100"
-                                    style={{
-                                        objectFit: "cover",
-                                    }}
+                                    src="pexels.png"
+                                    alt="Gaming Setup"
+                                    className={styles.image}
                                 />
                             </div>
                         </div>
@@ -71,117 +135,80 @@ function Aboutus() {
                 </div>
             </section>
 
-            <section id="mission" className="services-section py-5">
+            <section id="mission" className={styles.servicesSection}>
                 <div className="container">
-                    <div className="text-center mb-5">
-                        <h2 className="display-5 fw-normal mb-3">Our Services</h2>
-                        <p className="text-muted">
-                            Quality components – Build a standard PC to assemble according to your needs. <br />
-                            High quality, top performance, dedicated support.
-                        </p>
-                    </div>
+                    <h2 className={styles.sectionTitle}>Our Services</h2>
+                    <p className={styles.sectionDesc}>
+                        Quality components – Build a standard PC to assemble according to your needs. <br />
+                        High quality, top performance, dedicated support.
+                    </p>
                     <div className="row g-4">
-                        <div className="col-md-6 col-lg-3">
-                            <div className="service-card">
-                                <div className="icon-wrapper">
-                                    <FaTruck className="service-icon" />
+                        {services.map((service, index) => (
+                            <div key={index} className="col-md-6 col-lg-3">
+                                <div className={styles.serviceCard}>
+                                    <div className={styles.iconWrapper}>
+                                        <service.icon className={`${styles.serviceIcon} ${styles[service.iconClass]}`} />
+                                    </div>
+                                    <h3 className={styles.serviceTitle}>{service.title}</h3>
+                                    <p className={styles.serviceDesc}>{service.desc}</p>
                                 </div>
-                                <h3 className="service-title">Delivery Services</h3>
                             </div>
-                        </div>
-                        <div className="col-md-6 col-lg-3">
-                            <div className="service-card">
-                                <div className="icon-wrapper">
-                                    <FaExchangeAlt className="service-icon" />
-                                </div>
-                                <h3 className="service-title">Shipping & Return</h3>
-                            </div>
-                        </div>
-                        <div className="col-md-6 col-lg-3">
-                            <div className="service-card">
-                                <div className="icon-wrapper">
-                                    <FaPercent className="service-icon" />
-                                </div>
-                                <h3 className="service-title">Promotion</h3>
-                            </div>
-                        </div>
-                        <div className="col-md-6 col-lg-3">
-                            <div className="service-card">
-                                <div className="icon-wrapper">
-                                    <FaUserClock className="service-icon" />
-                                </div>
-                                <h3 className="service-title">24 Hours Service</h3>
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
             </section>
 
-            <section className="brands-section py-5">
+            <section className={styles.brandsSection}>
                 <div className="container">
-                    <div className="text-center mb-5">
-                        <h2 className="display-5 fw-normal mb-3">Our Brands</h2>
-                        <p className="text-muted">
-                            Quality components – Build a standard PC to assemble according to your needs. <br />
-                            High quality, top performance, dedicated support.
-                        </p>
-                    </div>
-                    <div className="brands-carousel">
+                    <h2 className={styles.sectionTitle}>Our Brands</h2>
+                    <p className={styles.sectionDesc}>
+                        We partner with the world's leading gaming and PC component manufacturers <br />
+                        to bring you the best in performance and reliability.
+                    </p>
+                    <div className={styles.brandsCarousel}>
                         <Carousel
-                            controls={true}
+                            controls={false}
                             indicators={false}
                             interval={3000}
                             pause="hover"
                         >
                             <Carousel.Item>
                                 <div className="row">
-                                    <div className="col-3">
-                                        <a href="#">
-                                            <img className="brand-img" src="/img/intel.png" alt="Intel Logo" />
-                                        </a>
-                                    </div>
-                                    <div className="col-3">
-                                        <a href="#">
-                                            <img className="brand-img" src="/img/Ryzen.png" alt="Ryzen Logo" />
-                                        </a>
-                                    </div>
-                                    <div className="col-3">
-                                        <a href="#">
-                                            <img className="brand-img" src="/img/ASUS.png" alt="ASUS Logo" />
-                                        </a>
-                                    </div>
-                                    <div className="col-3">
-                                        <a href="#">
-                                            <img className="brand-img" src="/img/Gigabyte.png" alt="Gigabyte Logo" />
-                                        </a>
-                                    </div>
+                                    {['c1', 'c2', 'c3', 'c4'].map((brand, index) => (
+                                        <div key={index} className="col-3">
+                                            <a href="#">
+                                                <img 
+                                                    className={styles.brandImg} 
+                                                    src={`${brand}.png`}
+                                                    alt={`${brand} Logo`} 
+                                                />
+                                            </a>
+                                        </div>
+                                    ))}
                                 </div>
                             </Carousel.Item>
                             <Carousel.Item>
                                 <div className="row">
-                                    <div className="col-3">
-                                        <a href="#">
-                                            <img className="brand-img" src="/img/MSI.png" alt="MSI Logo" />
-                                        </a>
-                                    </div>
-                                    <div className="col-3">
-                                        <a href="#">
-                                            <img className="brand-img" src="/img/NVIDIA.png" alt="NVIDIA Logo" />
-                                        </a>
-                                    </div>
-                                    <div className="col-3">
-                                        <a href="#">
-                                            <img className="brand-img" src="/img/corsair.png" alt="Corsair Logo" />
-                                        </a>
-                                    </div>
-                                    <div className="col-3">
-                                        <a href="#">
-                                            <img className="brand-img" src="/img/intel.png" alt="Intel Logo" />
-                                        </a>
-                                    </div>
+                                    {['c8', 'c5', 'c6', 'c7'].map((brand, index) => (
+                                        <div key={index} className="col-3">
+                                            <a href="#">
+                                                <img 
+                                                    className={styles.brandImg} 
+                                                    src={`${brand}.png`}
+                                                    alt={`${brand} Logo`} 
+                                                />
+                                            </a>
+                                        </div>
+                                    ))}
                                 </div>
                             </Carousel.Item>
                         </Carousel>
+                    </div>
+
+                    <div className={styles.ctaSection}>
+                        <h2 className={styles.ctaTitle}>Ready to Build Your Dream Setup?</h2>
+                        <p className={styles.ctaText}>Join millions of satisfied customers and start building today</p>
+                        <button className={styles.ctaButton}>Start Shopping</button>
                     </div>
                 </div>
             </section>

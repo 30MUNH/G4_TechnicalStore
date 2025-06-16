@@ -1,34 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Package, Truck, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { orderService } from '../../services/orderService';
+import { OrderStatus } from '../../types/order';
+import './OrderHistory.css';
 
 const getStatusIcon = (status) => {
     switch (status) {
-        case 'pending':
+        case OrderStatus.PENDING:
             return <Clock className="status-icon" />;
-        case 'processing':
+        case OrderStatus.PROCESSING:
             return <Package className="status-icon" />;
-        case 'shipped':
+        case OrderStatus.SHIPPING:
             return <Truck className="status-icon" />;
-        case 'delivered':
+        case OrderStatus.DELIVERED:
             return <CheckCircle className="status-icon" />;
-        case 'cancelled':
+        case OrderStatus.CANCELLED:
             return <XCircle className="status-icon" />;
         default:
-            return <Clock className="status-icon" />;
+            return null;
     }
 };
 
 const getStatusColor = (status) => {
     switch (status) {
-        case 'pending':
+        case OrderStatus.PENDING:
             return 'status-pending';
-        case 'processing':
+        case OrderStatus.PROCESSING:
             return 'status-processing';
-        case 'shipped':
+        case OrderStatus.SHIPPING:
             return 'status-shipped';
-        case 'delivered':
+        case OrderStatus.DELIVERED:
             return 'status-delivered';
-        case 'cancelled':
+        case OrderStatus.CANCELLED:
             return 'status-cancelled';
         default:
             return 'status-default';
@@ -52,113 +55,135 @@ const getStatusText = (status) => {
     }
 };
 
-export const OrderHistory = ({ orders = [] }) => {
-    const [expandedOrders, setExpandedOrders] = useState(new Set());
+const OrderHistory = () => {
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [expandedOrderId, setExpandedOrderId] = useState(null);
 
-    const toggleOrderDetails = (orderId) => {
-        const newExpanded = new Set(expandedOrders);
-        if (newExpanded.has(orderId)) {
-            newExpanded.delete(orderId);
-        } else {
-            newExpanded.add(orderId);
+    useEffect(() => {
+        fetchOrders();
+    }, []);
+
+    const fetchOrders = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await orderService.getOrders();
+            if (response.message === "Lấy danh sách đơn hàng thành công") {
+                setOrders(response.orders);
+            } else {
+                throw new Error(response.error || "Không thể lấy danh sách đơn hàng");
+            }
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setLoading(false);
         }
-        setExpandedOrders(newExpanded);
     };
 
-    if (orders.length === 0) {
-        return (
-            <div className="order-history">
-                <div className="empty-orders">
-                    <Package className="empty-icon" />
-                    <h3>Chưa có đơn hàng nào</h3>
-                    <p>Bạn chưa thực hiện đơn hàng nào. Hãy bắt đầu mua sắm!</p>
-                </div>
-            </div>
-        );
+    const handleStatusUpdate = async (orderId, newStatus, cancelReason = '') => {
+        try {
+            setError(null);
+            const response = await orderService.updateOrderStatus(orderId, {
+                status: newStatus,
+                cancelReason
+            });
+            if (response.message === "Cập nhật trạng thái đơn hàng thành công") {
+                // Cập nhật state local
+                setOrders(orders.map(order => 
+                    order.id === orderId 
+                        ? { ...order, status: newStatus, cancelReason } 
+                        : order
+                ));
+            } else {
+                throw new Error(response.error || "Không thể cập nhật trạng thái đơn hàng");
+            }
+        } catch (error) {
+            setError(error.message);
+        }
+    };
+
+    const toggleOrderDetails = (orderId) => {
+        setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
+    };
+
+    if (loading) {
+        return <div className="loading">Đang tải danh sách đơn hàng...</div>;
+    }
+
+    if (error) {
+        return <div className="error">Lỗi: {error}</div>;
+    }
+
+    if (!orders.length) {
+        return <div className="empty">Bạn chưa có đơn hàng nào</div>;
     }
 
     return (
         <div className="order-history">
+            <h2>Lịch sử đơn hàng</h2>
             {orders.map((order) => (
-                <div key={order.id} className="order-card-compact">
-                    {/* Compact Order Summary */}
-                    <div className="order-summary-compact">
-                        <div className="order-main-info">
-                            <div className="order-title-compact">
-                                <h4>#{order.id}</h4>
-                                <span className={`order-status-compact ${getStatusColor(order.status)}`}>
-                                    {getStatusIcon(order.status)}
-                                    {getStatusText(order.status)}
-                                </span>
+                <div key={order.id} className="order-card">
+                    <div className="order-header" onClick={() => toggleOrderDetails(order.id)}>
+                        <div className="order-summary">
+                            <div className="status">
+                                {getStatusIcon(order.status)}
+                                <span>{order.status}</span>
                             </div>
-                            <div className="order-meta-compact">
-                                <span className="order-date-compact">
-                                    {new Date(order.orderDate).toLocaleDateString('vi-VN')}
-                                </span>
-                                <span className="item-count-compact">
-                                    {order.items.length} sản phẩm
-                                </span>
+                            <div className="order-info">
+                                <span>Mã đơn: {order.id}</span>
+                                <span>Ngày đặt: {new Date(order.orderDate).toLocaleDateString('vi-VN')}</span>
+                                <span>Tổng tiền: {order.totalAmount.toLocaleString('vi-VN')}đ</span>
                             </div>
                         </div>
-
-                        <div className="order-right-info">
-                            <div className="total-amount-compact">{order.total.toLocaleString()}đ</div>
-                            <button
-                                className="btn-details"
-                                onClick={() => toggleOrderDetails(order.id)}
-                            >
-                                {expandedOrders.has(order.id) ? (
-                                    <>
-                                        Ẩn <ChevronUp size={16} />
-                                    </>
-                                ) : (
-                                    <>
-                                        Chi tiết <ChevronDown size={16} />
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                        {expandedOrderId === order.id ? <ChevronUp /> : <ChevronDown />}
                     </div>
-
-                    {/* Expanded Details */}
-                    {expandedOrders.has(order.id) && (
-                        <div className="order-details-expanded">
-                            <div className="order-items-expanded">
-                                <h5>Sản phẩm đã đặt:</h5>
-                                {order.items.map((item, index) => (
-                                    <div key={index} className="order-item-expanded">
-                                        <img
-                                            src={item.product.image}
-                                            alt={item.product.name}
-                                            className="item-image-expanded"
-                                        />
-                                        <div className="item-details-expanded">
-                                            <p className="item-name-expanded">{item.product.name}</p>
-                                            <p className="item-quantity-expanded">
-                                                Số lượng: {item.quantity} × {item.product.price.toLocaleString()}đ
-                                            </p>
-                                        </div>
-                                        <div className="item-total-expanded">
-                                            {(item.product.price * item.quantity).toLocaleString()}đ
+                    
+                    {expandedOrderId === order.id && (
+                        <div className="order-details">
+                            <div className="shipping-info">
+                                <h4>Thông tin giao hàng</h4>
+                                <p>Địa chỉ: {order.shippingAddress}</p>
+                                {order.note && <p>Ghi chú: {order.note}</p>}
+                                {order.cancelReason && <p>Lý do hủy: {order.cancelReason}</p>}
+                            </div>
+                            
+                            <div className="products">
+                                <h4>Sản phẩm</h4>
+                                {order.orderDetails.map((detail) => (
+                                    <div key={detail.id} className="product-item">
+                                        <img src={detail.product.url} alt={detail.product.name} />
+                                        <div className="product-info">
+                                            <h5>{detail.product.name}</h5>
+                                            <p>Số lượng: {detail.quantity}</p>
+                                            <p>Đơn giá: {detail.price.toLocaleString('vi-VN')}đ</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
-
-                            <div className="order-info-expanded">
-                                <div className="info-section">
-                                    <h5>Thông tin giao hàng:</h5>
-                                    <p><strong>Địa chỉ:</strong> {order.deliveryAddress}</p>
-                                    <p><strong>Thanh toán:</strong> {order.paymentMethod}</p>
-                                    {order.trackingNumber && (
-                                        <p><strong>Mã vận đơn:</strong> <span className="tracking-code">{order.trackingNumber}</span></p>
-                                    )}
+                            
+                            {order.status === OrderStatus.PENDING && (
+                                <div className="actions">
+                                    <button 
+                                        className="cancel-button"
+                                        onClick={() => {
+                                            const reason = window.prompt('Nhập lý do hủy đơn hàng:');
+                                            if (reason) {
+                                                handleStatusUpdate(order.id, OrderStatus.CANCELLED, reason);
+                                            }
+                                        }}
+                                    >
+                                        Hủy đơn hàng
+                                    </button>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     )}
                 </div>
             ))}
         </div>
     );
-}; 
+};
+
+export default OrderHistory; 
