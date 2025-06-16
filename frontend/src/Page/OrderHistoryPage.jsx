@@ -1,14 +1,31 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OrderHistory } from '../components/Cart/OrderHistory';
-import { useCartContext } from '../Hook/useCart';
+import { orderService } from '../services/orderService';
 
 export const OrderHistoryPage = () => {
     const navigate = useNavigate();
-    const { orders } = useCartContext();
+    const [statistics, setStatistics] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Add class to remove main-content padding
     useEffect(() => {
+        const fetchStatistics = async () => {
+            try {
+                const response = await orderService.getOrderStatistics();
+                if (response.message === "Lấy thống kê đơn hàng thành công") {
+                    setStatistics(response.statistics);
+                } else {
+                    throw new Error(response.error || 'Không thể lấy thống kê đơn hàng');
+                }
+            } catch (err) {
+                setError(err.message || 'Có lỗi xảy ra khi lấy thống kê đơn hàng');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStatistics();
         document.body.classList.add('order-history-page-active');
         return () => document.body.classList.remove('order-history-page-active');
     }, []);
@@ -37,15 +54,17 @@ export const OrderHistoryPage = () => {
                                 <span style={{ fontSize: '1.8rem' }}>📋</span>
                                 Lịch sử đơn hàng
                             </h1>
-                            <p style={{
-                                fontSize: '0.9rem',
-                                opacity: '0.8',
-                                margin: 0,
-                                marginTop: '0.2rem',
-                                marginLeft: '3.4rem'
-                            }}>
-                                {orders.length === 0 ? 'Chưa có đơn hàng' : `${orders.length} đơn hàng`}
-                            </p>
+                            {!loading && !error && statistics && (
+                                <p style={{
+                                    fontSize: '0.9rem',
+                                    opacity: '0.8',
+                                    margin: 0,
+                                    marginTop: '0.2rem',
+                                    marginLeft: '3.4rem'
+                                }}>
+                                    {statistics.total === 0 ? 'Chưa có đơn hàng' : `${statistics.total} đơn hàng`}
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -55,7 +74,12 @@ export const OrderHistoryPage = () => {
                 background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
                 minHeight: 'calc(100vh - 80px)'
             }}>
-                <OrderHistory orders={orders} />
+                {error && (
+                    <div className="alert alert-danger" role="alert">
+                        {error}
+                    </div>
+                )}
+                <OrderHistory />
 
                 {/* Nút quay lại */}
                 <div className="d-flex justify-content-center mt-4 mb-3">

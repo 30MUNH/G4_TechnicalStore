@@ -3,6 +3,7 @@ import { BaseEntity } from "@/common/BaseEntity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { OrderDetail } from "./orderDetail.entity";
 import { Payment } from "@/payment/payment.entity";
+import { OrderStatus } from "./dtos/update-order.dto";
 
 @Entity('orders')
 export class Order extends BaseEntity {
@@ -17,11 +18,24 @@ export class Order extends BaseEntity {
   @Column()
   orderDate: Date;
 
-  @Column()
-  status: string;
+  @Column({
+    type: 'enum',
+    enum: OrderStatus,
+    default: OrderStatus.PENDING
+  })
+  status: OrderStatus;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, name: 'total_amount' })
   totalAmount: number;
+
+  @Column({ nullable: true })
+  shippingAddress: string;
+
+  @Column({ nullable: true })
+  note: string;
+
+  @Column({ nullable: true })
+  cancelReason: string;
 
   @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.order)
   orderDetails: OrderDetail[];
