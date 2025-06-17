@@ -5,6 +5,7 @@ import ContactUs from "./components/About/ContactUs.jsx";
 import Aboutus from "./components/About/Aboutus.jsx";
 import HomePage from "./Page/HomePage.jsx";
 import CartPage from "./Page/CartPage.jsx";
+import SalesDashboard from "./Page/SalesDashboard.jsx"
 import { CartProvider } from "./Hook/useCart.jsx";
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/about" element={<Aboutus />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/dashboard" element={<SalesDashboard />} />
           {/* Redirect any unknown paths to home page */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
