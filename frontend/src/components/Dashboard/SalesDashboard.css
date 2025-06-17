@@ -1,10 +1,11 @@
 .dashboard-container {
   display: flex;
+  min-height: 100vh;
+  align-items: stretch;
 }
 
 .sidebar {
   width: 250px;
-  height: 100vh;
   background: #2a1e5e;
   color: white;
   padding: 20px;
