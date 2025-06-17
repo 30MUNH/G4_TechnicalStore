@@ -24,7 +24,6 @@ export class CartService {
     const newCart = new Cart();
     newCart.account = account;
     newCart.totalAmount = 0;
-    newCart.lastUpdated = new Date();
     await newCart.save();
     return newCart;
   }
@@ -62,7 +61,6 @@ export class CartService {
 
   private async updateCartTotals(cart: Cart): Promise<Cart> {
     cart.totalAmount = await this.calculateTotalAmount(cart);
-    cart.lastUpdated = new Date();
     await cart.save();
     return cart;
   }
@@ -173,7 +171,6 @@ export class CartService {
     }
     
     cart.totalAmount = 0;
-    cart.lastUpdated = new Date();
     await cart.save();
   }
 
@@ -183,7 +180,7 @@ export class CartService {
 
     const abandonedCarts = await Cart.find({
       where: {
-        lastUpdated: LessThan(cutoffDate)
+        updatedAt: LessThan(cutoffDate)
       },
       relations: ['cartItems']
     });

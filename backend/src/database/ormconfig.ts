@@ -12,6 +12,10 @@ export default {
 
   synchronize: process.env.DB_SYNCHRONIZE || true,
 
+  extra: {
+    timezone: "+07:00",
+  },
+
   entities: [path.join(__dirname, '../*/**/*.entity.{ts,js}')],
 
   cli: {
