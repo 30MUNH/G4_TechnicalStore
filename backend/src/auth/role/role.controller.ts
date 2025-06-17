@@ -14,8 +14,8 @@ export class RoleController{
         return await this.roleService.getAllRoles();
     }
 
-    @Post('/roles/create-admin')
-    async createAdminRole(){
-        return await this.roleService.createAdminRole();
+    @Post('/roles/create-roles')
+    async createRoles(){
+        return await this.roleService.createRoles();
     }
 }
