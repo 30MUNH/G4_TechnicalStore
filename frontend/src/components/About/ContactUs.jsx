@@ -7,9 +7,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import emailjs from '@emailjs/browser';
 import styles from './ContactUs.module.css';
-import Fade from 'react-reveal/Fade';
-import Bounce from 'react-reveal/Bounce';
-import Zoom from 'react-reveal/Zoom';
+import { motion } from 'framer-motion';
 
 const ContactUs = () => {
     const form = useRef();
@@ -37,37 +35,49 @@ const ContactUs = () => {
     return (
         <div className={styles.contactus}>
             <div className={styles.header}>
-                <Bounce top cascade>
-                    <h1>LIÊN HỆ VỚI CHÚNG TÔI</h1>
-                </Bounce>
+                <motion.h1
+                    initial={{ y: -50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                >
+                    LIÊN HỆ VỚI CHÚNG TÔI
+                </motion.h1>
 
-                <Fade bottom delay={500}>
-                    <p className={styles.mainDesc}>
-                        Chuyên cung cấp linh kiện máy tính chính hãng với giá tốt nhất thị trường
-                    </p>
-                </Fade>
+                <motion.p
+                    className={styles.mainDesc}
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                    Chuyên cung cấp linh kiện máy tính chính hãng với giá tốt nhất thị trường
+                </motion.p>
 
-                <Fade bottom delay={800}>
-                    <p className={styles.subDesc}>
-                        Giá tốt nhất thị trường - Bảo hành uy tín - Giao hàng nhanh chóng
-                    </p>
-                </Fade>
+                <motion.p
+                    className={styles.subDesc}
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                    Giá tốt nhất thị trường - Bảo hành uy tín - Giao hàng nhanh chóng
+                </motion.p>
 
                 <div className={styles.badges}>
-                    <Zoom cascade delay={1000}>
-                        <div className={styles.badge}>
-                            <FontAwesomeIcon icon={faAward} />
-                            <span>Uy tín hàng đầu</span>
-                        </div>
-                        <div className={styles.badge}>
-                            <FontAwesomeIcon icon={faCheckCircle} />
-                            <span>Bảo hành chính hãng</span>
-                        </div>
-                        <div className={styles.badge}>
-                            <FontAwesomeIcon icon={faTruck} />
-                            <span>Giao hàng nhanh</span>
-                        </div>
-                    </Zoom>
+                    {[
+                        { icon: faAward, text: 'Uy tín hàng đầu' },
+                        { icon: faCheckCircle, text: 'Bảo hành chính hãng' },
+                        { icon: faTruck, text: 'Giao hàng nhanh' }
+                    ].map((badge, index) => (
+                        <motion.div
+                            key={index}
+                            className={styles.badge}
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ duration: 0.3, delay: 0.6 + index * 0.2 }}
+                        >
+                            <FontAwesomeIcon icon={badge.icon} />
+                            <span>{badge.text}</span>
+                        </motion.div>
+                    ))}
                 </div>
             </div>
 
