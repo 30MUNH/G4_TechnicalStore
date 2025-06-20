@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { X, AlertTriangle } from 'lucide-react';
-import styles from '../styles/DeleteConfirmation.module.css';
-import commonStyles from '../styles/common.module.css';
+import styles from './styles/DeleteConfirmation.module.css';
+import commonStyles from './styles/common.module.css';
 
 const DeleteConfirmation = ({ customer, onConfirm, onClose }) => {
   const handleConfirm = () => {

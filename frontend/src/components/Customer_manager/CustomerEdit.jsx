@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { X, Save } from 'lucide-react';
-import styles from '../styles/CustomerEdit.module.css';
-import commonStyles from '../styles/common.module.css';
+import styles from './styles/CustomerEdit.module.css';
+import commonStyles from './styles/common.module.css';
 
 const CustomerEdit = ({ customer, onSave, onClose }) => {
   const [formData, setFormData] = useState({

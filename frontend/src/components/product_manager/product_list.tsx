@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import '../product_manager/ProductList.css'
+import './ProductList.css'
 interface Product {
   id: string;
   name: string;

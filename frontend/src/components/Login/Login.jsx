@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import "./login.css";
+import "./Login.css";
 
 const Login = () => {
     const [isRegister, setIsRegister] = useState(false);

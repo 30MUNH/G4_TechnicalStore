@@ -16,8 +16,8 @@ import {
 import CustomerDetail from './CustomerDetail';
 import CustomerEdit from './CustomerEdit';
 import DeleteConfirmation from './DeleteConfirmation';
-import styles from '../styles/CustomerList.module.css';
-import commonStyles from '../styles/common.module.css';
+import styles from './styles/CustomerList.module.css';
+import commonStyles from './styles/common.module.css';
 
 const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
