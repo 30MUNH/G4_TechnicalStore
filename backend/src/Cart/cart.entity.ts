@@ -14,7 +14,4 @@ export class Cart extends BaseEntity {
     
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
     totalAmount: number;
-
-    @Column({ type: 'timestamp', nullable: true })
-    lastUpdated: Date;
 }

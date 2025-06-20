@@ -7,14 +7,13 @@ import { Account } from '@/auth/account/account.entity';
 import { CreateOrderDto } from './dtos/create-order.dto';
 import { OrderStatus, UpdateOrderDto } from './dtos/update-order.dto';
 import { EntityNotFoundException } from '@/exceptions/http-exceptions';
-import { AppDataSource } from '@/database/dbConnection';
+import { DbConnection } from '@/database/dbConnection';
 
 @Service()
 export class OrderService {
     constructor(
-        private readonly cartService: CartService
+        private readonly cartService: CartService,
     ) {}
-
     private validateOrderStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): boolean {
         const validTransitions: Record<OrderStatus, OrderStatus[]> = {
             [OrderStatus.PENDING]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
@@ -47,7 +46,7 @@ export class OrderService {
             throw new Error('Giá sản phẩm đã thay đổi, vui lòng kiểm tra lại giỏ hàng');
         }
 
-        return await AppDataSource.manager.transaction(async transactionalEntityManager => {
+        return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
             const order = new Order();
             order.customer = cart.account;
             order.orderDate = new Date();
@@ -132,7 +131,7 @@ export class OrderService {
         username: string,
         updateOrderDto: UpdateOrderDto
     ): Promise<Order> {
-        return await AppDataSource.manager.transaction(async transactionalEntityManager => {
+        return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
             const order = await this.getOrderById(orderId);
             const account = await Account.findOne({ 
                 where: { username },
