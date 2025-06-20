@@ -1,10 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
 
+interface User {
+    id: string;
+    email: string;
+    fullName: string;
+    role: string;
+}
+
 interface AuthContextType {
-    user: any;
+    user: User | null;
     token: string | null;
-    login: (userData: any, token: string) => void;
+    login: (userData: User, token: string) => void;
     logout: () => void;
     isAuthenticated: () => boolean;
 }
@@ -15,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState(authService.getUser());
     const [token, setToken] = useState(authService.getToken());
 
-    const login = (userData: any, token: string) => {
+    const login = (userData: User, token: string) => {
         setUser(userData);
         setToken(token);
         localStorage.setItem('authToken', token);

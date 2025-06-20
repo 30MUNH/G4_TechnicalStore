@@ -125,7 +125,7 @@ function Aboutus() {
                         <div className="col-lg-6">
                             <div className={styles.imageWrapper}>
                                 <img
-                                    src="pexels.png"
+                                    src="/img/pexels.png"
                                     alt="Gaming Setup"
                                     className={styles.image}
                                 />
@@ -179,7 +179,7 @@ function Aboutus() {
                                             <a href="#">
                                                 <img 
                                                     className={styles.brandImg} 
-                                                    src={`${brand}.png`}
+                                                    src={`/img/${brand}.png`}
                                                     alt={`${brand} Logo`} 
                                                 />
                                             </a>
@@ -194,7 +194,7 @@ function Aboutus() {
                                             <a href="#">
                                                 <img 
                                                     className={styles.brandImg} 
-                                                    src={`${brand}.png`}
+                                                    src={`/img/${brand}.png`}
                                                     alt={`${brand} Logo`} 
                                                 />
                                             </a>

@@ -115,4 +115,21 @@ export class CartController {
             };
         }
     }
+
+    @Post("/clear")
+    @UseBefore(Auth)
+    async clearCart(@Req() req: any) {
+        const user = req.user as AccountDetailsDto;
+        try {
+            await this.cartService.clearCart(user.username);
+            return {
+                message: "Cart cleared successfully"
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to clear cart",
+                error: error.message
+            };
+        }
+    }
 }

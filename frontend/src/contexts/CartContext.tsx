@@ -1,12 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { cartService, CartItem } from '../services/cartService';
+import { cartService, type CartItem } from '../services/cartService';
 
 interface CartContextType {
     cartItems: CartItem[];
-    addToCart: (productId: string, quantity: number) => Promise<void>;
-    removeFromCart: (productId: string) => Promise<void>;
-    updateQuantity: (productId: string, quantity: number) => Promise<void>;
+    totalAmount: number;
+    addToCart: (productSlug: string, quantity: number) => Promise<void>;
+    removeFromCart: (productSlug: string) => Promise<void>;
+    updateQuantity: (productSlug: string, quantity: number) => Promise<void>;
     clearCart: () => Promise<void>;
+    getCartTotal: () => number;
+    getTax: () => number;
+    getShipping: () => number;
+    getFinalTotal: () => number;
     loading: boolean;
     error: string | null;
 }
@@ -15,6 +20,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    const [totalAmount, setTotalAmount] = useState<number>(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +28,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             setLoading(true);
             const response = await cartService.viewCart();
-            setCartItems(response.data);
+            if (response.cart) {
+                setCartItems(response.cart.cartItems || []);
+                setTotalAmount(response.cart.totalAmount || 0);
+            }
             setError(null);
         } catch (err) {
             setError('Failed to fetch cart');
@@ -36,10 +45,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fetchCart();
     }, []);
 
-    const addToCart = async (productId: string, quantity: number) => {
+    const addToCart = async (productSlug: string, quantity: number) => {
         try {
             setLoading(true);
-            await cartService.addToCart(productId, quantity);
+            await cartService.addToCart(productSlug, quantity);
             await fetchCart();
         } catch (err) {
             setError('Failed to add item to cart');
@@ -49,10 +58,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const removeFromCart = async (productId: string) => {
+    const removeFromCart = async (productSlug: string) => {
         try {
             setLoading(true);
-            await cartService.removeItem(productId);
+            await cartService.removeItem(productSlug);
             await fetchCart();
         } catch (err) {
             setError('Failed to remove item from cart');
@@ -62,10 +71,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const updateQuantity = async (productId: string, quantity: number) => {
+    const updateQuantity = async (productSlug: string, quantity: number) => {
         try {
             setLoading(true);
-            await cartService.updateQuantity(productId, quantity);
+            await cartService.updateQuantity(productSlug, quantity);
             await fetchCart();
         } catch (err) {
             setError('Failed to update quantity');
@@ -80,6 +89,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setLoading(true);
             await cartService.clearCart();
             setCartItems([]);
+            setTotalAmount(0);
         } catch (err) {
             setError('Failed to clear cart');
             console.error('Error clearing cart:', err);
@@ -88,14 +98,37 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    // Helper functions for cart calculations
+    const getCartTotal = () => {
+        return cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+    };
+
+    const getTax = () => {
+        return getCartTotal() * 0.1; 
+    };
+
+    const getShipping = () => {
+        const total = getCartTotal();
+        return total >= 1000000 ? 0 : 30000; // Free shipping over 1M VND
+    };
+
+    const getFinalTotal = () => {
+        return getCartTotal() + getTax() + getShipping();
+    };
+
     return (
         <CartContext.Provider
             value={{
                 cartItems,
+                totalAmount,
                 addToCart,
                 removeFromCart,
                 updateQuantity,
                 clearCart,
+                getCartTotal,
+                getTax,
+                getShipping,
+                getFinalTotal,
                 loading,
                 error
             }}

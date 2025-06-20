@@ -1,13 +1,22 @@
 import api from './apiInterceptor';
 
 export interface CartItem {
-    productId: string;
+    id: string;
     quantity: number;
+    product: {
+        id: string;
+        name: string;
+        slug: string;
+        price: number;
+        url: string;
+        stock: number;
+        category: string;
+    };
 }
 
 export const cartService = {
-    async addToCart(productId: string, quantity: number) {
-        const response = await api.post('/cart/add', { productId, quantity });
+    async addToCart(productSlug: string, quantity: number) {
+        const response = await api.post('/cart/add', { productSlug, quantity });
         return response.data;
     },
 
@@ -16,24 +25,24 @@ export const cartService = {
         return response.data;
     },
 
-    async updateQuantity(productId: string, quantity: number) {
+    async updateQuantity(productSlug: string, quantity: number) {
         const endpoint = quantity > 0 ? '/cart/increase' : '/cart/decrease';
         const response = await api.post(endpoint, {
-            productSlug: productId,
+            productSlug: productSlug,
             amount: Math.abs(quantity)
         });
         return response.data;
     },
 
-    async removeItem(productId: string) {
+    async removeItem(productSlug: string) {
         const response = await api.patch('/cart/remove', {
-            productSlug: productId
+            productSlug: productSlug
         });
         return response.data;
     },
 
     async clearCart() {
-        const response = await api.delete('/cart/clear');
+        const response = await api.post('/cart/clear');
         return response.data;
     }
 }; 

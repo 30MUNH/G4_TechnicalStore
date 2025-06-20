@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckoutForm } from '../components/Cart/CheckoutForm';
-import { useCartContext } from '../Hook/useCart';
+import { useCartContext } from '../Hook/useCart.jsx';
 import { orderService } from '../services/orderService';
 import { toast } from 'react-toastify';
 
