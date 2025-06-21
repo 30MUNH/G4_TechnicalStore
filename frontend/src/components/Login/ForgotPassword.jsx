@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Phone } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './ForgotPassword.module.css';
 
 const ForgotPassword = ({ onNavigate }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     phone: '',
   });
@@ -126,7 +128,7 @@ const ForgotPassword = ({ onNavigate }) => {
         <button 
           type="button" 
           className={styles.linkBtn}
-          onClick={() => onNavigate('login')}
+          onClick={() => navigate('/login')}
         >
           Back to Sign In
         </button>
