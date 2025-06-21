@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, User, Phone, Lock } from 'lucide-react';
 import FormCard from './FormCard';
 import styles from './SignUp.module.css';
 
 const SignUp = ({ onNavigate }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -93,7 +95,7 @@ const SignUp = ({ onNavigate }) => {
       alert('Account created successfully! Welcome to PC Components Store!');
       // Reset form
       setFormData({ name: '', phone: '', password: '', confirmPassword: '' });
-      onNavigate('login');
+      navigate('/login');
     } catch (error) {
       setErrors({ phone: 'Phone number already exists. Please use a different number.' });
     } finally {
@@ -204,7 +206,7 @@ const SignUp = ({ onNavigate }) => {
         <button 
           type="button" 
           className={styles.linkBtn}
-          onClick={() => onNavigate('login')}
+          onClick={() => navigate('/login')}
         >
           Already have an account? Sign In
         </button>

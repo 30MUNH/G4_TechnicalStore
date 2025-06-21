@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, User, Lock, Phone } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './Login.module.css';
 
 const Login = ({ onNavigate }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     nameOrPhone: '',
     password: '',
@@ -162,14 +164,14 @@ const Login = ({ onNavigate }) => {
         <button 
           type="button" 
           className={styles.linkBtn}
-          onClick={() => onNavigate('forgot')}
+          onClick={() => navigate('/forgot-password')}
         >
           Forgot Password?
         </button>
         <button 
           type="button" 
           className={styles.linkBtn}
-          onClick={() => onNavigate('signup')}
+          onClick={() => navigate('/signup')}
         >
           Create Account
         </button>
