@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckoutForm } from '../components/Cart/CheckoutForm';
-import { useCartContext } from '../Hook/useCart.jsx';
+import { useCart } from '../contexts/CartContext';
 import { orderService } from '../services/orderService';
 import { toast } from 'react-toastify';
 
@@ -17,7 +17,7 @@ export const CheckoutPage = () => {
         getTax,
         getShipping,
         clearCart
-    } = useCartContext();
+    } = useCart();
 
     if (cartItems.length === 0) {
         navigate('/cart');

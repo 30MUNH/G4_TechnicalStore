@@ -7,7 +7,7 @@
 
 .header {
   padding: 40px;
-  background: url("frontend\public\img\ctnen.png") no-repeat center center;
+  background: url("/img/ctnen.png") no-repeat center center;
   background-size: cover;
   text-align: center;
   position: relative;
@@ -15,7 +15,6 @@
   margin-bottom: 50px;
 }
 
-/* Thêm overlay effect */
 .header::before {
   content: "";
   position: absolute;
@@ -61,7 +60,6 @@
   color: #fff;
 }
 
-/* Badge animations và styling */
 .badges {
   display: flex;
   justify-content: center;
@@ -121,7 +119,6 @@
   }
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .header h1 {
     font-size: 2em;
@@ -241,7 +238,6 @@
   margin-bottom: 0;
 }
 
-/* Form Section */
 .formSection {
   background: #111111;
   border-radius: 16px;
