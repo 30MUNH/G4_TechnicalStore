@@ -1,125 +1,145 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import "./ForgotPassword.css";
+import React, { useState } from 'react';
+import { Phone } from 'lucide-react';
+import FormCard from './FormCard';
+import OTPPopup from './OTPPopup';
+import styles from './ForgotPassword.module.css';
 
-const ForgotPassword = () => {
-    const [phone, setPhone] = useState("");
-    const [otp, setOTP] = useState("");
-    const [message, setMessage] = useState("");
-    const [isSuccess, setIsSuccess] = useState(false);
-    const [showOTP, setShowOTP] = useState(false);
-    const navigate = useNavigate();
+const ForgotPassword = ({ onNavigate }) => {
+  const [formData, setFormData] = useState({
+    phone: '',
+  });
+  
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOTPPopup, setShowOTPPopup] = useState(false);
 
-    const phonePattern = /^[0-9]{10}$/;
+  const validateField = (name, value) => {
+    switch (name) {
+      case 'phone':
+        if (!value.trim()) return 'Phone number is required';
+        const cleanPhone = value.replace(/\D/g, '');
+        if (cleanPhone.length < 10) return 'Phone number must be at least 10 digits';
+        if (cleanPhone.length > 15) return 'Phone number must be less than 15 digits';
+        if (!/^[\+]?[0-9\s\-\(\)]+$/.test(value)) return 'Enter a valid phone number';
+        return undefined;
+        
+      default:
+        return undefined;
+    }
+  };
 
-    const validatePhone = (value) => {
-        if (!phonePattern.test(value)) {
-            setMessage("Please enter a valid 10-digit phone number");
-            setIsSuccess(false);
-            return false;
-        }
-        setMessage("");
-        return true;
-    };
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+    
+    const error = validateField(name, value);
+    if (error) {
+      setErrors(prev => ({ ...prev, [name]: error }));
+    }
+  };
 
-    const validateOTP = (value) => {
-        if (!value || value.length !== 6) {
-            setMessage("Please enter a valid 6-digit OTP");
-            setIsSuccess(false);
-            return false;
-        }
-        setMessage("");
-        return true;
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const phoneError = validateField('phone', formData.phone);
+    if (phoneError) {
+      setErrors({ phone: phoneError });
+      return;
+    }
 
-    const handlePhoneInput = (e) => {
-        const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
-        setPhone(value);
-        validatePhone(value);
-    };
+    setIsSubmitting(true);
+    try {
+      // Simulate sending OTP
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setShowOTPPopup(true);
+    } catch (error) {
+      setErrors({ phone: 'Failed to send OTP. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    const handleOTPInput = (e) => {
-        const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
-        setOTP(value);
-        validateOTP(value);
-    };
+  const handleVerifyOTP = async (otp) => {
+    setIsSubmitting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      // After successful OTP verification, navigate to reset password page
+      onNavigate('reset');
+      setShowOTPPopup(false);
+    } catch (error) {
+      alert('Invalid OTP. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    const handleSubmitPhone = (e) => {
-        e.preventDefault();
-        if (validatePhone(phone)) {
-            setShowOTP(true);
-            setMessage("OTP has been sent to your phone number!");
-            setIsSuccess(true);
-            // Here you would typically make an API call to send OTP
-        }
-    };
+  const handleResendOTP = async () => {
+    try {
+      // Simulate API call to resend OTP
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      alert('New OTP has been sent to your phone!');
+    } catch (error) {
+      alert('Failed to resend OTP. Please try again.');
+    }
+  };
 
-    const handleVerifyOTP = (e) => {
-        e.preventDefault();
-        if (validateOTP(otp)) {
-            setMessage("Password reset link has been sent to your phone!");
-            setIsSuccess(true);
-            // Here you would typically make an API call to verify OTP and reset password
+  return (
+    <FormCard>
+      <div className={styles.authHeader}>
+        <h1 className={styles.authTitle}>Reset Password</h1>
+        <p className={styles.authSubtitle}>Enter your phone number to receive a verification code</p>
+      </div>
 
-            setTimeout(() => {
-                setPhone("");
-                setOTP("");
-                setMessage("");
-                setIsSuccess(false);
-                navigate("/login");
-            }, 3000);
-        }
-    };
-
-    return (
-        <div className="forgot-container">
-            <div className="forgot-box">
-                <form
-                    onSubmit={showOTP ? handleVerifyOTP : handleSubmitPhone}
-                    noValidate
-                >
-                    <h1>Forgot Password</h1>
-                    <p>Enter your phone number to reset your password.</p>
-                    <input
-                        type="tel"
-                        value={phone}
-                        onChange={handlePhoneInput}
-                        placeholder="Phone Number"
-                        required
-                        disabled={showOTP}
-                    />
-
-                    {showOTP && (
-                        <input
-                            type="text"
-                            value={otp}
-                            onChange={handleOTPInput}
-                            placeholder="Enter 6-digit OTP"
-                            maxLength="6"
-                            required
-                        />
-                    )}
-
-                    <div
-                        className="error-message"
-                        style={{ color: isSuccess ? "#4CAF50" : "red" }}
-                    >
-                        {message}
-                    </div>
-
-                    {!showOTP ? (
-                        <button type="submit">Send OTP</button>
-                    ) : (
-                        <button type="submit">Verify OTP</button>
-                    )}
-
-                    <div className="back-link">
-                        <Link to="/login">Back to Login</Link>
-                    </div>
-                </form>
+      <form onSubmit={handleSubmit} className={styles.authForm}>
+        <div className={styles.formGroup}>
+          <div className={styles.inputWrapper}>
+            <div className={styles.inputIcon}>
+              <Phone size={20} />
             </div>
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Phone Number"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className={`${styles.input} ${errors.phone ? styles.error : ''}`}
+            />
+          </div>
+          {errors.phone && <span className={styles.errorMessage}>{errors.phone}</span>}
         </div>
-    );
+
+        <button 
+          type="submit" 
+          className={styles.submitBtn}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Sending OTP...' : 'Send OTP'}
+        </button>
+      </form>
+
+      <div className={styles.authLinks}>
+        <button 
+          type="button" 
+          className={styles.linkBtn}
+          onClick={() => onNavigate('login')}
+        >
+          Back to Sign In
+        </button>
+      </div>
+
+      <OTPPopup
+        isOpen={showOTPPopup}
+        onClose={() => setShowOTPPopup(false)}
+        onVerify={handleVerifyOTP}
+        onResend={handleResendOTP}
+      />
+    </FormCard>
+  );
 };
 
-export default ForgotPassword;
+export default ForgotPassword; 
