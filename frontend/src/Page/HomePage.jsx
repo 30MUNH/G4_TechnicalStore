@@ -866,30 +866,6 @@ const HomePage = () => {
       </div>
       {/* /SECTION */}
 
-      {/* NEWSLETTER */}
-      <div id="newsletter" className="section">
-        <div className="container">
-          <div className="row">
-            <div className="col-md-12">
-              <div className="newsletter">
-                <p>Sign Up for the <strong>NEWSLETTER</strong></p>
-                <form>
-                  <input
-                    className="input"
-                    type="email"
-                    placeholder="Enter Your Email"
-                  />
-                  <button className="newsletter-btn">
-                    <FontAwesomeIcon icon={faEnvelope} /> Subscribe
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* /NEWSLETTER */}
-
       {/* FOOTER */}
       <footer id="footer">
         <div className="section">
