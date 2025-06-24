@@ -13,6 +13,7 @@ import {
 } from "chart.js";
 import "./SalesDashboard.css";
 
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -93,34 +94,32 @@ const SalesDashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <div className="sidebar">
+      <div className="sidebar min-h-screen">
         <h2>
-          <span style={{ color: "#6b48ff" }}>T</span>echnical Store
+          <a href="HomePage.html">
+          <span style={{ color: "red" }}>T</span>echnical Store
+          </a>
         </h2>
-        <a href="#" className="active">
-          <span className="icon" style={{ background: "#6b48ff" }}></span>
+        <a href="SalesDashboard.jsx" className="active">
           Dashboard
         </a>
         <a href="#">
-          <span className="icon"></span>Leaderboard
+          Order
         </a>
         <a href="#">
-          <span className="icon"></span>Order
+          Payment
         </a>
         <a href="#">
-          <span className="icon"></span>Products
+          Products
         </a>
         <a href="#">
-          <span className="icon"></span>Sales Report
+          FeedBack
         </a>
         <a href="#">
-          <span className="icon"></span>Messages
+          Settings
         </a>
         <a href="#">
-          <span className="icon"></span>Settings
-        </a>
-        <a href="#">
-          <span className="icon"></span>Sign Out
+          Sign Out
         </a>
       </div>
       <div className="content">
@@ -128,8 +127,8 @@ const SalesDashboard = () => {
           <h1>Dashboard</h1>
           <input type="text" placeholder="Search here..." />
           <div className="profile">
-            <span>Muqif</span>
-            <img src="https://via.placeholder.com/30" alt="Profile" />
+            <span>Manager</span>
+           
           </div>
         </div>
         <div className="card-container">
