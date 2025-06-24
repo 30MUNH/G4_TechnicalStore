@@ -37,6 +37,7 @@
     "swagger-ui-express": "^5.0.1",
     "twilio": "^5.7.0",
     "typedi": "^0.10.0",
-    "typeorm": "^0.3.24"
+    "typeorm": "^0.3.24",
+    "typeorm-typedi-extensions": "^0.4.1"
   }
 }
