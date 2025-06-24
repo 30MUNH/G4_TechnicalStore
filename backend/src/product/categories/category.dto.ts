@@ -1,4 +1,4 @@
-// src/product/dtos/category.dto.ts
+//xài class-validator đi
 
 export class CreateCategoryDto {
   name: string;
