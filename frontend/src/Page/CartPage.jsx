@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CartItem from '../components/Cart/CartItem';
-import { useCartContext } from '../Hook/useCart';
+import { useCart } from '../contexts/CartContext';
 
 const CartPage = () => {
     const navigate = useNavigate();
@@ -13,7 +13,7 @@ const CartPage = () => {
         getCartTotal,
         getTax,
         getShipping
-    } = useCartContext();
+    } = useCart();
 
     const handleQuantityChange = (productId, newQuantity) => {
         if (newQuantity <= 0) {

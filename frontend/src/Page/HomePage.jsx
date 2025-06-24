@@ -26,7 +26,7 @@ const HomePage = () => {
             </ul>
             <ul className="header-links pull-right">
               <li>
-                <a href="#"><FontAwesomeIcon icon={faUserRegular} /> My Account</a>
+                <Link to="/login"><FontAwesomeIcon icon={faUserRegular} /> My Account</Link>
               </li>
             </ul>
           </div>

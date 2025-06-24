@@ -11,13 +11,14 @@ import {
   Mail,
   ChevronLeft,
   ChevronRight,
-  ArrowLeft
+  ArrowLeft,
+  Users
 } from 'lucide-react';
 import CustomerDetail from './CustomerDetail';
 import CustomerEdit from './CustomerEdit';
 import DeleteConfirmation from './DeleteConfirmation';
-import styles from '../styles/CustomerList.module.css';
-import commonStyles from '../styles/common.module.css';
+import styles from './styles/CustomerList.module.css';
+import commonStyles from './styles/common.module.css';
 
 const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
@@ -221,102 +222,134 @@ const CustomerList = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedCustomers.map((customer) => (
-                <tr key={customer.id} className={styles.tableRow}>
-                  <td className={styles.tableCell}>
-                    <div className={styles.customerNameWrapper}>
-                      <div className={styles.customerAvatar}>
-                        {customer.firstName[0]}{customer.lastName[0]}
-                      </div>
-                      <div className={styles.customerInfo}>
-                        <div className={styles.customerName}>
-                          {customer.firstName} {customer.lastName}
+              {paginatedCustomers.length > 0 ? (
+                paginatedCustomers.map((customer) => (
+                  <tr key={customer.id} className={styles.tableRow}>
+                    <td className={styles.tableCell}>
+                      <div className={styles.customerNameWrapper}>
+                        <div className={styles.customerAvatar}>
+                          {customer.firstName[0]}{customer.lastName[0]}
                         </div>
-                        <div className={styles.customerDate}>
-                          Tham gia: {new Date(customer.dateJoined).toLocaleDateString('vi-VN')}
+                        <div className={styles.customerInfo}>
+                          <div className={styles.customerName}>
+                            {customer.firstName} {customer.lastName}
+                          </div>
+                          <div className={styles.customerDate}>
+                            Tham gia: {new Date(customer.dateJoined).toLocaleDateString('vi-VN')}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className={styles.tableCell}>
-                    <span className={`${commonStyles.badgeType} ${
-                      customer.customerType === 'PC Build' 
-                        ? commonStyles.badgeTypeBuild 
-                        : commonStyles.badgeTypeComponent
-                    }`}>
-                      {customer.customerType === 'PC Build' ? 'Người build PC' : 'Người mua linh kiện'}
-                    </span>
-                  </td>
-                  <td className={styles.tableCell}>
-                    <span className={customer.status === 'Active' ? commonStyles.badgeSuccess : commonStyles.badgeInactive}>
-                      {customer.status === 'Active' ? 'Đang hoạt động' : 'Không hoạt động'}
-                    </span>
-                  </td>
-                  <td className={styles.tableCell}>{customer.totalOrders} đơn hàng</td>
-                  <td className={styles.tableCell}>{formatCurrency(customer.totalSpent)}</td>
-                  <td className={styles.tableCell}>
-                    {customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString('vi-VN') : 'Chưa có'}
-                  </td>
-                  <td className={styles.tableCell}>
-                    <div className={styles.actionButtons}>
-                      <button
-                        onClick={() => handleViewDetail(customer)}
-                        className={styles.actionButton}
-                        title="Xem chi tiết"
-                      >
-                        <Eye className={styles.actionIcon} />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(customer)}
-                        className={styles.actionButton}
-                        title="Chỉnh sửa"
-                      >
-                        <Edit3 className={styles.actionIcon} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(customer)}
-                        className={styles.actionButton}
-                        title="Xóa"
-                      >
-                        <Trash2 className={styles.actionIcon} />
-                      </button>
+                    </td>
+                    <td className={styles.tableCell}>
+                      <span className={`${commonStyles.badgeType} ${
+                        customer.customerType === 'PC Build' 
+                          ? commonStyles.badgeTypeBuild 
+                          : commonStyles.badgeTypeComponent
+                      }`}>
+                        {customer.customerType === 'PC Build' ? 'Người build PC' : 'Người mua linh kiện'}
+                      </span>
+                    </td>
+                    <td className={styles.tableCell}>
+                      <span className={customer.status === 'Active' ? commonStyles.badgeSuccess : commonStyles.badgeInactive}>
+                        {customer.status === 'Active' ? 'Đang hoạt động' : 'Không hoạt động'}
+                      </span>
+                    </td>
+                    <td className={styles.tableCell}>{customer.totalOrders} đơn hàng</td>
+                    <td className={styles.tableCell}>{formatCurrency(customer.totalSpent)}</td>
+                    <td className={styles.tableCell}>
+                      {customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString('vi-VN') : 'Chưa có'}
+                    </td>
+                    <td className={styles.tableCell}>
+                      <div className={styles.actionButtons}>
+                        <button
+                          onClick={() => handleViewDetail(customer)}
+                          className={styles.actionButton}
+                          title="Xem chi tiết"
+                        >
+                          <Eye className={styles.actionIcon} />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(customer)}
+                          className={styles.actionButton}
+                          title="Chỉnh sửa"
+                        >
+                          <Edit3 className={styles.actionIcon} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(customer)}
+                          className={styles.actionButton}
+                          title="Xóa"
+                        >
+                          <Trash2 className={styles.actionIcon} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className={styles.emptyState}>
+                    <div className={styles.emptyContent}>
+                      <div className={styles.emptyIcon}>
+                        <Users size={48} />
+                      </div>
+                      <h3 className={styles.emptyTitle}>
+                        {customers.length === 0 ? 'Chưa có khách hàng nào' : 'Không tìm thấy khách hàng phù hợp'}
+                      </h3>
+                      <p className={styles.emptyText}>
+                        {customers.length === 0 
+                          ? 'Chưa có khách hàng nào trong hệ thống hoặc không khớp với bộ lọc' 
+                          : 'Thử điều chỉnh bộ lọc hoặc tìm kiếm để xem kết quả khác'}
+                      </p>
+                      {customers.length === 0 && (
+                        <button 
+                          onClick={handleAddCustomer}
+                          className={commonStyles.buttonPrimary}
+                          style={{ marginTop: '16px' }}
+                        >
+                          <Plus className={commonStyles.icon} />
+                          Thêm khách hàng đầu tiên
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
 
-        <div className={styles.pagination}>
-          <div className={styles.paginationButtons}>
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className={styles.paginationButton}
-            >
-              <ChevronLeft className={styles.actionIcon} />
-              Trước
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+        {filteredCustomers.length > 0 && (
+          <div className={styles.pagination}>
+            <div className={styles.paginationButtons}>
               <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`${styles.pageNumber} ${currentPage === page ? styles.pageNumberActive : ''}`}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={styles.paginationButton}
               >
-                {page}
+                <ChevronLeft className={styles.actionIcon} />
+                Trước
               </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className={styles.paginationButton}
-            >
-              Sau
-              <ChevronRight className={styles.actionIcon} />
-            </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`${styles.pageNumber} ${currentPage === page ? styles.pageNumberActive : ''}`}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={styles.paginationButton}
+              >
+                Sau
+                <ChevronRight className={styles.actionIcon} />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {showDetail && (

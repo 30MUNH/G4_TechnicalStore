@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { X, Edit3, User, Mail, Phone, Calendar, ShoppingBag, DollarSign } from 'lucide-react';
-import styles from '../styles/CustomerDetail.module.css';
-import commonStyles from '../styles/common.module.css';
+import styles from './styles/CustomerDetail.module.css';
+import commonStyles from './styles/common.module.css';
 
 const CustomerDetail = ({ customer, onClose, onEdit }) => {
   const formatCurrency = (amount) => {

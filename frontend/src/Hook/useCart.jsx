@@ -1,111 +1,119 @@
-import { useState, useCallback, createContext, useContext } from 'react';
+import { useState, useEffect } from 'react';
+import { cartService } from '../services/cartService';
 
 export const useCart = () => {
     const [cartItems, setCartItems] = useState([]);
-    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-
-    const addToCart = useCallback((product, quantity = 1) => {
-        setCartItems(prev => {
-            const existingItem = prev.find(item => item.product.id === product.id);
-
-            if (existingItem) {
-                return prev.map(item =>
-                    item.product.id === product.id
-                        ? { ...item, quantity: item.quantity + quantity }
-                        : item
-                );
+    // Fetch cart from backend
+    const fetchCart = async () => {
+        try {
+            setLoading(true);
+            const response = await cartService.viewCart();
+            if (response.cart) {
+                setCartItems(response.cart.cartItems || []);
             }
+            setError(null);
+        } catch (err) {
+            setError('Failed to fetch cart');
+            console.error('Error fetching cart:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-            return [...prev, { product, quantity }];
-        });
+    useEffect(() => {
+        fetchCart();
     }, []);
 
-    const updateQuantity = useCallback((productId, quantity) => {
-        setCartItems(prev =>
-            prev.map(item =>
-                item.product.id === productId
-                    ? { ...item, quantity: Math.max(1, quantity) }
-                    : item
-            )
-        );
-    }, []);
+    const handleUpdateQuantity = async (productSlug, newQuantity) => {
+        try {
+            setLoading(true);
+            const currentItem = cartItems.find(item => item.product.slug === productSlug);
+            if (!currentItem) return;
 
-    const removeFromCart = useCallback((productId) => {
-        setCartItems(prev => prev.filter(item => item.product.id !== productId));
-    }, []);
+            const quantityDiff = newQuantity - currentItem.quantity;
+            await cartService.updateQuantity(productSlug, quantityDiff);
+            await fetchCart();
+        } catch (err) {
+            setError('Failed to update quantity');
+            console.error('Error updating quantity:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const clearCart = useCallback(() => {
-        setCartItems([]);
-    }, []);
+    const handleRemoveItem = async (productSlug) => {
+        try {
+            setLoading(true);
+            await cartService.removeItem(productSlug);
+            await fetchCart();
+        } catch (err) {
+            setError('Failed to remove item');
+            console.error('Error removing item:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const getCartTotal = useCallback(() => {
+    const addToCart = async (productSlug, quantity = 1) => {
+        try {
+            setLoading(true);
+            await cartService.addToCart(productSlug, quantity);
+            await fetchCart();
+        } catch (err) {
+            setError('Failed to add to cart');
+            console.error('Error adding to cart:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const clearCart = async () => {
+        try {
+            setLoading(true);
+            await cartService.clearCart();
+            setCartItems([]);
+        } catch (err) {
+            setError('Failed to clear cart');
+            console.error('Error clearing cart:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const calculateSubtotal = () => {
         return cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
-    }, [cartItems]);
+    };
 
-    const getTax = useCallback(() => {
-        return getCartTotal() * 0.1;
-    }, [getCartTotal]);
+    const getItemCount = () => {
+        return cartItems.reduce((total, item) => total + item.quantity, 0);
+    };
 
-    const getShipping = useCallback(() => {
-        return getCartTotal() > 25000000 ? 0 : 200000; // Free shipping over 25 million VND
-    }, [getCartTotal]);
+    const shippingFee = 30000;
 
-    const getFinalTotal = useCallback(() => {
-        return getCartTotal() + getTax() + getShipping();
-    }, [getCartTotal, getTax, getShipping]);
+    const calculateTotalAmount = (subtotal) => {
+        return subtotal >= 1000000 ? subtotal : subtotal + shippingFee;
+    };
 
-    const checkout = useCallback((customer) => {
-        const newOrder = {
-            id: `ORD-${Date.now()}`,
-            items: [...cartItems],
-            total: getFinalTotal(),
-            status: 'pending',
-            orderDate: new Date(),
-            deliveryAddress: `${customer.address}, ${customer.city} ${customer.zipCode}`,
-            paymentMethod: 'Credit Card'
-        };
-
-        setOrders(prev => [newOrder, ...prev]);
-        clearCart();
-
-        return newOrder;
-    }, [cartItems, getFinalTotal, clearCart]);
-
-
+    const subtotal = calculateSubtotal();
+    const totalAmount = calculateTotalAmount(subtotal);
+    const currentShippingFee = subtotal >= 1000000 ? 0 : shippingFee;
 
     return {
         cartItems,
-        orders,
+        setCartItems,
+        handleUpdateQuantity,
+        handleRemoveItem,
         addToCart,
-        updateQuantity,
-        removeFromCart,
         clearCart,
-        getCartTotal,
-        getTax,
-        getShipping,
-        getFinalTotal,
-        checkout
+        subtotal,
+        totalAmount,
+        currentShippingFee,
+        itemCount: getItemCount(),
+        loading,
+        error,
+        fetchCart
     };
-};
-
-
-const CartContext = createContext();
-
-export const CartProvider = ({ children }) => {
-    const cartData = useCart();
-
-    return (
-        <CartContext.Provider value={cartData}>
-            {children}
-        </CartContext.Provider>
-    );
-};
-
-export const useCartContext = () => {
-    const context = useContext(CartContext);
-    if (!context) {
-        throw new Error('useCartContext must be used within a CartProvider');
-    }
-    return context;
 }; 
