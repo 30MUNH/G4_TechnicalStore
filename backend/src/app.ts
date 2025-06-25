@@ -39,16 +39,22 @@ export default class App {
   }
 
   private initializeMiddlewares() {
-    this.app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-      if (req.originalUrl.toString().includes('webhook')) {
-        next();
-      } else {
-        express.json()(req, res, next);
+    this.app.use(
+      (
+        req: express.Request,
+        res: express.Response,
+        next: express.NextFunction
+      ) => {
+        if (req.originalUrl.toString().includes("webhook")) {
+          next();
+        } else {
+          express.json()(req, res, next);
+        }
       }
-    });
+    );
     this.app.use(cors());
     this.app.use(express.urlencoded({ extended: true }));
-    this.app.use(express.static('public'));
+    this.app.use(express.static("public"));
   }
 
   private async connectToDatabase() {
@@ -67,7 +73,8 @@ export default class App {
       routePrefix: "/api",
       controllers: [__dirname + "/**/*.controller.{ts,js}"],
       interceptors: [ResponseInterceptor],
-      middlewares: [__dirname + '/middlewares/**/*.middleware.{ts,js}'],
+      middlewares: [__dirname + "/middlewares/**/*.middleware.{ts,js}"],
+      defaultErrorHandler: false,
     });
   }
 
