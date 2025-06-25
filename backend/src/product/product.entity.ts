@@ -3,6 +3,8 @@ import { NamedEntity } from "@/common/NamedEntity";
 import { CartItem } from "@/Cart/cartItem.entity";
 import { OrderDetail } from "@/order/orderDetail.entity";
 import { Category } from "./categories/category.entity";
+import { Image } from "@/image/image.entity";
+import { Feedback } from "@/feedback/feedback.entity";
 
 @Entity('products')
 export class Product extends NamedEntity {
@@ -29,4 +31,10 @@ export class Product extends NamedEntity {
 
     @ManyToOne(() => Category, (category) => category.products)
     category: Category;
+
+    @OneToMany(() => Image, (image) => image.product)
+    images: Image[];
+
+    @OneToMany(() => Feedback, (feedback) => feedback.product)
+    feedbacks: Feedback[];
 }

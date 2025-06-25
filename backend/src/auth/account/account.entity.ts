@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from "typeorm";
 import { NamedEntity } from "@/common/NamedEntity";
 import { Role } from "@/auth/role/role.entity";
 import { RefreshToken } from "../jwt/refreshToken.entity";
@@ -6,6 +6,8 @@ import { Exclude } from "class-transformer";
 import { Order } from "@/order/order.entity";
 import { Marketing } from "@/marketing/marketing.entity";
 import { SMSNotification } from "@/notification/smsNotification.entity";
+import { Image } from "@/image/image.entity";
+import { Feedback } from "@/feedback/feedback.entity";
 
 @Entity("accounts")
 export class Account extends NamedEntity {
@@ -39,4 +41,11 @@ export class Account extends NamedEntity {
 
   @OneToMany(() => SMSNotification, (smsnotification) => smsnotification.account)
   smsNotifications: SMSNotification[];
+
+  @OneToOne(() => Image)
+  @JoinColumn({ name: "image_id" })
+  image: Image;
+
+  @OneToMany(() => Feedback, (feedback) => feedback.account)
+  feedbacks: Feedback[];
 }
