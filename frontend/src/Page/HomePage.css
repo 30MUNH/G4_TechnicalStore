@@ -80,3 +80,9 @@
   margin: 0 !important;
   border-right: none !important;
 } 
+
+.footer .footer-title + p {
+  padding-left: 0px;
+  padding-right: 12px;
+  text-align: justify;
+} 
