@@ -105,47 +105,54 @@
 }
 
 .tableCell {
-  padding: 1rem 1.5rem;
+  padding: 12px 16px;
+  font-size: 14px;
   color: #374151;
-  vertical-align: top;
-  white-space: nowrap;
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+
+.tableCell:first-child {
+  font-weight: 500;
+  color: #6b7280;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+  min-width: 120px;
 }
 
 .customerNameWrapper {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  max-width: 300px;
+  gap: 12px;
 }
 
 .customerAvatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  background-color: #7c3aed;
-  border-radius: 9999px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  color: #ffffff;
+  font-weight: 500;
+  color: #4b5563;
   text-transform: uppercase;
 }
 
 .customerInfo {
-  margin-left: 1rem;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .customerName {
   font-weight: 500;
   color: #111827;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
+}
+
+.customerContact {
+  font-size: 12px;
+  color: #6b7280;
 }
 
 .customerDate {
@@ -264,36 +271,8 @@
   border-color: #7c3aed;
 }
 
-/* Empty State Styles */
-.emptyState {
-  text-align: center;
-  padding: 4rem 2rem;
-}
-
-.emptyContent {
+.badgeContainer {
   display: flex;
-  flex-direction: column;
+  gap: 8px;
   align-items: center;
-  justify-content: center;
-}
-
-.emptyIcon {
-  color: #9ca3af;
-  margin-bottom: 1rem;
-  opacity: 0.6;
-}
-
-.emptyTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 0.5rem 0;
-}
-
-.emptyText {
-  font-size: 1rem;
-  color: #6b7280;
-  margin: 0;
-  max-width: 400px;
-  line-height: 1.5;
 }

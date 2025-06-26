@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { X, Edit3, User, Mail, Phone, Calendar, ShoppingBag, DollarSign } from 'lucide-react';
-import styles from './styles/CustomerDetail.module.css';
-import commonStyles from './styles/common.module.css';
+import styles from '../styles/CustomerDetail.module.css';
+import commonStyles from '../styles/common.module.css';
 
 const CustomerDetail = ({ customer, onClose, onEdit }) => {
   const formatCurrency = (amount) => {
@@ -81,6 +81,25 @@ const CustomerDetail = ({ customer, onClose, onEdit }) => {
                   {new Date(customer.dateJoined).toLocaleDateString('vi-VN')}
                 </div>
               </div>
+              <div className={styles.field}>
+                <div className={styles.fieldLabel}>
+                  <User className={styles.fieldIcon} />
+                  Vai trò
+                </div>
+                <div className={styles.fieldValue}>
+                  <span className={`${commonStyles.badgeType} ${
+                    customer.role === 'admin' || customer.role === 'manager'
+                      ? commonStyles.badgeTypeBuild 
+                      : commonStyles.badgeTypeComponent
+                  }`}>
+                    {customer.role === 'user' ? 'User' :
+                     customer.role === 'staff' ? 'Staff' :
+                     customer.role === 'admin' ? 'Admin' :
+                     customer.role === 'manager' ? 'Manager' :
+                     customer.role === 'shipper' ? 'Shipper' : customer.role}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -128,6 +147,7 @@ CustomerDetail.propTypes = {
     email: PropTypes.string.isRequired,
     phone: PropTypes.string.isRequired,
     status: PropTypes.string.isRequired,
+    role: PropTypes.string,
     dateJoined: PropTypes.string.isRequired,
     totalOrders: PropTypes.number.isRequired,
     totalSpent: PropTypes.number.isRequired,
