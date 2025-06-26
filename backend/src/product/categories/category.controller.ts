@@ -1,7 +1,9 @@
 import { Controller, Get } from "routing-controllers";
+import { Service } from "typedi";
 import { CategoryService } from "./category.service";
 import { Container } from "typedi";
 
+@Service()
 @Controller("/categories")
 export class CategoryController {
   private categoryService: CategoryService;

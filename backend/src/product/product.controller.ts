@@ -1,7 +1,9 @@
 import { Controller, Get, Param, QueryParam } from "routing-controllers";
+import { Service } from "typedi";
 import { ProductService } from "./product.service";
 import { Container } from "typedi";
 
+@Service()
 @Controller("/products")
 export class ProductController {
   private productService: ProductService;
