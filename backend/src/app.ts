@@ -11,6 +11,7 @@ import swaggerUi from "swagger-ui-express";
 import { DbConnection } from "@/database/dbConnection";
 import { ResponseInterceptor } from "./utils/interceptor/interceptor";
 import cors from "cors";
+import { useContainer as useTypeORMContainer } from "typeorm";
 
 export default class App {
   public app: express.Application;
@@ -39,22 +40,32 @@ export default class App {
   }
 
   private initializeMiddlewares() {
-    this.app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-      if (req.originalUrl.toString().includes('webhook')) {
-        next();
-      } else {
-        express.json()(req, res, next);
+    this.app.use(
+      (
+        req: express.Request,
+        res: express.Response,
+        next: express.NextFunction
+      ) => {
+        if (req.originalUrl.toString().includes("webhook")) {
+          next();
+        } else {
+          express.json()(req, res, next);
+        }
       }
-    });
+    );
     this.app.use(cors());
     this.app.use(express.urlencoded({ extended: true }));
-    this.app.use(express.static('public'));
+    this.app.use(express.static("public"));
   }
 
   private async connectToDatabase() {
     try {
-      await DbConnection.createConnection();
-      console.log("✅ Database connection established successfully.");
+      const dataSource = await DbConnection.createConnection();
+      if (dataSource) {
+        // Setup TypeORM with TypeDI container
+        useTypeORMContainer(Container);
+        console.log("✅ Database connection established successfully.");
+      }
     } catch (error) {
       console.error("❌ Failed to connect to the database: ", error);
       throw error;
@@ -67,7 +78,8 @@ export default class App {
       routePrefix: "/api",
       controllers: [__dirname + "/**/*.controller.{ts,js}"],
       interceptors: [ResponseInterceptor],
-      middlewares: [__dirname + '/middlewares/**/*.middleware.{ts,js}'],
+      middlewares: [__dirname + "/middlewares/**/*.middleware.{ts,js}"],
+      defaultErrorHandler: false,
     });
   }
 

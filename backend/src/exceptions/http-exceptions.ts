@@ -52,3 +52,10 @@ export class TokenNotFoundException extends HttpException {
     super(400, HttpMessages._NO_TOKEN);
   }
 }
+
+
+export class NoFileUploadedException extends HttpException {
+  constructor() {
+    super(400, "No file uploaded");
+  }
+}

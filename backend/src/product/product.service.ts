@@ -1,53 +1,76 @@
 import { Service } from "typedi";
 import { Product } from "./product.entity";
-import { CreateProductDto, UpdateProductDto } from "./dtos/product.dto";
-import { EntityNotFoundException, HttpException } from "@/exceptions/http-exceptions";
+import { Category } from "./categories/category.entity";
+import { Repository, getRepository } from "typeorm";
 
 @Service()
 export class ProductService {
-    async createProduct(request: CreateProductDto): Promise<Product> {
-        const product = new Product();
-        product.name = request.name;
-        product.category = request.category;
-        product.price = request.price;
-        product.stock = request.stock;
-        product.url = request.url+'';
-        product.description = request.description+'';
-        product.active = request.active ?? true;
-        await product.save();
-        return product;
+  private productRepository: Repository<Product>;
+  private categoryRepository: Repository<Category>;
+
+  constructor() {
+    this.productRepository = getRepository(Product);
+    this.categoryRepository = getRepository(Category);
+  }
+
+  async getAllProducts(): Promise<Product[]> {
+    return await this.productRepository.find({
+      where: { isActive: true },
+      relations: ["category"],
+      order: { createdAt: "DESC" }
+    });
+  }
+
+  async getNewProducts(limit: number = 8): Promise<Product[]> {
+    return await this.productRepository.find({
+      where: { isActive: true },
+      relations: ["category"],
+      order: { createdAt: "DESC" },
+      take: limit
+    });
+  }
+
+  async getTopSellingProducts(limit: number = 6): Promise<Product[]> {
+    // For now, return products with highest stock (as a proxy for popularity)
+    // In a real application, this would be based on actual sales data
+    return await this.productRepository.find({
+      where: { isActive: true },
+      relations: ["category"],
+      order: { stock: "DESC" },
+      take: limit
+    });
+  }
+
+  async getProductsByCategory(categorySlug: string): Promise<Product[]> {
+    const category = await this.categoryRepository.findOne({
+      where: { slug: categorySlug }
+    });
+
+    if (!category) {
+      return [];
     }
 
-    async getProductById(id: string): Promise<Product> {
-        const product = await Product.findOne({ where: { id } });
-        if (!product) throw new EntityNotFoundException("Product");
-        return product;
-    }
+    return await this.productRepository.find({
+      where: { 
+        isActive: true,
+        categoryId: category.id
+      },
+      relations: ["category"],
+      order: { createdAt: "DESC" }
+    });
+  }
 
-    async getAllProducts(): Promise<Product[]> {
-        return await Product.find();
-    }
+  async getProductById(id: string): Promise<Product | null> {
+    return await this.productRepository.findOne({
+      where: { id, isActive: true },
+      relations: ["category"]
+    });
+  }
 
-    async updateProduct(id: string, request: UpdateProductDto): Promise<Product> {
-        const product = await Product.findOne({ where: { id } });
-        if (!product) throw new EntityNotFoundException("Product");
-
-        product.name = request.name ?? product.name;
-        product.category = request.category ?? product.category;
-        product.price = request.price ?? product.price;
-        product.stock = request.stock ?? product.stock;
-        product.url = request.url ?? product.url;
-        product.description = request.description ?? product.description;
-        if (request.active !== undefined) product.active = request.active;
-
-        await product.save();
-        return product;
-    }
-
-    async deleteProduct(id: string): Promise<void> {
-        const product = await Product.findOne({ where: { id } });
-        if (!product) throw new EntityNotFoundException("Product");
-
-        await product.remove();
-    }
-}
+  async getProductBySlug(slug: string): Promise<Product | null> {
+    return await this.productRepository.findOne({
+      where: { slug, isActive: true },
+      relations: ["category"]
+    });
+  }
+} 

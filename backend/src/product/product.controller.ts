@@ -1,57 +1,108 @@
-import { Service } from 'typedi';
-import {
-  JsonController,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Param,
-  Body,
-  HttpCode,
-  OnUndefined,
-  Req,
-} from 'routing-controllers';
-import { Inject } from 'typedi';
-import { ProductService } from './product.service';
-import { CreateProductDto, UpdateProductDto } from './dtos/product.dto';
-import { Product } from './product.entity';
-import { EntityNotFoundException } from '@/exceptions/http-exceptions';
+import { Controller, Get, Param, QueryParam } from "routing-controllers";
+import { ProductService } from "./product.service";
+import { Container } from "typedi";
 
-@Service()
-@JsonController('/products')
+@Controller("/products")
 export class ProductController {
-  constructor(
-    @Inject(() => ProductService)
-    private readonly productService: ProductService,
-  ) {}
+  private productService: ProductService;
 
-  @Post()
-  @HttpCode(201)
-  async create(@Req() req: any): Promise<Product> {
-    return this.productService.createProduct(req.body);
+  constructor() {
+    this.productService = Container.get(ProductService);
   }
 
-  @Get()
-  async findAll(): Promise<Product[]> {
-    return this.productService.getAllProducts();
+  @Get("/")
+  async getAllProducts() {
+    try {
+      const products = await this.productService.getAllProducts();
+      return {
+        success: true,
+        data: products,
+        message: "Products retrieved successfully"
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to retrieve products",
+        error: error.message || "Unknown error"
+      };
+    }
   }
 
-  @Get('/:id')
-  async findOne(@Param('id') id: string): Promise<Product> {
-    return this.productService.getProductById(id);
+  @Get("/new")
+  async getNewProducts(@QueryParam("limit") limit: number = 8) {
+    try {
+      const products = await this.productService.getNewProducts(limit);
+      return {
+        success: true,
+        data: products,
+        message: "New products retrieved successfully"
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to retrieve new products",
+        error: error.message || "Unknown error"
+      };
+    }
   }
 
-  @Put('/:id')
-  async update(
-    @Param('id') id: string,
-    @Req() req: any,
-  ): Promise<Product> {
-    return this.productService.updateProduct(id, req.body);
+  @Get("/top-selling")
+  async getTopSellingProducts(@QueryParam("limit") limit: number = 6) {
+    try {
+      const products = await this.productService.getTopSellingProducts(limit);
+      return {
+        success: true,
+        data: products,
+        message: "Top selling products retrieved successfully"
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to retrieve top selling products",
+        error: error.message || "Unknown error"
+      };
+    }
   }
 
-  @Delete('/:id')
-  @OnUndefined(204)
-  async delete(@Param('id') id: string): Promise<void> {
-    await this.productService.deleteProduct(id);
+  @Get("/category/:categorySlug")
+  async getProductsByCategory(@Param("categorySlug") categorySlug: string) {
+    try {
+      const products = await this.productService.getProductsByCategory(categorySlug);
+      return {
+        success: true,
+        data: products,
+        message: "Products by category retrieved successfully"
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to retrieve products by category",
+        error: error.message || "Unknown error"
+      };
+    }
   }
-}
+
+  @Get("/:id")
+  async getProductById(@Param("id") id: string) {
+    try {
+      const product = await this.productService.getProductById(id);
+      if (!product) {
+        return {
+          success: false,
+          message: "Product not found"
+        };
+      }
+      return {
+        success: true,
+        data: product,
+        message: "Product retrieved successfully"
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to retrieve product",
+        error: error.message || "Unknown error"
+      };
+    }
+  }
+} 
