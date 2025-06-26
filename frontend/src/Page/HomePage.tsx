@@ -1,40 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowCircleRight, faStar, faExchange, faEye, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
-import { faStar as faStarRegular, faHeart as faHeartRegular2 } from '@fortawesome/free-regular-svg-icons';
+import { faArrowCircleRight, faEye, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
+import { faHeart as faHeartRegular2 } from '@fortawesome/free-regular-svg-icons';
 import './HomePage.css';
-import Header from '../components/header';
 import Footer from '../components/footer';
 import { productService } from '../services/productService';
-import type { Product, Category } from '../services/productService';
+import type { Product } from '../types/product';
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+import ProductDetailModal from '../components/product_manager/productDetailModal';
 
 const HomePage: React.FC = () => {
-  const [newProducts, setNewProducts] = useState<Product[]>([]);
+  const [newProducts, setNewProducts] = useState<{ laptops: Product[]; pcs: Product[]; accessories: Product[] }>({ laptops: [], pcs: [], accessories: [] });
   const [topSellingProducts, setTopSellingProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hoveredProductId, setHoveredProductId] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState<'laptop' | 'pc' | 'accessories'>('laptop');
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
 
   useEffect(() => {
+    console.log("HomePage useEffect chạy");
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [newProductsData, topSellingData, categoriesData] = await Promise.all([
+        const [newProductsData, topSellingData] = await Promise.all([
           productService.getNewProducts(8),
-          productService.getTopSellingProducts(6),
-          productService.getCategories()
+          productService.getTopSellingProducts(6)
         ]);
         
         // Ensure we have arrays
-        setNewProducts(Array.isArray(newProductsData) ? newProductsData : []);
+        setNewProducts(newProductsData);
         setTopSellingProducts(Array.isArray(topSellingData) ? topSellingData : []);
-        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } catch (error) {
         console.error('Error fetching data:', error);
         // Set empty arrays on error
-        setNewProducts([]);
+        setNewProducts({ laptops: [], pcs: [], accessories: [] });
         setTopSellingProducts([]);
-        setCategories([]);
       } finally {
         setLoading(false);
       }
@@ -59,53 +63,56 @@ const HomePage: React.FC = () => {
     return '/img/product01.png';
   };
 
-  const renderStars = (rating: number = 5) => (
-    <>
-      {[...Array(5)].map((_, i) => (
-        <FontAwesomeIcon
-          key={i}
-          icon={i < rating ? faStar : faStarRegular}
-          style={{ color: i < rating ? '#D10024' : '#E4E7ED' }}
-        />
-      ))}
-    </>
-  );
+  const handleOpenQuickView = (product: Product) => {
+    setQuickViewProduct(product);
+    setIsQuickViewOpen(true);
+  };
+  const handleCloseQuickView = () => {
+    setIsQuickViewOpen(false);
+    setQuickViewProduct(null);
+  };
 
   const renderProduct = (product: Product) => (
-    <div key={product.id} className="product">
-      <div className="product-img">
-        <img src={getProductImage(product)} alt={product.name} />
-        <div className="product-label">
-          <span className="new">NEW</span>
+    <div
+      key={product.id}
+      className="product"
+      style={{ margin: '0 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}
+      onMouseEnter={() => setHoveredProductId(product.id)}
+      onMouseLeave={() => setHoveredProductId(null)}
+    >
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="product-img">
+          <img src={getProductImage(product)} alt={product.name} />
+          <div className="product-label">
+            <span className="new">NEW</span>
+          </div>
+        </div>
+        <div className="product-body">
+          <p className="product-category">{product.category?.name || 'Category'}</p>
+          <h3 className="product-name">
+            <Link to={`/product/${product.slug}`}>{product.name}</Link>
+          </h3>
+          <h4 className="product-price">{formatPrice(product.price)}</h4>
+          <div className="product-btns">
+            <button className="add-to-wishlist">
+              <FontAwesomeIcon icon={faHeartRegular2} />
+              <span className="tooltipp">add to wishlist</span>
+            </button>
+            <button className="quick-view" onClick={() => handleOpenQuickView(product)}>
+              <FontAwesomeIcon icon={faEye} />
+              <span className="tooltipp">quick view</span>
+            </button>
+          </div>
         </div>
       </div>
-      <div className="product-body">
-        <p className="product-category">{product.category?.name || 'Category'}</p>
-        <h3 className="product-name">
-          <Link to={`/product/${product.slug}`}>{product.name}</Link>
-        </h3>
-        <h4 className="product-price">{formatPrice(product.price)}</h4>
-        <div className="product-rating">{renderStars()}</div>
-        <div className="product-btns">
-          <button className="add-to-wishlist">
-            <FontAwesomeIcon icon={faHeartRegular2} />
-            <span className="tooltipp">add to wishlist</span>
-          </button>
-          <button className="add-to-compare">
-            <FontAwesomeIcon icon={faExchange} />
-            <span className="tooltipp">add to compare</span>
-          </button>
-          <button className="quick-view">
-            <FontAwesomeIcon icon={faEye} />
-            <span className="tooltipp">quick view</span>
+      {/* Nút Add to Cart chỉ hiện khi hover */}
+      {hoveredProductId === product.id && (
+        <div style={{ background: '#18191f', padding: '24px 0', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px', textAlign: 'center', margin: '0 -1px', marginTop: 'auto', transition: 'opacity 0.2s' }}>
+          <button className="add-to-cart-btn" style={{ background: '#D10024', color: '#fff', borderRadius: '24px', padding: '12px 36px', fontWeight: 700, fontSize: '18px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', letterSpacing: 1 }}>
+            <FontAwesomeIcon icon={faShoppingCart} /> ADD TO CART
           </button>
         </div>
-      </div>
-      <div className="add-to-cart">
-        <button className="add-to-cart-btn">
-          <FontAwesomeIcon icon={faShoppingCart} /> add to cart
-        </button>
-      </div>
+      )}
     </div>
   );
 
@@ -124,10 +131,53 @@ const HomePage: React.FC = () => {
     </div>
   );
 
+  // Cấu hình slider cho 4 sản phẩm 1 lần, tự động trượt
+  const sliderSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 4,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 2500,
+    arrows: true,
+    responsive: [
+      {
+        breakpoint: 1024,
+        settings: {
+          slidesToShow: 3,
+        },
+      },
+      {
+        breakpoint: 768,
+        settings: {
+          slidesToShow: 2,
+        },
+      },
+      {
+        breakpoint: 480,
+        settings: {
+          slidesToShow: 1,
+        },
+      },
+    ],
+    style: { padding: '0 32px' },
+  };
+
+  const getFilteredProducts = () => {
+    if (selectedTab === 'laptop') {
+      return newProducts.laptops || [];
+    }
+    if (selectedTab === 'pc') {
+      return newProducts.pcs || [];
+    }
+    // Accessories
+    return newProducts.accessories || [];
+  };
+
   if (loading) {
     return (
       <>
-        <Header />
         <div className="section">
           <div className="container">
             <div className="row">
@@ -144,26 +194,6 @@ const HomePage: React.FC = () => {
 
   return (
     <>
-      <Header />
-      {/* NAVIGATION */}
-      <nav id="navigation">
-        <div className="container">
-          <div id="responsive-nav">
-            <ul className="main-nav nav navbar-nav">
-              <li className="active"><a href="#">Home</a></li>
-              <li><a href="#">Hot Deals</a></li>
-              <li><a href="#">Categories</a></li>
-              {categories && categories.length > 0 && categories.slice(0, 4).map(category => (
-                <li key={category.id}>
-                  <Link to={`/category/${category.slug}`}>{category.name}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </nav>
-      {/* /NAVIGATION */}
-
       {/* SECTION: SHOP BOXES */}
       <div className="section">
         <div className="container">
@@ -226,11 +256,15 @@ const HomePage: React.FC = () => {
                 <h3 className="title">New Products</h3>
                 <div className="section-nav">
                   <ul className="section-tab-nav tab-nav">
-                    {categories && categories.length > 0 && categories.slice(0, 3).map((category, index) => (
-                      <li key={category.id} className={index === 0 ? 'active' : ''}>
-                        <a data-toggle="tab" href="#tab1">{category.name}</a>
-                      </li>
-                    ))}
+                    <li className={selectedTab === 'laptop' ? 'active' : ''}>
+                      <a data-toggle="tab" href="#tab1" onClick={e => { e.preventDefault(); setSelectedTab('laptop'); }}>Laptop</a>
+                    </li>
+                    <li className={selectedTab === 'pc' ? 'active' : ''}>
+                      <a data-toggle="tab" href="#tab2" onClick={e => { e.preventDefault(); setSelectedTab('pc'); }}>PC</a>
+                    </li>
+                    <li className={selectedTab === 'accessories' ? 'active' : ''}>
+                      <a data-toggle="tab" href="#tab3" onClick={e => { e.preventDefault(); setSelectedTab('accessories'); }}>Accessories</a>
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -242,10 +276,9 @@ const HomePage: React.FC = () => {
                 <div className="products-tabs">
                   {/* tab */}
                   <div id="tab1" className="tab-pane active">
-                    <div className="products-slick" data-nav="#slick-nav-1">
-                      {newProducts && newProducts.length > 0 && newProducts.map(renderProduct)}
-                    </div>
-                    <div id="slick-nav-1" className="products-slick-nav"></div>
+                    <Slider {...sliderSettings}>
+                      {getFilteredProducts().map(renderProduct)}
+                    </Slider>
                   </div>
                   {/* /tab */}
                 </div>
@@ -282,6 +315,8 @@ const HomePage: React.FC = () => {
         </div>
       </div>
       {/* /SECTION */}
+      {/* Quick View Modal */}
+      <ProductDetailModal isOpen={isQuickViewOpen} onClose={handleCloseQuickView} product={quickViewProduct} />
       <Footer />
     </>
   );

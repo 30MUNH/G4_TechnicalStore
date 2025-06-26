@@ -4,11 +4,14 @@ const api = axios.create({
     baseURL:  import.meta.env.VITE_API_URL || "http://localhost:3000/api" 
 });
 
+console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
+
 // Flag to prevent infinite redirect loops
 let isRedirecting = false;
 
 api.interceptors.request.use(
     (config) => {
+        console.log("Gửi request đến:", (config.baseURL || "") + (config.url || ""));
         const token = localStorage.getItem('authToken');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;

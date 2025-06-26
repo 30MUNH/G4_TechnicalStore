@@ -3,11 +3,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './ProductList.css'
+
 interface Product {
   id: string;
   name: string;
   url: string;
-  active: boolean;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -15,7 +16,12 @@ interface Product {
   price: number;
   description: string;
   stock: number;
-  category: string;
+  categoryId: string;
+  category?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
 }
 
 const ProductList: React.FC = () => {
@@ -31,14 +37,14 @@ const ProductList: React.FC = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get("http://localhost:4000/api/products");
+        const response = await axios.get("http://localhost:3000/api/products");
         if (response.data.success) {
           const formattedProducts: Product[] = response.data.data.map(
             (product: any) => ({
               id: product.id,
               name: product.name,
               url: product.url,
-              active: product.active,
+              isActive: product.isActive,
               createdAt: product.createdAt,
               updatedAt: product.updatedAt,
               deletedAt: product.deletedAt,
@@ -46,6 +52,7 @@ const ProductList: React.FC = () => {
               price: product.price,
               description: product.description,
               stock: product.stock,
+              categoryId: product.categoryId,
               category: product.category,
             })
           );
@@ -69,11 +76,11 @@ const ProductList: React.FC = () => {
     const filtered = products.filter((product) => {
       const matchKeyword =
         product.name.toLowerCase().includes(keyword) ||
-        product.category.toLowerCase().includes(keyword);
+        (product.category?.name || '').toLowerCase().includes(keyword);
       const matchStatus =
         statusFilter === "all" ||
-        (statusFilter === "true" && product.active) ||
-        (statusFilter === "false" && !product.active);
+        (statusFilter === "true" && product.isActive) ||
+        (statusFilter === "false" && !product.isActive);
       return matchKeyword && matchStatus;
     });
     setFilteredProducts(filtered);
@@ -147,8 +154,7 @@ const ProductList: React.FC = () => {
               <tr key={product.id}>
                 <td>{index + 1}</td>
                 <td>{product.name}</td>
-                <td>{product.category}</td>
-                {/* <td>{product.categoryName}</td> */}
+                <td>{product.category?.name || 'N/A'}</td>
                 <td>
                   <img
                     src={product.url}
@@ -162,7 +168,7 @@ const ProductList: React.FC = () => {
                 </td>
                 <td>{product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</td>
                 <td>{product.stock}</td>
-                <td>{product.active ? "Hoạt động" : "Không hoạt động"}</td>
+                <td>{product.isActive ? "Hoạt động" : "Không hoạt động"}</td>
                 <td>
                   <button onClick={() => handleDetail(product.id)}>
                     Chi tiết
@@ -172,7 +178,7 @@ const ProductList: React.FC = () => {
             ))
           ) : (
             <tr>
-              <td colSpan={7} style={{ textAlign: "center" }}>
+              <td colSpan={8} style={{ textAlign: "center" }}>
                 Không có dữ liệu hiển thị
               </td>
             </tr>
