@@ -1,9 +1,5 @@
-<<<<<<< hieunvhe182603
-import { Controller, Get } from "routing-controllers";
-import { Service } from "typedi";
-=======
 import { Controller, Get, Post, Put, Delete, Param, Body } from "routing-controllers";
->>>>>>> main
+import { Service } from "typedi";
 import { CategoryService } from "./category.service";
 import { Container } from "typedi";
 import { CreateCategoryDto, UpdateCategoryDto } from "../dtos/category.dto";

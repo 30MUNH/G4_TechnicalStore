@@ -38,7 +38,10 @@ class ProductService {
   async getAllProducts(): Promise<Product[]> {
     try {
       const response = await api.get<ApiResponse<Product[]>>(`/products`);
-      return response.data.success ? response.data.data : [];
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
     } catch (error) {
       console.error('Error fetching products:', error);
       return [];
@@ -48,7 +51,10 @@ class ProductService {
   async getProductsByCategory(categorySlug: string): Promise<Product[]> {
     try {
       const response = await api.get<ApiResponse<Product[]>>(`/products/category/${categorySlug}`);
-      return response.data.success ? response.data.data : [];
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
     } catch (error) {
       console.error('Error fetching products by category:', error);
       return [];
@@ -58,7 +64,10 @@ class ProductService {
   async getCategories(): Promise<Category[]> {
     try {
       const response = await api.get<ApiResponse<Category[]>>(`/categories`);
-      return response.data.success ? response.data.data : [];
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
     } catch (error) {
       console.error('Error fetching categories:', error);
       return [];
@@ -68,7 +77,10 @@ class ProductService {
   async getProductById(id: string): Promise<Product | null> {
     try {
       const response = await api.get<ApiResponse<Product>>(`/products/${id}`);
-      return response.data.success ? response.data.data : null;
+      if (response.data && response.data.success && response.data.data) {
+        return response.data.data;
+      }
+      return null;
     } catch (error) {
       console.error('Error fetching product:', error);
       return null;
@@ -78,7 +90,10 @@ class ProductService {
   async getNewProducts(limit: number = 8): Promise<Product[]> {
     try {
       const response = await api.get<ApiResponse<Product[]>>(`/products/new?limit=${limit}`);
-      return response.data.success ? response.data.data : [];
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
     } catch (error) {
       console.error('Error fetching new products:', error);
       return [];
@@ -88,7 +103,10 @@ class ProductService {
   async getTopSellingProducts(limit: number = 6): Promise<Product[]> {
     try {
       const response = await api.get<ApiResponse<Product[]>>(`/products/top-selling?limit=${limit}`);
-      return response.data.success ? response.data.data : [];
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
     } catch (error) {
       console.error('Error fetching top selling products:', error);
       return [];

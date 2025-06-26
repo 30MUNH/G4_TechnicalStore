@@ -24,11 +24,17 @@ const HomePage: React.FC = () => {
           productService.getTopSellingProducts(6),
           productService.getCategories()
         ]);
-        setNewProducts(newProductsData);
-        setTopSellingProducts(topSellingData);
-        setCategories(categoriesData);
+        
+        // Ensure we have arrays
+        setNewProducts(Array.isArray(newProductsData) ? newProductsData : []);
+        setTopSellingProducts(Array.isArray(topSellingData) ? topSellingData : []);
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } catch (error) {
         console.error('Error fetching data:', error);
+        // Set empty arrays on error
+        setNewProducts([]);
+        setTopSellingProducts([]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
@@ -147,7 +153,7 @@ const HomePage: React.FC = () => {
               <li className="active"><a href="#">Home</a></li>
               <li><a href="#">Hot Deals</a></li>
               <li><a href="#">Categories</a></li>
-              {categories.slice(0, 4).map(category => (
+              {categories && categories.length > 0 && categories.slice(0, 4).map(category => (
                 <li key={category.id}>
                   <Link to={`/category/${category.slug}`}>{category.name}</Link>
                 </li>
@@ -220,7 +226,7 @@ const HomePage: React.FC = () => {
                 <h3 className="title">New Products</h3>
                 <div className="section-nav">
                   <ul className="section-tab-nav tab-nav">
-                    {categories.slice(0, 3).map((category, index) => (
+                    {categories && categories.length > 0 && categories.slice(0, 3).map((category, index) => (
                       <li key={category.id} className={index === 0 ? 'active' : ''}>
                         <a data-toggle="tab" href="#tab1">{category.name}</a>
                       </li>
@@ -237,7 +243,7 @@ const HomePage: React.FC = () => {
                   {/* tab */}
                   <div id="tab1" className="tab-pane active">
                     <div className="products-slick" data-nav="#slick-nav-1">
-                      {newProducts.map(renderProduct)}
+                      {newProducts && newProducts.length > 0 && newProducts.map(renderProduct)}
                     </div>
                     <div id="slick-nav-1" className="products-slick-nav"></div>
                   </div>
@@ -264,7 +270,7 @@ const HomePage: React.FC = () => {
                   </div>
                 </div>
                 <div className="products-widget-slick" data-nav={`#slick-nav-${index + 3}`}>
-                  {topSellingProducts.slice(index * 2, (index + 1) * 2).map(product => (
+                  {topSellingProducts && topSellingProducts.length > 0 && topSellingProducts.slice(index * 2, (index + 1) * 2).map(product => (
                     <div key={product.id}>
                       {renderProductWidget(product)}
                     </div>
