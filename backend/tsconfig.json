@@ -15,5 +15,6 @@
     },
     "strictPropertyInitialization": false
   },
-  "include": ["src", ".env"]
+  "include": ["src", ".env"],
+  "exclude": ["node_modules", "dist"]
 }

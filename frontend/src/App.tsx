@@ -6,7 +6,7 @@ import Aboutus from "./components/About/Aboutus.jsx";
 import Login from "./components/Login/Login.jsx";
 import SignUp from "./components/Login/SignUp.jsx";
 import ForgotPassword from "./components/Login/ForgotPassword.jsx";
-import HomePage from "./Page/HomePage.jsx";
+import HomePage from "./Page/HomePage";
 import CartPage from "./Page/CartPage.jsx";
 import { CartProvider } from "./contexts/CartContext";
 

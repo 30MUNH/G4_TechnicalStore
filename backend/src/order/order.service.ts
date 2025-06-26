@@ -65,7 +65,7 @@ export class OrderService {
                     throw new Error(`Sản phẩm ${cartItem.product.name} không tồn tại`);
                 }
 
-                if (!product.active) {
+                if (!product.isActive) {
                     throw new Error(`Sản phẩm ${product.name} hiện không khả dụng`);
                 }
 
