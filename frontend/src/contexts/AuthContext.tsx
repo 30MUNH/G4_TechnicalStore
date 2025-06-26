@@ -3,11 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 
 interface User {
-    id: string;
-    email: string;
-    fullName: string;
+    username: string;
+    phone?: string;
     role: string;
-    username?: string;
+    isRegistered: boolean;
 }
 
 interface AuthContextType {

@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { cartService, type CartItem } from '../services/cartService';
 import { useAuth } from './AuthContext';
+import debounce from 'lodash/debounce';
 
 interface CartContextType {
     cartItems: CartItem[];
@@ -25,8 +26,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { isAuthenticated } = useAuth();
+    const [isUpdating, setIsUpdating] = useState(false);
 
-    const fetchCart = async () => {
+    const fetchCart = useCallback(async () => {
         if (!isAuthenticated()) {
             setCartItems([]);
             setTotalAmount(0);
@@ -49,47 +51,72 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } finally {
             setLoading(false);
         }
-    };
-
+    }, [isAuthenticated]);
 
     useEffect(() => {
         fetchCart();
-    }, [isAuthenticated()]);
+    }, [fetchCart]);
+
+    const debouncedAddToCart = useCallback(
+        debounce(async (productSlug: string, quantity: number) => {
+            if (isUpdating) return;
+            setIsUpdating(true);
+            try {
+                await cartService.addToCart(productSlug, quantity);
+                await fetchCart();
+            } catch (err) {
+                setError('Failed to add item to cart');
+                console.error('Error adding to cart:', err);
+                throw err;
+            } finally {
+                setIsUpdating(false);
+            }
+        }, 500),
+        [fetchCart, isUpdating]
+    );
+
+    const debouncedUpdateQuantity = useCallback(
+        debounce(async (productSlug: string, quantity: number) => {
+            if (isUpdating) return;
+            setIsUpdating(true);
+            try {
+                await cartService.updateQuantity(productSlug, quantity);
+                await fetchCart();
+            } catch (err) {
+                setError('Failed to update quantity');
+                console.error('Error updating quantity:', err);
+                throw err;
+            } finally {
+                setIsUpdating(false);
+            }
+        }, 500),
+        [fetchCart, isUpdating]
+    );
+
+    const debouncedRemoveFromCart = useCallback(
+        debounce(async (productSlug: string) => {
+            if (isUpdating) return;
+            setIsUpdating(true);
+            try {
+                await cartService.removeItem(productSlug);
+                await fetchCart();
+            } catch (err) {
+                setError('Failed to remove item from cart');
+                console.error('Error removing from cart:', err);
+                throw err;
+            } finally {
+                setIsUpdating(false);
+            }
+        }, 500),
+        [fetchCart, isUpdating]
+    );
 
     const addToCart = async (productSlug: string, quantity: number) => {
         if (!isAuthenticated()) {
             setError('Please login to add items to cart');
             return;
         }
-
-        try {
-            setLoading(true);
-            await cartService.addToCart(productSlug, quantity);
-            await fetchCart();
-        } catch (err) {
-            setError('Failed to add item to cart');
-            console.error('Error adding to cart:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const removeFromCart = async (productSlug: string) => {
-        if (!isAuthenticated()) {
-            setError('Please login to manage cart');
-            return;
-        }
-
-        try {
-            setLoading(true);
-            await cartService.removeItem(productSlug);
-            await fetchCart();
-        } catch (err) {
-            setError('Failed to remove item from cart');
-            console.error('Error removing from cart:', err);
-        } finally {
-            setLoading(false);
-        }
+        await debouncedAddToCart(productSlug, quantity);
     };
 
     const updateQuantity = async (productSlug: string, quantity: number) => {
@@ -97,26 +124,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setError('Please login to manage cart');
             return;
         }
+        await debouncedUpdateQuantity(productSlug, quantity);
+    };
 
-        try {
-            setLoading(true);
-            await cartService.updateQuantity(productSlug, quantity);
-            await fetchCart();
-        } catch (err) {
-            setError('Failed to update quantity');
-            console.error('Error updating quantity:', err);
-        } finally {
-            setLoading(false);
+    const removeFromCart = async (productSlug: string) => {
+        if (!isAuthenticated()) {
+            setError('Please login to manage cart');
+            return;
         }
+        await debouncedRemoveFromCart(productSlug);
     };
 
     const clearCart = async () => {
-        if (!isAuthenticated()) {
-            return;
-        }
-
+        if (!isAuthenticated() || isUpdating) return;
+        
+        setIsUpdating(true);
         try {
-            setLoading(true);
             await cartService.clearCart();
             setCartItems([]);
             setTotalAmount(0);
@@ -124,27 +147,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setError('Failed to clear cart');
             console.error('Error clearing cart:', err);
         } finally {
-            setLoading(false);
+            setIsUpdating(false);
         }
     };
 
-    
-    const getCartTotal = () => {
+    const getCartTotal = useCallback(() => {
         return cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
-    };
+    }, [cartItems]);
 
-    const getTax = () => {
-        return getCartTotal() * 0.1; 
-    };
+    const getTax = useCallback(() => {
+        return getCartTotal() * 0.1;
+    }, [getCartTotal]);
 
-    const getShipping = () => {
+    const getShipping = useCallback(() => {
         const total = getCartTotal();
-        return total >= 1000000 ? 0 : 30000; 
-    };
+        return total >= 1000000 ? 0 : 30000;
+    }, [getCartTotal]);
 
-    const getFinalTotal = () => {
+    const getFinalTotal = useCallback(() => {
         return getCartTotal() + getTax() + getShipping();
-    };
+    }, [getCartTotal, getTax, getShipping]);
 
     return (
         <CartContext.Provider

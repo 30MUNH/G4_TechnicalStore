@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, User, Phone, Lock } from 'lucide-react';
+import { Phone, Lock, Eye, EyeOff, User } from 'lucide-react';
 import FormCard from './FormCard';
+import OTPPopup from './OTPPopup';
 import styles from './SignUp.module.css';
+import { authService } from '../../services/authService';
 
 const SignUp = ({ onNavigate }) => {
   const navigate = useNavigate();
@@ -17,6 +19,7 @@ const SignUp = ({ onNavigate }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOTPPopup, setShowOTPPopup] = useState(false);
 
   const validateField = (name, value) => {
     switch (name) {
@@ -103,30 +106,23 @@ const SignUp = ({ onNavigate }) => {
     }
   };
 
+  const handleVerifyOTP = () => {
+    // Implementation of handleVerifyOTP
+  };
+
   return (
     <FormCard>
       <div className={styles.authHeader}>
         <h1 className={styles.authTitle}>Create Account</h1>
-        <p className={styles.authSubtitle}>Join us to access premium PC components and build services</p>
+        <p className={styles.authSubtitle}>Join us to explore premium PC components</p>
       </div>
 
       <form onSubmit={handleSubmit} className={styles.authForm}>
-        <div className={styles.formGroup}>
-          <div className={styles.inputWrapper}>
-            <div className={styles.inputIcon}>
-              <User size={20} />
-            </div>
-            <input
-              type="text"
-              name="name"
-              placeholder="Full Name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className={`${styles.input} ${errors.name ? styles.error : ''}`}
-            />
+        {errors.general && (
+          <div className={styles.errorMessage} style={{ marginBottom: '1rem', textAlign: 'center' }}>
+            {errors.general}
           </div>
-          {errors.name && <span className={styles.errorMessage}>{errors.name}</span>}
-        </div>
+        )}
 
         <div className={styles.formGroup}>
           <div className={styles.inputWrapper}>
@@ -136,13 +132,35 @@ const SignUp = ({ onNavigate }) => {
             <input
               type="tel"
               name="phone"
-              placeholder="Phone Number"
+              placeholder="Enter your phone number"
               value={formData.phone}
               onChange={handleInputChange}
               className={`${styles.input} ${errors.phone ? styles.error : ''}`}
+              autoComplete="tel"
+              maxLength={11}
             />
           </div>
           {errors.phone && <span className={styles.errorMessage}>{errors.phone}</span>}
+         
+        </div>
+
+        <div className={styles.formGroup}>
+          <div className={styles.inputWrapper}>
+            <div className={styles.inputIcon}>
+              <User size={20} />
+            </div>
+            <input
+              type="text"
+              name="username"
+              placeholder="Choose your username"
+              value={formData.username}
+              onChange={handleInputChange}
+              className={`${styles.input} ${errors.username ? styles.error : ''}`}
+              autoComplete="username"
+            />
+          </div>
+          {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
+        
         </div>
 
         <div className={styles.formGroup}>
@@ -151,17 +169,19 @@ const SignUp = ({ onNavigate }) => {
               <Lock size={20} />
             </div>
             <input
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               name="password"
-              placeholder="Password"
+              placeholder="Create your password"
               value={formData.password}
               onChange={handleInputChange}
               className={`${styles.input} ${errors.password ? styles.error : ''}`}
+              autoComplete="new-password"
             />
             <button
               type="button"
               className={styles.passwordToggle}
               onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
@@ -169,48 +189,29 @@ const SignUp = ({ onNavigate }) => {
           {errors.password && <span className={styles.errorMessage}>{errors.password}</span>}
         </div>
 
-        <div className={styles.formGroup}>
-          <div className={styles.inputWrapper}>
-            <div className={styles.inputIcon}>
-              <Lock size={20} />
-            </div>
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              className={`${styles.input} ${errors.confirmPassword ? styles.error : ''}`}
-            />
-            <button
-              type="button"
-              className={styles.passwordToggle}
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
-          </div>
-          {errors.confirmPassword && <span className={styles.errorMessage}>{errors.confirmPassword}</span>}
-        </div>
-
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className={styles.submitBtn}
           disabled={isSubmitting}
         >
           {isSubmitting ? 'Creating Account...' : 'Create Account'}
         </button>
+
+        <div className={styles.authLinks}>
+          <button type="button" onClick={() => navigate('/login')} className={styles.linkBtn}>
+            Already have an account? Sign In
+          </button>
+        </div>
       </form>
 
-      <div className={styles.authLinks}>
-        <button 
-          type="button" 
-          className={styles.linkBtn}
-          onClick={() => navigate('/login')}
-        >
-          Already have an account? Sign In
-        </button>
-      </div>
+      {showOTPPopup && (
+        <OTPPopup
+          onVerify={handleVerifyOTP}
+          onClose={() => setShowOTPPopup(false)}
+          isLoading={isSubmitting}
+          error={errors.general}
+        />
+      )}
     </FormCard>
   );
 };

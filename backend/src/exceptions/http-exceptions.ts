@@ -59,3 +59,9 @@ export class NoFileUploadedException extends HttpException {
     super(400, "No file uploaded");
   }
 }
+
+export class BadRequestException extends HttpException {
+  constructor(message: string) {
+    super(400, message);
+  }
+}

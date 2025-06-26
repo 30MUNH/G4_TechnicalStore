@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL:  import.meta.env.VITE_API_URL || "http://localhost:3000/api" 
+    baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000/api"
 });
 
 console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
@@ -9,12 +9,25 @@ console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
 // Flag to prevent infinite redirect loops
 let isRedirecting = false;
 
+// Auth routes that don't need token
+const authRoutes = [
+    '/account/login',
+    '/account/verify-login',
+    '/account/register',
+    '/account/verify-register'
+];
+
 api.interceptors.request.use(
     (config) => {
-        console.log("Gửi request đến:", (config.baseURL || "") + (config.url || ""));
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+        const url = config.url || '';
+        console.log("Gửi request đến:", (config.baseURL || "") + url);
+
+        // Chỉ thêm token nếu không phải là auth route
+        if (!authRoutes.some(route => url.includes(route))) {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
         }
         return config;
     },

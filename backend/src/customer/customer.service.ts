@@ -10,7 +10,6 @@ const SALT_ROUNDS = 8;
 @Service()
 export class CustomerService {
   async createCustomer(createCustomerDto: CreateCustomerDto): Promise<Account> {
-    // Kiểm tra username đã tồn tại chưa
     const existingAccount = await Account.findOne({ 
       where: { username: createCustomerDto.username } 
     });
@@ -18,7 +17,7 @@ export class CustomerService {
       throw new Error("Username đã được sử dụng");
     }
 
-    // Lấy role customer
+
     const customerRole = await Role.findOne({ 
       where: { slug: "customer" } 
     });
@@ -33,7 +32,7 @@ export class CustomerService {
     account.role = customerRole;
     account.isRegistered = true;
     
-    // Sử dụng name field của NamedEntity cho fullName
+    
     account.name = createCustomerDto.fullName;
 
     await account.save();
@@ -80,7 +79,7 @@ export class CustomerService {
   async updateCustomer(id: string, updateCustomerDto: UpdateCustomerDto): Promise<Account> {
     const account = await this.getCustomerById(id);
 
-    // Kiểm tra username trùng (nếu có update username)
+    
     if (updateCustomerDto.username && updateCustomerDto.username !== account.username) {
       const existingAccount = await Account.findOne({ 
         where: { username: updateCustomerDto.username } 
