@@ -1,4 +1,8 @@
+
+import { Controller, Get, Param, QueryParam } from "routing-controllers";
+
 import { Controller, Get, Param, QueryParam, Post, Put, Delete, Body } from "routing-controllers";
+
 import { Service } from "typedi";
 import { ProductService } from "./product.service";
 import { Container } from "typedi";

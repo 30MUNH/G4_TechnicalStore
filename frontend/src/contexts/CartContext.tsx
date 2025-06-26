@@ -57,7 +57,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [isAuthenticated()]);
 
     const addToCart = async (productSlug: string, quantity: number) => {
-        // Require authentication for cart operations
         if (!isAuthenticated()) {
             setError('Please login to add items to cart');
             return;
@@ -129,7 +128,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    // Helper functions for cart calculations
+    
     const getCartTotal = () => {
         return cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
     };
