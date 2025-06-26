@@ -1,15 +1,18 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart, faPhone, faMapMarker, faShoppingCart, faTimes, faArrowCircleRight, faBars, faUser as faUserRegular } from '@fortawesome/free-solid-svg-icons';
 import { faEnvelope as faEnvelopeRegular } from '@fortawesome/free-regular-svg-icons';
 import '../Page/HomePage.css';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import { productService } from '../services/productService';
 
 const Header = () => {
   const { isAuthenticated, user } = useAuth();
   const { cartItems, getCartTotal } = useCart();
+  const navigate = useNavigate();
+  const [searchValue, setSearchValue] = React.useState("");
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
@@ -18,6 +21,13 @@ const Header = () => {
   };
 
   const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchValue.trim()) return;
+    const results = await productService.searchProducts(searchValue.trim());
+    navigate('/all-products', { state: { searchResults: results, searchKeyword: searchValue.trim() } });
+  };
 
   return (
     <>
@@ -67,14 +77,9 @@ const Header = () => {
               {/* SEARCH BAR */}
               <div className="col-md-6">
                 <div className="header-search">
-                  <form>
-                    <select className="input-select">
-                      <option value="0">All Categories</option>
-                      <option value="1">Category 01</option>
-                      <option value="1">Category 02</option>
-                    </select>
-                    <input className="input" placeholder="Search here" />
-                    <button className="search-btn">Search</button>
+                  <form style={{ display: 'flex', width: '100%' }} onSubmit={handleSearch}>
+                    <input className="input" placeholder="Search here" style={{ flex: 1 }} value={searchValue} onChange={e => setSearchValue(e.target.value)} />
+                    <button className="search-btn" type="submit">Search</button>
                   </form>
                 </div>
               </div>

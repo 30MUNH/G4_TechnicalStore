@@ -82,6 +82,19 @@ class ProductService {
       return [];
     }
   }
+
+  async searchProducts(keyword: string): Promise<Product[]> {
+    try {
+      const response = await api.get<ApiResponse<Product[]>>(`/products/search?q=${encodeURIComponent(keyword)}`);
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error searching products:', error);
+      return [];
+    }
+  }
 }
 
 export const productService = new ProductService(); 

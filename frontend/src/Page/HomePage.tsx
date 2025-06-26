@@ -123,8 +123,12 @@ const HomePage: React.FC = () => {
       </div>
       <div className="product-body">
         <p className="product-category">{product.category?.name || 'Category'}</p>
-        <h3 className="product-name">
-          <Link to={`/product/${product.slug}`}>{product.name}</Link>
+        <h3
+          className="product-name product-name-hover"
+          style={{ cursor: 'pointer', transition: 'color 0.2s' }}
+          onClick={() => handleOpenQuickView(product)}
+        >
+          {product.name}
         </h3>
         <h4 className="product-price">{formatPrice(product.price)}</h4>
       </div>

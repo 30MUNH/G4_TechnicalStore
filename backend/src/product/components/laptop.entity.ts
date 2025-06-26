@@ -27,8 +27,20 @@ export class Laptop extends BaseEntity {
   @Column({ type: 'int', name: 'storage_gb' })
   storageGb: number;
 
+  @Column({ type: 'varchar', length: 50, name: 'storage_type' })
+  storageType: string;
+
   @Column({ type: 'decimal', precision: 4, scale: 1, name: 'screen_size' })
   screenSize: number;
+
+  @Column({ type: 'varchar', length: 50 })
+  resolution: string;
+
+  @Column({ type: 'decimal', precision: 4, scale: 1, name: 'battery_life_hours' })
+  batteryLifeHours: number;
+
+  @Column({ type: 'decimal', precision: 4, scale: 2, name: 'weight_kg' })
+  weightKg: number;
 
   @Column({ type: 'varchar', length: 50, name: 'os' })
   os: string;

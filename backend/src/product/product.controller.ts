@@ -1,6 +1,3 @@
-
-import { Controller, Get, Param, QueryParam } from "routing-controllers";
-
 import { Controller, Get, Param, QueryParam, Post, Put, Delete, Body } from "routing-controllers";
 
 import { Service } from "typedi";
@@ -84,6 +81,30 @@ export class ProductController {
       return {
         success: false,
         message: "Failed to retrieve products by category",
+        error: error.message || "Unknown error"
+      };
+    }
+  }
+
+  @Get("/search")
+  async searchProducts(@QueryParam("q") keyword: string) {
+    if (!keyword || keyword.trim() === "") {
+      return {
+        success: false,
+        message: "Missing search keyword"
+      };
+    }
+    try {
+      const products = await this.productService.searchProducts(keyword);
+      return {
+        success: true,
+        data: products,
+        message: "Products search result"
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to search products",
         error: error.message || "Unknown error"
       };
     }
