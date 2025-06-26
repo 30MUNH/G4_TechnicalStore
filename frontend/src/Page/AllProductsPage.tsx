@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { productService } from '../services/productService';
-import type { Product } from '../types/product.ts';
+import type { Product } from '../types/product';
 import './AllProductsPage.css';
 import { useLocation } from 'react-router-dom';
+import ProductDetailModal from '../components/product_manager/productDetailModal';
 
 const CATEGORY_FILTERS = [
   { key: 'laptop', label: 'Laptop' },
@@ -37,6 +38,8 @@ const AllProductsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const location = useLocation();
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
 
   // Set filter theo state khi chuyển trang từ HomePage
   useEffect(() => {
@@ -57,14 +60,19 @@ const AllProductsPage: React.FC = () => {
   }, [location.state]);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      const res = await productService.getAllProducts();
-      setProducts(res);
+    if (location.state && location.state.searchResults) {
+      setProducts(location.state.searchResults);
       setLoading(false);
-    };
-    fetchProducts();
-  }, []);
+    } else {
+      const fetchProducts = async () => {
+        setLoading(true);
+        const res = await productService.getAllProducts();
+        setProducts(res);
+        setLoading(false);
+      };
+      fetchProducts();
+    }
+  }, [location.state]);
 
   useEffect(() => {
     let filtered = [...products];
@@ -144,6 +152,17 @@ const AllProductsPage: React.FC = () => {
     }
   };
 
+  const handleOpenQuickView = async (product: Product) => {
+    // Gọi API lấy chi tiết sản phẩm
+    const detail = await productService.getProductById(product.id);
+    setQuickViewProduct(detail || product);
+    setIsQuickViewOpen(true);
+  };
+  const handleCloseQuickView = () => {
+    setIsQuickViewOpen(false);
+    setQuickViewProduct(null);
+  };
+
   return (
     <div className="all-products-page">
       <aside className="sidebar">
@@ -189,7 +208,12 @@ const AllProductsPage: React.FC = () => {
                 <div>Không có sản phẩm nào.</div>
               ) : (
                 paginatedProducts.map((product) => (
-                  <div className="product-card" key={product.id}>
+                  <div
+                    className="product-card"
+                    key={product.id}
+                    onClick={async () => await handleOpenQuickView(product)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <img src={product.url} alt={product.name} />
                     <h4>{product.name}</h4>
                     <div className="product-price">
@@ -229,6 +253,7 @@ const AllProductsPage: React.FC = () => {
                 </button>
               </div>
             )}
+            <ProductDetailModal isOpen={isQuickViewOpen} onClose={handleCloseQuickView} product={quickViewProduct} />
           </>
         )}
       </main>

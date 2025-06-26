@@ -16,6 +16,7 @@ export interface Product {
     name: string;
     slug: string;
   };
+  [key: string]: any;
 }
 
 export interface Category {
