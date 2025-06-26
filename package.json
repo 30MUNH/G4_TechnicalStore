@@ -11,7 +11,7 @@
     "backend"
   ],
   "scripts": {
-    "concurrent": "concurrently \"yarn workspace frontend dev\" \"yarn workspace backend dev\""
+    "concurrent": "concurrently --shell=powershell \"yarn workspace frontend dev\" \"yarn workspace backend dev\""
   },
   "devDependencies": {
     "concurrently": "^8.0.0"
