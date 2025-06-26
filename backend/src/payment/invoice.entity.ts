@@ -8,12 +8,6 @@ export class Invoice extends BaseEntity {
   @JoinColumn()
   payment: Payment;
 
-  @Column({name: 'issued_date' })
-  issuedDate: Date;
-
-  @Column({name: 'due_date' })
-  dueDate: Date;
-
   @Column({ type: 'decimal', precision: 10, scale: 2, name: 'total_amount' })
   totalAmount: number;
 }

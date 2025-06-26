@@ -12,11 +12,7 @@ import { HttpError } from "routing-controllers";
 @Middleware({ type: "after" })
 export class ErrorHandler implements ExpressErrorMiddlewareInterface {
   error(error: any, req: any, res: any, next: (err?: any) => any): void {
-    console.log("Custom ErrorHandler triggered!");
-    if (res.headersSent) {
-      console.log("Headers already sent, skipping response formatting");
-      return next(error);
-    }
+    if (res.headersSent) return next(error);
 
     console.log("🔴 ERROR HANDLER TRIGGERED");
     console.log("Error object:", error);
