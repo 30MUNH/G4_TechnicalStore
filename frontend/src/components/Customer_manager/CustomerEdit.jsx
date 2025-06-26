@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { X, Save } from 'lucide-react';
-import styles from './styles/CustomerEdit.module.css';
-import commonStyles from './styles/common.module.css';
+import styles from '../styles/CustomerEdit.module.css';
+import commonStyles from '../styles/common.module.css';
 
 const CustomerEdit = ({ customer, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -10,7 +10,8 @@ const CustomerEdit = ({ customer, onSave, onClose }) => {
     lastName: customer.lastName,
     email: customer.email,
     phone: customer.phone,
-    status: customer.status
+    status: customer.status,
+    role: customer.role || 'user'
   });
 
   const [errors, setErrors] = useState({});
@@ -177,6 +178,24 @@ const CustomerEdit = ({ customer, onSave, onClose }) => {
                 <option value="Inactive">Không hoạt động</option>
               </select>
             </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="role" className={styles.label}>Vai trò</label>
+              <select
+                id="role"
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className={styles.select}
+                required
+              >
+                <option value="user">User</option>
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+                <option value="shipper">Shipper</option>
+              </select>
+            </div>
           </div>
 
           <div className={styles.actions}>
@@ -208,7 +227,8 @@ CustomerEdit.propTypes = {
     lastName: PropTypes.string.isRequired,
     email: PropTypes.string.isRequired,
     phone: PropTypes.string.isRequired,
-    status: PropTypes.string.isRequired
+    status: PropTypes.string.isRequired,
+    role: PropTypes.string
   }).isRequired,
   onSave: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired

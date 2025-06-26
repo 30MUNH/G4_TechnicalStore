@@ -12,15 +12,18 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
-  Users
+  Bell
 } from 'lucide-react';
 import CustomerDetail from './CustomerDetail';
 import CustomerEdit from './CustomerEdit';
 import DeleteConfirmation from './DeleteConfirmation';
-import styles from './styles/CustomerList.module.css';
-import commonStyles from './styles/common.module.css';
+import styles from '../styles/CustomerList.module.css';
+import commonStyles from '../styles/common.module.css';
 
 const CustomerList = () => {
+
+  const [currentUserRole] = useState('manager'); 
+  
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -35,10 +38,66 @@ const CustomerList = () => {
   const [filters, setFilters] = useState({
     search: '',
     status: '',
-    customerType: '',
+    role: '',
     dateFrom: '',
     dateTo: ''
   });
+
+  // Định nghĩa quyền hạn theo vai trò
+  const permissions = {
+    user: {
+      canView: true,
+      canEdit: false,
+      canDelete: false,
+      canAdd: false,
+      canExport: false,
+      canImport: false,
+      canManageStaff: false
+    },
+    staff: {
+      canView: true,
+      canEdit: true,
+      canDelete: false,
+      canAdd: true,
+      canExport: false,
+      canImport: false,
+      canManageStaff: false
+    },
+    manager: {
+      canView: true,
+      canEdit: true,
+      canDelete: true,
+      canAdd: true,
+      canExport: true,
+      canImport: true,
+      canManageStaff: true,
+      canViewReports: true,
+      canApproveRequests: true
+    },
+    admin: {
+      canView: true,
+      canEdit: true,
+      canDelete: true,
+      canAdd: true,
+      canExport: true,
+      canImport: true,
+      canManageStaff: true,
+      canViewReports: true,
+      canApproveRequests: true,
+      canManageRoles: true
+    },
+    shipper: {
+      canView: true,
+      canEdit: false,
+      canDelete: false,
+      canAdd: false,
+      canExport: false,
+      canImport: false,
+      canManageStaff: false
+    }
+  };
+
+  const currentUserPermissions = permissions[currentUserRole] || permissions.user;
 
   const filteredCustomers = useMemo(() => {
     return customers.filter(customer => {
@@ -50,13 +109,13 @@ const CustomerList = () => {
         customer.phone.includes(searchTerm);
       
       const matchesStatus = !filters.status || customer.status === filters.status;
-      const matchesType = !filters.customerType || customer.customerType === filters.customerType;
+      const matchesRole = !filters.role || customer.role === filters.role;
 
       const customerDate = new Date(customer.dateJoined);
       const matchesDateFrom = !filters.dateFrom || customerDate >= new Date(filters.dateFrom);
       const matchesDateTo = !filters.dateTo || customerDate <= new Date(filters.dateTo);
 
-      return matchesSearch && matchesStatus && matchesType && matchesDateFrom && matchesDateTo;
+      return matchesSearch && matchesStatus && matchesRole && matchesDateFrom && matchesDateTo;
     });
   }, [customers, filters]);
 
@@ -73,11 +132,19 @@ const CustomerList = () => {
   };
 
   const handleEdit = (customer) => {
+    if (!currentUserPermissions.canEdit) {
+      alert('Bạn không có quyền chỉnh sửa khách hàng');
+      return;
+    }
     setEditingCustomer(customer);
     setShowEdit(true);
   };
 
   const handleDelete = (customer) => {
+    if (!currentUserPermissions.canDelete) {
+      alert('Bạn không có quyền xóa khách hàng');
+      return;
+    }
     setDeletingCustomer(customer);
     setShowDelete(true);
   };
@@ -107,6 +174,10 @@ const CustomerList = () => {
   };
 
   const handleAddCustomer = () => {
+    if (!currentUserPermissions.canAdd) {
+      alert('Bạn không có quyền thêm khách hàng mới');
+      return;
+    }
     setEditingCustomer({
       id: null,
       firstName: '',
@@ -114,7 +185,7 @@ const CustomerList = () => {
       email: '',
       phone: '',
       status: 'Active',
-      customerType: 'Component Purchase'
+      role: 'user'
     });
     setShowAddCustomer(true);
     setShowEdit(true);
@@ -141,18 +212,30 @@ const CustomerList = () => {
               <p className={commonStyles.subtitle}>Quản lý thông tin khách hàng và đơn hàng</p>
             </div>
             <div className={commonStyles.headerActions}>
-              <button className={commonStyles.buttonSecondary}>
-                <Upload className={commonStyles.icon} />
-                Nhập dữ liệu
-              </button>
-              <button className={commonStyles.buttonSecondary}>
-                <Download className={commonStyles.icon} />
-                Xuất dữ liệu
-              </button>
-              <button className={commonStyles.buttonPrimary} onClick={handleAddCustomer}>
-                <Plus className={commonStyles.icon} />
-                Thêm khách hàng
-              </button>
+              {currentUserPermissions.canViewReports && (
+                <button className={commonStyles.buttonSecondary}>
+                  <Bell className={commonStyles.icon} />
+                  Báo cáo
+                </button>
+              )}
+              {currentUserPermissions.canImport && (
+                <button className={commonStyles.buttonSecondary}>
+                  <Upload className={commonStyles.icon} />
+                  Nhập dữ liệu
+                </button>
+              )}
+              {currentUserPermissions.canExport && (
+                <button className={commonStyles.buttonSecondary}>
+                  <Download className={commonStyles.icon} />
+                  Xuất dữ liệu
+                </button>
+              )}
+              {currentUserPermissions.canAdd && (
+                <button className={commonStyles.buttonPrimary} onClick={handleAddCustomer}>
+                  <Plus className={commonStyles.icon} />
+                  Tạo hồ sơ KH
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -173,12 +256,15 @@ const CustomerList = () => {
           <div className={styles.filterContainer}>
             <select
               className={commonStyles.select}
-              value={filters.customerType}
-              onChange={(e) => setFilters(prev => ({ ...prev, customerType: e.target.value }))}
+              value={filters.role}
+              onChange={(e) => setFilters(prev => ({ ...prev, role: e.target.value }))}
             >
-              <option value="">Loại khách hàng</option>
-              <option value="PC Build">Người build PC</option>
-              <option value="Component Purchase">Người mua linh kiện</option>
+              <option value="">Vai trò</option>
+              <option value="user">User</option>
+              <option value="staff">Staff</option>
+              <option value="admin">Admin</option>
+              <option value="manager">Manager</option>
+              <option value="shipper">Shipper</option>
             </select>
             <select
               className={commonStyles.select}
@@ -213,7 +299,7 @@ const CustomerList = () => {
             <thead className={styles.tableHeader}>
               <tr>
                 <th className={styles.tableHeaderCell} style={{width: 'auto'}}>Khách hàng</th>
-                <th className={styles.tableHeaderCell} style={{width: 'auto'}}>Loại</th>
+                <th className={styles.tableHeaderCell} style={{width: 'auto'}}>Vai trò</th>
                 <th className={styles.tableHeaderCell} style={{width: 'auto'}}>Trạng thái</th>
                 <th className={styles.tableHeaderCell} style={{width: '8%'}}>Đơn hàng</th>
                 <th className={styles.tableHeaderCell} style={{width: '10%'}}>Tổng chi tiêu</th>
@@ -222,45 +308,49 @@ const CustomerList = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedCustomers.length > 0 ? (
-                paginatedCustomers.map((customer) => (
-                  <tr key={customer.id} className={styles.tableRow}>
-                    <td className={styles.tableCell}>
-                      <div className={styles.customerNameWrapper}>
-                        <div className={styles.customerAvatar}>
-                          {customer.firstName[0]}{customer.lastName[0]}
+              {paginatedCustomers.map((customer) => (
+                <tr key={customer.id} className={styles.tableRow}>
+                  <td className={styles.tableCell}>
+                    <div className={styles.customerNameWrapper}>
+                      <div className={styles.customerAvatar}>
+                        {customer.firstName[0]}{customer.lastName[0]}
+                      </div>
+                      <div className={styles.customerInfo}>
+                        <div className={styles.customerName}>
+                          {customer.firstName} {customer.lastName}
                         </div>
-                        <div className={styles.customerInfo}>
-                          <div className={styles.customerName}>
-                            {customer.firstName} {customer.lastName}
-                          </div>
-                          <div className={styles.customerDate}>
-                            Tham gia: {new Date(customer.dateJoined).toLocaleDateString('vi-VN')}
-                          </div>
+                        <div className={styles.customerDate}>
+                          Tham gia: {new Date(customer.dateJoined).toLocaleDateString('vi-VN')}
                         </div>
                       </div>
-                    </td>
-                    <td className={styles.tableCell}>
-                      <span className={`${commonStyles.badgeType} ${
-                        customer.customerType === 'PC Build' 
-                          ? commonStyles.badgeTypeBuild 
-                          : commonStyles.badgeTypeComponent
-                      }`}>
-                        {customer.customerType === 'PC Build' ? 'Người build PC' : 'Người mua linh kiện'}
-                      </span>
-                    </td>
-                    <td className={styles.tableCell}>
-                      <span className={customer.status === 'Active' ? commonStyles.badgeSuccess : commonStyles.badgeInactive}>
-                        {customer.status === 'Active' ? 'Đang hoạt động' : 'Không hoạt động'}
-                      </span>
-                    </td>
-                    <td className={styles.tableCell}>{customer.totalOrders} đơn hàng</td>
-                    <td className={styles.tableCell}>{formatCurrency(customer.totalSpent)}</td>
-                    <td className={styles.tableCell}>
-                      {customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString('vi-VN') : 'Chưa có'}
-                    </td>
-                    <td className={styles.tableCell}>
-                      <div className={styles.actionButtons}>
+                    </div>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <span className={`${commonStyles.badgeType} ${
+                      customer.role === 'admin' || customer.role === 'manager'
+                        ? commonStyles.badgeTypeBuild 
+                        : commonStyles.badgeTypeComponent
+                    }`}>
+                      {customer.role === 'user' ? 'User' :
+                       customer.role === 'staff' ? 'Staff' :
+                       customer.role === 'admin' ? 'Admin' :
+                       customer.role === 'manager' ? 'Manager' :
+                       customer.role === 'shipper' ? 'Shipper' : customer.role}
+                    </span>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <span className={customer.status === 'Active' ? commonStyles.badgeSuccess : commonStyles.badgeInactive}>
+                      {customer.status === 'Active' ? 'Đang hoạt động' : 'Không hoạt động'}
+                    </span>
+                  </td>
+                  <td className={styles.tableCell}>{customer.totalOrders} đơn hàng</td>
+                  <td className={styles.tableCell}>{formatCurrency(customer.totalSpent)}</td>
+                  <td className={styles.tableCell}>
+                    {customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString('vi-VN') : 'Chưa có'}
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div className={styles.actionButtons}>
+                      {currentUserPermissions.canView && (
                         <button
                           onClick={() => handleViewDetail(customer)}
                           className={styles.actionButton}
@@ -268,6 +358,8 @@ const CustomerList = () => {
                         >
                           <Eye className={styles.actionIcon} />
                         </button>
+                      )}
+                      {currentUserPermissions.canEdit && (
                         <button
                           onClick={() => handleEdit(customer)}
                           className={styles.actionButton}
@@ -275,6 +367,8 @@ const CustomerList = () => {
                         >
                           <Edit3 className={styles.actionIcon} />
                         </button>
+                      )}
+                      {currentUserPermissions.canDelete && (
                         <button
                           onClick={() => handleDelete(customer)}
                           className={styles.actionButton}
@@ -282,74 +376,44 @@ const CustomerList = () => {
                         >
                           <Trash2 className={styles.actionIcon} />
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} className={styles.emptyState}>
-                    <div className={styles.emptyContent}>
-                      <div className={styles.emptyIcon}>
-                        <Users size={48} />
-                      </div>
-                      <h3 className={styles.emptyTitle}>
-                        {customers.length === 0 ? 'Chưa có khách hàng nào' : 'Không tìm thấy khách hàng phù hợp'}
-                      </h3>
-                      <p className={styles.emptyText}>
-                        {customers.length === 0 
-                          ? 'Chưa có khách hàng nào trong hệ thống hoặc không khớp với bộ lọc' 
-                          : 'Thử điều chỉnh bộ lọc hoặc tìm kiếm để xem kết quả khác'}
-                      </p>
-                      {customers.length === 0 && (
-                        <button 
-                          onClick={handleAddCustomer}
-                          className={commonStyles.buttonPrimary}
-                          style={{ marginTop: '16px' }}
-                        >
-                          <Plus className={commonStyles.icon} />
-                          Thêm khách hàng đầu tiên
-                        </button>
                       )}
                     </div>
                   </td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
         </div>
 
-        {filteredCustomers.length > 0 && (
-          <div className={styles.pagination}>
-            <div className={styles.paginationButtons}>
+        <div className={styles.pagination}>
+          <div className={styles.paginationButtons}>
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className={styles.paginationButton}
+            >
+              <ChevronLeft className={styles.actionIcon} />
+              Trước
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className={styles.paginationButton}
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`${styles.pageNumber} ${currentPage === page ? styles.pageNumberActive : ''}`}
               >
-                <ChevronLeft className={styles.actionIcon} />
-                Trước
+                {page}
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`${styles.pageNumber} ${currentPage === page ? styles.pageNumberActive : ''}`}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className={styles.paginationButton}
-              >
-                Sau
-                <ChevronRight className={styles.actionIcon} />
-              </button>
-            </div>
+            ))}
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className={styles.paginationButton}
+            >
+              Sau
+              <ChevronRight className={styles.actionIcon} />
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
       {showDetail && (
