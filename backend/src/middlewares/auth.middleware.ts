@@ -32,6 +32,7 @@ export class Auth implements ExpressMiddlewareInterface {
       req.user = payload;
       return next();
     } catch (err) {
+      console.error('JWT verification error:', err);
       return next(new HttpException(401, HttpMessages._UNAUTHORIZED));
     }
   }

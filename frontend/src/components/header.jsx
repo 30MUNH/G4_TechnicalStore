@@ -4,8 +4,21 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart, faPhone, faMapMarker, faShoppingCart, faTimes, faArrowCircleRight, faBars, faUser as faUserRegular } from '@fortawesome/free-solid-svg-icons';
 import { faEnvelope as faEnvelopeRegular } from '@fortawesome/free-regular-svg-icons';
 import '../Page/HomePage.css';
+import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 
 const Header = () => {
+  const { isAuthenticated, user } = useAuth();
+  const { cartItems, getCartTotal } = useCart();
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
+      .format(amount)
+      .replace('₫', 'đ');
+  };
+
+  const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
+
   return (
     <>
       {/* HEADER */}
@@ -26,7 +39,11 @@ const Header = () => {
             </ul>
             <ul className="header-links pull-right">
               <li>
-                <Link to="/login"><FontAwesomeIcon icon={faUserRegular} /> My Account</Link>
+                {isAuthenticated() ? (
+                  <span><FontAwesomeIcon icon={faUserRegular} /> Welcome, {user?.username || 'User'}</span>
+                ) : (
+                  <Link to="/login"><FontAwesomeIcon icon={faUserRegular} /> My Account</Link>
+                )}
               </li>
             </ul>
           </div>
@@ -71,7 +88,7 @@ const Header = () => {
                     <a href="#">
                       <FontAwesomeIcon icon={faHeart} size="lg" className="wishlist-icon" />
                       <span className="wishlist-text">Your Wishlist</span>
-                      <div className="qty">2</div>
+                      <div className="qty">0</div>
                     </a>
                   </div>
                   {/* /Wishlist */}
@@ -81,53 +98,42 @@ const Header = () => {
                     <Link to="/cart" className="dropdown-toggle">
                       <FontAwesomeIcon icon={faShoppingCart} />
                       <span>Your Cart</span>
-                      <div className="qty">3</div>
+                      <div className="qty">{totalItems}</div>
                     </Link>
-                    <div className="cart-dropdown">
-                      <div className="cart-list">
-                        <div className="product-widget">
-                          <div className="product-img">
-                            <img src="/img/product01.png" alt="" />
-                          </div>
-                          <div className="product-body">
-                            <h3 className="product-name">
-                              <a href="#">product name goes here</a>
-                            </h3>
-                            <h4 className="product-price">
-                              <span className="qty">1x</span>$980.00
-                            </h4>
-                          </div>
-                          <button className="delete">
-                            <FontAwesomeIcon icon={faTimes} />
-                          </button>
+                    
+                    {isAuthenticated() && cartItems.length > 0 && (
+                      <div className="cart-dropdown">
+                        <div className="cart-list">
+                          {cartItems.slice(0, 3).map(item => (
+                            <div key={item.id} className="product-widget">
+                              <div className="product-img">
+                                <img src="/img/product01.png" alt={item.product.name} />
+                              </div>
+                              <div className="product-body">
+                                <h3 className="product-name">
+                                  <a href="#">{item.product.name}</a>
+                                </h3>
+                                <h4 className="product-price">
+                                  <span className="qty">{item.quantity}x</span>
+                                  {formatCurrency(item.product.price)}
+                                </h4>
+                              </div>
+                              <button className="delete">
+                                <FontAwesomeIcon icon={faTimes} />
+                              </button>
+                            </div>
+                          ))}
                         </div>
-
-                        <div className="product-widget">
-                          <div className="product-img">
-                            <img src="/img/product02.png" alt="" />
-                          </div>
-                          <div className="product-body">
-                            <h3 className="product-name">
-                              <a href="#">product name goes here</a>
-                            </h3>
-                            <h4 className="product-price">
-                              <span className="qty">3x</span>$980.00
-                            </h4>
-                          </div>
-                          <button className="delete">
-                            <FontAwesomeIcon icon={faTimes} />
-                          </button>
+                        <div className="cart-summary">
+                          <small>{totalItems} Item(s) selected</small>
+                          <h5>SUBTOTAL: {formatCurrency(getCartTotal())}</h5>
+                        </div>
+                        <div className="cart-btns">
+                          <Link to="/cart">View Cart</Link>
+                          <Link to="/checkout">Checkout <FontAwesomeIcon icon={faArrowCircleRight} /></Link>
                         </div>
                       </div>
-                      <div className="cart-summary">
-                        <small>3 Item(s) selected</small>
-                        <h5>SUBTOTAL: $2940.00</h5>
-                      </div>
-                      <div className="cart-btns">
-                        <Link to="/cart">View Cart</Link>
-                        <a href="#">Checkout <FontAwesomeIcon icon={faArrowCircleRight} /></a>
-                      </div>
-                    </div>
+                    )}
                   </div>
                   {/* /Cart */}
 

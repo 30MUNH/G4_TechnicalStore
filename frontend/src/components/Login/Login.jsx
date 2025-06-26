@@ -4,9 +4,12 @@ import { Eye, EyeOff, User, Lock, Phone } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './Login.module.css';
+import { authService } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Login = ({ onNavigate }) => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     nameOrPhone: '',
     password: '',
@@ -16,13 +19,14 @@ const Login = ({ onNavigate }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showOTPPopup, setShowOTPPopup] = useState(false);
+  const [pendingLogin, setPendingLogin] = useState(null);
 
   const validateField = (name, value) => {
     switch (name) {
       case 'nameOrPhone':
         if (!value.trim()) return 'Name or phone number is required';
         if (value.length < 2) return 'Must be at least 2 characters';
-        // Check if it's a phone number (starts with + or digits)
+
         const isPhone = /^[\+]?[0-9\s\-\(\)]+$/.test(value);
         const isName = /^[a-zA-Z\s]+$/.test(value);
         if (!isPhone && !isName) return 'Enter a valid name or phone number';
@@ -32,9 +36,6 @@ const Login = ({ onNavigate }) => {
       case 'password':
         if (!value) return 'Password is required';
         if (value.length < 6) return 'Password must be at least 6 characters';
-        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
-          return 'Password must contain uppercase, lowercase, and number';
-        }
         return undefined;
         
       default:
@@ -71,31 +72,90 @@ const Login = ({ onNavigate }) => {
       return;
     }
     
-    // Show OTP popup instead of submitting directly
-    setShowOTPPopup(true);
+    setIsSubmitting(true);
+    try {
+
+      const response = await authService.login({
+        username: formData.nameOrPhone,
+        password: formData.password
+      });
+      
+      
+      if (response && typeof response === 'string' && response.includes('OTP')) {
+        setPendingLogin(formData.nameOrPhone);
+        setShowOTPPopup(true);
+        setErrors({});
+      } else {
+        setErrors({ general: 'Unexpected response from server' });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrors({ 
+        general: error.response?.data?.message || 'Login failed. Please check your credentials.' 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleVerifyOTP = async (otp) => {
+    if (!pendingLogin) return;
+    
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      alert('Login successful! Welcome to PC Components Store!');
-      setFormData({ nameOrPhone: '', password: '' });
-      setShowOTPPopup(false);
+      const response = await authService.verifyLogin({
+        username: pendingLogin,
+        otp: otp
+      });
+      
+      // Backend trả về trực tiếp accessToken string
+      console.log('OTP verification response:', response);
+      const accessToken = response;
+      
+      if (accessToken && typeof accessToken === 'string') {
+        // Tạo user object với thông tin cơ bản
+        const user = {
+          id: pendingLogin, 
+          username: pendingLogin,
+          email: '', 
+          fullName: pendingLogin, 
+          role: 'user' 
+        };
+        
+        
+        login(user, accessToken);
+        
+        setShowOTPPopup(false);
+        setPendingLogin(null);
+        
+        
+        navigate('/');
+        alert('Login successful!');
+      } else {
+        throw new Error('Invalid token received');
+      }
     } catch (error) {
-      alert('Invalid OTP. Please try again.');
+      console.error('OTP verification error:', error);
+      setErrors({ 
+        general: error.response?.data?.message || 'OTP verification failed. Please try again.' 
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleResendOTP = async () => {
+    if (!pendingLogin) return;
+    
     try {
-      // Simulate API call to resend OTP
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('New OTP has been sent to your phone!');
+     
+      await authService.login({
+        username: formData.nameOrPhone,
+        password: formData.password
+      });
+      alert('New OTP has been sent!');
     } catch (error) {
+      console.error('Resend OTP error:', error);
       alert('Failed to resend OTP. Please try again.');
     }
   };
@@ -110,6 +170,12 @@ const Login = ({ onNavigate }) => {
       </div>
 
       <form onSubmit={handleSubmit} className={styles.authForm}>
+        {errors.general && (
+          <div className={styles.errorMessage} style={{ marginBottom: '1rem', textAlign: 'center' }}>
+            {errors.general}
+          </div>
+        )}
+        
         <div className={styles.formGroup}>
           <div className={styles.inputWrapper}>
             <div className={styles.inputIcon}>
@@ -179,7 +245,10 @@ const Login = ({ onNavigate }) => {
 
       <OTPPopup
         isOpen={showOTPPopup}
-        onClose={() => setShowOTPPopup(false)}
+        onClose={() => {
+          setShowOTPPopup(false);
+          setPendingLogin(null);
+        }}
         onVerify={handleVerifyOTP}
         onResend={handleResendOTP}
       />
