@@ -10,6 +10,7 @@ export class DbConnection {
   }
 
   public static async createConnection() {
+
     try {
       this.appDataSource = new DataSource(config);
       await this.appDataSource
