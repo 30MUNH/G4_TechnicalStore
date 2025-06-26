@@ -1,7 +1,12 @@
+
 import { Controller, Get, Param, QueryParam } from "routing-controllers";
+
+import { Controller, Get, Param, QueryParam, Post, Put, Delete, Body } from "routing-controllers";
+
 import { Service } from "typedi";
 import { ProductService } from "./product.service";
 import { Container } from "typedi";
+import { CreateProductDto, UpdateProductDto } from "./dtos/product.dto";
 
 @Service()
 @Controller("/products")
@@ -103,6 +108,74 @@ export class ProductController {
       return {
         success: false,
         message: "Failed to retrieve product",
+        error: error.message || "Unknown error"
+      };
+    }
+  }
+
+  @Post("/")
+  async createProduct(@Body() createProductDto: CreateProductDto) {
+    try {
+      const product = await this.productService.createProduct(createProductDto);
+      return {
+        success: true,
+        data: product,
+        message: "Product created successfully"
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to create product",
+        error: error.message || "Unknown error"
+      };
+    }
+  }
+
+  @Put("/:id")
+  async updateProduct(
+    @Param("id") id: string,
+    @Body() updateProductDto: UpdateProductDto
+  ) {
+    try {
+      const product = await this.productService.updateProduct(id, updateProductDto);
+      if (!product) {
+        return {
+          success: false,
+          message: "Product not found"
+        };
+      }
+      return {
+        success: true,
+        data: product,
+        message: "Product updated successfully"
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to update product",
+        error: error.message || "Unknown error"
+      };
+    }
+  }
+
+  @Delete("/:id")
+  async deleteProduct(@Param("id") id: string) {
+    try {
+      const result = await this.productService.deleteProduct(id);
+      if (!result) {
+        return {
+          success: false,
+          message: "Product not found"
+        };
+      }
+      return { 
+        success: true, 
+        message: "Product deleted successfully" 
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to delete product",
         error: error.message || "Unknown error"
       };
     }

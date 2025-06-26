@@ -19,7 +19,7 @@ export default class App {
 
   constructor() {
     this.app = express();
-    this.port = process.env.PORT || 4000;
+    this.port = process.env.PORT || 3000;
     this.connectToDatabase();
     this.initializeMiddlewares();
     this.initializeRoutes();
@@ -60,7 +60,6 @@ export default class App {
   private async connectToDatabase() {
     try {
       await DbConnection.createConnection();
-      console.log("✅ Database connection established successfully.");
     } catch (error) {
       console.error("❌ Failed to connect to the database: ", error);
       throw error;
