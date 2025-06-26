@@ -3,8 +3,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faSearch,
   faPlus,
-  faChevronLeft,
-  faChevronRight,
   faArrowLeft,
   faUpload,
   faDownload,
@@ -42,7 +40,6 @@ function ShipperManagement() {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('view');
   const [selectedShipper, setSelectedShipper] = useState(null);
-  const [formData, setFormData] = useState({});
 
   const itemsPerPage = 5;
 
@@ -70,41 +67,30 @@ function ShipperManagement() {
  
   const openModal = (mode, shipper) => {
     setModalMode(mode);
-    setSelectedShipper(shipper || null);
-    setFormData(shipper || {
-      employeeId: '',
-      fullname: '',
-      licenseNumber: '',
-      vehicleType: 'motorbike',
-      vehiclePlate: '',
-      status: 'Available',
-      workingAreas: [],
-      rating: 0,
-      totalDeliveries: 0,
-      isActive: true,
-      startDate: new Date().toISOString().split('T')[0],
-      phone: ''
-    });
+    setSelectedShipper(shipper);
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelectedShipper(null);
-    setFormData({});
   };
 
-  const handleSave = () => {
+  const handleSave = (formData) => {
     if (modalMode === 'add') {
       const newShipper = {
-        ...formData,
         id: Date.now().toString(),
+        ...formData,
+        rating: 0,
+        totalDeliveries: 0
       };
-      setShippers([...shippers, newShipper]);
+      setShippers(prev => [...prev, newShipper]);
     } else if (modalMode === 'edit' && selectedShipper) {
-      setShippers(shippers.map(shipper => 
-        shipper.id === selectedShipper.id ? { ...shipper, ...formData } : shipper
-      ));
+      setShippers(prev => 
+        prev.map(shipper => 
+          shipper.id === selectedShipper.id ? { ...shipper, ...formData } : shipper
+        )
+      );
     }
     closeModal();
   };
@@ -156,9 +142,9 @@ function ShipperManagement() {
 
   const getModalTitle = () => {
     switch (modalMode) {
-      case 'view': return 'Thông tin shipper';
-      case 'edit': return 'Chỉnh sửa shipper';
-      case 'add': return 'Thêm shipper mới';
+      case 'view': return 'Shipper Information';
+      case 'edit': return 'Edit Shipper';
+      case 'add': return 'Thêm đơn giao';
       default: return '';
     }
   };
@@ -175,7 +161,7 @@ function ShipperManagement() {
                 Quay lại
               </button>
               <div className={styles.titleSection}>
-                <h1 className={styles.title}>Quản lý Shipper</h1>
+                <h1 className={styles.title}>Manager shipper</h1>
                 <p className={styles.subtitle}>
                   Quản lý thông tin shipper và giao hàng
                 </p>
@@ -195,7 +181,7 @@ function ShipperManagement() {
                 onClick={() => openModal('add')}
               >
                 <FontAwesomeIcon icon={faPlus} className={styles.buttonIcon} />
-                Thêm shipper
+                Thêm đơn giao
               </button>
             </div>
           </div>
@@ -210,7 +196,7 @@ function ShipperManagement() {
               <FontAwesomeIcon icon={faSearch} className={styles.searchIcon} />
               <input
                 type="text"
-                placeholder="Tìm kiếm theo tên, email, số điện thoại..."
+                placeholder="Tìm kiếm theo mã , ..."
                 className={styles.searchInput}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -245,13 +231,7 @@ function ShipperManagement() {
               placeholder="dd/mm/yyyy"
             />
 
-            <input
-              type="date"
-              className={styles.filterSelect}
-              value={startDateTo}
-              onChange={(e) => setStartDateTo(e.target.value)}
-              placeholder="dd/mm/yyyy"
-            />
+            
           </div>
         </div>
 
@@ -260,14 +240,14 @@ function ShipperManagement() {
           <table className={styles.table}>
             <thead className={styles.tableHeader}>
               <tr>
-                <th className={styles.tableHeaderCell}>MÃ NV</th>
-                <th className={styles.tableHeaderCell}>TÊN TÀI KHOẢN</th>
-                <th className={styles.tableHeaderCell}>PHƯƠNG TIỆN</th>
-                <th className={styles.tableHeaderCell}>TRẠNG THÁI</th>
-                <th className={styles.tableHeaderCell}>KHU VỰC</th>
-                <th className={styles.tableHeaderCell}>ĐƠN GIAO</th>
-                <th className={styles.tableHeaderCell}>ĐÁNH GIÁ</th>
-                <th className={styles.tableHeaderCell}>THAO TÁC</th>
+                <th className={styles.tableHeaderCell}>Mã đơn</th>
+                <th className={styles.tableHeaderCell}>Tên shipper</th>
+                <th className={styles.tableHeaderCell}>Phương tiện</th>
+                <th className={styles.tableHeaderCell}>Trạng thái</th>
+                <th className={styles.tableHeaderCell}>Khu vực</th>
+                <th className={styles.tableHeaderCell}>Số điện thoại</th>
+                <th className={styles.tableHeaderCell}>Ngày giao hàng</th>
+                <th className={styles.tableHeaderCell}>Thao tác</th>
               </tr>
             </thead>
             <tbody className={styles.tableBody}>
@@ -333,9 +313,9 @@ function ShipperManagement() {
                   <td colSpan={8} className={styles.emptyState}>
                     <div className={styles.emptyContent}>
                       <div className={styles.emptyIcon}>📦</div>
-                      <h3 className={styles.emptyTitle}>Không có shipper nào</h3>
+                      <h3 className={styles.emptyTitle}>Không có đơn giao nào</h3>
                       <p className={styles.emptyText}>
-                        Chưa có shipper nào trong hệ thống hoặc không khớp với bộ lọc
+                        Chưa có đơn giao nào trong hệ thống hoặc không khớp với bộ lọc
                       </p>
                     </div>
                   </td>
@@ -397,15 +377,14 @@ function ShipperManagement() {
       {/* Modal */}
       <Modal
         isOpen={showModal}
-        onClose={closeModal}
         title={getModalTitle()}
+        onClose={closeModal}
         size="large"
       >
         <ShipperForm
-          formData={formData}
           mode={modalMode}
-          onFormDataChange={setFormData}
-          onSave={handleSave}
+          initialData={selectedShipper}
+          onSubmit={handleSave}
           onCancel={closeModal}
         />
       </Modal>

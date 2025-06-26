@@ -10,7 +10,7 @@ const SALT_ROUNDS = 8;
 @Service()
 export class ShipperService {
   async createShipper(createShipperDto: CreateShipperDto): Promise<Account> {
-    // Kiểm tra username đã tồn tại chưa
+
     const existingAccount = await Account.findOne({ 
       where: { username: createShipperDto.username } 
     });
@@ -18,7 +18,7 @@ export class ShipperService {
       throw new Error("Username đã được sử dụng");
     }
 
-    // Lấy role shipper
+    
     const shipperRole = await Role.findOne({ 
       where: { slug: "shipper" } 
     });
@@ -33,7 +33,7 @@ export class ShipperService {
     account.role = shipperRole;
     account.isRegistered = true;
     
-    // Sử dụng name field của NamedEntity cho fullName
+   
     account.name = createShipperDto.fullName;
 
     await account.save();
@@ -67,7 +67,7 @@ export class ShipperService {
   async updateShipper(id: string, updateShipperDto: UpdateShipperDto): Promise<Account> {
     const account = await this.getShipperById(id);
 
-    // Kiểm tra username trùng (nếu có update username)
+
     if (updateShipperDto.username && updateShipperDto.username !== account.username) {
       const existingAccount = await Account.findOne({ 
         where: { username: updateShipperDto.username } 
@@ -77,7 +77,7 @@ export class ShipperService {
       }
     }
 
-    // Update fields
+    
     if (updateShipperDto.username) account.username = updateShipperDto.username;
     if (updateShipperDto.fullName) account.name = updateShipperDto.fullName;
     if (updateShipperDto.phone) account.phone = updateShipperDto.phone;
