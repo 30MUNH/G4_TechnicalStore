@@ -1,10 +1,14 @@
 export interface Product {
   id: string;
   name: string;
-  slug: string;
-  description: string | null;
+  url: string;
   isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  slug: string;
   price: number;
+  description: string;
   stock: number;
   categoryId: string;
   category?: {
@@ -12,8 +16,6 @@ export interface Product {
     name: string;
     slug: string;
   };
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface Category {

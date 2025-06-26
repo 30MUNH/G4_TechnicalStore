@@ -8,16 +8,22 @@ import SignUp from "./components/Login/SignUp.jsx";
 import ForgotPassword from "./components/Login/ForgotPassword.jsx";
 import HomePage from "./Page/HomePage";
 import CartPage from "./Page/CartPage.jsx";
+import AllProductsPage from "./Page/AllProductsPage";
 import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import Navigation from './components/Navigation';
+import Header from './components/header';
 
 function App() {
   return (
     <Router>
       <AuthProvider>
         <CartProvider>
+          <Header />
+          <Navigation />
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/all-products" element={<AllProductsPage />} />
             <Route path="/contact" element={<ContactUs />} />
             <Route path="/about" element={<Aboutus />} />
             <Route path="/cart" element={<CartPage />} />

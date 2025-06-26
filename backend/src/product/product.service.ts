@@ -32,14 +32,45 @@ export class ProductService {
     });
   }
 
-  async getNewProducts(limit: number = 8): Promise<Product[]> {
+  async getNewLaptops(limit: number = 8): Promise<Product[]> {
     await this.ensureRepositories();
     return await this.productRepository.find({
-      where: { isActive: true },
+      where: { isActive: true, categoryId: '8d5e884c-150d-4302-9118-ae434778ca27' },
       relations: ["category"],
       order: { createdAt: "DESC" },
       take: limit
     });
+  }
+
+  async getNewPCs(limit: number = 8): Promise<Product[]> {
+    await this.ensureRepositories();
+    return await this.productRepository.find({
+      where: { isActive: true, categoryId: '34d6f233-6782-48af-99fe-d485ccdfc618' },
+      relations: ["category"],
+      order: { createdAt: "DESC" },
+      take: limit
+    });
+  }
+
+  async getNewAccessories(limit: number = 8): Promise<Product[]> {
+    await this.ensureRepositories();
+    // Accessories là các sản phẩm KHÔNG phải laptop, pc
+    return await this.productRepository.createQueryBuilder("product")
+      .leftJoinAndSelect("product.category", "category")
+      .where("product.isActive = :isActive", { isActive: true })
+      .andWhere("product.categoryId NOT IN (:...ids)", { ids: ['8d5e884c-150d-4302-9118-ae434778ca27', '34d6f233-6782-48af-99fe-d485ccdfc618'] })
+      .orderBy("product.createdAt", "DESC")
+      .take(limit)
+      .getMany();
+  }
+
+  async getNewProducts(limit: number = 8) {
+    const [laptops, pcs, accessories] = await Promise.all([
+      this.getNewLaptops(limit),
+      this.getNewPCs(limit),
+      this.getNewAccessories(limit)
+    ]);
+    return { laptops, pcs, accessories };
   }
 
   async getTopSellingProducts(limit: number = 6): Promise<Product[]> {

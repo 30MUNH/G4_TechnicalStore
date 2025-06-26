@@ -1,49 +1,17 @@
 import api from './apiInterceptor';
-
-export interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  isActive: boolean;
-  price: number;
-  stock: number;
-  categoryId: string;
-  category?: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message: string;
-  error?: string;
-}
+import type { Product, Category, ApiResponse } from '../types/product';
 
 class ProductService {
 
   async getAllProducts(): Promise<Product[]> {
     try {
-      const response = await api.get<ApiResponse<Product[]>>(`/products`);
-      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+      const response = await api.get<ApiResponse<Product[]>>('/products');
+      if (response.data && response.data.success && response.data.data) {
         return response.data.data;
       }
       return [];
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('Error fetching all products:', error);
       return [];
     }
   }
@@ -87,20 +55,22 @@ class ProductService {
     }
   }
 
-  async getNewProducts(limit: number = 8): Promise<Product[]> {
+  async getNewProducts(limit: number = 8): Promise<{ laptops: Product[]; pcs: Product[]; accessories: Product[] }> {
+    console.log("Gọi getNewProducts");
     try {
-      const response = await api.get<ApiResponse<Product[]>>(`/products/new?limit=${limit}`);
-      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+      const response = await api.get<ApiResponse<{ laptops: Product[]; pcs: Product[]; accessories: Product[] }>>(`/products/new?limit=${limit}`);
+      if (response.data && response.data.success && response.data.data) {
         return response.data.data;
       }
-      return [];
+      return { laptops: [], pcs: [], accessories: [] };
     } catch (error) {
       console.error('Error fetching new products:', error);
-      return [];
+      return { laptops: [], pcs: [], accessories: [] };
     }
   }
 
   async getTopSellingProducts(limit: number = 6): Promise<Product[]> {
+    console.log("Gọi getTopSellingProducts");
     try {
       const response = await api.get<ApiResponse<Product[]>>(`/products/top-selling?limit=${limit}`);
       if (response.data && response.data.success && Array.isArray(response.data.data)) {
