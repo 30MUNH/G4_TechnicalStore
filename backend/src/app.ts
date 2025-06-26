@@ -11,7 +11,6 @@ import swaggerUi from "swagger-ui-express";
 import { DbConnection } from "@/database/dbConnection";
 import { ResponseInterceptor } from "./utils/interceptor/interceptor";
 import cors from "cors";
-import { useContainer as useTypeORMContainer } from "typeorm";
 
 export default class App {
   public app: express.Application;
@@ -60,12 +59,8 @@ export default class App {
 
   private async connectToDatabase() {
     try {
-      const dataSource = await DbConnection.createConnection();
-      if (dataSource) {
-        // Setup TypeORM with TypeDI container
-        useTypeORMContainer(Container);
-        console.log("✅ Database connection established successfully.");
-      }
+      await DbConnection.createConnection();
+      console.log("✅ Database connection established successfully.");
     } catch (error) {
       console.error("❌ Failed to connect to the database: ", error);
       throw error;
