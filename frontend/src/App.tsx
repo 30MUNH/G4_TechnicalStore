@@ -9,23 +9,26 @@ import ForgotPassword from "./components/Login/ForgotPassword.jsx";
 import HomePage from "./Page/HomePage.jsx";
 import CartPage from "./Page/CartPage.jsx";
 import { CartProvider } from "./contexts/CartContext";
+import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
   return (
     <Router>
-      <CartProvider>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/contact" element={<ContactUs />} />
-          <Route path="/about" element={<Aboutus />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          {/* Redirect any unknown paths to home page */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/about" element={<Aboutus />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            {/* Redirect any unknown paths to home page */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </CartProvider>
+      </AuthProvider>
     </Router>
   );
 }

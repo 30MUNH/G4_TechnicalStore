@@ -19,8 +19,8 @@ export class Auth implements ExpressMiddlewareInterface {
   ) {}
 
   use(req: RequestWithUser, res: Response, next: NextFunction): any {
-    const token = req.header('Authorization');
-    
+    const token = req.header("Authorization");
+
     if (!token) {
       return next(new HttpException(401, HttpMessages._UNAUTHORIZED));
     }
@@ -33,6 +33,7 @@ export class Auth implements ExpressMiddlewareInterface {
       req.user = payload;
       return next();
     } catch (err) {
+      console.error('JWT verification error:', err);
       return next(new HttpException(401, HttpMessages._UNAUTHORIZED));
     }
   }

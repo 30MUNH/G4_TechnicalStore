@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { cartService, type CartItem } from '../services/cartService';
+import { useAuth } from './AuthContext';
 
 interface CartContextType {
     cartItems: CartItem[];
@@ -23,8 +24,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [totalAmount, setTotalAmount] = useState<number>(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { isAuthenticated } = useAuth();
 
     const fetchCart = async () => {
+        if (!isAuthenticated()) {
+            setCartItems([]);
+            setTotalAmount(0);
+            return;
+        }
+
         try {
             setLoading(true);
             const response = await cartService.viewCart();
@@ -36,16 +44,25 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (err) {
             setError('Failed to fetch cart');
             console.error('Error fetching cart:', err);
+            setCartItems([]);
+            setTotalAmount(0);
         } finally {
             setLoading(false);
         }
     };
 
+
     useEffect(() => {
         fetchCart();
-    }, []);
+    }, [isAuthenticated()]);
 
     const addToCart = async (productSlug: string, quantity: number) => {
+        // Require authentication for cart operations
+        if (!isAuthenticated()) {
+            setError('Please login to add items to cart');
+            return;
+        }
+
         try {
             setLoading(true);
             await cartService.addToCart(productSlug, quantity);
@@ -59,6 +76,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const removeFromCart = async (productSlug: string) => {
+        if (!isAuthenticated()) {
+            setError('Please login to manage cart');
+            return;
+        }
+
         try {
             setLoading(true);
             await cartService.removeItem(productSlug);
@@ -72,6 +94,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const updateQuantity = async (productSlug: string, quantity: number) => {
+        if (!isAuthenticated()) {
+            setError('Please login to manage cart');
+            return;
+        }
+
         try {
             setLoading(true);
             await cartService.updateQuantity(productSlug, quantity);
@@ -85,6 +112,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const clearCart = async () => {
+        if (!isAuthenticated()) {
+            return;
+        }
+
         try {
             setLoading(true);
             await cartService.clearCart();
@@ -109,7 +140,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const getShipping = () => {
         const total = getCartTotal();
-        return total >= 1000000 ? 0 : 30000; // Free shipping over 1M VND
+        return total >= 1000000 ? 0 : 30000; 
     };
 
     const getFinalTotal = () => {
