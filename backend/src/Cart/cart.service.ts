@@ -39,7 +39,7 @@ export class CartService {
     for (const item of cart.cartItems) {
         const product = await Product.findOne({ where: { id: item.product.id } });
         
-        if (!product || !product.active) {
+        if (!product || !product.isActive) {
             itemsToRemove.push(item);
         } else if (product.stock < item.quantity) {
             itemsToRemove.push(item);
@@ -73,7 +73,7 @@ export class CartService {
       throw new EntityNotFoundException('Product');
     }
 
-    if (!product.active) {
+    if (!product.isActive) {
       throw new Error('Sản phẩm này hiện không khả dụng');
     }
 

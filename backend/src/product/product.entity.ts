@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany, JoinColumn } from "typeorm";
 import { NamedEntity } from "@/common/NamedEntity";
 import { CartItem } from "@/Cart/cartItem.entity";
 import { OrderDetail } from "@/order/orderDetail.entity";
@@ -12,7 +12,7 @@ export class Product extends NamedEntity {
     url: string;
 
     @Column({ default: true })
-    active: boolean;
+    isActive: boolean;
 
     @Column({nullable: true, type: 'double precision'})
     price: number;
@@ -23,6 +23,9 @@ export class Product extends NamedEntity {
     @Column({ nullable: true })
     stock: number;
 
+    @Column({ nullable: true })
+    categoryId: string;
+
     @OneToMany(() => CartItem, (cartItem) => cartItem.product)
     cartItems: CartItem[];
 
@@ -30,6 +33,7 @@ export class Product extends NamedEntity {
     orderDetails: OrderDetail[];
 
     @ManyToOne(() => Category, (category) => category.products)
+    @JoinColumn({ name: 'categoryId' })
     category: Category;
 
     @OneToMany(() => Image, (image) => image.product)

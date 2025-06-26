@@ -4,7 +4,9 @@
   "main": "src/server.ts",
   "license": "MIT",
   "scripts": {
-    "dev": "ts-node-dev -r tsconfig-paths/register src/server.ts"
+    "dev": "ts-node-dev -r tsconfig-paths/register src/server.ts",
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
