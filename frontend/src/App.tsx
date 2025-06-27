@@ -14,13 +14,15 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Navigation from './components/Navigation';
 import Header from './components/header';
 import { Fragment } from 'react';
+import CustomerList from "./components/Customer_manager/CustomerList.jsx";
+import ShipperManagement from "./components/Shipper_manager/ShipperManagement.jsx";
 
 // 👇 Tách logic route để dùng useLocation
 function AppContent() {
   const location = useLocation();
 
   // Các route không muốn hiện header/navigation
-  const hideHeaderAndNavRoutes = ["/login", "/signup", "/forgot-password", "/about", "/contact", "/cart"];
+  const hideHeaderAndNavRoutes = ["/login", "/signup", "/forgot-password", "/about", "/contact", "/cart", "/manage-customers", "/manage-shippers"];
   const shouldHide = hideHeaderAndNavRoutes.includes(location.pathname);
 
   return (
@@ -37,6 +39,8 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/manage-customers" element={<CustomerList />} />
+        <Route path="/manage-shippers" element={<ShipperManagement />} />
         {/* Redirect any unknown paths to home page */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -11,8 +11,8 @@ import {
   faTrash,
   faStar
 } from '@fortawesome/free-solid-svg-icons';
-import Modal from '../Modal/Modal';
-import ShipperForm from '../ShipperForm/ShipperForm';
+import Modal from "./Modal";
+import ShipperForm from "./ShipperForm";
 import styles from './ShipperManagement.module.css';
 
 
