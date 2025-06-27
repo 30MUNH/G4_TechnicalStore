@@ -28,9 +28,19 @@ export class CategoryController {
     return this.categoryService.findAll();
   }
 
+  @Get('/with-products')
+  async getAllWithProducts(): Promise<Category[]> {
+    return this.categoryService.findWithProducts();
+  }
+
   @Get('/:id')
   async getOne(@Param('id') id: number): Promise<Category> {
     return this.categoryService.findById(id);
+  }
+
+  @Get('/:id/with-products')
+  async getOneWithProducts(@Param('id') id: number): Promise<Category> {
+    return this.categoryService.findByIdWithProducts(id);
   }
 
   @Post()

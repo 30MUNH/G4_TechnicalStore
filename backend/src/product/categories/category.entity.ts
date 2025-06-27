@@ -1,12 +1,16 @@
 // src/product/category.entity.ts
 
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Product } from "../product.entity";
 
-@Entity()
+@Entity("categories")
 export class Category {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @Column({ unique: true })
-  name: string;
+    @Column({ unique: true })
+    name: string;
+
+    @OneToMany(() => Product, (product) => product.category)
+    products: Product[];
 }

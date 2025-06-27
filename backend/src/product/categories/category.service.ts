@@ -15,16 +15,29 @@ export class CategoryService {
 
   async create(data: CreateCategoryDto): Promise<Category> {
     console.log('DATA TYPE:', Array.isArray(data)); 
-  const category = this.categoryRepo.create(data); 
-  return this.categoryRepo.save(category);
+    const category = this.categoryRepo.create(data); 
+    return this.categoryRepo.save(category);
   }
 
   async findAll(): Promise<Category[]> {
     return this.categoryRepo.find();
   }
 
+  async findWithProducts(): Promise<Category[]> {
+    return this.categoryRepo.find({
+      relations: ["products"]
+    });
+  }
+
   async findById(id: number): Promise<Category> {
     return this.categoryRepo.findOneByOrFail({ id });
+  }
+
+  async findByIdWithProducts(id: number): Promise<Category> {
+    return this.categoryRepo.findOneOrFail({
+      where: { id },
+      relations: ["products"]
+    });
   }
 
   async update(id: number, data: UpdateCategoryDto): Promise<Category> {
