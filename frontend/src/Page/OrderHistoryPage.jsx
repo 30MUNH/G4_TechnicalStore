@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { OrderHistory } from '../components/Cart/OrderHistory';
+import { OrderHistory } from '../components/Cart/OrderHistory.jsx';
 import { orderService } from '../services/orderService';
 
 export const OrderHistoryPage = () => {

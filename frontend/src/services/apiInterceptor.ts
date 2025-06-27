@@ -1,20 +1,33 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL:  import.meta.env.VITE_API_URL || "http://localhost:3000/api" 
+    baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000/api"
 });
 
 console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
 
-// Flag to prevent infinite redirect loops
+
 let isRedirecting = false;
+
+
+const authRoutes = [
+    '/account/login',
+    '/account/verify-login',
+    '/account/register',
+    '/account/verify-register'
+];
 
 api.interceptors.request.use(
     (config) => {
-        console.log("Gửi request đến:", (config.baseURL || "") + (config.url || ""));
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+        const url = config.url || '';
+        console.log("Gửi request đến:", (config.baseURL || "") + url);
+
+        
+        if (!authRoutes.some(route => url.includes(route))) {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
         }
         return config;
     },
@@ -29,7 +42,7 @@ api.interceptors.response.use(
         console.log('API Error:', error.response?.status, error.response?.data);
         
         if (error.response?.status === 401 && !isRedirecting) {
-            // Only redirect if we're not already redirecting and not already on auth pages
+            
             const currentPath = window.location.pathname;
             const authPages = ['/login', '/signup', '/forgot-password', '/reset-password'];
             
@@ -38,16 +51,16 @@ api.interceptors.response.use(
                 
                 console.log('401 Unauthorized - Clearing auth data and redirecting');
                 
-                // Clear auth data
+                
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('user');
                 
-                // Dispatch event for AuthContext to handle
+                
                 window.dispatchEvent(new CustomEvent('auth:unauthorized', {
                     detail: { message: 'Session expired. Please login again.' }
                 }));
                 
-                // Reset flag after a delay
+               
                 setTimeout(() => {
                     isRedirecting = false;
                 }, 1000);

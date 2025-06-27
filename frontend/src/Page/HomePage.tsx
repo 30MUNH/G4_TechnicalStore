@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowCircleRight, faEye, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import { faHeart as faHeartRegular2 } from '@fortawesome/free-regular-svg-icons';
@@ -11,8 +11,13 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import ProductDetailModal from '../components/product_manager/productDetailModal';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const HomePage: React.FC = () => {
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const [newProducts, setNewProducts] = useState<{ laptops: Product[]; pcs: Product[]; accessories: Product[] }>({ laptops: [], pcs: [], accessories: [] });
   const [topSellingProducts, setTopSellingProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +25,7 @@ const HomePage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<'laptop' | 'pc' | 'accessories'>('laptop');
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [addToCartStatus, setAddToCartStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
   useEffect(() => {
     console.log("HomePage useEffect chạy");
@@ -72,6 +78,33 @@ const HomePage: React.FC = () => {
     setQuickViewProduct(null);
   };
 
+  const handleAddToCart = async (product: Product) => {
+    if (!isAuthenticated()) {
+      navigate('/login', { 
+        state: { 
+          returnUrl: window.location.pathname,
+          message: 'Please login to add items to cart'
+        } 
+      });
+      return;
+    }
+
+    try {
+      await addToCart(product.slug, 1);
+      setAddToCartStatus({
+        message: 'Product added to cart successfully!',
+        type: 'success'
+      });
+      setTimeout(() => setAddToCartStatus(null), 3000);
+    } catch (error) {
+      setAddToCartStatus({
+        message: 'Failed to add product to cart',
+        type: 'error'
+      });
+      setTimeout(() => setAddToCartStatus(null), 3000);
+    }
+  };
+
   const renderProduct = (product: Product) => (
     <div
       key={product.id}
@@ -108,7 +141,11 @@ const HomePage: React.FC = () => {
       {/* Nút Add to Cart chỉ hiện khi hover */}
       {hoveredProductId === product.id && (
         <div style={{ background: '#18191f', padding: '24px 0', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px', textAlign: 'center', margin: '0 -1px', marginTop: 'auto', transition: 'opacity 0.2s' }}>
-          <button className="add-to-cart-btn" style={{ background: '#D10024', color: '#fff', borderRadius: '24px', padding: '12px 36px', fontWeight: 700, fontSize: '18px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', letterSpacing: 1 }}>
+          <button 
+            className="add-to-cart-btn" 
+            style={{ background: '#D10024', color: '#fff', borderRadius: '24px', padding: '12px 36px', fontWeight: 700, fontSize: '18px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', letterSpacing: 1 }}
+            onClick={() => handleAddToCart(product)}
+          >
             <FontAwesomeIcon icon={faShoppingCart} /> ADD TO CART
           </button>
         </div>
@@ -198,6 +235,23 @@ const HomePage: React.FC = () => {
 
   return (
     <>
+      {addToCartStatus && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '15px',
+            borderRadius: '5px',
+            backgroundColor: addToCartStatus.type === 'success' ? '#4CAF50' : '#f44336',
+            color: 'white',
+            zIndex: 1000,
+            boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+          }}
+        >
+          {addToCartStatus.message}
+        </div>
+      )}
       {/* SECTION: SHOP BOXES */}
       <div className="section">
         <div className="container">

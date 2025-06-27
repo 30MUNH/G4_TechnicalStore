@@ -101,10 +101,17 @@
 }
 
 .contentWrapper {
-  padding: 3rem !important;
+  padding: 5rem 5rem 10px 5rem !important;
   height: 100%;
+  min-height: 600px;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
 }
 
 .contentWrapper:hover {
@@ -116,72 +123,55 @@
 .contentBox {
   position: relative;
   z-index: 1;
+  max-width: 95%;
+  margin: 0 auto;
 }
 
 .contentBox h2 {
-  font-size: 4rem;
+  font-size: 6.5rem;
   font-weight: 800;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   color: #fff;
   line-height: 1;
-  animation: neonGlow 2s ease-in-out infinite;
-}
-
-.contentBox h2 span {
-  background: linear-gradient(45deg, #8a20b9, #b14eeb, #ff59b6);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: block;
-  font-size: 3.5rem;
-  animation: shine 3s linear infinite;
   text-shadow: 0 0 20px rgba(138, 32, 185, 0.5);
 }
 
+.contentBox h2 span {
+  background: linear-gradient(45deg, #8a20b9, #b14eeb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: block;
+  font-size: 4.5rem;
+  margin-top: 0.5rem;
+}
+
 .contentBox p {
-  font-size: 1.1rem;
-  line-height: 1.8;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 2.5rem;
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 1.5rem auto 2.5rem;
+  max-width: 700px;
 }
 
 .seeMoreBtn {
   display: inline-flex;
   align-items: center;
-  padding: 0.8rem 1.8rem;
-  border-radius: 12px;
-  color: #fff;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  text-decoration: none;
+  padding: 0.8rem 2rem;
+  border-radius: 30px;
   font-size: 1rem;
-  position: relative;
-  overflow: hidden;
+  margin: 0 0.5rem;
 }
 
 .seeMoreBtn.primary {
-  background: linear-gradient(45deg, #8a20b9, #b14eeb, #ff59b6);
-  background-size: 200% auto;
+  background: linear-gradient(45deg, #8a20b9, #b14eeb);
+  color: white;
   border: none;
-  animation: shine 3s linear infinite;
-  box-shadow: 0 0 20px rgba(138, 32, 185, 0.3);
-}
-
-.seeMoreBtn.primary:hover {
-  background-position: right center;
-  transform: translateY(-2px);
-  box-shadow: 0 0 30px rgba(138, 32, 185, 0.5);
 }
 
 .seeMoreBtn:not(.primary) {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(177, 78, 235, 0.1);
-}
-
-.seeMoreBtn:not(.primary):hover {
-  border-color: rgba(177, 78, 235, 0.4);
-  background: rgba(177, 78, 235, 0.2);
-  box-shadow: 0 0 15px rgba(177, 78, 235, 0.3);
 }
 
 .bounceArrow {
@@ -193,9 +183,9 @@
 
 .statsContainer {
   display: flex;
-  justify-content: space-between;
-  margin-top: 3.5rem;
-  gap: 1rem;
+  justify-content: center;
+  margin-top: 2.5rem;
+  gap: 4rem;
 }
 
 .statItem {
@@ -215,18 +205,18 @@
 }
 
 .statNumber {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
   background: linear-gradient(45deg, #fff, #b14eeb);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 0.5rem;
-  animation: shine 3s linear infinite;
 }
 
 .statLabel {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: rgba(168, 178, 209, 0.7);
+  text-transform: none;
 }
 
 .servicesSection {
@@ -341,58 +331,60 @@
 
 @media (max-width: 992px) {
   .contentWrapper {
-    padding: 2rem !important;
+    padding: 4rem 4rem 10px 4rem !important;
   }
 
   .contentBox h2 {
-    font-size: 2.5rem;
+    font-size: 5rem;
   }
 
-  .serviceCard {
-    margin-bottom: 2rem;
+  .contentBox h2 span {
+    font-size: 3.5rem;
   }
 
-  .statNumber {
-    font-size: 2rem;
+  .statsContainer {
+    gap: 3rem;
   }
 }
 
 @media (max-width: 768px) {
+  .contentWrapper {
+    padding: 3rem 3rem 10px 3rem !important;
+  }
+
   .contentBox h2 {
-    font-size: 2rem;
+    font-size: 4rem;
   }
 
-  .iconWrapper {
-    width: 60px;
-    height: 60px;
-  }
-
-  .serviceIcon {
-    font-size: 1.5rem;
+  .contentBox h2 span {
+    font-size: 2.8rem;
   }
 
   .statsContainer {
-    flex-wrap: wrap;
     gap: 2rem;
-  }
-
-  .statItem {
-    width: 45%;
   }
 }
 
 @media (max-width: 576px) {
   .contentWrapper {
-    padding: 1.5rem !important;
+    padding: 2rem 2rem 10px 2rem !important;
   }
 
-  .sectionTitle {
-    font-size: 2rem;
+  .contentBox h2 {
+    font-size: 3rem;
+  }
+
+  .contentBox h2 span {
+    font-size: 2.2rem;
+  }
+
+  .statsContainer {
+    flex-wrap: wrap;
+    gap: 1.5rem;
   }
 
   .statItem {
-    width: 100%;
-    margin-bottom: 1.5rem;
+    width: calc(50% - 1rem);
   }
 }
 
@@ -451,7 +443,7 @@
 
 .image {
   width: 100%;
-  height: 590px;
+  height: 600px;
   object-fit: cover;
   border-radius: 10px;
 }

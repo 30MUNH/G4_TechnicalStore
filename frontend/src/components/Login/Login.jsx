@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, User, Lock, Phone } from 'lucide-react';
+import { Phone, Lock, Eye, EyeOff } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './Login.module.css';
@@ -11,10 +11,10 @@ const Login = ({ onNavigate }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
-    nameOrPhone: '',
+    username: '', // Sẽ sử dụng cho số điện thoại
     password: '',
   });
-  
+
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,21 +23,17 @@ const Login = ({ onNavigate }) => {
 
   const validateField = (name, value) => {
     switch (name) {
-      case 'nameOrPhone':
-        if (!value.trim()) return 'Name or phone number is required';
-        if (value.length < 2) return 'Must be at least 2 characters';
-
-        const isPhone = /^[\+]?[0-9\s\-\(\)]+$/.test(value);
-        const isName = /^[a-zA-Z\s]+$/.test(value);
-        if (!isPhone && !isName) return 'Enter a valid name or phone number';
-        if (isPhone && value.replace(/\D/g, '').length < 10) return 'Phone number must be at least 10 digits';
+      case 'username':
+        if (!value) return 'Phone number is required';
+        if (!/^\d+$/.test(value)) return 'Phone number must contain only digits';
+        if (value.length < 10) return 'Phone number must be at least 10 digits';
+        if (value.length > 11) return 'Phone number must not exceed 11 digits';
         return undefined;
-        
+
       case 'password':
         if (!value) return 'Password is required';
-        if (value.length < 6) return 'Password must be at least 6 characters';
         return undefined;
-        
+
       default:
         return undefined;
     }
@@ -45,12 +41,21 @@ const Login = ({ onNavigate }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    // Chỉ cho phép nhập số cho trường phone
+    if (name === 'username') {
+      const numbersOnly = value.replace(/\D/g, '');
+      if (numbersOnly !== value) {
+        return; // Không cập nhật nếu có ký tự không phải số
+      }
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
-    
+
     const error = validateField(name, value);
     if (error) {
       setErrors(prev => ({ ...prev, [name]: error }));
@@ -59,30 +64,34 @@ const Login = ({ onNavigate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    // Validate all fields
     const newErrors = {};
     Object.keys(formData).forEach(key => {
       const error = validateField(key, formData[key]);
       if (error) newErrors[key] = error;
     });
-    
+
     setErrors(newErrors);
-    
+
     if (Object.keys(newErrors).length > 0) {
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
 
-      const response = await authService.login({
-        username: formData.nameOrPhone,
+      const phoneNumber = formData.username.replace(/\D/g, '');
+
+      const loginData = {
+        username: phoneNumber, // Send raw phone number
         password: formData.password
-      });
-      
-      
+      };
+
+      const response = await authService.login(loginData);
+
       if (response && typeof response === 'string' && response.includes('OTP')) {
-        setPendingLogin(formData.nameOrPhone);
+        setPendingLogin(phoneNumber);
         setShowOTPPopup(true);
         setErrors({});
       } else {
@@ -90,77 +99,64 @@ const Login = ({ onNavigate }) => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      setErrors({ 
-        general: error.response?.data?.message || 'Login failed. Please check your credentials.' 
-      });
+      let errorMessage = 'Login failed. Please check your credentials.';
+
+      if (error.response?.status === 401) {
+        errorMessage = 'Invalid phone number or password';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.message || 'Invalid input format';
+      } else if (!navigator.onLine) {
+        errorMessage = 'No internet connection. Please check your network.';
+      }
+
+      setErrors({ general: errorMessage });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleVerifyOTP = async (otp) => {
-    if (!pendingLogin) return;
-    
+    if (!pendingLogin) {
+      setErrors({ general: 'No pending login session' });
+      return;
+    }
+
+    if (!otp || otp.trim().length === 0) {
+      setErrors({ general: 'Please enter OTP code' });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const response = await authService.verifyLogin({
+      const verifyData = {
         username: pendingLogin,
-        otp: otp
-      });
-      
-      // Backend trả về trực tiếp accessToken string
-      console.log('OTP verification response:', response);
-      const accessToken = response;
-      
-      if (accessToken && typeof accessToken === 'string') {
-        // Tạo user object với thông tin cơ bản
-        const user = {
-          id: pendingLogin, 
-          username: pendingLogin,
-          email: '', 
-          fullName: pendingLogin, 
-          role: 'user' 
-        };
-        
-        
-        login(user, accessToken);
-        
+        otp: otp.trim()
+      };
+
+      const response = await authService.verifyLogin(verifyData);
+
+      if (response && typeof response === 'string') {
+        login({ username: pendingLogin }, response);
         setShowOTPPopup(false);
         setPendingLogin(null);
-        
-        
         navigate('/');
-        alert('Login successful!');
       } else {
-        throw new Error('Invalid token received');
+        throw new Error('Invalid response format');
       }
     } catch (error) {
-      console.error('OTP verification error:', error);
-      setErrors({ 
-        general: error.response?.data?.message || 'OTP verification failed. Please try again.' 
-      });
+      let errorMessage = 'OTP verification failed. Please try again.';
+
+      if (error.response?.status === 401) {
+        errorMessage = 'Invalid OTP code';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      setErrors({ general: errorMessage });
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const handleResendOTP = async () => {
-    if (!pendingLogin) return;
-    
-    try {
-     
-      await authService.login({
-        username: formData.nameOrPhone,
-        password: formData.password
-      });
-      alert('New OTP has been sent!');
-    } catch (error) {
-      console.error('Resend OTP error:', error);
-      alert('Failed to resend OTP. Please try again.');
-    }
-  };
-
-  const isPhoneNumber = /^[\+]?[0-9\s\-\(\)]+$/.test(formData.nameOrPhone);
 
   return (
     <FormCard>
@@ -175,22 +171,25 @@ const Login = ({ onNavigate }) => {
             {errors.general}
           </div>
         )}
-        
+
         <div className={styles.formGroup}>
           <div className={styles.inputWrapper}>
             <div className={styles.inputIcon}>
-              {isPhoneNumber ? <Phone size={20} /> : <User size={20} />}
+              <Phone size={20} />
             </div>
             <input
-              type="text"
-              name="nameOrPhone"
-              placeholder="Name or Phone Number"
-              value={formData.nameOrPhone}
+              type="tel"
+              name="username"
+              placeholder="Enter your phone number"
+              value={formData.username}
               onChange={handleInputChange}
-              className={`${styles.input} ${errors.nameOrPhone ? styles.error : ''}`}
+              className={`${styles.input} ${errors.username ? styles.error : ''}`}
+              autoComplete="tel"
+              maxLength={11}
             />
           </div>
-          {errors.nameOrPhone && <span className={styles.errorMessage}>{errors.nameOrPhone}</span>}
+          {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
+
         </div>
 
         <div className={styles.formGroup}>
@@ -199,17 +198,19 @@ const Login = ({ onNavigate }) => {
               <Lock size={20} />
             </div>
             <input
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               name="password"
-              placeholder="Password"
+              placeholder="Enter your password"
               value={formData.password}
               onChange={handleInputChange}
               className={`${styles.input} ${errors.password ? styles.error : ''}`}
+              autoComplete="current-password"
             />
             <button
               type="button"
               className={styles.passwordToggle}
               onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
@@ -217,41 +218,32 @@ const Login = ({ onNavigate }) => {
           {errors.password && <span className={styles.errorMessage}>{errors.password}</span>}
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className={styles.submitBtn}
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Signing In...' : 'Sign In'}
+          {isSubmitting ? 'Signing in...' : 'Sign In'}
         </button>
+
+        <div className={styles.authLinks}>
+          <button type="button" onClick={() => navigate('/forgot-password')} className={styles.linkBtn}>
+            Forgot Password?
+          </button>
+          <button type="button" onClick={() => navigate('/signup')} className={styles.linkBtn}>
+            Create Account
+          </button>
+        </div>
       </form>
 
-      <div className={styles.authLinks}>
-        <button 
-          type="button" 
-          className={styles.linkBtn}
-          onClick={() => navigate('/forgot-password')}
-        >
-          Forgot Password?
-        </button>
-        <button 
-          type="button" 
-          className={styles.linkBtn}
-          onClick={() => navigate('/signup')}
-        >
-          Create Account
-        </button>
-      </div>
-
-      <OTPPopup
-        isOpen={showOTPPopup}
-        onClose={() => {
-          setShowOTPPopup(false);
-          setPendingLogin(null);
-        }}
-        onVerify={handleVerifyOTP}
-        onResend={handleResendOTP}
-      />
+      {showOTPPopup && (
+        <OTPPopup
+          onVerify={handleVerifyOTP}
+          onClose={() => setShowOTPPopup(false)}
+          isLoading={isSubmitting}
+          error={errors.general}
+        />
+      )}
     </FormCard>
   );
 };

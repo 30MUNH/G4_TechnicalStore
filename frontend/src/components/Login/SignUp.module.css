@@ -36,11 +36,12 @@
   position: relative;
   display: flex;
   align-items: center;
+  z-index: 2;
 }
 
 .input {
   width: 100%;
-  padding: 1rem 1rem 1rem 3rem;
+  padding: 2rem 3rem 2rem 3rem;
   background: rgba(168, 85, 247, 0.05);
   border: 1px solid rgba(168, 85, 247, 0.2);
   border-radius: 12px;
@@ -70,8 +71,9 @@
   position: absolute;
   left: 1rem;
   color: rgba(168, 85, 247, 0.7);
-  z-index: 1;
+  z-index: 3;
   transition: color 0.3s ease;
+  pointer-events: none;
 }
 
 .inputWrapper:focus-within .inputIcon {
@@ -79,20 +81,29 @@
 }
 
 .passwordToggle {
-  position: absolute;
-  right: 1rem;
-  background: none;
-  border: none;
-  color: rgba(168, 85, 247, 0.7);
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  transition: color 0.3s ease;
+  position: absolute !important;
+  right: 1rem !important;
+  background: none !important;
+  border: none !important;
+  color: rgba(168, 85, 247, 0.7) !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  z-index: 3 !important;
+  transition: color 0.3s ease !important;
 }
 
 .passwordToggle:hover {
-  color: #a855f7;
+  color: #a855f7 !important;
+}
+
+.passwordToggle svg {
+  width: 20px !important;
+  height: 20px !important;
 }
 
 .errorMessage {
