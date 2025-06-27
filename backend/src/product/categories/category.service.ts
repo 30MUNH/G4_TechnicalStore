@@ -1,76 +1,52 @@
-import { Service } from "typedi";
-import { Category } from "./category.entity";
-import { Repository } from "typeorm";
-import { DbConnection } from "@/database/dbConnection";
-import { CreateCategoryDto, UpdateCategoryDto } from "../dtos/category.dto";
+// src/product/category.service.ts
+
+import { Service } from 'typedi';
+import { InjectRepository } from 'typeorm-typedi-extensions';
+import { Repository } from 'typeorm';
+import { Category } from './category.entity';
+import { CreateCategoryDto, UpdateCategoryDto } from './category.dto';
 
 @Service()
 export class CategoryService {
-  private categoryRepository: Repository<Category>;
+  constructor(
+    @InjectRepository(Category)
+    private readonly categoryRepo: Repository<Category>
+  ) {}
 
-  constructor() {
-    this.initializeRepository();
+  async create(data: CreateCategoryDto): Promise<Category> {
+    console.log('DATA TYPE:', Array.isArray(data)); 
+    const category = this.categoryRepo.create(data); 
+    return this.categoryRepo.save(category);
   }
 
-  private async initializeRepository() {
-    const dataSource = await DbConnection.getConnection();
-    if (!dataSource) {
-      throw new Error("Database connection not available");
-    }
-    this.categoryRepository = dataSource.getRepository(Category);
+  async findAll(): Promise<Category[]> {
+    return this.categoryRepo.find();
   }
 
-  async getAllCategories(): Promise<Category[]> {
-    await this.ensureRepository();
-    return await this.categoryRepository.find({
-      order: { name: "ASC" }
+  async findWithProducts(): Promise<Category[]> {
+    return this.categoryRepo.find({
+      relations: ["products"]
     });
   }
 
-  async getCategoryBySlug(slug: string): Promise<Category | null> {
-    await this.ensureRepository();
-    return await this.categoryRepository.findOne({
-      where: { slug }
+  async findById(id: number): Promise<Category> {
+    return this.categoryRepo.findOneByOrFail({ id });
+  }
+
+  async findByIdWithProducts(id: number): Promise<Category> {
+    return this.categoryRepo.findOneOrFail({
+      where: { id },
+      relations: ["products"]
     });
   }
 
-  async createCategory(createCategoryDto: CreateCategoryDto): Promise<Category> {
-    await this.ensureRepository();
-    const category = this.categoryRepository.create(createCategoryDto);
-    return await this.categoryRepository.save(category);
+  async update(id: number, data: UpdateCategoryDto): Promise<Category> {
+    const category = await this.findById(id);
+    Object.assign(category, data);
+    return this.categoryRepo.save(category);
   }
 
-  async updateCategory(id: string, updateCategoryDto: UpdateCategoryDto): Promise<Category | null> {
-    await this.ensureRepository();
-    const category = await this.categoryRepository.findOne({
-      where: { id }
-    });
-
-    if (!category) {
-      return null;
-    }
-
-    Object.assign(category, updateCategoryDto);
-    return await this.categoryRepository.save(category);
-  }
-
-  async deleteCategory(id: string): Promise<boolean> {
-    await this.ensureRepository();
-    const category = await this.categoryRepository.findOne({
-      where: { id }
-    });
-
-    if (!category) {
-      return false;
-    }
-
-    await this.categoryRepository.remove(category);
-    return true;
-  }
-
-  private async ensureRepository() {
-    if (!this.categoryRepository) {
-      await this.initializeRepository();
-    }
+  async delete(id: number): Promise<void> {
+    await this.categoryRepo.delete(id);
   }
 }

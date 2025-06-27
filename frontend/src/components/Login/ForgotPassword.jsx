@@ -4,13 +4,13 @@ import { Phone, Lock, Eye, EyeOff } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './ForgotPassword.module.css';
+import { authService } from '../../services/authService';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1: Phone, 2: OTP, 3: New Password
   const [formData, setFormData] = useState({
     phone: '',
-    otp: '',
     newPassword: '',
     confirmPassword: ''
   });
@@ -18,25 +18,21 @@ const ForgotPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOTPPopup, setShowOTPPopup] = useState(false);
+  const [pendingReset, setPendingReset] = useState(null);
 
   const validateField = (name, value) => {
     switch (name) {
       case 'phone':
         if (!value.trim()) return 'Phone number is required';
         const cleanPhone = value.replace(/\D/g, '');
-        if (cleanPhone.length < 10) return 'Phone number must be at least 10 digits';
-        if (cleanPhone.length > 15) return 'Phone number must be less than 15 digits';
-        if (!/^[\+]?[0-9\s\-\(\)]+$/.test(value)) return 'Enter a valid phone number';
-        return undefined;
-        
-      case 'otp':
-        if (!value.trim()) return 'OTP is required';
-        if (value.length !== 6) return 'OTP must be 6 digits';
+        if (cleanPhone.length !== 10) return 'Phone number must be 10 digits';
         return undefined;
         
       case 'newPassword':
         if (!value.trim()) return 'Password is required';
-        if (value.length < 8) return 'Password must be at least 8 characters';
+        if (value.length < 6) return 'Password must be at least 6 characters';
+        if (!/\d/.test(value)) return 'Password must contain at least one number';
         return undefined;
         
       case 'confirmPassword':
@@ -66,45 +62,106 @@ const ForgotPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const phoneError = validateField('phone', formData.phone);
-    if (phoneError) {
-      setErrors({ phone: phoneError });
+    if (step === 1) {
+      const phoneError = validateField('phone', formData.phone);
+      if (phoneError) {
+        setErrors({ phone: phoneError });
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        const response = await authService.requestPasswordReset(formData.phone.replace(/\D/g, ''));
+        if (response && response.success) {
+          setPendingReset(formData.phone.replace(/\D/g, ''));
+          setShowOTPPopup(true);
+          setStep(2);
+        } else {
+          throw new Error('Failed to send OTP');
+        }
+      } catch (error) {
+        setErrors({ phone: error.response?.data?.message || 'Failed to send OTP. Please try again.' });
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else if (step === 3) {
+      const newPasswordError = validateField('newPassword', formData.newPassword);
+      const confirmPasswordError = validateField('confirmPassword', formData.confirmPassword);
+      
+      if (newPasswordError || confirmPasswordError) {
+        setErrors({
+          newPassword: newPasswordError,
+          confirmPassword: confirmPasswordError
+        });
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        const response = await authService.resetPassword({
+          phone: pendingReset,
+          newPassword: formData.newPassword
+        });
+
+        if (response && response.success) {
+          alert('Password has been reset successfully!');
+          navigate('/login');
+        } else {
+          throw new Error('Failed to reset password');
+        }
+      } catch (error) {
+        setErrors({ general: error.response?.data?.message || 'Failed to reset password. Please try again.' });
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  const handleVerifyOTP = async (otp) => {
+    if (!pendingReset) {
+      setErrors({ general: 'No pending reset session' });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Simulate sending OTP
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setStep(2);
-    } catch (error) {
-      setErrors({ phone: 'Failed to send OTP. Please try again.' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      const response = await authService.verifyResetOTP({
+        phone: pendingReset,
+        otp: otp
+      });
 
-  const handleVerifyOTP = async (otp) => {
-    setIsSubmitting(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      // After successful OTP verification, navigate to reset password page
-      setStep(3);
+      if (response && response.success) {
+        setShowOTPPopup(false);
+        setStep(3);
+      } else {
+        throw new Error('Invalid OTP');
+      }
     } catch (error) {
-      alert('Invalid OTP. Please try again.');
+      setErrors({ general: error.response?.data?.message || 'Invalid OTP. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleResendOTP = async () => {
+    if (!pendingReset) {
+      setErrors({ general: 'No pending reset session' });
+      return;
+    }
+
     try {
-      // Simulate API call to resend OTP
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('New OTP has been sent to your phone!');
+      const response = await authService.resendOTP({
+        phone: pendingReset,
+        type: 'reset'
+      });
+
+      if (response && response.success) {
+        alert('New OTP code has been sent to your phone');
+      } else {
+        throw new Error('Failed to resend OTP');
+      }
     } catch (error) {
-      alert('Failed to resend OTP. Please try again.');
+      setErrors({ general: 'Failed to resend OTP. Please try again.' });
     }
   };
 
@@ -144,7 +201,6 @@ const ForgotPassword = () => {
               />
             </div>
             {errors.phone && <span className={styles.errorMessage}>{errors.phone}</span>}
-            
           </div>
         )}
 
@@ -211,8 +267,8 @@ const ForgotPassword = () => {
         >
           {isSubmitting ? 'Processing...' : (
             step === 1 ? 'Send OTP' :
-            step === 2 ? 'Verify OTP' :
-            'Reset Password'
+            step === 3 ? 'Reset Password' :
+            'Verify OTP'
           )}
         </button>
 
@@ -223,11 +279,16 @@ const ForgotPassword = () => {
         </div>
       </form>
 
-      {step === 2 && (
+      {showOTPPopup && (
         <OTPPopup
+          isOpen={showOTPPopup}
+          onClose={() => {
+            setShowOTPPopup(false);
+            setPendingReset(null);
+            navigate('/login');
+          }}
           onVerify={handleVerifyOTP}
-          onClose={() => navigate('/login')}
-          isLoading={isSubmitting}
+          onResend={handleResendOTP}
           error={errors.general}
         />
       )}
