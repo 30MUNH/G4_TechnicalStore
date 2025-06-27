@@ -1,9 +1,4 @@
-<<<<<<< Updated upstream
-=======
 
-
-
->>>>>>> Stashed changes
 import { Controller, Get, Param, QueryParam, Post, Put, Delete, Body } from "routing-controllers";
 
 import { Service } from "typedi";

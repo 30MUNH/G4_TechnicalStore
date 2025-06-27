@@ -1,209 +1,196 @@
-import React, { useState } from 'react';
-import { FaArrowLeft, FaCheckCircle, FaTruck, FaHourglassHalf } from 'react-icons/fa';
-import styles from './OrderHistory.module.css';
+import React from 'react';
+import './OrderHistory.module.css';
 
-const OrderStatusBadge = ({ status }) => {
-    let icon = <FaHourglassHalf className={`${styles.icon} ${styles.statusIconDefault}`} />;
-    let text = status || "Đang xử lý";
-    let className = styles.statusDefault;
-
-    if (status === 'Đã giao') {
-        icon = <FaCheckCircle className={`${styles.icon} ${styles.statusIconSuccess}`} />;
-        className = styles.statusSuccess;
-    } else if (status === 'Đang giao') {
-        icon = <FaTruck className={`${styles.icon} ${styles.statusIconWarning}`} />;
-        className = styles.statusWarning;
-    } else if (status === 'Đã hủy') {
-        className = styles.statusDanger;
-    }
-    return <span className={`${styles.orderStatusBadge} ${className}`}>{icon}{text}</span>;
-};
-
-const OrderHistory = ({ orders, onBackToCart }) => {
-    const [selectedOrder, setSelectedOrder] = useState(null);
-
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+export const OrderHistory = ({ orders, onBackToCart }) => {
+    const getStatusColor = (status) => {
+        switch (status?.toLowerCase()) {
+            case 'pending':
+                return '#f59e0b'; // Amber
+            case 'processing':
+                return '#3b82f6'; // Blue
+            case 'shipped':
+                return '#10b981'; // Emerald
+            case 'delivered':
+                return '#059669'; // Green
+            case 'cancelled':
+                return '#ef4444'; // Red
+            default:
+                return '#6b7280'; // Gray
+        }
     };
 
     const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return new Intl.DateTimeFormat('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
-        }).format(date);
+        };
+        return new Date(dateString).toLocaleDateString('vi-VN', options);
     };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'delivered':
-                return styles.statusDelivered;
-            case 'shipping':
-                return styles.statusShipping;
-            case 'processing':
-                return styles.statusProcessing;
-            case 'cancelled':
-                return styles.statusCancelled;
-            default:
-                return '';
-        }
-    };
-
-    const getStatusText = (status) => {
-        switch (status) {
-            case 'delivered':
-                return 'Đã giao';
-            case 'shipping':
-                return 'Đang giao';
-            case 'processing':
-                return 'Đang xử lý';
-            case 'cancelled':
-                return 'Đã hủy';
-            default:
-                return status;
-        }
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
     };
 
     return (
-        <div className={styles.orderHistoryPage}>
-            <div className={styles.orderHeader}>
-                <h1>
-                    Lịch sử đơn hàng
-                    <span className={styles.orderCount}>({orders.length} đơn hàng)</span>
-                </h1>
-                <button onClick={onBackToCart} className={styles.backButton}>
-                    <FaArrowLeft className={styles.icon} />
-                    Quay lại giỏ hàng
+        <div className="order-history-container">
+            <div className="mb-4 d-flex justify-content-between align-items-center">
+                <button
+                    className="btn"
+                    onClick={onBackToCart}
+                    style={{
+                        background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.5rem 1.5rem',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontSize: '0.95rem',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.target.style.transform = 'translateY(-2px)';
+                        e.target.style.boxShadow = '0 4px 12px rgba(30, 41, 59, 0.2)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = 'none';
+                    }}
+                >
+                    ← Quay lại giỏ hàng
                 </button>
             </div>
 
-            <div className={styles.orderContent}>
-                {orders.length === 0 ? (
-                    <div className={styles.noOrders}>
-                        <div className={styles.noOrdersIcon}>
-                            <FaHourglassHalf />
-                        </div>
-                        <h2>Chưa có đơn hàng nào</h2>
-                        <p>Bạn chưa có đơn hàng nào. Hãy thêm sản phẩm vào giỏ hàng và đặt hàng ngay!</p>
-                        <button onClick={onBackToCart} className={styles.continueShoppingButton}>
-                            <FaArrowLeft />
-                            Quay lại giỏ hàng
-                        </button>
+            {orders.length === 0 ? (
+                <div className="text-center py-5">
+                    <div style={{
+                        fontSize: '4rem',
+                        marginBottom: '1rem'
+                    }}>
+                        📋
                     </div>
-                ) : (
-                    <div className={styles.orderList}>
-                        {orders.map(order => (
-                            <div key={order.id} className={styles.orderCard}>
-                                <div className={styles.orderCardHeader}>
-                                    <div className={styles.orderInfo}>
-                                        <h3>Đơn hàng #{order.id}</h3>
-                                        <span className={styles.orderDate}>
-                                            {formatDate(order.orderDate)}
-                                        </span>
-                                    </div>
-                                    <div className={styles.orderStatus}>
-                                        <span className={`${styles.statusBadge} ${getStatusColor(order.status)}`}>
-                                            {getStatusText(order.status)}
-                                        </span>
-                                        <span className={styles.orderTotal}>
-                                            {formatCurrency(order.totalAmount)}
-                                        </span>
+                    <h3 className="mb-3">Chưa có đơn hàng nào</h3>
+                    <p className="text-muted">
+                        Bạn chưa có đơn hàng nào trong lịch sử. Hãy mua sắm và đặt hàng nhé!
+                    </p>
+                </div>
+            ) : (
+                <div className="row">
+                    {orders.map((order) => (
+                        <div key={order.id} className="col-12 mb-4">
+                            <div className="card" style={{
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
+                                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)'
+                            }}>
+                                <div className="card-header bg-white" style={{
+                                    borderBottom: '1px solid #e2e8f0',
+                                    padding: '1rem 1.5rem'
+                                }}>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 className="mb-0">Đơn hàng #{order.id}</h6>
+                                            <small className="text-muted">
+                                                Đặt ngày: {formatDate(order.orderDate)}
+                                            </small>
+                                        </div>
+                                        <div className="d-flex align-items-center">
+                                            <span className="me-2">Trạng thái:</span>
+                                            <span className="badge" style={{
+                                                backgroundColor: getStatusColor(order.status),
+                                                padding: '0.5em 1em',
+                                                fontSize: '0.85em'
+                                            }}>
+                                                {order.status}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <div className={styles.orderPreview}>
-                                    <div className={styles.productImages}>
-                                        {order.items.slice(0, 3).map(item => (
-                                            <img 
-                                                key={item.id} 
-                                                src={item.image} 
-                                                alt={item.name}
-                                                className={styles.productImage} 
-                                            />
-                                        ))}
-                                        {order.items.length > 3 && (
-                                            <div className={styles.moreItems}>
-                                                +{order.items.length - 3}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <button
-                                        className={styles.detailsButton}
-                                        onClick={() => setSelectedOrder(selectedOrder === order.id ? null : order.id)}
-                                    >
-                                        {selectedOrder === order.id ? 'Ẩn chi tiết' : 'Xem chi tiết'}
-                                    </button>
-                                </div>
-
-                                {selectedOrder === order.id && (
-                                    <div className={styles.orderDetails}>
-                                        <div className={styles.detailsSection}>
-                                            <h4>Chi tiết đơn hàng</h4>
-                                            <div className={styles.itemsList}>
-                                                {order.items.map(item => (
-                                                    <div key={item.id} className={styles.orderItem}>
-                                                        <img 
-                                                            src={item.image} 
-                                                            alt={item.name} 
-                                                            className={styles.itemImage}
-                                                        />
-                                                        <div className={styles.itemInfo}>
-                                                            <h5>{item.name}</h5>
-                                                            <p className={styles.itemCategory}>{item.category}</p>
-                                                            <div className={styles.itemPriceQuantity}>
-                                                                <span>Số lượng: {item.quantity}</span>
-                                                                <span>{formatCurrency(item.price)}</span>
+                                <div className="card-body">
+                                    <div className="table-responsive">
+                                        <table className="table table-borderless mb-0">
+                                            <thead>
+                                                <tr className="text-muted" style={{ fontSize: '0.9rem' }}>
+                                                    <th>Sản phẩm</th>
+                                                    <th className="text-center">Số lượng</th>
+                                                    <th className="text-end">Giá</th>
+                                                    <th className="text-end">Tổng</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {order.orderDetails?.map((item) => (
+                                                    <tr key={item.id}>
+                                                        <td style={{ maxWidth: '300px' }}>
+                                                            <div className="d-flex align-items-center">
+                                                                {item.product?.image && (
+                                                                    <img
+                                                                        src={item.product.image}
+                                                                        alt={item.product.name}
+                                                                        style={{
+                                                                            width: '50px',
+                                                                            height: '50px',
+                                                                            objectFit: 'cover',
+                                                                            borderRadius: '8px',
+                                                                            marginRight: '1rem'
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                                <div>
+                                                                    <div className="fw-medium">{item.product?.name}</div>
+                                                                    <small className="text-muted">
+                                                                        {item.product?.category?.name}
+                                                                    </small>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                        <div className={styles.itemTotal}>
-                                                            {formatCurrency(item.price * item.quantity)}
-                                                        </div>
-                                                    </div>
+                                                        </td>
+                                                        <td className="text-center">{item.quantity}</td>
+                                                        <td className="text-end">{formatCurrency(item.price)}</td>
+                                                        <td className="text-end">{formatCurrency(item.price * item.quantity)}</td>
+                                                    </tr>
                                                 ))}
-                                            </div>
-                                        </div>
-
-                                        <div className={styles.detailsSection}>
-                                            <h4>Thông tin giao hàng</h4>
-                                            <div className={styles.shippingInfo}>
-                                                <p><strong>Người nhận:</strong> {order.shippingInfo.fullName}</p>
-                                                <p><strong>Số điện thoại:</strong> {order.shippingInfo.phone}</p>
-                                                <p><strong>Địa chỉ:</strong> {order.shippingInfo.address}</p>
-                                                <p><strong>Phường:</strong> {order.shippingInfo.ward}</p>
-                                                <p><strong>Xã/Quận:</strong> {order.shippingInfo.commune}</p>
-                                                <p><strong>Thành phố:</strong> {order.shippingInfo.city}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className={styles.detailsSection}>
-                                            <h4>Tổng quan đơn hàng</h4>
-                                            <div className={styles.orderSummary}>
-                                                <div className={styles.summaryRow}>
-                                                    <span>Tạm tính:</span>
-                                                    <span>{formatCurrency(order.subtotal)}</span>
-                                                </div>
-                                                <div className={styles.summaryRow}>
-                                                    <span>Phí vận chuyển:</span>
-                                                    <span>{order.shippingFee === 0 ? 'Miễn phí' : formatCurrency(order.shippingFee)}</span>
-                                                </div>
-                                                <div className={`${styles.summaryRow} ${styles.total}`}>
-                                                    <span>Tổng cộng:</span>
-                                                    <span>{formatCurrency(order.totalAmount)}</span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <td colSpan="3" className="text-end fw-medium">Tạm tính:</td>
+                                                    <td className="text-end">{formatCurrency(order.subtotal)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td colSpan="3" className="text-end fw-medium">Phí vận chuyển:</td>
+                                                    <td className="text-end">{formatCurrency(order.shippingFee)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td colSpan="3" className="text-end fw-medium">Thuế:</td>
+                                                    <td className="text-end">{formatCurrency(order.tax)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td colSpan="3" className="text-end fw-bold">Tổng cộng:</td>
+                                                    <td className="text-end fw-bold">{formatCurrency(order.total)}</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                                {order.note && (
+                                    <div className="card-footer bg-white" style={{
+                                        borderTop: '1px solid #e2e8f0',
+                                        padding: '1rem 1.5rem'
+                                    }}>
+                                        <strong>Ghi chú:</strong> {order.note}
                                     </div>
                                 )}
                             </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
-};
-
-export default OrderHistory;
+}; 
