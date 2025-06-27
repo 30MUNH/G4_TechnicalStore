@@ -27,12 +27,11 @@ export class AccountService{
         account.password = await bcrypt.hash(request.password, SALT_ROUNDS);
         account.role = role;
         account.phone = request.phone;
-        await account.save();
         return account;
     }
 
-    async finalizeCreateAccount(username: string){
-        const account = await this.findAccountByUsername(username);
+    async finalizeCreateAccount(account: Account){
+        await account.save();
         const newRefreshToken = await this.jwtService.generateRefreshToken(account);
         const accessToken = this.jwtService.generateAccessToken(account);
         return {newRefreshToken, accessToken};
