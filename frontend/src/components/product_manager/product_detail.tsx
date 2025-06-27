@@ -7,9 +7,9 @@ import './productDetail.css';
 interface Product {
   id?: string;
   name: string;
-  category: string;
+  categoryId: string;
   url: string;
-  active: boolean;
+  isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
   deletedAt?: string | null;
@@ -18,34 +18,48 @@ interface Product {
   description: string;
   stock: number;
 }
-// const formatVND = (value: number | string) => {
-//   if (!value && value !== 0) return '';
-//   return new Intl.NumberFormat('vi-VN', {
-//     style: 'currency',
-//     currency: 'VND',
-//     minimumFractionDigits: 0,
-//   }).format(Number(value));
-// };
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<Product | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-const [validationErrors, setValidationErrors] = useState<Partial<Product>>({});
+  const [validationErrors, setValidationErrors] = useState<Partial<Product>>({});
   const navigate = useNavigate();
 
   const isAddMode = !id; // Kiểm tra nếu không có id thì là chế độ thêm mới
 
   useEffect(() => {
+    // Fetch categories
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/categories");
+        if (response.data.success) {
+          setCategories(response.data.data);
+        }
+      } catch (err: any) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+
+    fetchCategories();
+
     if (isAddMode) {
       // Chế độ thêm mới: Khởi tạo form rỗng
       const initialFormData: Product = {
         name: "",
-        category: "",
+        categoryId: "",
         url: "",
-        active: true,
+        isActive: true,
         price: 0,
         description: "",
         stock: 0,
@@ -56,15 +70,15 @@ const [validationErrors, setValidationErrors] = useState<Partial<Product>>({});
       const fetchProduct = async () => {
         try {
           const response = await axios.get(
-            `http://localhost:4000/api/products/${id}`
+            `http://localhost:3000/api/products/${id}`
           );
           if (response.data.success) {
             const productData: Product = {
               id: response.data.data.id,
               name: response.data.data.name,
-              category: response.data.data.category,
+              categoryId: response.data.data.categoryId,
               url: response.data.data.url,
-              active: response.data.data.active,
+              isActive: response.data.data.isActive,
               createdAt: response.data.data.createdAt,
               updatedAt: response.data.data.updatedAt,
               deletedAt: response.data.data.deletedAt,
@@ -86,16 +100,18 @@ const [validationErrors, setValidationErrors] = useState<Partial<Product>>({});
       fetchProduct();
     }
   }, [id, isAddMode]);
-const validateForm = (data: Product): Record<string, string> => {
-  const errors: Record<string, string> = {};
-  if (!data.name.trim()) errors.name = "Tên sản phẩm là bắt buộc";
-  if (!data.category.trim()) errors.category = "Danh mục là bắt buộc";
-  if (!data.url.trim()) errors.url = "URL hình ảnh là bắt buộc";
-  if (!data.description.trim()) errors.description = "Mô tả là bắt buộc";
-  if (data.price <= 0) errors.price = "Giá phải lớn hơn 0";
-  if (data.stock < 0) errors.stock = "Số lượng tồn kho không được âm";
-  return errors;
-};
+
+  const validateForm = (data: Product): Record<string, string> => {
+    const errors: Record<string, string> = {};
+    if (!data.name.trim()) errors.name = "Tên sản phẩm là bắt buộc";
+    if (!data.categoryId.trim()) errors.categoryId = "Danh mục là bắt buộc";
+    if (!data.url.trim()) errors.url = "URL hình ảnh là bắt buộc";
+    if (!data.description.trim()) errors.description = "Mô tả là bắt buộc";
+    if (data.price <= 0) errors.price = "Giá phải lớn hơn 0";
+    if (data.stock < 0) errors.stock = "Số lượng tồn kho không được âm";
+    return errors;
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -137,18 +153,18 @@ const validateForm = (data: Product): Record<string, string> => {
     try {
       const payload = {
         name: formData.name,
-        category: formData.category,
+        categoryId: formData.categoryId,
         price: formData.price,
         stock: formData.stock,
         url: formData.url,
         description: formData.description,
-        active: formData.active,
+        isActive: formData.isActive,
       };
 
       if (isAddMode) {
         // Chế độ thêm mới: Gửi POST request
         const response = await axios.post(
-          "http://localhost:4000/api/products",
+          "http://localhost:3000/api/products",
           payload
         );
         if (response.data.success) {
@@ -162,7 +178,7 @@ const validateForm = (data: Product): Record<string, string> => {
       } else {
         // Chế độ chỉnh sửa: Gửi PUT request với payload
         const response = await axios.put(
-          `http://localhost:4000/api/products/${id}`,
+          `http://localhost:3000/api/products/${id}`,
           payload
         );
         if (response.data.success) {
@@ -171,7 +187,6 @@ const validateForm = (data: Product): Record<string, string> => {
           setTimeout(() => {
             navigate("/products");
           }, 3000);
-          // console.log("payload: ", payload);
         } else {
           setError("Không thể cập nhật sản phẩm");
         }
@@ -185,8 +200,8 @@ const validateForm = (data: Product): Record<string, string> => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:4000/api/products/${id}`);
-     setSuccessMessage("Xóa sản phẩm thành công!");
+      await axios.delete(`http://localhost:3000/api/products/${id}`);
+      setSuccessMessage("Xóa sản phẩm thành công!");
       setTimeout(() => {
         navigate("/products");
       }, 3000);
@@ -208,12 +223,12 @@ const validateForm = (data: Product): Record<string, string> => {
   return (
     <div className="product-detail-container">
       <h2>{isAddMode ? "Thêm Sản Phẩm Mới" : "Chi Tiết Sản Phẩm"}</h2>
-       {successMessage && (
+      {successMessage && (
         <div className="success-notification">
           {successMessage}
         </div>
       )}
-        <div className="product-detail-card">
+      <div className="product-detail-card">
         <div className="product-detail-image-wrapper">
           <div className="form-group">
             <label>URL Hình ảnh:</label>
@@ -256,15 +271,21 @@ const validateForm = (data: Product): Record<string, string> => {
           </div>
           <div className="form-group">
             <label>Danh mục:</label>
-            <input
-              type="text"
-              name="category"
-              value={formData.category}
+            <select
+              name="categoryId"
+              value={formData.categoryId}
               onChange={handleInputChange}
-              className={`form-input ${validationErrors.category ? 'border-red-500' : ''}`}
-            />
-            {validationErrors.category && (
-              <p className="text-red-500 text-sm">{validationErrors.category}</p>
+              className={`form-input ${validationErrors.categoryId ? 'border-red-500' : ''}`}
+            >
+              <option value="">Chọn danh mục</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            {validationErrors.categoryId && (
+              <p className="text-red-500 text-sm">{validationErrors.categoryId}</p>
             )}
           </div>
           <div className="form-group">
@@ -309,11 +330,11 @@ const validateForm = (data: Product): Record<string, string> => {
             <label>
               <input
                 type="checkbox"
-                name="active"
-                checked={formData.active}
+                name="isActive"
+                checked={formData.isActive}
                 onChange={handleInputChange}
               />
-              Trạng thái: {formData.active ? "Hoạt động" : "Không hoạt động"}
+              Trạng thái: {formData.isActive ? "Hoạt động" : "Không hoạt động"}
             </label>
           </div>
         </div>

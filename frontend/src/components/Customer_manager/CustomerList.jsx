@@ -1,394 +1,362 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  Search, 
-  Plus, 
-  Edit3, 
-  Trash2, 
-  Eye, 
-  Download,
-  Upload,
-  Phone,
-  Mail,
-  ChevronLeft,
-  ChevronRight,
-  ArrowLeft,
-  Users
-} from 'lucide-react';
-import CustomerDetail from './CustomerDetail';
-import CustomerEdit from './CustomerEdit';
-import DeleteConfirmation from './DeleteConfirmation';
-import styles from './styles/CustomerList.module.css';
-import commonStyles from './styles/common.module.css';
+import React, { useState, useEffect } from "react";
+import { Eye, Pencil, Trash2, Search, ArrowLeft, FileDown, FileUp, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import CustomerDetail from "./CustomerDetail";
+import CustomerEdit from "./CustomerEdit";
+import DeleteConfirmation from "./DeleteConfirmation";
+import { customerService } from "../../services/customerService";
+import styles from "./styles/CustomerList.module.css";
 
 const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [editingCustomer, setEditingCustomer] = useState(null);
-  const [deletingCustomer, setDeletingCustomer] = useState(null);
-  const [showDetail, setShowDetail] = useState(false);
-  const [showEdit, setShowEdit] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
-  const [showAddCustomer, setShowAddCustomer] = useState(false);
-  
-  const [filters, setFilters] = useState({
-    search: '',
-    status: '',
-    customerType: '',
-    dateFrom: '',
-    dateTo: ''
-  });
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const filteredCustomers = useMemo(() => {
-    return customers.filter(customer => {
-      const searchTerm = filters.search.toLowerCase();
-      const matchesSearch = 
-        customer.firstName.toLowerCase().includes(searchTerm) ||
-        customer.lastName.toLowerCase().includes(searchTerm) ||
-        customer.email.toLowerCase().includes(searchTerm) ||
-        customer.phone.includes(searchTerm);
-      
-      const matchesStatus = !filters.status || customer.status === filters.status;
-      const matchesType = !filters.customerType || customer.customerType === filters.customerType;
-
-      const customerDate = new Date(customer.dateJoined);
-      const matchesDateFrom = !filters.dateFrom || customerDate >= new Date(filters.dateFrom);
-      const matchesDateTo = !filters.dateTo || customerDate <= new Date(filters.dateTo);
-
-      return matchesSearch && matchesStatus && matchesType && matchesDateFrom && matchesDateTo;
-    });
-  }, [customers, filters]);
-
-  const paginatedCustomers = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredCustomers.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredCustomers, currentPage, itemsPerPage]);
-
-  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
-
-  const handleViewDetail = (customer) => {
-    setSelectedCustomer(customer);
-    setShowDetail(true);
-  };
-
-  const handleEdit = (customer) => {
-    setEditingCustomer(customer);
-    setShowEdit(true);
-  };
-
-  const handleDelete = (customer) => {
-    setDeletingCustomer(customer);
-    setShowDelete(true);
-  };
-
-  const handleSaveCustomer = (updatedCustomer) => {
-    if (updatedCustomer.id) {
-      setCustomers(prev => prev.map(c => c.id === updatedCustomer.id ? updatedCustomer : c));
-    } else {
-      const newCustomer = {
-        ...updatedCustomer,
-        id: String(customers.length + 1),
-        dateJoined: new Date().toISOString().split('T')[0],
-        totalOrders: 0,
-        totalSpent: 0
-      };
-      setCustomers(prev => [...prev, newCustomer]);
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      const response = await customerService.getAllCustomers();
+      if (response?.success && Array.isArray(response?.data)) {
+        setCustomers(response.data);
+        setError(null);
+      } else {
+        setCustomers([]);
+        setError(response?.message || "Không thể tải danh sách khách hàng");
+        alert(response?.message || "Không thể tải danh sách khách hàng");
+      }
+    } catch (err) {
+      setCustomers([]);
+      const errorMsg = err.response?.data?.message || err.message || "Không thể tải danh sách khách hàng";
+      setError(errorMsg);
+      alert(errorMsg);
+    } finally {
+      setLoading(false);
     }
-    setShowEdit(false);
-    setEditingCustomer(null);
-    setShowAddCustomer(false);
   };
 
-  const handleDeleteCustomer = (customerId) => {
-    setCustomers(prev => prev.filter(c => c.id !== customerId));
-    setShowDelete(false);
-    setDeletingCustomer(null);
+  // Auto refresh every 30 seconds
+  useEffect(() => {
+    fetchCustomers();
+    const interval = setInterval(() => {
+      fetchCustomers();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [refreshTrigger]);
+
+  const handleViewDetails = (customer) => {
+    setSelectedCustomer(customer);
+    setShowDetailModal(true);
+  };
+
+  const handleEditClick = (customer) => {
+    setSelectedCustomer(customer);
+    setShowEditModal(true);
   };
 
   const handleAddCustomer = () => {
-    setEditingCustomer({
-      id: null,
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      status: 'Active',
-      customerType: 'Component Purchase'
-    });
-    setShowAddCustomer(true);
-    setShowEdit(true);
+    setSelectedCustomer(null);
+    setShowEditModal(true);
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
+  const handleEditSave = async (editedCustomer) => {
+    try {
+      let response;
+      if (editedCustomer.id) {
+        response = await customerService.updateCustomer(editedCustomer.id, editedCustomer);
+      } else {
+        response = await customerService.createCustomer(editedCustomer);
+      }
+      
+      if (response?.success) {
+        alert(editedCustomer.id ? "Cập nhật khách hàng thành công" : "Thêm khách hàng thành công");
+        setShowEditModal(false);
+        setSelectedCustomer(null);
+        setRefreshTrigger(prev => prev + 1);
+      } else {
+        alert(response?.message || "Không thể lưu thông tin khách hàng");
+      }
+    } catch (error) {
+      alert("Không thể lưu thông tin khách hàng: " + (error.response?.data?.message || error.message));
+    }
   };
+
+  const handleDeleteClick = (customer) => {
+    setSelectedCustomer(customer);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      const response = await customerService.deleteCustomer(selectedCustomer.id);
+      if (response?.success) {
+        alert("Xóa khách hàng thành công");
+        setShowDeleteModal(false);
+        setSelectedCustomer(null);
+        setRefreshTrigger(prev => prev + 1);
+      } else {
+        alert(response?.message || "Không thể xóa khách hàng");
+      }
+    } catch (error) {
+      alert("Không thể xóa khách hàng: " + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleImportData = async (event) => {
+    try {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await customerService.importCustomers(formData);
+      if (response?.success) {
+        alert("Nhập dữ liệu thành công");
+        setRefreshTrigger(prev => prev + 1);
+      } else {
+        alert(response?.message || "Không thể nhập dữ liệu");
+      }
+    } catch (error) {
+      alert("Không thể nhập dữ liệu: " + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      const response = await customerService.exportCustomers();
+      if (response?.success) {
+        // Create a download link for the Excel file
+        const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'customers.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert(response?.message || "Không thể xuất dữ liệu");
+      }
+    } catch (error) {
+      alert("Không thể xuất dữ liệu: " + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const filteredCustomers = Array.isArray(customers) ? customers.filter((customer) => {
+    if (!customer) return false;
+    
+    const matchesSearch = customer.phone?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === "all" || customer.role?.name === roleFilter;
+    const matchesStatus = statusFilter === "all" || 
+      (statusFilter === "registered" && customer.isRegistered) ||
+      (statusFilter === "unregistered" && !customer.isRegistered);
+    
+    let matchesDate = true;
+    if (startDate && endDate && customer.createdAt) {
+      const customerDate = new Date(customer.createdAt);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      matchesDate = customerDate >= start && customerDate <= end;
+    }
+
+    return matchesSearch && matchesRole && matchesStatus && matchesDate;
+  }) : [];
+
+  const itemsPerPage = 10;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredCustomers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+
+  if (loading) {
+    return <div className={styles.loading}>Đang tải...</div>;
+  }
+
+  if (error) {
+    return <div className={styles.error}>{error}</div>;
+  }
 
   return (
-    <div className={commonStyles.container}>
-      <div className={commonStyles.header}>
-        <div className={commonStyles.headerContent}>
-          <div className={commonStyles.headerTop}>
-            <button className={commonStyles.buttonSecondary}>
-              <ArrowLeft className={commonStyles.icon} />
-              Quay lại
-            </button>
-            <div className={commonStyles.headerTitle}>
-              <h1 className={commonStyles.title}>Quản lý khách hàng</h1>
-              <p className={commonStyles.subtitle}>Quản lý thông tin khách hàng và đơn hàng</p>
-            </div>
-            <div className={commonStyles.headerActions}>
-              <button className={commonStyles.buttonSecondary}>
-                <Upload className={commonStyles.icon} />
-                Nhập dữ liệu
-              </button>
-              <button className={commonStyles.buttonSecondary}>
-                <Download className={commonStyles.icon} />
-                Xuất dữ liệu
-              </button>
-              <button className={commonStyles.buttonPrimary} onClick={handleAddCustomer}>
-                <Plus className={commonStyles.icon} />
-                Thêm khách hàng
-              </button>
-            </div>
-          </div>
+    <div className={styles.container}>
+      {/* Header */}
+      <div className={styles.header}>
+        <button className={styles.backButton}>
+          <ArrowLeft size={20} />
+          Quay lại
+        </button>
+        <div className={styles.headerTitle}>
+          <h1>Manager Customer</h1>
+          <p>Quản lý thông tin và trạng thái khách hàng</p>
+        </div>
+        <div className={styles.headerActions}>
+          <input
+            type="file"
+            id="importFile"
+            accept=".xlsx,.xls"
+            style={{ display: 'none' }}
+            onChange={handleImportData}
+          />
+          <button className={styles.actionButton} onClick={() => document.getElementById('importFile').click()}>
+            <FileUp size={20} />
+            Nhập dữ liệu
+          </button>
+          <button className={styles.actionButton} onClick={handleExportData}>
+            <FileDown size={20} />
+            Xuất dữ liệu
+          </button>
+          <button className={styles.primaryButton} onClick={handleAddCustomer}>
+            <Plus size={20} />
+            Thêm khách hàng
+          </button>
         </div>
       </div>
 
-      <div className={commonStyles.headerContent}>
-        <div className={styles.searchContainer}>
-          <div className={styles.searchWrapper}>
-            <Search className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo tên, email, số điện thoại..."
-              className={styles.searchInput}
-              value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-            />
-          </div>
-          <div className={styles.filterContainer}>
-            <select
-              className={commonStyles.select}
-              value={filters.customerType}
-              onChange={(e) => setFilters(prev => ({ ...prev, customerType: e.target.value }))}
-            >
-              <option value="">Loại khách hàng</option>
-              <option value="PC Build">Người build PC</option>
-              <option value="Component Purchase">Người mua linh kiện</option>
-            </select>
-            <select
-              className={commonStyles.select}
-              value={filters.status}
-              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-            >
-              <option value="">Trạng thái</option>
-              <option value="Active">Đang hoạt động</option>
-              <option value="Inactive">Không hoạt động</option>
-            </select>
-            <div className={styles.dateFilter}>
-              <input
-                type="date"
-                className={commonStyles.select}
-                value={filters.dateFrom}
-                onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-                placeholder="Từ ngày"
-              />
-              <input
-                type="date"
-                className={commonStyles.select}
-                value={filters.dateTo}
-                onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-                placeholder="Đến ngày"
-              />
-            </div>
-          </div>
+      {/* Search and Filters */}
+      <div className={styles.filters}>
+        <div className={styles.searchBar}>
+          <Search className={styles.searchIcon} />
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo số điện thoại..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
+        <div className={styles.filterGroup}>
+          <select 
+            value={roleFilter} 
+            onChange={(e) => setRoleFilter(e.target.value)}
+          >
+            <option value="all">Tất cả vai trò</option>
+            <option value="Customer">Customer</option>
+            <option value="Premium Customer">Premium Customer</option>
+          </select>
+          <select 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="registered">Đã đăng ký</option>
+            <option value="unregistered">Chưa đăng ký</option>
+          </select>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </div>
+      </div>
 
-        <div className={styles.table}>
-          <table className="w-full">
-            <thead className={styles.tableHeader}>
-              <tr>
-                <th className={styles.tableHeaderCell} style={{width: 'auto'}}>Khách hàng</th>
-                <th className={styles.tableHeaderCell} style={{width: 'auto'}}>Loại</th>
-                <th className={styles.tableHeaderCell} style={{width: 'auto'}}>Trạng thái</th>
-                <th className={styles.tableHeaderCell} style={{width: '8%'}}>Đơn hàng</th>
-                <th className={styles.tableHeaderCell} style={{width: '10%'}}>Tổng chi tiêu</th>
-                <th className={styles.tableHeaderCell} style={{width: '10%'}}>Đơn hàng cuối</th>
-                <th className={styles.tableHeaderCell} style={{width: '5%'}}>Thao tác</th>
+      {/* Table */}
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên</th>
+              <th>Vai trò</th>
+              <th>Trạng thái</th>
+              <th>Ngày tạo</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentItems.map((customer) => customer && (
+              <tr key={customer.id}>
+                <td className={styles.idCell}>{customer.id}</td>
+                <td className={styles.nameCell}>
+                  <div className={styles.avatar}>?</div>
+                  <span>{customer.phone}</span>
+                </td>
+                <td>{customer.role?.name || "Customer"}</td>
+                <td>
+                  <span className={`${styles.status} ${styles[customer.isRegistered ? 'registered' : 'unregistered']}`}>
+                    {customer.isRegistered ? "Đã đăng ký" : "Chưa đăng ký"}
+                  </span>
+                </td>
+                <td>{customer.createdAt ? new Date(customer.createdAt).toLocaleDateString('vi-VN') : 'N/A'}</td>
+                <td>
+                  <div className={styles.actions}>
+                    <button onClick={() => handleViewDetails(customer)} title="Xem chi tiết">
+                      <Eye size={18} />
+                    </button>
+                    <button onClick={() => handleEditClick(customer)} title="Chỉnh sửa">
+                      <Pencil size={18} />
+                    </button>
+                    <button onClick={() => handleDeleteClick(customer)} title="Xóa">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {paginatedCustomers.length > 0 ? (
-                paginatedCustomers.map((customer) => (
-                  <tr key={customer.id} className={styles.tableRow}>
-                    <td className={styles.tableCell}>
-                      <div className={styles.customerNameWrapper}>
-                        <div className={styles.customerAvatar}>
-                          {customer.firstName[0]}{customer.lastName[0]}
-                        </div>
-                        <div className={styles.customerInfo}>
-                          <div className={styles.customerName}>
-                            {customer.firstName} {customer.lastName}
-                          </div>
-                          <div className={styles.customerDate}>
-                            Tham gia: {new Date(customer.dateJoined).toLocaleDateString('vi-VN')}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className={styles.tableCell}>
-                      <span className={`${commonStyles.badgeType} ${
-                        customer.customerType === 'PC Build' 
-                          ? commonStyles.badgeTypeBuild 
-                          : commonStyles.badgeTypeComponent
-                      }`}>
-                        {customer.customerType === 'PC Build' ? 'Người build PC' : 'Người mua linh kiện'}
-                      </span>
-                    </td>
-                    <td className={styles.tableCell}>
-                      <span className={customer.status === 'Active' ? commonStyles.badgeSuccess : commonStyles.badgeInactive}>
-                        {customer.status === 'Active' ? 'Đang hoạt động' : 'Không hoạt động'}
-                      </span>
-                    </td>
-                    <td className={styles.tableCell}>{customer.totalOrders} đơn hàng</td>
-                    <td className={styles.tableCell}>{formatCurrency(customer.totalSpent)}</td>
-                    <td className={styles.tableCell}>
-                      {customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString('vi-VN') : 'Chưa có'}
-                    </td>
-                    <td className={styles.tableCell}>
-                      <div className={styles.actionButtons}>
-                        <button
-                          onClick={() => handleViewDetail(customer)}
-                          className={styles.actionButton}
-                          title="Xem chi tiết"
-                        >
-                          <Eye className={styles.actionIcon} />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(customer)}
-                          className={styles.actionButton}
-                          title="Chỉnh sửa"
-                        >
-                          <Edit3 className={styles.actionIcon} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(customer)}
-                          className={styles.actionButton}
-                          title="Xóa"
-                        >
-                          <Trash2 className={styles.actionIcon} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} className={styles.emptyState}>
-                    <div className={styles.emptyContent}>
-                      <div className={styles.emptyIcon}>
-                        <Users size={48} />
-                      </div>
-                      <h3 className={styles.emptyTitle}>
-                        {customers.length === 0 ? 'Chưa có khách hàng nào' : 'Không tìm thấy khách hàng phù hợp'}
-                      </h3>
-                      <p className={styles.emptyText}>
-                        {customers.length === 0 
-                          ? 'Chưa có khách hàng nào trong hệ thống hoặc không khớp với bộ lọc' 
-                          : 'Thử điều chỉnh bộ lọc hoặc tìm kiếm để xem kết quả khác'}
-                      </p>
-                      {customers.length === 0 && (
-                        <button 
-                          onClick={handleAddCustomer}
-                          className={commonStyles.buttonPrimary}
-                          style={{ marginTop: '16px' }}
-                        >
-                          <Plus className={commonStyles.icon} />
-                          Thêm khách hàng đầu tiên
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredCustomers.length > 0 && (
-          <div className={styles.pagination}>
-            <div className={styles.paginationButtons}>
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className={styles.paginationButton}
-              >
-                <ChevronLeft className={styles.actionIcon} />
-                Trước
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`${styles.pageNumber} ${currentPage === page ? styles.pageNumberActive : ''}`}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className={styles.paginationButton}
-              >
-                Sau
-                <ChevronRight className={styles.actionIcon} />
-              </button>
-            </div>
-          </div>
-        )}
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {showDetail && (
+      {/* Pagination */}
+      <div className={styles.pagination}>
+        <button 
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        >
+          Trước
+        </button>
+        <span className={styles.pageNumber}>{currentPage}</span>
+        <button 
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+        >
+          Sau
+        </button>
+      </div>
+
+      {/* Modals */}
+      {showDetailModal && selectedCustomer && (
         <CustomerDetail
           customer={selectedCustomer}
           onClose={() => {
-            setShowDetail(false);
+            setShowDetailModal(false);
             setSelectedCustomer(null);
           }}
-          onEdit={(customer) => {
-            setEditingCustomer(customer);
-            setShowEdit(true);
-            setShowDetail(false);
-          }}
         />
       )}
 
-      {showEdit && (
+      {showEditModal && (
         <CustomerEdit
-          customer={editingCustomer}
+          customer={selectedCustomer}
+          onSave={handleEditSave}
           onClose={() => {
-            setShowEdit(false);
-            setEditingCustomer(null);
-            if (showAddCustomer) {
-              setShowAddCustomer(false);
-            }
+            setShowEditModal(false);
+            setSelectedCustomer(null);
           }}
-          onSave={handleSaveCustomer}
         />
       )}
 
-      {showDelete && (
+      {showDeleteModal && selectedCustomer && (
         <DeleteConfirmation
-          customer={deletingCustomer}
+          customer={selectedCustomer}
+          onConfirm={handleDeleteConfirm}
           onClose={() => {
-            setShowDelete(false);
-            setDeletingCustomer(null);
+            setShowDeleteModal(false);
+            setSelectedCustomer(null);
           }}
-          onConfirm={() => handleDeleteCustomer(deletingCustomer.id)}
         />
       )}
     </div>

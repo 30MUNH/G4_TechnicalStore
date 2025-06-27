@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 
 interface User {
-    id: string;
-    email: string;
-    fullName: string;
+    username: string;
+    phone?: string;
     role: string;
+    isRegistered: boolean;
 }
 
 interface AuthContextType {
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState(authService.getUser());
     const [token, setToken] = useState(authService.getToken());
+    const navigate = useNavigate();
 
     const login = (userData: User, token: string) => {
         setUser(userData);
@@ -38,6 +40,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isAuthenticated = () => {
         return authService.isAuthenticated();
     };
+
+    // Handle unauthorized events from API interceptor
+    useEffect(() => {
+        const handleUnauthorized = (event: CustomEvent) => {
+            console.log('Unauthorized access detected:', event.detail?.message);
+            
+            // Clear auth state
+            setUser(null);
+            setToken(null);
+            
+            // Show notification to user
+            if (event.detail?.message) {
+                // You can replace this with a toast notification
+                alert(event.detail.message);
+            }
+            
+            // Navigate to login page using React Router (no page reload)
+            navigate('/login', { replace: true });
+        };
+
+        // Listen for unauthorized events
+        window.addEventListener('auth:unauthorized', handleUnauthorized as EventListener);
+        
+        // Cleanup listener
+        return () => {
+            window.removeEventListener('auth:unauthorized', handleUnauthorized as EventListener);
+        };
+    }, [navigate]);
 
     // Verify token on mount
     useEffect(() => {

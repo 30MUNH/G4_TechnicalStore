@@ -1,19 +1,67 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const Navigation: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeButton, setActiveButton] = useState<string>('');
+
+  // Cập nhật active button dựa trên current location và state
+  useEffect(() => {
+    if (location.pathname === '/') {
+      setActiveButton('home');
+    } else if (location.pathname === '/all-products') {
+      if (location.state?.filter) {
+        setActiveButton(location.state.filter);
+      } else if (location.state?.clearFilter) {
+        setActiveButton('all-products');
+      } else {
+        setActiveButton('all-products');
+      }
+    }
+  }, [location]);
+
+  const handleFilter = (filter: string) => {
+    setActiveButton(filter);
+    navigate('/all-products', { state: { filter } });
+  };
+
+  const handleAllProducts = () => {
+    setActiveButton('all-products');
+    navigate('/all-products', { state: { clearFilter: true } });
+  };
+
+  const handleHome = () => {
+    setActiveButton('home');
+  };
+
+  const getButtonStyle = (buttonType: string) => {
+    const isActive = activeButton === buttonType;
+    return {
+      background: 'none',
+      border: 'none',
+      color: isActive ? '#ff2d55' : '#fff',
+      textDecoration: 'none',
+      fontWeight: isActive ? 900 : 700,
+      fontSize: 18,
+      padding: '2px 8px',
+      borderRadius: 4,
+      cursor: 'pointer',
+      textShadow: isActive ? '0 0 5px rgba(255, 45, 85, 0.5)' : 'none'
+    };
+  };
+
   return (
-    <nav className="navigation" style={{background: '#fff', borderBottom: '1px solid #eee', fontWeight: 600, boxShadow: 'none', width: '100%'}}>
-      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '0.7rem 0', gap: 32}}>
-        <ul className="nav-list" style={{display: 'flex', justifyContent: 'center', gap: 36, listStyle: 'none', margin: 0, padding: 0}}>
-          <li><a href="#home" style={{color: '#222', textDecoration: 'none', fontWeight: 600, fontSize: 16, padding: '2px 8px', borderRadius: 4, transition: '0.2s'}} onMouseOver={e => (e.target as HTMLAnchorElement).style.color='#1976d2'} onMouseOut={e => (e.target as HTMLAnchorElement).style.color='#222'}>Home</a></li>
-          <li><a href="#pc" style={{color: '#222', textDecoration: 'none', fontWeight: 600, fontSize: 16, padding: '2px 8px', borderRadius: 4, transition: '0.2s'}} onMouseOver={e => (e.target as HTMLAnchorElement).style.color='#1976d2'} onMouseOut={e => (e.target as HTMLAnchorElement).style.color='#222'}>PC & Laptop</a></li>
-          <li><a href="#accessories" style={{color: '#222', textDecoration: 'none', fontWeight: 600, fontSize: 16, padding: '2px 8px', borderRadius: 4, transition: '0.2s'}} onMouseOver={e => (e.target as HTMLAnchorElement).style.color='#1976d2'} onMouseOut={e => (e.target as HTMLAnchorElement).style.color='#222'}>Accessories</a></li>
-          <li><a href="#phones" style={{color: '#222', textDecoration: 'none', fontWeight: 600, fontSize: 16, padding: '2px 8px', borderRadius: 4, transition: '0.2s'}} onMouseOver={e => (e.target as HTMLAnchorElement).style.color='#1976d2'} onMouseOut={e => (e.target as HTMLAnchorElement).style.color='#222'}>Phones & Tablet</a></li>
-          <li><a href="#game" style={{color: '#222', textDecoration: 'none', fontWeight: 600, fontSize: 16, padding: '2px 8px', borderRadius: 4, transition: '0.2s'}} onMouseOver={e => (e.target as HTMLAnchorElement).style.color='#1976d2'} onMouseOut={e => (e.target as HTMLAnchorElement).style.color='#222'}>Game Console</a></li>
-          <li><a href="#contact" style={{color: '#222', textDecoration: 'none', fontWeight: 600, fontSize: 16, padding: '2px 8px', borderRadius: 4, transition: '0.2s'}} onMouseOver={e => (e.target as HTMLAnchorElement).style.color='#1976d2'} onMouseOut={e => (e.target as HTMLAnchorElement).style.color='#222'}>Contact Us</a></li>
-        </ul>
-        <div className="search-bar" style={{marginLeft: 32, minWidth: 260}}>
-          <input type="text" placeholder="Search products..." style={{width: '100%', padding: '0.45rem 1rem', border: '1px solid #ddd', borderRadius: 4, fontSize: 15}} />
+    <nav className="navigation" style={{background: '#181920', borderBottom: '2px solid #ff2d55', fontWeight: 600, boxShadow: 'none', width: '100%'}}>
+      <div className="container">
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start', width: '100%', padding: '0.7rem 0', gap: 32}}>
+          <ul className="nav-list" style={{display: 'flex', justifyContent: 'center', gap: 36, listStyle: 'none', margin: 0, padding: 0}}>
+            <li><Link to="/" style={getButtonStyle('home')} onClick={handleHome}>HOME</Link></li>
+            <li><button style={getButtonStyle('all-products')} onClick={handleAllProducts}>ALL PRODUCTS</button></li>
+            <li><button style={getButtonStyle('laptop')} onClick={() => handleFilter('laptop')}>LAPTOP</button></li>
+            <li><button style={getButtonStyle('pc')} onClick={() => handleFilter('pc')}>PC</button></li>
+            <li><button style={getButtonStyle('accessories')} onClick={() => handleFilter('accessories')}>ACCESSORIES</button></li>
+          </ul>
         </div>
       </div>
     </nav>

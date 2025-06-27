@@ -372,7 +372,7 @@ form button svg {
 
 .whyUs h2 {
   color: #fff;
-  font-size: 40px;
+  font-size: 35px;
   margin: 0 0 1.5rem;
   font-weight: 600;
 }
@@ -387,7 +387,7 @@ form button svg {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
+  padding: 17px;
   border-radius: 8px;
   background: #1a1a1a;
   border: 1px solid #333333;

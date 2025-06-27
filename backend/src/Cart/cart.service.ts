@@ -4,8 +4,8 @@ import { Account } from '@/auth/account/account.entity';
 import { Product } from '@/product/product.entity';
 import { AddToCartDto } from './dtos/cart.dto';
 import { Service } from 'typedi';
-import { LessThan } from 'typeorm';
-import { EntityNotFoundException } from '@/exceptions/http-exceptions';
+import { LessThan, getManager } from 'typeorm';
+import { EntityNotFoundException, BadRequestException } from '@/exceptions/http-exceptions';
 
 @Service()
 export class CartService {
@@ -39,7 +39,7 @@ export class CartService {
     for (const item of cart.cartItems) {
         const product = await Product.findOne({ where: { id: item.product.id } });
         
-        if (!product || !product.active) {
+        if (!product || !product.isActive) {
             itemsToRemove.push(item);
         } else if (product.stock < item.quantity) {
             itemsToRemove.push(item);
@@ -66,41 +66,53 @@ export class CartService {
   }
 
   async addToCart(username: string, addToCartDto: AddToCartDto): Promise<Cart> {
-    const cart = await this.getOrCreateCart(username);
-    const product = await Product.findOne({ where: { slug: addToCartDto.productSlug } });
-    
-    if (!product) {
-      throw new EntityNotFoundException('Product');
-    }
+    return getManager().transaction(async transactionalEntityManager => {
+      const cart = await this.getOrCreateCart(username);
+      
+      // Lock the product row for update
+      const product = await transactionalEntityManager
+        .createQueryBuilder(Product, 'product')
+        .setLock('pessimistic_write')
+        .where('product.slug = :slug', { slug: addToCartDto.productSlug })
+        .getOne();
 
-    if (!product.active) {
-      throw new Error('Sản phẩm này hiện không khả dụng');
-    }
-
-    if (product.stock < addToCartDto.quantity) {
-      throw new Error(`Số lượng trong kho không đủ. Chỉ còn ${product.stock} sản phẩm`);
-    }
-
-    const existingItem = cart.cartItems?.find(
-      item => item.product?.slug === addToCartDto.productSlug
-    );
-
-    if (existingItem) {
-      const newQuantity = existingItem.quantity + addToCartDto.quantity;
-      if (newQuantity > product.stock) {
-        throw new Error(`Không thể thêm. Tổng số lượng (${newQuantity}) vượt quá số lượng trong kho (${product.stock})`);
+      if (!product) {
+        throw new EntityNotFoundException('Product');
       }
-      existingItem.quantity = newQuantity;
-      await existingItem.save();
-    } else {
-      const newItem = new CartItem();
-      newItem.quantity = addToCartDto.quantity;
-      newItem.cart = cart;
-      newItem.product = product;
-      await newItem.save();
-    }
 
-    return this.updateCartTotals(cart);
+      if (!product.isActive) {
+        throw new BadRequestException('Sản phẩm này hiện không khả dụng');
+      }
+
+      if (addToCartDto.quantity <= 0) {
+        throw new BadRequestException('Số lượng phải lớn hơn 0');
+      }
+
+      if (product.stock < addToCartDto.quantity) {
+        throw new BadRequestException(`Số lượng trong kho không đủ. Chỉ còn ${product.stock} sản phẩm`);
+      }
+
+      const existingItem = cart.cartItems?.find(
+        item => item.product?.slug === addToCartDto.productSlug
+      );
+
+      if (existingItem) {
+        const newQuantity = existingItem.quantity + addToCartDto.quantity;
+        if (newQuantity > product.stock) {
+          throw new BadRequestException(`Không thể thêm. Tổng số lượng (${newQuantity}) vượt quá số lượng trong kho (${product.stock})`);
+        }
+        existingItem.quantity = newQuantity;
+        await transactionalEntityManager.save(existingItem);
+      } else {
+        const newItem = new CartItem();
+        newItem.quantity = addToCartDto.quantity;
+        newItem.cart = cart;
+        newItem.product = product;
+        await transactionalEntityManager.save(newItem);
+      }
+
+      return this.updateCartTotals(cart);
+    });
   }
 
   async viewCart(username: string): Promise<Cart> {
@@ -172,27 +184,6 @@ export class CartService {
     
     cart.totalAmount = 0;
     await cart.save();
-  }
-
-  async cleanupAbandonedCarts(hours: number = 72): Promise<void> {
-    const cutoffDate = new Date();
-    cutoffDate.setHours(cutoffDate.getHours() - hours);
-
-    const abandonedCarts = await Cart.find({
-      where: {
-        updatedAt: LessThan(cutoffDate)
-      },
-      relations: ['cartItems']
-    });
-
-    for (const cart of abandonedCarts) {
-      if (cart.cartItems) {
-        for (const item of cart.cartItems) {
-          await item.remove();
-        }
-      }
-      await cart.remove();
-    }
   }
 
   async validateCartPrices(username: string): Promise<{

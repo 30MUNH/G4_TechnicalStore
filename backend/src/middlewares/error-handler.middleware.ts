@@ -6,6 +6,7 @@ import {
   ExpressErrorMiddlewareInterface,
 } from "routing-controllers";
 import { Service } from "typedi";
+import { HttpError } from "routing-controllers";
 
 @Service()
 @Middleware({ type: "after" })
@@ -16,9 +17,15 @@ export class ErrorHandler implements ExpressErrorMiddlewareInterface {
     console.log("🔴 ERROR HANDLER TRIGGERED");
     console.log("Error object:", error);
     console.log("Error message:", error.message);
-    
+
     let status: number = error.httpCode || error.status || 500;
     let message: string | string[] = error.message || "Something went wrong";
+
+    // Handle routing-controllers HttpError instances
+    if (error instanceof HttpError) {
+      status = error.httpCode;
+      message = error.message;
+    }
 
     if (error instanceof JsonWebTokenError) {
       status = 401;
@@ -38,10 +45,12 @@ export class ErrorHandler implements ExpressErrorMiddlewareInterface {
       message = [...validatorErrors];
     }
 
-    res.status(status).json({
+    const response = {
       success: false,
       statusCode: status,
-      message,
-    });
+      message: Array.isArray(message) ? message[0] : message,
+    };
+
+    res.status(status).json(response);
   }
 }

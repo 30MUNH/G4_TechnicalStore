@@ -138,13 +138,14 @@
 
 .filtersGrid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 3fr 1fr 1fr 1fr;
   gap: 16px;
   align-items: center;
 }
 
 .searchWrapper {
   position: relative;
+  min-width: 400px;
 }
 
 .searchIcon {
@@ -180,6 +181,8 @@
   font-size: 14px;
   background-color: white;
   transition: all 0.2s ease;
+  min-width: 180px;
+  margin-left: auto;
 }
 
 .filterSelect:focus {

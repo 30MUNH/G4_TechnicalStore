@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import styles from './Modal.module.css';
 
 const Modal = ({ 
@@ -61,7 +61,7 @@ const Modal = ({
             onClick={onClose}
             title="Đóng"
           >
-            <FontAwesomeIcon icon={faTimes} className={styles.closeIcon} />
+            <FontAwesomeIcon icon={faXmark} className={styles.closeIcon} />
           </button>
         </div>
         
