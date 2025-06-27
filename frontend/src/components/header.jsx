@@ -67,9 +67,9 @@ const Header = () => {
               {/* LOGO */}
               <div className="col-md-3">
                 <div className="header-logo">
-                  <a href="#" className="logo">
+                  <Link to="../Page/HomePage.tsx" className="logo">
                     <img src="/img/logo.png" alt="" />
-                  </a>
+                  </Link>
                 </div>
               </div>
               {/* /LOGO */}

@@ -4,6 +4,7 @@ import { FaTruck, FaExchangeAlt, FaPercent, FaClock } from 'react-icons/fa';
 import { BsPeople, BsBox, BsStar, BsEmojiSmile } from 'react-icons/bs';
 import { Carousel } from 'react-bootstrap';
 import styles from './Aboutus.module.css';
+import Footer from '../footer';
 
 function Aboutus() {
     const scrollToMission = (e) => {
@@ -212,6 +213,7 @@ function Aboutus() {
                     </div>
                 </div>
             </section>
+            <Footer/>
         </>
     );
 }

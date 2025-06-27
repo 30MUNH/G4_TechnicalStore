@@ -27,11 +27,10 @@ const Footer = () => {
               <div className="footer">
                 <h3 className="footer-title">Categories</h3>
                 <ul className="footer-links">
-                  <li><a href="#">Hot deals</a></li>
+                  <li><a href="#">All Products</a></li>
                   <li><a href="#">Laptop</a></li>
                   <li><a href="#">PC</a></li>
                   <li><a href="#">Accessories</a></li>
-                  <li><a href="#">Build PC</a></li>
                 </ul>
               </div>
             </div>
@@ -44,7 +43,6 @@ const Footer = () => {
                   <li><Link to="/contact">Contact Us</Link></li>
                   <li><a href="#">Privacy Policy</a></li>
                   <li><a href="#">Orders and Returns</a></li>
-                  <li><a href="#">Terms & Conditions</a></li>
                 </ul>
               </div>
             </div>
@@ -54,10 +52,9 @@ const Footer = () => {
                 <h3 className="footer-title">Service</h3>
                 <ul className="footer-links">
                   <li><a href="#">My Account</a></li>
-                  <li><a href="#">View Cart</a></li>
+                  <li><Link to="/cart" className="dropdown-toggle">View Cart</Link></li>
                   <li><a href="#">Wishlist</a></li>
                   <li><a href="#">Track My Order</a></li>
-                  <li><a href="#">Help</a></li>
                 </ul>
               </div>
             </div>
