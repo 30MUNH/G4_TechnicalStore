@@ -1,9 +1,9 @@
-//xài class-validator đi
+// src/product/categories/category.dto.ts
 
 export class CreateCategoryDto {
-  name: string;
+    name: string;
 }
 
 export class UpdateCategoryDto {
-  name: string;
+    name: string;
 }
