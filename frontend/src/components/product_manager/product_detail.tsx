@@ -73,22 +73,9 @@ const ProductDetail: React.FC = () => {
             `http://localhost:3000/api/products/${id}`
           );
           if (response.data.success) {
-            const productData: Product = {
-              id: response.data.data.id,
-              name: response.data.data.name,
-              categoryId: response.data.data.categoryId,
-              url: response.data.data.url,
-              isActive: response.data.data.isActive,
-              createdAt: response.data.data.createdAt,
-              updatedAt: response.data.data.updatedAt,
-              deletedAt: response.data.data.deletedAt,
-              slug: response.data.data.slug,
-              price: response.data.data.price,
-              description: response.data.data.description,
-              stock: response.data.data.stock,
-            };
-            setProduct(productData);
-            setFormData(productData);
+            // Giữ nguyên toàn bộ object trả về từ API để không mất các trường động
+            setProduct(response.data.data);
+            setFormData(response.data.data);
           } else {
             setError("Không thể lấy dữ liệu sản phẩm");
           }
