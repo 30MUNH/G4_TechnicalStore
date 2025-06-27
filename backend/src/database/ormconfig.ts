@@ -1,6 +1,6 @@
-import path from 'path';
-import 'dotenv/config';
-import { DataSourceOptions } from 'typeorm';
+import path from "path";
+import "dotenv/config";
+import { DataSourceOptions } from "typeorm";
 
 export default {
   type: "postgres",
@@ -17,9 +17,11 @@ export default {
     timezone: "+07:00",
   },
 
-  entities: [path.join(__dirname, '../*/**/*.entity.{ts,js}')],
+  entities: [path.join(__dirname, "../*/**/*.entity.{ts,js}")],
 
   cli: {
     entitiesDir: "src",
   },
+
+  useGlobalDataConnection: true,
 } as DataSourceOptions;

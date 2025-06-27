@@ -33,3 +33,20 @@ export class AccountDetailsDto {
     @IsObject()
     role: Role;
 }
+
+export class VerifyRegisterDto {
+    @IsString()
+    username: string;
+
+    @IsString()
+    password: string;
+
+    @IsString()
+    phone: string;
+
+    @IsString()
+    roleSlug: string;
+
+    @IsString()
+    otp: string;
+}

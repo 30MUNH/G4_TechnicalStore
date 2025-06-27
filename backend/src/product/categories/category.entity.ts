@@ -1,16 +1,11 @@
 // src/product/category.entity.ts
 
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Entity, OneToMany } from "typeorm";
 import { Product } from "../product.entity";
+import { NamedEntity } from "@/common/NamedEntity";
 
 @Entity("categories")
-export class Category {
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column({ unique: true })
-    name: string;
-
+export class Category extends NamedEntity{
     @OneToMany(() => Product, (product) => product.category)
     products: Product[];
 }

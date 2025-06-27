@@ -21,10 +21,10 @@ export class TwilioService {
     return "OTP sent";
   }
 
-  async verifyOtp(account: Account, otp: string): Promise<boolean> {
+  async verifyOtp(phone: string, otp: string): Promise<boolean> {
 
     const result = await twilioClient.verify.v2.services(verifyServiceSid).verificationChecks.create({
-      to: account.phone,
+      to: phone,
       code: otp,
     });
 

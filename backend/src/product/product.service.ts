@@ -150,23 +150,25 @@ export class ProductService {
   }
 
   async getProductsByCategory(categorySlug: string): Promise<Product[]> {
-    await this.ensureRepositories();
-    const category = await this.categoryRepository.findOne({
-      where: { slug: categorySlug }
-    });
+    // await this.ensureRepositories();
+    // const category = await this.categoryRepository.findOne({
+    //   where: { slug: categorySlug }
+    // });
 
-    if (!category) {
-      return [];
-    }
+    // if (!category) {
+    //   return [];
+    // }
 
-    return await this.productRepository.find({
-      where: { 
-        isActive: true,
-        categoryId: category.id
-      },
-      relations: ["category"],
-      order: { createdAt: "DESC" }
-    });
+    // return await this.productRepository.find({
+    //   where: { 
+    //     isActive: true,
+    //     categoryId: category.id
+    //   },
+    //   relations: ["category"],
+    //   order: { createdAt: "DESC" }
+    // });
+    const products: Product[] = [];
+    return products;
   }
 
   async getProductById(id: string): Promise<any | null> {
