@@ -9,7 +9,7 @@ import { authService } from '../../services/authService';
 const SignUp = ({ onNavigate }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
     phone: '',
     password: '',
     confirmPassword: ''
@@ -20,31 +20,26 @@ const SignUp = ({ onNavigate }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showOTPPopup, setShowOTPPopup] = useState(false);
+  const [pendingSignup, setPendingSignup] = useState(null);
 
   const validateField = (name, value) => {
     switch (name) {
-      case 'name':
-        if (!value.trim()) return 'Name is required';
-        if (value.length < 2) return 'Name must be at least 2 characters';
-        if (!/^[a-zA-Z\s]+$/.test(value)) return 'Name can only contain letters and spaces';
-        if (value.length > 50) return 'Name must be less than 50 characters';
+      case 'username':
+        if (!value.trim()) return 'Username is required';
+        if (value.length < 3) return 'Username must be at least 3 characters';
+        if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Username can only contain letters, numbers and underscore';
         return undefined;
         
       case 'phone':
         if (!value.trim()) return 'Phone number is required';
         const cleanPhone = value.replace(/\D/g, '');
-        if (cleanPhone.length < 10) return 'Phone number must be at least 10 digits';
-        if (cleanPhone.length > 15) return 'Phone number must be less than 15 digits';
-        if (!/^[\+]?[0-9\s\-\(\)]+$/.test(value)) return 'Enter a valid phone number';
+        if (cleanPhone.length !== 10) return 'Phone number must be 10 digits';
         return undefined;
         
       case 'password':
         if (!value) return 'Password is required';
-        if (value.length < 8) return 'Password must be at least 8 characters';
-        if (!/(?=.*[a-z])/.test(value)) return 'Password must contain at least one lowercase letter';
-        if (!/(?=.*[A-Z])/.test(value)) return 'Password must contain at least one uppercase letter';
-        if (!/(?=.*\d)/.test(value)) return 'Password must contain at least one number';
-        if (!/(?=.*[@$!%*?&])/.test(value)) return 'Password must contain at least one special character';
+        if (value.length < 6) return 'Password must be at least 6 characters';
+        if (!/\d/.test(value)) return 'Password must contain at least one number';
         return undefined;
         
       case 'confirmPassword':
@@ -62,12 +57,10 @@ const SignUp = ({ onNavigate }) => {
     
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error for this field if it exists
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
     
-    // Real-time validation
     const error = validateField(name, value);
     if (error) {
       setErrors(prev => ({ ...prev, [name]: error }));
@@ -77,7 +70,6 @@ const SignUp = ({ onNavigate }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate all fields
     const newErrors = {};
     Object.keys(formData).forEach(key => {
       const error = validateField(key, formData[key]);
@@ -92,22 +84,98 @@ const SignUp = ({ onNavigate }) => {
     
     setIsSubmitting(true);
     
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      alert('Account created successfully! Welcome to PC Components Store!');
-      // Reset form
-      setFormData({ name: '', phone: '', password: '', confirmPassword: '' });
-      navigate('/login');
+      // Format phone number: remove non-digits and add country code
+      const phoneNumber = formData.phone.replace(/\D/g, '');
+      const formattedPhone = '+84' + phoneNumber.replace(/^0/, '');
+
+      const response = await authService.register({
+        username: formData.username,
+        phone: formattedPhone,
+        password: formData.password,
+        roleSlug: 'customer'
+      });
+
+      if (response && response.success) {
+        setPendingSignup(formattedPhone); // Use formatted phone for OTP
+        setShowOTPPopup(true);
+        setErrors({});
+      } else {
+        setErrors({ general: response?.message || 'Unexpected response from server' });
+      }
     } catch (error) {
-      setErrors({ phone: 'Phone number already exists. Please use a different number.' });
+      console.error('Registration error:', error);
+      let errorMessage = 'Registration failed. Please try again.';
+
+      if (error.response?.status === 409) {
+        errorMessage = 'Username or phone number already registered';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.message || 'Invalid input format';
+      } else if (!navigator.onLine) {
+        errorMessage = 'No internet connection. Please check your network.';
+      }
+
+      setErrors({ general: errorMessage });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleVerifyOTP = () => {
-    // Implementation of handleVerifyOTP
+  const handleVerifyOTP = async (otp) => {
+    if (!pendingSignup || !formData.username) {
+      setErrors({ general: 'No pending registration session' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await authService.verifyRegister({
+        username: formData.username,
+        phone: pendingSignup,
+        otp: otp
+      });
+
+      if (response && response.success) {
+        alert('Account created successfully! Please login.');
+        navigate('/login');
+      } else {
+        setErrors({ general: response?.message || 'OTP verification failed' });
+      }
+    } catch (error) {
+      let errorMessage = 'OTP verification failed. Please try again.';
+
+      if (error.response?.status === 401) {
+        errorMessage = 'Invalid OTP code';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      setErrors({ general: errorMessage });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (!pendingSignup) {
+      setErrors({ general: 'No pending registration session' });
+      return;
+    }
+
+    try {
+      const response = await authService.resendOTP({
+        phone: pendingSignup,
+        type: 'registration'
+      });
+
+      if (response && response.success) {
+        alert('New OTP code has been sent to your phone');
+      } else {
+        setErrors({ general: response?.message || 'Failed to resend OTP' });
+      }
+    } catch (error) {
+      setErrors({ general: error.response?.data?.message || 'Failed to resend OTP. Please try again.' });
+    }
   };
 
   return (
@@ -127,6 +195,24 @@ const SignUp = ({ onNavigate }) => {
         <div className={styles.formGroup}>
           <div className={styles.inputWrapper}>
             <div className={styles.inputIcon}>
+              <User size={20} />
+            </div>
+            <input
+              type="text"
+              name="username"
+              placeholder="Choose your username"
+              value={formData.username}
+              onChange={handleInputChange}
+              className={`${styles.input} ${errors.username ? styles.error : ''}`}
+              autoComplete="username"
+            />
+          </div>
+          {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
+        </div>
+
+        <div className={styles.formGroup}>
+          <div className={styles.inputWrapper}>
+            <div className={styles.inputIcon}>
               <Phone size={20} />
             </div>
             <input
@@ -141,26 +227,6 @@ const SignUp = ({ onNavigate }) => {
             />
           </div>
           {errors.phone && <span className={styles.errorMessage}>{errors.phone}</span>}
-         
-        </div>
-
-        <div className={styles.formGroup}>
-          <div className={styles.inputWrapper}>
-            <div className={styles.inputIcon}>
-              <User size={20} />
-            </div>
-            <input
-              type="text"
-              name="username"
-              placeholder="Choose your username"
-              value={formData.username}
-              onChange={handleInputChange}
-              className={`${styles.input} ${errors.username ? styles.error : ''}`}
-              autoComplete="username"
-            />
-          </div>
-          {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
-        
         </div>
 
         <div className={styles.formGroup}>
@@ -189,6 +255,32 @@ const SignUp = ({ onNavigate }) => {
           {errors.password && <span className={styles.errorMessage}>{errors.password}</span>}
         </div>
 
+        <div className={styles.formGroup}>
+          <div className={styles.inputWrapper}>
+            <div className={styles.inputIcon}>
+              <Lock size={20} />
+            </div>
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              name="confirmPassword"
+              placeholder="Confirm your password"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              className={`${styles.input} ${errors.confirmPassword ? styles.error : ''}`}
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              className={styles.passwordToggle}
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              tabIndex={-1}
+            >
+              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+          {errors.confirmPassword && <span className={styles.errorMessage}>{errors.confirmPassword}</span>}
+        </div>
+
         <button
           type="submit"
           className={styles.submitBtn}
@@ -206,9 +298,13 @@ const SignUp = ({ onNavigate }) => {
 
       {showOTPPopup && (
         <OTPPopup
+          isOpen={showOTPPopup}
+          onClose={() => {
+            setShowOTPPopup(false);
+            setPendingSignup(null);
+          }}
           onVerify={handleVerifyOTP}
-          onClose={() => setShowOTPPopup(false)}
-          isLoading={isSubmitting}
+          onResend={handleResendOTP}
           error={errors.general}
         />
       )}
