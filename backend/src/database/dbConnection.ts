@@ -1,5 +1,5 @@
-import { DataSource } from 'typeorm';
-import config from './ormconfig'
+import { DataSource } from "typeorm";
+import config from "./ormconfig";
 
 export class DbConnection {
   static appDataSource: DataSource;
@@ -10,18 +10,15 @@ export class DbConnection {
   }
 
   public static async createConnection() {
-
     try {
       this.appDataSource = new DataSource(config);
-      await this.appDataSource
-        .initialize()
-        .catch(error => {
-          console.log(error)
-        });
+      await this.appDataSource.initialize().catch((error) => {
+        console.log(error);
+      });
       await this.appDataSource.query("SET timezone = '+07:00'");
       return this.appDataSource;
     } catch (err) {
-      console.log(err)
+      console.log(err);
     }
     return null;
   }

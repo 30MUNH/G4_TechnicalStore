@@ -13,8 +13,7 @@ import { Feedback } from "@/feedback/feedback.entity";
 export class Account extends NamedEntity {
   @Column({ nullable: false, unique: true })
   username: string;
-
-  @Exclude()
+  
   @Column({ nullable: false })
   password: string;
 

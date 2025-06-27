@@ -13,7 +13,7 @@ import { HttpError } from "routing-controllers";
 export class ErrorHandler implements ExpressErrorMiddlewareInterface {
   error(error: any, req: any, res: any, next: (err?: any) => any): void {
     if (res.headersSent) return next(error);
-
+    console.log();
     console.log("🔴 ERROR HANDLER TRIGGERED");
     console.log("Error object:", error);
     console.log("Error message:", error.message);

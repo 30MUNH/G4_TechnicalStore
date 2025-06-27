@@ -1,11 +1,10 @@
 import { Body, BodyParam, Controller, Delete, Get, Post, Req, Res, UseBefore } from "routing-controllers";
 import { Service } from "typedi";
 import { AccountService } from "./account.service";
-import { AccountDetailsDto, CreateAccountDto, CredentialsDto } from "../dtos/account.dto";
+import { AccountDetailsDto, CreateAccountDto, CredentialsDto, VerifyRegisterDto } from "../dtos/account.dto";
 import { TwilioService } from "@/utils/twilio/twilio";
 import { Auth } from "@/middlewares/auth.middleware";
 import { Response } from 'express';
-import { Account } from "./account.entity";
 
 @Service()
 @Controller("/account")
@@ -19,14 +18,17 @@ export class AccountController{
     async register(@Body() body: CreateAccountDto){
         const account = await this.accountService.createAccount(body);
         await this.twilioService.sendOtp(account.phone);
-        return "Check OTP message to complete registration"
+        return {
+            account: account,
+            message: "Check OTP message to complete registration"
+        };
     }
 
     @Post("/verify-register")
-    async verifyRegister(@BodyParam("account") account: Account, @BodyParam("otp") otp: string, @Res() res: Response){
-        const result = await this.twilioService.verifyOtp(account, otp);
+    async verifyRegister(@Body() body: VerifyRegisterDto, @Res() res: Response){
+        const result = await this.twilioService.verifyOtp(body.phone, body.otp);
         if(!result) return "OTP is wrong or is expired";
-        const tokens = await this.accountService.finalizeCreateAccount(account);
+        const tokens = await this.accountService.finalizeCreateAccount(body.username, body.password, body.phone, body.roleSlug);
         res.cookie('refreshToken', tokens.newRefreshToken, {
             httpOnly: true,
             secure: true,
@@ -52,7 +54,7 @@ export class AccountController{
     @Post('/verify-login')
     async verifyLogin(@BodyParam("username") username: string, @BodyParam("otp") otp: string, @Res() res: Response){
         const account = await this.accountService.findAccountByUsername(username);
-        const result = await this.twilioService.verifyOtp(account, otp);
+        const result = await this.twilioService.verifyOtp(account.phone, otp);
         if(!result) return "OTP is wrong or is expired";
         const tokens = await this.accountService.finalizeLogin(username);
         res.cookie('refreshToken', tokens.newRefreshToken, {
@@ -100,7 +102,7 @@ export class AccountController{
     @BodyParam("otp") otp: string, 
     @BodyParam('newPassword') newPassword: string){
         const account = await this.accountService.findAccountByUsername(username);
-        const result = await this.twilioService.verifyOtp(account, otp);
+        const result = await this.twilioService.verifyOtp(account.phone, otp);
         if(!result) return "OTP is wrong or is expired";
         const token = await this.accountService.changePassword(account, newPassword);
         return token;
@@ -121,6 +123,6 @@ export class AccountController{
     @Post('/verify-otp')
     async verifyOtp(@BodyParam('username') username: string, @BodyParam('otp') otp: string){
         const account = await this.accountService.findAccountByUsername(username);
-        return this.twilioService.verifyOtp(account, otp);
+        return this.twilioService.verifyOtp(account.phone, otp);
     }
 }
