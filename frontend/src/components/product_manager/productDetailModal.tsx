@@ -93,10 +93,10 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>RAM:</b> {product.ramGb ? `${product.ramGb} GB` : '-'}</div>
         <div><b>Storage:</b> {product.storageGb ? `${product.storageGb} GB` : '-'}</div>
         <div><b>Storage type:</b> {product.storageType || '-'}</div>
-        <div><b>Graphics:</b> {product.gpu || '-'}</div>
+        <div><b>Graphics:</b> {product.graphics || '-'}</div>
         <div><b>Battery life:</b> {product.batteryLifeHours ? `${product.batteryLifeHours} h` : '-'}</div>
         <div><b>Weight:</b> {product.weightKg ? `${product.weightKg} kg` : '-'}</div>
-        <div><b>OS:</b> {product.os || '-'}</div>
+        <div><b>OS:</b> {product.operatingSystem || '-'}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.pc) {

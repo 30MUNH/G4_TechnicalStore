@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import api from './apiInterceptor';
 
 export interface LoginCredentials {
@@ -10,11 +11,39 @@ export interface VerifyLoginData {
     otp: string;
 }
 
-export interface RegisterData {
-    username: string;
-    password: string;
-    phone: string;
+interface ApiResponse {
+    success: boolean;
+    message: string;
+    data?: any;
 }
+
+interface RegisterData {
+    username: string;
+    phone: string;
+    password: string;
+    roleSlug?: string;
+}
+
+interface VerifyRegisterData {
+    username: string;
+    phone: string;
+    otp: string;
+}
+
+const formatPhoneNumber = (phone: string): string => {
+    // Remove all non-digits
+    let phoneNumber = phone.replace(/\D/g, '');
+    
+    // Remove leading 0 or 84
+    if (phoneNumber.startsWith('0')) {
+        phoneNumber = phoneNumber.substring(1);
+    } else if (phoneNumber.startsWith('84')) {
+        phoneNumber = phoneNumber.substring(2);
+    }
+    
+    // Add 84 prefix without +
+    return '84' + phoneNumber;
+};
 
 export const authService = {
     async login(credentials: LoginCredentials) {
@@ -113,13 +142,60 @@ export const authService = {
         }
     },
 
-    async register(userData: RegisterData) {
+    async register(userData: RegisterData): Promise<ApiResponse> {
         try {
-            const response = await api.post('/account/register', userData);
-            console.log('Register response:', response.data);
+            if (!userData.phone || !userData.password || !userData.username) {
+                throw new Error('Username, phone number and password are required');
+            }
+
+            const formattedPhone = formatPhoneNumber(userData.phone);
+            console.log('Original phone:', userData.phone);
+            console.log('Formatted phone:', formattedPhone);
+
+            const cleanedData = {
+                username: userData.username.trim(),
+                phone: formattedPhone,
+                password: userData.password,
+                roleSlug: 'customer'
+            };
+
+            console.log('Sending registration request with data:', {
+                ...cleanedData,
+                password: '***' // Hide password in logs
+            });
+
+            const response = await api.post<ApiResponse>('/account/register', cleanedData);
+            console.log('Registration response:', response.data);
             return response.data;
         } catch (error) {
-            console.error('Register API error:', error);
+            const axiosError = error as AxiosError;
+            console.error('Detailed registration error:', {
+                status: axiosError.response?.status,
+                data: axiosError.response?.data,
+                message: axiosError.message,
+                request: axiosError.config?.data
+            });
+            throw error;
+        }
+    },
+
+    async verifyRegister(verifyData: VerifyRegisterData): Promise<ApiResponse> {
+        try {
+            // Ensure phone number is in correct format
+            const formattedData = {
+                ...verifyData,
+                phone: formatPhoneNumber(verifyData.phone)
+            };
+
+            const response = await api.post<ApiResponse>('/account/verify-register', formattedData);
+            return response.data;
+        } catch (error) {
+            const axiosError = error as AxiosError;
+            console.error('Verification error:', {
+                status: axiosError.response?.status,
+                data: axiosError.response?.data,
+                message: axiosError.message
+            });
             throw error;
         }
     },

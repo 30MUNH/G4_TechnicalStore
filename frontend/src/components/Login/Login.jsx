@@ -11,7 +11,7 @@ const Login = ({ onNavigate }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
-    username: '', // Sẽ sử dụng cho số điện thoại
+    username: '', 
     password: '',
   });
 
@@ -25,13 +25,13 @@ const Login = ({ onNavigate }) => {
     switch (name) {
       case 'username':
         if (!value) return 'Phone number is required';
-        if (!/^\d+$/.test(value)) return 'Phone number must contain only digits';
-        if (value.length < 10) return 'Phone number must be at least 10 digits';
-        if (value.length > 11) return 'Phone number must not exceed 11 digits';
+        const cleanPhone = value.replace(/\D/g, '');
+        if (cleanPhone.length !== 10) return 'Phone number must be 10 digits';
         return undefined;
 
       case 'password':
         if (!value) return 'Password is required';
+        if (value.length < 6) return 'Password must be at least 6 characters';
         return undefined;
 
       default:
@@ -42,11 +42,10 @@ const Login = ({ onNavigate }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Chỉ cho phép nhập số cho trường phone
     if (name === 'username') {
       const numbersOnly = value.replace(/\D/g, '');
       if (numbersOnly !== value) {
-        return; // Không cập nhật nếu có ký tự không phải số
+        return; 
       }
     }
 
@@ -65,7 +64,6 @@ const Login = ({ onNavigate }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate all fields
     const newErrors = {};
     Object.keys(formData).forEach(key => {
       const error = validateField(key, formData[key]);
@@ -80,11 +78,10 @@ const Login = ({ onNavigate }) => {
 
     setIsSubmitting(true);
     try {
-
       const phoneNumber = formData.username.replace(/\D/g, '');
 
       const loginData = {
-        username: phoneNumber, // Send raw phone number
+        username: phoneNumber,
         password: formData.password
       };
 
@@ -121,11 +118,6 @@ const Login = ({ onNavigate }) => {
       return;
     }
 
-    if (!otp || otp.trim().length === 0) {
-      setErrors({ general: 'Please enter OTP code' });
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const verifyData = {
@@ -155,6 +147,28 @@ const Login = ({ onNavigate }) => {
       setErrors({ general: errorMessage });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (!pendingLogin) {
+      setErrors({ general: 'No pending login session' });
+      return;
+    }
+
+    try {
+      const response = await authService.resendOTP({
+        phone: pendingLogin,
+        type: 'login'
+      });
+
+      if (response && response.success) {
+        alert('New OTP code has been sent to your phone');
+      } else {
+        throw new Error('Failed to resend OTP');
+      }
+    } catch (error) {
+      setErrors({ general: 'Failed to resend OTP. Please try again.' });
     }
   };
 
@@ -238,9 +252,13 @@ const Login = ({ onNavigate }) => {
 
       {showOTPPopup && (
         <OTPPopup
+          isOpen={showOTPPopup}
+          onClose={() => {
+            setShowOTPPopup(false);
+            setPendingLogin(null);
+          }}
           onVerify={handleVerifyOTP}
-          onClose={() => setShowOTPPopup(false)}
-          isLoading={isSubmitting}
+          onResend={handleResendOTP}
           error={errors.general}
         />
       )}
