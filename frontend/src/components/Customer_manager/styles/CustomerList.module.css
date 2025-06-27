@@ -1,278 +1,264 @@
-.searchContainer {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 2rem;
-  margin-top: 2rem;
+.container {
+  padding: 0;
+  background: #fff;
+  min-height: 100vh;
 }
 
-.searchWrapper {
+/* Header Styles */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #6b21a8;
+  margin-bottom: 24px;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  color: #fff;
+  font-weight: 500;
+}
+
+.headerTitle {
+  text-align: left;
+  margin-left: -80px;
+}
+
+.headerTitle h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.headerTitle p {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 4px 0 0 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: 12px;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  color: #fff;
+  font-weight: 500;
+}
+
+.primaryButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #6b21a8;
+  font-weight: 500;
+}
+
+/* Filters Styles */
+.filters {
+  padding: 0 24px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.searchBar {
   position: relative;
-  width: 400px;
+  width: 600px;
 }
 
 .searchIcon {
   position: absolute;
-  left: 1rem;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  width: 1.25rem;
-  height: 1.25rem;
   color: #9ca3af;
 }
 
-.searchInput {
+.searchBar input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.75rem;
-  background-color: #ffffff;
+  padding: 12px 16px 12px 44px;
   border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  color: #374151;
-  font-size: 0.875rem;
-  transition: all 0.2s;
+  border-radius: 8px;
+  font-size: 14px;
 }
 
-.searchInput::placeholder {
-  color: #9ca3af;
-}
-
-.searchInput:focus {
-  outline: none;
-  border-color: #7c3aed;
-  ring: 2px solid rgba(124, 58, 237, 0.1);
-}
-
-.filterContainer {
+.filterGroup {
   display: flex;
-  gap: 0.75rem;
+  gap: 12px;
+  flex: 1;
 }
 
-.dateFilter {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.dateFilter input[type="date"] {
-  padding: 0.75rem;
-  background-color: #ffffff;
+.filterGroup select,
+.filterGroup input {
+  padding: 8px 12px;
   border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
+  border-radius: 8px;
+  font-size: 14px;
   color: #374151;
-  font-size: 0.875rem;
+  background: #fff;
+  min-width: 150px;
 }
 
-.dateFilter input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: none;
-  opacity: 0.7;
-  cursor: pointer;
+/* Table Styles */
+.tableContainer {
+  margin: 0 24px 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .table {
   width: 100%;
-  background-color: #ffffff;
-  border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
+  border-collapse: collapse;
 }
 
-.tableHeader {
-  background-color: #555758;
-}
-
-.tableHeaderCell {
-  padding: 1rem 1.5rem;
+.table th {
+  background: #f9fafb;
+  padding: 12px 16px;
   text-align: left;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: #ffffff;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-}
-
-.tableRow {
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
   border-bottom: 1px solid #e5e7eb;
-  transition: background-color 0.2s;
 }
 
-.tableRow:hover {
-  background-color: #f9fafb;
+.table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #111827;
 }
 
-.tableRow:last-child {
+.table tr:last-child td {
   border-bottom: none;
 }
 
-.tableCell {
-  padding: 12px 16px;
-  font-size: 14px;
-  color: #374151;
-  border-bottom: 1px solid #e5e7eb;
-  vertical-align: middle;
-}
-
-.tableCell:first-child {
-  font-weight: 500;
-  color: #6b7280;
+.idCell {
   font-family: monospace;
-  letter-spacing: 0.5px;
-  min-width: 120px;
+  color: #6b7280;
+  font-size: 12px;
 }
 
-.customerNameWrapper {
+.nameCell {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.customerAvatar {
-  width: 36px;
-  height: 36px;
+.avatar {
+  width: 32px;
+  height: 32px;
+  background: #f3e8ff;
   border-radius: 50%;
-  background-color: #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #7c3aed;
   font-weight: 500;
-  color: #4b5563;
-  text-transform: uppercase;
 }
 
-.customerInfo {
+.status {
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.registered {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.unregistered {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.actions {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  gap: 8px;
 }
 
-.customerName {
-  font-weight: 500;
+.actions button {
+  padding: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  border-radius: 4px;
+}
+
+.actions button:hover {
+  background: #f3f4f6;
   color: #111827;
 }
 
-.customerContact {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.customerDate {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.contactInfo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #6b7280;
-  margin-bottom: 0.25rem;
-  font-size: 0.875rem;
-}
-
-.contactIcon {
-  width: 1rem;
-  height: 1rem;
-  color: #6b7280;
-  flex-shrink: 0;
-}
-
-.actionButtons {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
-.actionButton {
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  color: #6b7280;
-  transition: all 0.2s;
-  background: none;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.actionButton:hover {
-  color: #374151;
-  background-color: #f3f4f6;
-}
-
-.actionIcon {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
+/* Pagination Styles */
 .pagination {
-  margin-top: 2rem;
-  margin-bottom: 2rem;
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  gap: 1rem;
+  justify-content: right;
+  gap: 12px;
+  margin-bottom: 24px;
+  margin-right: 24px;
 }
 
-.paginationButtons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.paginationButton {
-  padding: 0.75rem 1rem;
+.pagination button {
+  padding: 8px 16px;
   border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  background-color: #ffffff;
+  border-radius: 8px;
+  background: #fff;
   color: #374151;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  height: 2.5rem;
-  min-width: 2.5rem;
+  cursor: pointer;
+  font-weight: 500;
 }
 
-.paginationButton:hover:not(:disabled) {
-  background-color: #f9fafb;
-}
-
-.paginationButton:disabled {
+.pagination button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 .pageNumber {
-  min-width: 2.5rem;
-  height: 2.5rem;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  background-color: #ffffff;
+  background: #6b21a8;
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* Loading & Error States */
+.loading,
+.error {
+  text-align: center;
+  padding: 48px;
   color: #374151;
-  transition: all 0.2s;
-  font-size: 0.875rem;
-  border: 1px solid #e5e7eb;
-}
-
-.pageNumber:hover:not(.pageNumberActive) {
-  background-color: #f9fafb;
-}
-
-.pageNumberActive {
-  background-color: #7c3aed;
-  color: #ffffff;
-  border-color: #7c3aed;
-}
-
-.badgeContainer {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+  font-weight: 500;
 }
