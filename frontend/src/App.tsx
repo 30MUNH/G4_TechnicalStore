@@ -20,7 +20,7 @@ function AppContent() {
   const location = useLocation();
 
   // Các route không muốn hiện header/navigation
-  const hideHeaderAndNavRoutes = ["/login", "/signup", "/forgot-password", "/about", "/contact"];
+  const hideHeaderAndNavRoutes = ["/login", "/signup", "/forgot-password", "/about", "/contact", "/cart"];
   const shouldHide = hideHeaderAndNavRoutes.includes(location.pathname);
 
   return (
