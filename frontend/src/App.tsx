@@ -9,6 +9,7 @@ import ForgotPassword from "./components/Login/ForgotPassword.jsx";
 import HomePage from "./Page/HomePage";
 import CartPage from "./Page/CartPage.jsx";
 import AllProductsPage from "./Page/AllProductsPage";
+import ManageProduct from "./components/ManageProduct/ManageProduct";
 import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import Navigation from './components/Navigation';
@@ -39,6 +40,7 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/manage-product" element={<ManageProduct />} />
         <Route path="/manage-customers" element={<CustomerList />} />
         <Route path="/manage-shippers" element={<ShipperManagement />} />
         {/* Redirect any unknown paths to home page */}
