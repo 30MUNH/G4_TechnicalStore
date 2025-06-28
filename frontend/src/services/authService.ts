@@ -14,7 +14,12 @@ export interface VerifyLoginData {
 interface ApiResponse {
     success: boolean;
     message: string;
-    data?: any;
+    data?: unknown;
+}
+
+interface ApiErrorResponse {
+    message?: string;
+    error?: string;
 }
 
 interface RegisterData {
@@ -30,105 +35,98 @@ interface VerifyRegisterData {
     otp: string;
 }
 
+interface AuthError extends Error {
+    code?: string;
+    response?: {
+        status: number;
+        data: ApiErrorResponse;
+    };
+}
+
 const formatPhoneNumber = (phone: string): string => {
     // Remove all non-digits
     let phoneNumber = phone.replace(/\D/g, '');
     
-    // Remove leading 0 or 84
+    // Remove leading 0 or 84 or +84
     if (phoneNumber.startsWith('0')) {
         phoneNumber = phoneNumber.substring(1);
     } else if (phoneNumber.startsWith('84')) {
         phoneNumber = phoneNumber.substring(2);
     }
     
-    // Add 84 prefix without +
+    // Validate length after removing prefix
+    if (phoneNumber.length !== 9) {
+        throw new Error('Invalid phone number format. Must be 10 digits with leading 0 or 9 digits without leading 0');
+    }
+    
+    // Always return with 84 prefix without +
     return '84' + phoneNumber;
+};
+
+const handleAuthError = (error: AuthError): never => {
+    const errorResponse = error.response?.data;
+    const status = error.response?.status;
+
+    let errorMessage = 'An unexpected error occurred';
+
+    if (status === 401) {
+        errorMessage = 'Invalid credentials or session expired';
+    } else if (status === 400) {
+        errorMessage = errorResponse?.message || errorResponse?.error || 'Invalid input data';
+    } else if (status === 404) {
+        errorMessage = 'Account not found';
+    } else if (status === 429) {
+        errorMessage = 'Too many attempts. Please try again later';
+    } else if (!navigator.onLine) {
+        errorMessage = 'No internet connection';
+    }
+
+    error.message = errorMessage;
+    throw error;
 };
 
 export const authService = {
     async login(credentials: LoginCredentials) {
         try {
-            // Validate input
             if (!credentials.username || !credentials.password) {
                 throw new Error('Username and password are required');
             }
 
-            // Clean input
             const cleanedCredentials = {
                 username: credentials.username.toLowerCase().trim(),
                 password: credentials.password
             };
 
-            console.log('Sending login request with:', {
-                username: cleanedCredentials.username,
-                password: '***'
-            });
-
             const response = await api.post('/account/login', cleanedCredentials);
-            
-            // Log response for debugging
-            if (response.data) {
-                console.log('Login response type:', typeof response.data);
-                console.log('Login response:', 
-                    typeof response.data === 'string' 
-                        ? response.data 
-                        : 'Response is an object'
-                );
-            }
-
             return response.data;
-        } catch (error) {
-            console.error('Login error details:', {
-                status: error.response?.status,
-                data: error.response?.data,
-                message: error.message
-            });
-            throw error;
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                return handleAuthError(error as AuthError);
+            }
+            throw new Error('An unexpected error occurred');
         }
     },
 
     async verifyLogin(verifyData: VerifyLoginData) {
         try {
-            // Validate input
             if (!verifyData.username || !verifyData.otp) {
                 throw new Error('Username and OTP are required');
             }
 
-            // Clean input
             const cleanedData = {
                 username: verifyData.username.toLowerCase().trim(),
                 otp: verifyData.otp.trim()
             };
 
-            console.log('Sending verify login request with:', cleanedData);
-            
             const response = await api.post('/account/verify-login', cleanedData);
-            
-            // Log response for debugging
-            console.log('Verify login response type:', typeof response.data);
-            console.log('Verify login response:', 
-                typeof response.data === 'string' 
-                    ? response.data 
-                    : 'Response is an object'
-            );
 
-            // Handle token storage
-            if (response.data) {
-                if (typeof response.data === 'string') {
-                    localStorage.setItem('authToken', response.data);
-                } else if (response.data.token) {
-                    localStorage.setItem('authToken', response.data.token);
-                }
-            }
-
+            // The token is handled by httpOnly cookie from backend
             return response.data;
-        } catch (error) {
-            console.error('Verify login error details:', {
-                status: error.response?.status,
-                data: error.response?.data,
-                message: error.message
-            });
-            throw error;
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                return handleAuthError(error as AuthError);
+            }
+            throw new Error('An unexpected error occurred');
         }
     },
 

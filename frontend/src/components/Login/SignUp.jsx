@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, Lock, Eye, EyeOff, User } from 'lucide-react';
+import { User, Phone, Lock, Eye, EyeOff, X, Check } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './SignUp.module.css';
@@ -15,9 +15,9 @@ const SignUp = ({ onNavigate }) => {
     confirmPassword: ''
   });
   
-  const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showOTPPopup, setShowOTPPopup] = useState(false);
   const [pendingSignup, setPendingSignup] = useState(null);
@@ -27,19 +27,16 @@ const SignUp = ({ onNavigate }) => {
       case 'username':
         if (!value.trim()) return 'Username is required';
         if (value.length < 3) return 'Username must be at least 3 characters';
-        if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Username can only contain letters, numbers and underscore';
         return undefined;
         
       case 'phone':
         if (!value.trim()) return 'Phone number is required';
-        const cleanPhone = value.replace(/\D/g, '');
-        if (cleanPhone.length !== 10) return 'Phone number must be 10 digits';
+        if (!/^\d{9}$/.test(value)) return 'Please enter 9 digits after +84';
         return undefined;
         
       case 'password':
         if (!value) return 'Password is required';
-        if (value.length < 6) return 'Password must be at least 6 characters';
-        if (!/\d/.test(value)) return 'Password must contain at least one number';
+        if (value.length < 8) return 'Password must be at least 8 characters';
         return undefined;
         
       case 'confirmPassword':
@@ -52,18 +49,32 @@ const SignUp = ({ onNavigate }) => {
     }
   };
 
+  const getPasswordStrength = (password) => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return strength;
+  };
+
+  const passwordStrength = getPasswordStrength(formData.password);
+  const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'];
+  const strengthLabels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'phone') {
+      const phoneValue = value.replace(/\D/g, '').slice(0, 9);
+      setFormData(prev => ({ ...prev, [name]: phoneValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
     
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
-    }
-    
-    const error = validateField(name, value);
-    if (error) {
-      setErrors(prev => ({ ...prev, [name]: error }));
     }
   };
 
@@ -85,9 +96,7 @@ const SignUp = ({ onNavigate }) => {
     setIsSubmitting(true);
     
     try {
-      // Format phone number: remove non-digits and add country code
-      const phoneNumber = formData.phone.replace(/\D/g, '');
-      const formattedPhone = '+84' + phoneNumber.replace(/^0/, '');
+      const formattedPhone = '84' + formData.phone;
 
       const response = await authService.register({
         username: formData.username,
@@ -97,14 +106,13 @@ const SignUp = ({ onNavigate }) => {
       });
 
       if (response && response.success) {
-        setPendingSignup(formattedPhone); // Use formatted phone for OTP
+        setPendingSignup(formattedPhone);
         setShowOTPPopup(true);
         setErrors({});
       } else {
         setErrors({ general: response?.message || 'Unexpected response from server' });
       }
     } catch (error) {
-      console.error('Registration error:', error);
       let errorMessage = 'Registration failed. Please try again.';
 
       if (error.response?.status === 409) {
@@ -187,7 +195,8 @@ const SignUp = ({ onNavigate }) => {
 
       <form onSubmit={handleSubmit} className={styles.authForm}>
         {errors.general && (
-          <div className={styles.errorMessage} style={{ marginBottom: '1rem', textAlign: 'center' }}>
+          <div className={styles.errorMessage}>
+            <X className="w-4 h-4" />
             {errors.general}
           </div>
         )}
@@ -195,7 +204,7 @@ const SignUp = ({ onNavigate }) => {
         <div className={styles.formGroup}>
           <div className={styles.inputWrapper}>
             <div className={styles.inputIcon}>
-              <User size={20} />
+              <User className={styles.iconSvg} size={18} />
             </div>
             <input
               type="text"
@@ -204,35 +213,51 @@ const SignUp = ({ onNavigate }) => {
               value={formData.username}
               onChange={handleInputChange}
               className={`${styles.input} ${errors.username ? styles.error : ''}`}
-              autoComplete="username"
             />
           </div>
-          {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
+          {errors.username && (
+            <div className={styles.errorMessage}>
+              <X className="w-4 h-4" />
+              {errors.username}
+            </div>
+          )}
         </div>
 
         <div className={styles.formGroup}>
           <div className={styles.inputWrapper}>
             <div className={styles.inputIcon}>
-              <Phone size={20} />
+              <Phone className={styles.iconSvg} size={18} />
+            </div>
+            <div className={styles.prefixWrapper}>
+              +84
             </div>
             <input
               type="tel"
               name="phone"
-              placeholder="Enter your phone number"
+              placeholder="Enter 9 digits"
               value={formData.phone}
               onChange={handleInputChange}
-              className={`${styles.input} ${errors.phone ? styles.error : ''}`}
-              autoComplete="tel"
-              maxLength={11}
+              className={`${styles.input} ${styles.withPrefix} ${errors.phone ? styles.error : ''}`}
             />
           </div>
-          {errors.phone && <span className={styles.errorMessage}>{errors.phone}</span>}
+          {errors.phone && (
+            <div className={styles.errorMessage}>
+              <X className="w-4 h-4" />
+              {errors.phone}
+            </div>
+          )}
+          {formData.phone && !errors.phone && (
+            <div className={styles.successMessage}>
+              <Check className="w-4 h-4" />
+              Phone: +84{formData.phone}
+            </div>
+          )}
         </div>
 
         <div className={styles.formGroup}>
           <div className={styles.inputWrapper}>
             <div className={styles.inputIcon}>
-              <Lock size={20} />
+              <Lock className={styles.iconSvg} size={18} />
             </div>
             <input
               type={showPassword ? "text" : "password"}
@@ -241,24 +266,44 @@ const SignUp = ({ onNavigate }) => {
               value={formData.password}
               onChange={handleInputChange}
               className={`${styles.input} ${errors.password ? styles.error : ''}`}
-              autoComplete="new-password"
             />
             <button
               type="button"
-              className={styles.passwordToggle}
               onClick={() => setShowPassword(!showPassword)}
-              tabIndex={-1}
+              className={styles.passwordToggle}
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          {errors.password && <span className={styles.errorMessage}>{errors.password}</span>}
+          {formData.password && (
+            <div className={styles.passwordStrength}>
+              <div className={styles.strengthBars}>
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className={`${styles.strengthBar} ${
+                      i < passwordStrength ? styles[strengthColors[passwordStrength - 1]] : ''
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className={styles[`strength${passwordStrength}`]}>
+                Password strength: {strengthLabels[passwordStrength - 1] || 'Very Weak'}
+              </p>
+            </div>
+          )}
+          {errors.password && (
+            <div className={styles.errorMessage}>
+              <X className="w-4 h-4" />
+              {errors.password}
+            </div>
+          )}
         </div>
 
         <div className={styles.formGroup}>
           <div className={styles.inputWrapper}>
             <div className={styles.inputIcon}>
-              <Lock size={20} />
+              <Lock className={styles.iconSvg} size={18} />
             </div>
             <input
               type={showConfirmPassword ? "text" : "password"}
@@ -267,18 +312,27 @@ const SignUp = ({ onNavigate }) => {
               value={formData.confirmPassword}
               onChange={handleInputChange}
               className={`${styles.input} ${errors.confirmPassword ? styles.error : ''}`}
-              autoComplete="new-password"
             />
             <button
               type="button"
-              className={styles.passwordToggle}
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              tabIndex={-1}
+              className={styles.passwordToggle}
             >
-              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          {errors.confirmPassword && <span className={styles.errorMessage}>{errors.confirmPassword}</span>}
+          {errors.confirmPassword && (
+            <div className={styles.errorMessage}>
+              <X className="w-4 h-4" />
+              {errors.confirmPassword}
+            </div>
+          )}
+          {formData.confirmPassword && formData.password === formData.confirmPassword && (
+            <div className={styles.successMessage}>
+              <Check className="w-4 h-4" />
+              Passwords match
+            </div>
+          )}
         </div>
 
         <button
@@ -286,13 +340,21 @@ const SignUp = ({ onNavigate }) => {
           className={styles.submitBtn}
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Creating Account...' : 'Create Account'}
+          {isSubmitting ? (
+            <div className={styles.loadingWrapper}>
+              <div className={styles.spinner}></div>
+              Creating Account...
+            </div>
+          ) : (
+            'CREATE ACCOUNT'
+          )}
         </button>
 
         <div className={styles.authLinks}>
-          <button type="button" onClick={() => navigate('/login')} className={styles.linkBtn}>
-            Already have an account? Sign In
-          </button>
+          <p className={styles.signInText}>
+            Already have an account?{' '}<button type="button" onClick={() => navigate('/login')} className={styles.signInLink}>SIGN IN
+            </button>
+          </p>
         </div>
       </form>
 

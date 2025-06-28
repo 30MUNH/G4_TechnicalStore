@@ -15,7 +15,6 @@ const OTPPopup = ({ isOpen, onClose, onVerify, onResend }) => {
   }, [isOpen]);
 
   const handleChange = (index, value) => {
-    // Chỉ cho phép nhập số và validate độ dài
     if (!/^\d*$/.test(value) || value.length > 1) {
       return;
     }
@@ -25,7 +24,7 @@ const OTPPopup = ({ isOpen, onClose, onVerify, onResend }) => {
     setOtp(newOtp);
     setError('');
 
-    // Auto-focus next input
+
     if (value && index < 5) {
       inputRefs.current[index + 1].focus();
     }
@@ -33,7 +32,7 @@ const OTPPopup = ({ isOpen, onClose, onVerify, onResend }) => {
 
   const handleKeyDown = (index, e) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      // Xóa giá trị của ô hiện tại và focus vào ô trước đó
+
       const newOtp = [...otp];
       newOtp[index - 1] = '';
       setOtp(newOtp);
@@ -51,7 +50,7 @@ const OTPPopup = ({ isOpen, onClose, onVerify, onResend }) => {
       return;
     }
 
-    // Cập nhật tất cả các ô input
+
     const newOtp = pastedData.split('').slice(0, 6);
     setOtp(newOtp);
     setError('');
