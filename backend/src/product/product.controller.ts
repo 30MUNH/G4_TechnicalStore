@@ -1,10 +1,10 @@
-
-import { Controller, Get, Param, QueryParam, Post, Put, Delete, Body } from "routing-controllers";
+import { Controller, Get, Param, QueryParam, Post, Put, Delete, Body, UseBefore } from "routing-controllers";
 
 import { Service } from "typedi";
 import { ProductService } from "./product.service";
 import { Container } from "typedi";
 import { CreateProductDto, UpdateProductDto } from "./dtos/product.dto";
+import { Auth, authorizedRoles } from "@/middlewares/auth.middleware";
 
 @Service()
 @Controller("/products")
@@ -136,6 +136,8 @@ export class ProductController {
   }
 
   @Post("/")
+  @UseBefore(Auth)
+  @UseBefore(authorizedRoles("manager", "admin"))
   async createProduct(@Body() createProductDto: CreateProductDto) {
     try {
       const product = await this.productService.createProduct(createProductDto);
@@ -154,6 +156,8 @@ export class ProductController {
   }
 
   @Put("/:id")
+  @UseBefore(Auth)
+  @UseBefore(authorizedRoles("manager", "admin"))
   async updateProduct(
     @Param("id") id: string,
     @Body() updateProductDto: UpdateProductDto
@@ -181,6 +185,8 @@ export class ProductController {
   }
 
   @Delete("/:id")
+  @UseBefore(Auth)
+  @UseBefore(authorizedRoles("manager", "admin"))
   async deleteProduct(@Param("id") id: string) {
     try {
       const result = await this.productService.deleteProduct(id);

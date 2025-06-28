@@ -95,6 +95,45 @@ class ProductService {
       return [];
     }
   }
+
+  // CRUD operations for product management
+  async createProduct(productData: Partial<Product>): Promise<Product> {
+    try {
+      const response = await api.post<ApiResponse<Product>>('/products', productData);
+      if (response.data && response.data.success && response.data.data) {
+        return response.data.data;
+      }
+      throw new Error('Failed to create product');
+    } catch (error) {
+      console.error('Error creating product:', error);
+      throw error;
+    }
+  }
+
+  async updateProduct(id: string, productData: Partial<Product>): Promise<Product> {
+    try {
+      const response = await api.put<ApiResponse<Product>>(`/products/${id}`, productData);
+      if (response.data && response.data.success && response.data.data) {
+        return response.data.data;
+      }
+      throw new Error('Failed to update product');
+    } catch (error) {
+      console.error('Error updating product:', error);
+      throw error;
+    }
+  }
+
+  async deleteProduct(id: string): Promise<void> {
+    try {
+      const response = await api.delete<ApiResponse<void>>(`/products/${id}`);
+      if (!response.data || !response.data.success) {
+        throw new Error('Failed to delete product');
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      throw error;
+    }
+  }
 }
 
 export const productService = new ProductService(); 
