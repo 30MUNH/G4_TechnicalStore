@@ -41,16 +41,11 @@ function AppContent() {
         <Route path="/all-products" element={<AllProductsPage />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/about" element={<Aboutus />} />
-        <Route path="/cart" element={<CartPage />} 
+        <Route path="/cart" element={<CartPage />} />
         <Route path="/login" element={<AuthBgWrapper><Login /></AuthBgWrapper>} />
         <Route path="/signup" element={<AuthBgWrapper><SignUp /></AuthBgWrapper>} />
         <Route path="/forgot-password" element={<AuthBgWrapper><ForgotPassword /></AuthBgWrapper>} />
-
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/manage-product" element={<ManageProduct />} />
-
         <Route path="/manage-customers" element={<CustomerList />} />
         <Route path="/manage-shippers" element={<ShipperManagement />} />
         {/* Redirect any unknown paths to home page */}

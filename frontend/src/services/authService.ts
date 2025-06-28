@@ -59,8 +59,8 @@ const formatPhoneNumber = (phone: string): string => {
         throw new Error('Invalid phone number format. Must be 10 digits with leading 0 or 9 digits without leading 0');
     }
     
-    // Always return with 84 prefix without +
-    return '84' + phoneNumber;
+    // Always return with +84 prefix
+    return '+84' + phoneNumber;
 };
 
 const handleAuthError = (error: AuthError): never => {
@@ -85,45 +85,59 @@ const handleAuthError = (error: AuthError): never => {
     throw error;
 };
 
+// Helper type guard
+function isErrorWithMessage(error: unknown): error is { message: string } {
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error &&
+        typeof (error as { message?: unknown }).message === 'string'
+    );
+}
+
 export const authService = {
-    async login(credentials: LoginCredentials) {
+    /**
+     * Đăng nhập: Gửi username và password, nhận thông báo OTP nếu thành công
+     * @param credentials { username, password }
+     * @returns {Promise<string>} Thông báo OTP hoặc lỗi
+     */
+    async login(credentials: LoginCredentials): Promise<string> {
         try {
             if (!credentials.username || !credentials.password) {
                 throw new Error('Username and password are required');
             }
-
             const cleanedCredentials = {
                 username: credentials.username.toLowerCase().trim(),
                 password: credentials.password
             };
-
             const response = await api.post('/account/login', cleanedCredentials);
             return response.data;
         } catch (error: unknown) {
-            if (error instanceof Error) {
+            if (isErrorWithMessage(error)) {
                 return handleAuthError(error as AuthError);
             }
             throw new Error('An unexpected error occurred');
         }
     },
 
-    async verifyLogin(verifyData: VerifyLoginData) {
+    /**
+     * Xác thực OTP: Gửi username và otp, nhận accessToken nếu thành công
+     * @param verifyData { username, otp }
+     * @returns {Promise<string>} accessToken hoặc lỗi
+     */
+    async verifyLogin(verifyData: VerifyLoginData): Promise<string> {
         try {
             if (!verifyData.username || !verifyData.otp) {
                 throw new Error('Username and OTP are required');
             }
-
             const cleanedData = {
                 username: verifyData.username.toLowerCase().trim(),
                 otp: verifyData.otp.trim()
             };
-
             const response = await api.post('/account/verify-login', cleanedData);
-
-            // The token is handled by httpOnly cookie from backend
             return response.data;
         } catch (error: unknown) {
-            if (error instanceof Error) {
+            if (isErrorWithMessage(error)) {
                 return handleAuthError(error as AuthError);
             }
             throw new Error('An unexpected error occurred');
@@ -220,6 +234,38 @@ export const authService = {
             console.error('Error parsing user data:', error);
             localStorage.removeItem('user');
             return null;
+        }
+    },
+
+    // Gửi OTP quên mật khẩu
+    async requestPasswordReset(phone: string) {
+        try {
+            const formattedPhone = formatPhoneNumber(phone);
+            const response = await api.post('/account/forgot-password', { username: formattedPhone });
+            return response.data;
+        } catch (error) {
+            if (isErrorWithMessage(error)) {
+                return handleAuthError(error as AuthError);
+            }
+            throw new Error('An unexpected error occurred');
+        }
+    },
+
+    // Xác thực OTP và đổi mật khẩu
+    async verifyResetOTP({ username, otp, newPassword }: { username: string, otp: string, newPassword: string }) {
+        try {
+            const formattedPhone = formatPhoneNumber(username);
+            const response = await api.post('/account/verify-change-password', {
+                username: formattedPhone,
+                otp,
+                newPassword
+            });
+            return response.data;
+        } catch (error) {
+            if (isErrorWithMessage(error)) {
+                return handleAuthError(error as AuthError);
+            }
+            throw new Error('An unexpected error occurred');
         }
     }
 }; 
