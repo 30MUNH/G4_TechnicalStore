@@ -31,7 +31,7 @@ const SignUp = ({ onNavigate }) => {
         
       case 'phone':
         if (!value.trim()) return 'Phone number is required';
-        if (!/^\d{9}$/.test(value)) return 'Please enter 9 digits after +84';
+        if (!/^0\d{9}$/.test(value)) return 'Please enter a valid 10-digit phone number (bắt đầu bằng 0)';
         return undefined;
         
       case 'password':
@@ -67,7 +67,7 @@ const SignUp = ({ onNavigate }) => {
     const { name, value } = e.target;
     
     if (name === 'phone') {
-      const phoneValue = value.replace(/\D/g, '').slice(0, 9);
+      const phoneValue = value.replace(/\D/g, '').slice(0, 10);
       setFormData(prev => ({ ...prev, [name]: phoneValue }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -96,7 +96,7 @@ const SignUp = ({ onNavigate }) => {
     setIsSubmitting(true);
     
     try {
-      const formattedPhone = '84' + formData.phone;
+      const formattedPhone = '+84' + formData.phone.substring(1);
 
       const response = await authService.register({
         username: formData.username,
@@ -234,7 +234,7 @@ const SignUp = ({ onNavigate }) => {
             <input
               type="tel"
               name="phone"
-              placeholder="Enter 9 digits"
+              placeholder="Enter 10 digits"
               value={formData.phone}
               onChange={handleInputChange}
               className={`${styles.input} ${styles.withPrefix} ${errors.phone ? styles.error : ''}`}
