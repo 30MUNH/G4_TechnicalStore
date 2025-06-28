@@ -241,11 +241,11 @@ const Login = ({ onNavigate }) => {
         </button>
 
         <div className={styles.authLinks}>
-          <button type="button" onClick={() => navigate('/forgot-password')} className={styles.linkBtn}>
-            Forgot Password?
-          </button>
           <button type="button" onClick={() => navigate('/signup')} className={styles.linkBtn}>
             Create Account
+          </button>
+          <button type="button" onClick={() => navigate('/forgot-password')} className={styles.linkBtn}>
+            Forgot Password?
           </button>
         </div>
       </form>

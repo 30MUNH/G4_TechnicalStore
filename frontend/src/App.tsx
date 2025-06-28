@@ -14,10 +14,15 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Navigation from './components/Navigation';
 import Header from './components/header';
 import { Fragment } from 'react';
+import type { ReactNode } from 'react';
 import CustomerList from "./components/Customer_manager/CustomerList.jsx";
 import ShipperManagement from "./components/Shipper_manager/ShipperManagement.jsx";
 
-// 👇 Tách logic route để dùng useLocation
+function AuthBgWrapper({ children }: { children: ReactNode }) {
+  return <div className="auth-bg-custom">{children}</div>;
+}
+
+// �� Tách logic route để dùng useLocation
 function AppContent() {
   const location = useLocation();
 
@@ -36,9 +41,9 @@ function AppContent() {
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/about" element={<Aboutus />} />
         <Route path="/cart" element={<CartPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/login" element={<AuthBgWrapper><Login /></AuthBgWrapper>} />
+        <Route path="/signup" element={<AuthBgWrapper><SignUp /></AuthBgWrapper>} />
+        <Route path="/forgot-password" element={<AuthBgWrapper><ForgotPassword /></AuthBgWrapper>} />
         <Route path="/manage-customers" element={<CustomerList />} />
         <Route path="/manage-shippers" element={<ShipperManagement />} />
         {/* Redirect any unknown paths to home page */}
