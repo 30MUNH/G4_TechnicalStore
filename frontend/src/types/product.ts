@@ -27,7 +27,15 @@ export interface Category {
   updatedAt: string;
 }
 
+// Response format mới từ backend (không có success field)
 export interface ApiResponse<T> {
+  message: string;
+  error?: string;
+  [key: string]: any; // Cho phép các field khác như products, categories, etc.
+}
+
+// Response format cũ (để backward compatibility)
+export interface LegacyApiResponse<T> {
   success: boolean;
   data: T;
   message: string;

@@ -1,28 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { productService } from '../../services/productService';
+import type { Product } from '../../types/product';
 import './ProductList.css'
-
-interface Product {
-  id: string;
-  name: string;
-  url: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  slug: string;
-  price: number;
-  description: string;
-  stock: number;
-  categoryId: string;
-  category?: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-}
 
 const ProductList: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -37,30 +18,9 @@ const ProductList: React.FC = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/products");
-        if (response.data.success) {
-          const formattedProducts: Product[] = response.data.data.map(
-            (product: any) => ({
-              id: product.id,
-              name: product.name,
-              url: product.url,
-              isActive: product.isActive,
-              createdAt: product.createdAt,
-              updatedAt: product.updatedAt,
-              deletedAt: product.deletedAt,
-              slug: product.slug,
-              price: product.price,
-              description: product.description,
-              stock: product.stock,
-              categoryId: product.categoryId,
-              category: product.category,
-            })
-          );
-          setProducts(formattedProducts);
-          setFilteredProducts(formattedProducts);
-        } else {
-          setError("Không thể lấy dữ liệu từ API");
-        }
+        const products = await productService.getAllProducts();
+        setProducts(products);
+        setFilteredProducts(products);
       } catch (err: any) {
         setError("Đã có lỗi xảy ra khi gọi API: " + err.message);
       } finally {
