@@ -105,10 +105,13 @@ const SignUp = ({ onNavigate }) => {
         roleSlug: 'customer'
       });
 
-      if (response && response.success) {
+      if ((response && response.success) || (response && typeof response.message === 'string' && response.message.toLowerCase().includes('otp'))) {
         setPendingSignup(formattedPhone);
         setShowOTPPopup(true);
         setErrors({});
+        setTimeout(() => {
+          setErrors({ general: 'Vui lòng kiểm tra tin nhắn OTP để hoàn tất đăng ký.' });
+        }, 100);
       } else {
         setErrors({ general: response?.message || 'Unexpected response from server' });
       }
@@ -139,7 +142,9 @@ const SignUp = ({ onNavigate }) => {
     try {
       const response = await authService.verifyRegister({
         username: formData.username,
+        password: formData.password,
         phone: pendingSignup,
+        roleSlug: 'customer',
         otp: otp
       });
 
