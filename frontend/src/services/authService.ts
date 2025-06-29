@@ -31,7 +31,9 @@ interface RegisterData {
 
 interface VerifyRegisterData {
     username: string;
+    password: string;
     phone: string;
+    roleSlug: string;
     otp: string;
 }
 
@@ -195,8 +197,11 @@ export const authService = {
         try {
             // Ensure phone number is in correct format
             const formattedData = {
-                ...verifyData,
-                phone: formatPhoneNumber(verifyData.phone)
+                username: verifyData.username,
+                password: verifyData.password,
+                phone: formatPhoneNumber(verifyData.phone),
+                roleSlug: verifyData.roleSlug,
+                otp: verifyData.otp
             };
 
             const response = await api.post<ApiResponse>('/account/verify-register', formattedData);

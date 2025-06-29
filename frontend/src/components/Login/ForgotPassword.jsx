@@ -8,7 +8,7 @@ import { authService } from '../../services/authService';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Phone, 2: OTP, 3: New Password
+  const [step, setStep] = useState(1); 
   const [formData, setFormData] = useState({
     phone: '',
     newPassword: '',
@@ -75,6 +75,18 @@ const ForgotPassword = () => {
         if (response && response.success) {
           setPendingReset(formData.phone.replace(/\D/g, ''));
           setShowOTPPopup(true);
+          setErrors({});
+          setTimeout(() => {
+            setErrors({ general: 'Vui lòng kiểm tra tin nhắn OTP để đặt lại mật khẩu.' });
+          }, 100);
+          setStep(2);
+        } else if (response && typeof response.message === 'string' && response.message.toLowerCase().includes('otp')) {
+          setPendingReset(formData.phone.replace(/\D/g, ''));
+          setShowOTPPopup(true);
+          setErrors({});
+          setTimeout(() => {
+            setErrors({ general: 'Vui lòng kiểm tra tin nhắn OTP để đặt lại mật khẩu.' });
+          }, 100);
           setStep(2);
         } else {
           throw new Error('Failed to send OTP');

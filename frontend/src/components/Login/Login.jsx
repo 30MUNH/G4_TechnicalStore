@@ -25,8 +25,7 @@ const Login = ({ onNavigate }) => {
     switch (name) {
       case 'username':
         if (!value) return 'Phone number is required';
-        const cleanPhone = value.replace(/\D/g, '');
-        if (cleanPhone.length !== 10) return 'Phone number must be 10 digits';
+        if (!/^0\d{9}$/.test(value)) return 'Please enter a valid 10-digit phone number (bắt đầu bằng 0)';
         return undefined;
 
       case 'password':
@@ -43,10 +42,16 @@ const Login = ({ onNavigate }) => {
     const { name, value } = e.target;
 
     if (name === 'username') {
-      const numbersOnly = value.replace(/\D/g, '');
-      if (numbersOnly !== value) {
-        return; 
+      const numbersOnly = value.replace(/\D/g, '').slice(0, 10);
+      setFormData(prev => ({ ...prev, [name]: numbersOnly }));
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: undefined }));
       }
+      const error = validateField(name, numbersOnly);
+      if (error) {
+        setErrors(prev => ({ ...prev, [name]: error }));
+      }
+      return;
     }
 
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -79,18 +84,24 @@ const Login = ({ onNavigate }) => {
     setIsSubmitting(true);
     try {
       const phoneNumber = formData.username.replace(/\D/g, '');
+      const formattedPhone = phoneNumber && phoneNumber.length === 10 && phoneNumber.startsWith('0')
+        ? '+84' + phoneNumber.slice(1)
+        : phoneNumber;
 
       const loginData = {
-        username: phoneNumber,
+        username: formattedPhone,
         password: formData.password
       };
 
       const response = await authService.login(loginData);
 
-      if (response && typeof response === 'string' && response.includes('OTP')) {
-        setPendingLogin(phoneNumber);
+      if (response && typeof response === 'string' && response.toLowerCase().includes('otp')) {
+        setPendingLogin(formattedPhone);
         setShowOTPPopup(true);
         setErrors({});
+        setTimeout(() => {
+          setErrors({ general: 'Vui lòng kiểm tra tin nhắn OTP để hoàn tất đăng nhập.' });
+        }, 100);
       } else {
         setErrors({ general: 'Unexpected response from server' });
       }
@@ -191,19 +202,21 @@ const Login = ({ onNavigate }) => {
             <div className={styles.inputIcon}>
               <Phone size={20} />
             </div>
+            <div className={styles.prefixWrapper}>
+              +84
+            </div>
             <input
               type="tel"
               name="username"
-              placeholder="Enter your phone number"
+              placeholder="Enter 10 digits"
               value={formData.username}
               onChange={handleInputChange}
-              className={`${styles.input} ${errors.username ? styles.error : ''}`}
+              className={`${styles.input} ${styles.withPrefix} ${errors.username ? styles.error : ''}`}
               autoComplete="tel"
-              maxLength={11}
+              maxLength={10}
             />
           </div>
           {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
-
         </div>
 
         <div className={styles.formGroup}>
