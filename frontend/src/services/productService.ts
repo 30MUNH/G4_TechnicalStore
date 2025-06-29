@@ -6,8 +6,8 @@ class ProductService {
   async getAllProducts(): Promise<Product[]> {
     try {
       const response = await api.get<ApiResponse<Product[]>>('/products');
-      if (response.data && response.data.success && response.data.data) {
-        return response.data.data;
+      if (response.data && response.data.data && response.data.data.products) {
+        return response.data.data.products;
       }
       return [];
     } catch (error) {
@@ -16,11 +16,11 @@ class ProductService {
     }
   }
 
-  async getProductsByCategory(categorySlug: string): Promise<Product[]> {
+  async getProductsByCategory(categoryId: string): Promise<Product[]> {
     try {
-      const response = await api.get<ApiResponse<Product[]>>(`/products/category/${categorySlug}`);
-      if (response.data && response.data.success && Array.isArray(response.data.data)) {
-        return response.data.data;
+      const response = await api.get<ApiResponse<Product[]>>(`/products/category/${categoryId}`);
+      if (response.data && response.data.products) {
+        return response.data.products;
       }
       return [];
     } catch (error) {
@@ -29,11 +29,24 @@ class ProductService {
     }
   }
 
+  async getProductsByCategoryName(categoryName: string): Promise<Product[]> {
+    try {
+      const response = await api.get<ApiResponse<Product[]>>(`/products/category-name/${categoryName}`);
+      if (response.data && response.data.products) {
+        return response.data.products;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching products by category name:', error);
+      return [];
+    }
+  }
+
   async getCategories(): Promise<Category[]> {
     try {
-      const response = await api.get<ApiResponse<Category[]>>(`/categories`);
-      if (response.data && response.data.success && Array.isArray(response.data.data)) {
-        return response.data.data;
+      const response = await api.get<ApiResponse<Category[]>>('/products/categories/all');
+      if (response.data && response.data.categories) {
+        return response.data.categories;
       }
       return [];
     } catch (error) {
@@ -45,8 +58,8 @@ class ProductService {
   async getProductById(id: string): Promise<Product | null> {
     try {
       const response = await api.get<ApiResponse<Product>>(`/products/${id}`);
-      if (response.data && response.data.success && response.data.data) {
-        return response.data.data;
+      if (response.data && response.data.product) {
+        return response.data.product;
       }
       return null;
     } catch (error) {
@@ -55,12 +68,24 @@ class ProductService {
     }
   }
 
+  async getProductByName(name: string): Promise<Product | null> {
+    try {
+      const response = await api.get<ApiResponse<Product>>(`/products/name/${name}`);
+      if (response.data && response.data.product) {
+        return response.data.product;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching product by name:', error);
+      return null;
+    }
+  }
+
   async getNewProducts(limit: number = 8): Promise<{ laptops: Product[]; pcs: Product[]; accessories: Product[] }> {
-    console.log("Gọi getNewProducts");
     try {
       const response = await api.get<ApiResponse<{ laptops: Product[]; pcs: Product[]; accessories: Product[] }>>(`/products/new?limit=${limit}`);
-      if (response.data && response.data.success && response.data.data) {
-        return response.data.data;
+      if (response.data && response.data.data && response.data.data.products) {
+        return response.data.data.products;
       }
       return { laptops: [], pcs: [], accessories: [] };
     } catch (error) {
@@ -70,11 +95,10 @@ class ProductService {
   }
 
   async getTopSellingProducts(limit: number = 6): Promise<Product[]> {
-    console.log("Gọi getTopSellingProducts");
     try {
       const response = await api.get<ApiResponse<Product[]>>(`/products/top-selling?limit=${limit}`);
-      if (response.data && response.data.success && Array.isArray(response.data.data)) {
-        return response.data.data;
+      if (response.data && response.data.data && response.data.data.products) {
+        return response.data.data.products;
       }
       return [];
     } catch (error) {
@@ -86,8 +110,8 @@ class ProductService {
   async searchProducts(keyword: string): Promise<Product[]> {
     try {
       const response = await api.get<ApiResponse<Product[]>>(`/products/search?q=${encodeURIComponent(keyword)}`);
-      if (response.data && response.data.success && Array.isArray(response.data.data)) {
-        return response.data.data;
+      if (response.data && response.data.products) {
+        return response.data.products;
       }
       return [];
     } catch (error) {
@@ -96,12 +120,66 @@ class ProductService {
     }
   }
 
+  async getProductsByType(type: 'laptop' | 'pc' | 'accessories', limit: number = 8): Promise<Product[]> {
+    try {
+      const response = await api.get<ApiResponse<Product[]>>(`/products/type/${type}?limit=${limit}`);
+      if (response.data && response.data.products) {
+        return response.data.products;
+      }
+      return [];
+    } catch (error) {
+      console.error(`Error fetching products by type ${type}:`, error);
+      return [];
+    }
+  }
+
+  async getProductsByMultipleCategories(categoryIds: string[], limit: number = 8): Promise<Product[]> {
+    try {
+      const categoryIdsParam = categoryIds.join(',');
+      const response = await api.get<ApiResponse<Product[]>>(`/products/categories/multiple?categoryIds=${categoryIdsParam}&limit=${limit}`);
+      if (response.data && response.data.products) {
+        return response.data.products;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching products by multiple categories:', error);
+      return [];
+    }
+  }
+
+  // Admin methods
+  async getAllProductsIncludingOutOfStock(): Promise<Product[]> {
+    try {
+      const response = await api.get<ApiResponse<Product[]>>('/products/all-including-out-of-stock');
+      if (response.data && response.data.products) {
+        return response.data.products;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching all products including out of stock:', error);
+      return [];
+    }
+  }
+
+  async getOutOfStockProducts(): Promise<Product[]> {
+    try {
+      const response = await api.get<ApiResponse<Product[]>>('/products/out-of-stock');
+      if (response.data && response.data.products) {
+        return response.data.products;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching out of stock products:', error);
+      return [];
+    }
+  }
+
   // CRUD operations for product management
   async createProduct(productData: Partial<Product>): Promise<Product> {
     try {
       const response = await api.post<ApiResponse<Product>>('/products', productData);
-      if (response.data && response.data.success && response.data.data) {
-        return response.data.data;
+      if (response.data && response.data.product) {
+        return response.data.product;
       }
       throw new Error('Failed to create product');
     } catch (error) {
@@ -113,8 +191,8 @@ class ProductService {
   async updateProduct(id: string, productData: Partial<Product>): Promise<Product> {
     try {
       const response = await api.put<ApiResponse<Product>>(`/products/${id}`, productData);
-      if (response.data && response.data.success && response.data.data) {
-        return response.data.data;
+      if (response.data && response.data.product) {
+        return response.data.product;
       }
       throw new Error('Failed to update product');
     } catch (error) {
@@ -126,7 +204,7 @@ class ProductService {
   async deleteProduct(id: string): Promise<void> {
     try {
       const response = await api.delete<ApiResponse<void>>(`/products/${id}`);
-      if (!response.data || !response.data.success) {
+      if (!response.data || response.data.error) {
         throw new Error('Failed to delete product');
       }
     } catch (error) {
