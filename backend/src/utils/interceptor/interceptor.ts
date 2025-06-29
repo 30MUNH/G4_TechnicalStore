@@ -6,11 +6,11 @@ import { Service } from "typedi";
 @Interceptor()
 export class ResponseInterceptor implements InterceptorInterface {
   intercept(action: Action, result: any): any {
-    // Nếu kết quả đã có dạng { success, data, ... } thì trả về nguyên bản
-    if (result && typeof result === "object" && "success" in result && "data" in result) {
-      return instanceToPlain(result);
-    }
-    // Nếu không, chỉ trả về instanceToPlain(result)
-    return instanceToPlain(result);
+    const statusCode = action.response?.statusCode ?? 200;
+    return {
+      success: true,
+      statusCode: 200,
+      data: instanceToPlain(result),
+    };
   }
 }
