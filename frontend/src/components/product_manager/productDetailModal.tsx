@@ -83,162 +83,168 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
   const catId = product.categoryId;
 
   const renderDetail = () => {
+    // Helper lấy field: lấy trực tiếp từ product
+    const get = (field: string) => {
+      if (product && product[field] !== undefined && product[field] !== null) return product[field];
+      return '-';
+    };
+    
     if (catId === CATEGORY_MAP.laptop) {
       return <>
-        <div><b>Brand:</b> {product.brand || '-'}</div>
-        <div><b>Model:</b> {product.model || '-'}</div>
-        <div><b>Screen size:</b> {product.screenSize ? `${product.screenSize}"` : '-'}</div>
-        <div><b>Resolution:</b> {product.resolution || '-'}</div>
-        <div><b>Processor:</b> {product.cpu || '-'}</div>
-        <div><b>RAM:</b> {product.ramGb ? `${product.ramGb} GB` : '-'}</div>
-        <div><b>Storage:</b> {product.storageGb ? `${product.storageGb} GB` : '-'}</div>
-        <div><b>Storage type:</b> {product.storageType || '-'}</div>
-        <div><b>Graphics:</b> {product.graphics || '-'}</div>
-        <div><b>Battery life:</b> {product.batteryLifeHours ? `${product.batteryLifeHours} h` : '-'}</div>
-        <div><b>Weight:</b> {product.weightKg ? `${product.weightKg} kg` : '-'}</div>
-        <div><b>OS:</b> {product.operatingSystem || '-'}</div>
+        <div><b>Brand:</b> {get('brand')}</div>
+        <div><b>Model:</b> {get('model')}</div>
+        <div><b>Screen size:</b> {get('screenSize') !== '-' ? `${get('screenSize')}"` : '-'}</div>
+        <div><b>Resolution:</b> {get('resolution')}</div>
+        <div><b>Processor:</b> {get('cpu')}</div>
+        <div><b>RAM:</b> {get('ramGb') !== '-' ? `${get('ramGb')} GB` : '-'}</div>
+        <div><b>Storage:</b> {get('storageGb') !== '-' ? `${get('storageGb')} GB` : '-'}</div>
+        <div><b>Storage type:</b> {get('storageType')}</div>
+        <div><b>Graphics:</b> {get('graphics')}</div>
+        <div><b>Battery life:</b> {get('batteryLifeHours') !== '-' ? `${get('batteryLifeHours')} h` : '-'}</div>
+        <div><b>Weight:</b> {get('weightKg') !== '-' ? `${get('weightKg')} kg` : '-'}</div>
+        <div><b>OS:</b> {get('os')}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.pc) {
       return <>
-        <div><b>Brand:</b> {product.brand || '-'}</div>
-        <div><b>Model:</b> {product.model || '-'}</div>
-        <div><b>Processor:</b> {product.processor || '-'}</div>
-        <div><b>RAM:</b> {product.ramGb ? `${product.ramGb} GB` : '-'}</div>
-        <div><b>Storage:</b> {product.storageGb ? `${product.storageGb} GB` : '-'}</div>
-        <div><b>Storage type:</b> {product.storageType || '-'}</div>
-        <div><b>Graphics:</b> {product.graphics || '-'}</div>
-        <div><b>Form factor:</b> {product.formFactor || '-'}</div>
-        <div><b>Power supply:</b> {product.powerSupplyWattage ? `${product.powerSupplyWattage} W` : '-'}</div>
-        <div><b>OS:</b> {product.operatingSystem || '-'}</div>
+        <div><b>Brand:</b> {get('brand')}</div>
+        <div><b>Model:</b> {get('model')}</div>
+        <div><b>Processor:</b> {get('processor')}</div>
+        <div><b>RAM:</b> {get('ramGb') !== '-' ? `${get('ramGb')} GB` : '-'}</div>
+        <div><b>Storage:</b> {get('storageGb') !== '-' ? `${get('storageGb')} GB` : '-'}</div>
+        <div><b>Storage type:</b> {get('storageType')}</div>
+        <div><b>Graphics:</b> {get('graphics')}</div>
+        <div><b>Form factor:</b> {get('formFactor')}</div>
+        <div><b>Power supply:</b> {get('powerSupplyWattage') !== '-' ? `${get('powerSupplyWattage')} W` : '-'}</div>
+        <div><b>OS:</b> {get('operatingSystem')}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.drive) {
       return <>
-        <div><b>Brand:</b> {product.brand || '-'}</div>
-        <div><b>Model:</b> {product.model || '-'}</div>
-        <div><b>Type:</b> {product.type || '-'}</div>
-        <div><b>Capacity:</b> {product.capacityGb ? `${product.capacityGb} GB` : '-'}</div>
-        <div><b>Interface:</b> {product.interface || '-'}</div>
+        <div><b>Brand:</b> {get('brand')}</div>
+        <div><b>Model:</b> {get('model')}</div>
+        <div><b>Type:</b> {get('type')}</div>
+        <div><b>Capacity:</b> {get('capacityGb') !== '-' ? `${get('capacityGb')} GB` : '-'}</div>
+        <div><b>Interface:</b> {get('interface')}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.monitor) {
       return <>
-        <div><b>Brand:</b> {product.brand || '-'}</div>
-        <div><b>Model:</b> {product.model || '-'}</div>
-        <div><b>Size:</b> {product.sizeInch ? `${product.sizeInch}"` : '-'}</div>
-        <div><b>Resolution:</b> {product.resolution || '-'}</div>
-        <div><b>Refresh rate:</b> {product.refreshRate ? `${product.refreshRate} Hz` : '-'}</div>
-        <div><b>Panel type:</b> {product.panelType || '-'}</div>
+        <div><b>Brand:</b> {get('brand')}</div>
+        <div><b>Model:</b> {get('model')}</div>
+        <div><b>Size:</b> {get('sizeInch') !== '-' ? `${get('sizeInch')}"` : '-'}</div>
+        <div><b>Resolution:</b> {get('resolution')}</div>
+        <div><b>Refresh rate:</b> {get('refreshRate') !== '-' ? `${get('refreshRate')} Hz` : '-'}</div>
+        <div><b>Panel type:</b> {get('panelType')}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.cpu) {
       return <>
-        <div><b>Cores:</b> {product.cores || '-'}</div>
-        <div><b>Threads:</b> {product.threads || '-'}</div>
-        <div><b>Base Clock:</b> {product.baseClock || '-'}</div>
-        <div><b>Boost Clock:</b> {product.boostClock || '-'}</div>
-        <div><b>Socket:</b> {product.socket || '-'}</div>
-        <div><b>Architecture:</b> {product.architecture || '-'}</div>
-        <div><b>TDP:</b> {product.tdp ? `${product.tdp}W` : '-'}</div>
-        <div><b>Integrated Graphics:</b> {product.integratedGraphics || '-'}</div>
+        <div><b>Cores:</b> {get('cores')}</div>
+        <div><b>Threads:</b> {get('threads')}</div>
+        <div><b>Base Clock:</b> {get('baseClock')}</div>
+        <div><b>Boost Clock:</b> {get('boostClock')}</div>
+        <div><b>Socket:</b> {get('socket')}</div>
+        <div><b>Architecture:</b> {get('architecture')}</div>
+        <div><b>TDP:</b> {get('tdp') !== '-' ? `${get('tdp')}W` : '-'}</div>
+        <div><b>Integrated Graphics:</b> {get('integratedGraphics')}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.cooler) {
       return <>
-        <div><b>Brand:</b> {product.brand || '-'}</div>
-        <div><b>Model:</b> {product.model || '-'}</div>
-        <div><b>Type:</b> {product.type || '-'}</div>
-        <div><b>Supported sockets:</b> {product.supportedSockets || '-'}</div>
-        <div><b>Fan size:</b> {product.fanSizeMm ? `${product.fanSizeMm} mm` : '-'}</div>
+        <div><b>Brand:</b> {get('brand')}</div>
+        <div><b>Model:</b> {get('model')}</div>
+        <div><b>Type:</b> {get('type')}</div>
+        <div><b>Supported sockets:</b> {get('supportedSockets')}</div>
+        <div><b>Fan size:</b> {get('fanSizeMm') !== '-' ? `${get('fanSizeMm')} mm` : '-'}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.ram) {
       return <>
-        <div><b>Brand:</b> {product.brand || '-'}</div>
-        <div><b>Model:</b> {product.model || '-'}</div>
-        <div><b>Capacity:</b> {product.capacityGb ? `${product.capacityGb} GB` : '-'}</div>
-        <div><b>Speed:</b> {product.speedMhz ? `${product.speedMhz} MHz` : '-'}</div>
-        <div><b>Type:</b> {product.type || '-'}</div>
+        <div><b>Brand:</b> {get('brand')}</div>
+        <div><b>Model:</b> {get('model')}</div>
+        <div><b>Capacity:</b> {get('capacityGb') !== '-' ? `${get('capacityGb')} GB` : '-'}</div>
+        <div><b>Speed:</b> {get('speedMhz') !== '-' ? `${get('speedMhz')} MHz` : '-'}</div>
+        <div><b>Type:</b> {get('type')}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.psu) {
       return <>
-        <div><b>Brand:</b> {product.brand || '-'}</div>
-        <div><b>Model:</b> {product.model || '-'}</div>
-        <div><b>Wattage:</b> {product.wattage ? `${product.wattage} W` : '-'}</div>
-        <div><b>Efficiency rating:</b> {product.efficiencyRating || '-'}</div>
-        <div><b>Modular:</b> {product.modular || '-'}</div>
+        <div><b>Brand:</b> {get('brand')}</div>
+        <div><b>Model:</b> {get('model')}</div>
+        <div><b>Wattage:</b> {get('wattage') !== '-' ? `${get('wattage')} W` : '-'}</div>
+        <div><b>Efficiency rating:</b> {get('efficiencyRating')}</div>
+        <div><b>Modular:</b> {get('modular')}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.case) {
       return <>
-        <div><b>Brand:</b> {product.brand || '-'}</div>
-        <div><b>Model:</b> {product.model || '-'}</div>
-        <div><b>Form factor support:</b> {product.formFactorSupport || '-'}</div>
-        <div><b>Has RGB:</b> {product.hasRgb !== undefined ? (product.hasRgb ? 'Có' : 'Không') : '-'}</div>
-        <div><b>Side panel type:</b> {product.sidePanelType || '-'}</div>
+        <div><b>Brand:</b> {get('brand')}</div>
+        <div><b>Model:</b> {get('model')}</div>
+        <div><b>Form factor support:</b> {get('formFactorSupport')}</div>
+        <div><b>Has RGB:</b> {get('hasRgb') !== undefined ? (get('hasRgb') ? 'Có' : 'Không') : '-'}</div>
+        <div><b>Side panel type:</b> {get('sidePanelType')}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.headset) {
       return <>
-        <div><b>Has microphone:</b> {product.hasMicrophone !== undefined ? (product.hasMicrophone ? 'Có' : 'Không') : '-'}</div>
-        <div><b>Connectivity:</b> {product.connectivity || '-'}</div>
-        <div><b>Surround sound:</b> {product.surroundSound !== undefined ? (product.surroundSound ? 'Có' : 'Không') : '-'}</div>
+        <div><b>Has microphone:</b> {get('hasMicrophone') !== undefined ? (get('hasMicrophone') ? 'Có' : 'Không') : '-'}</div>
+        <div><b>Connectivity:</b> {get('connectivity')}</div>
+        <div><b>Surround sound:</b> {get('surroundSound') !== undefined ? (get('surroundSound') ? 'Có' : 'Không') : '-'}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.motherboard) {
       return <>
-        <div><b>Brand:</b> {product.brand || '-'}</div>
-        <div><b>Model:</b> {product.model || '-'}</div>
-        <div><b>Chipset:</b> {product.chipset || '-'}</div>
-        <div><b>Socket:</b> {product.socket || '-'}</div>
-        <div><b>Form factor:</b> {product.formFactor || '-'}</div>
-        <div><b>RAM slots:</b> {product.ramSlots || '-'}</div>
-        <div><b>Max RAM:</b> {product.maxRam ? `${product.maxRam} GB` : '-'}</div>
+        <div><b>Brand:</b> {get('brand')}</div>
+        <div><b>Model:</b> {get('model')}</div>
+        <div><b>Chipset:</b> {get('chipset')}</div>
+        <div><b>Socket:</b> {get('socket')}</div>
+        <div><b>Form factor:</b> {get('formFactor')}</div>
+        <div><b>RAM slots:</b> {get('ramSlots')}</div>
+        <div><b>Max RAM:</b> {get('maxRam') !== '-' ? `${get('maxRam')} GB` : '-'}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.keyboard) {
       return <>
-        <div><b>Type:</b> {product.type || '-'}</div>
-        <div><b>Switch type:</b> {product.switchType || '-'}</div>
-        <div><b>Connectivity:</b> {product.connectivity || '-'}</div>
-        <div><b>Layout:</b> {product.layout || '-'}</div>
-        <div><b>Has RGB:</b> {product.hasRgb !== undefined ? (product.hasRgb ? 'Có' : 'Không') : '-'}</div>
+        <div><b>Type:</b> {get('type')}</div>
+        <div><b>Switch type:</b> {get('switchType')}</div>
+        <div><b>Connectivity:</b> {get('connectivity')}</div>
+        <div><b>Layout:</b> {get('layout')}</div>
+        <div><b>Has RGB:</b> {get('hasRgb') !== undefined ? (get('hasRgb') ? 'Có' : 'Không') : '-'}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.gpu) {
       return <>
-        <div><b>Brand:</b> {product.brand || '-'}</div>
-        <div><b>Model:</b> {product.model || '-'}</div>
-        <div><b>VRAM:</b> {product.vram ? `${product.vram} GB` : '-'}</div>
-        <div><b>Chipset:</b> {product.chipset || '-'}</div>
-        <div><b>Memory type:</b> {product.memoryType || '-'}</div>
-        <div><b>Length:</b> {product.lengthMm ? `${product.lengthMm} mm` : '-'}</div>
+        <div><b>Brand:</b> {get('brand')}</div>
+        <div><b>Model:</b> {get('model')}</div>
+        <div><b>VRAM:</b> {get('vram') !== '-' ? `${get('vram')} GB` : '-'}</div>
+        <div><b>Chipset:</b> {get('chipset')}</div>
+        <div><b>Memory type:</b> {get('memoryType')}</div>
+        <div><b>Length:</b> {get('lengthMm') !== '-' ? `${get('lengthMm')} mm` : '-'}</div>
       </>;
     }
     if (catId === CATEGORY_MAP.mouse) {
       return <>
-        <div><b>Type:</b> {product.type || '-'}</div>
-        <div><b>DPI:</b> {product.dpi || '-'}</div>
-        <div><b>Connectivity:</b> {product.connectivity || '-'}</div>
-        <div><b>Has RGB:</b> {product.hasRgb !== undefined ? (product.hasRgb ? 'Có' : 'Không') : '-'}</div>
+        <div><b>Type:</b> {get('type')}</div>
+        <div><b>DPI:</b> {get('dpi') !== '-' ? `${get('dpi')}` : '-'}</div>
+        <div><b>Connectivity:</b> {get('connectivity')}</div>
+        <div><b>Has RGB:</b> {get('hasRgb') !== undefined ? (get('hasRgb') ? 'Có' : 'Không') : '-'}</div>
       </>;
     }
     if (catId === CATEGORY_MAP['network-card']) {
       return <>
-        <div><b>Type:</b> {product.type || '-'}</div>
-        <div><b>Interface:</b> {product.interface || '-'}</div>
-        <div><b>Speed:</b> {product.speedMbps ? `${product.speedMbps} Mbps` : '-'}</div>
+        <div><b>Type:</b> {get('type')}</div>
+        <div><b>Interface:</b> {get('interface')}</div>
+        <div><b>Speed:</b> {get('speedMbps') !== '-' ? `${get('speedMbps')} Mbps` : '-'}</div>
       </>;
     }
     // Trường hợp mặc định (sản phẩm chung)
     return <>
-      <div><b>Mô tả:</b> {product.description}</div>
-      <div><b>Tồn kho:</b> {product.stock}</div>
-      <div><b>Trạng thái:</b> {product.isActive ? 'Hoạt động' : 'Không hoạt động'}</div>
-      <div><b>Ngày tạo:</b> {formatDate(product.createdAt)}</div>
-      <div><b>Ngày cập nhật:</b> {formatDate(product.updatedAt)}</div>
+      <div><b>Mô tả:</b> {get('description')}</div>
+      <div><b>Tồn kho:</b> {get('stock')}</div>
+      <div><b>Trạng thái:</b> {get('isActive') ? 'Hoạt động' : 'Không hoạt động'}</div>
+      <div><b>Ngày tạo:</b> {formatDate(get('createdAt'))}</div>
+      <div><b>Ngày cập nhật:</b> {formatDate(get('updatedAt'))}</div>
     </>;
   };
 

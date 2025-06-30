@@ -69,8 +69,10 @@ const HomePage: React.FC = () => {
     return '/img/product01.png';
   };
 
-  const handleOpenQuickView = (product: Product) => {
-    setQuickViewProduct(product);
+  const handleOpenQuickView = async (product: Product) => {
+    // Gọi API lấy chi tiết sản phẩm
+    const detail = await productService.getProductById(product.id);
+    setQuickViewProduct(detail || product);
     setIsQuickViewOpen(true);
   };
   const handleCloseQuickView = () => {
@@ -90,7 +92,7 @@ const HomePage: React.FC = () => {
     }
 
     try {
-      await addToCart(product.slug, 1);
+      await addToCart(product.id, 1);
       setAddToCartStatus({
         message: 'Product added to cart successfully!',
         type: 'success'
@@ -123,7 +125,7 @@ const HomePage: React.FC = () => {
         <div className="product-body">
           <p className="product-category">{product.category?.name || 'Category'}</p>
           <h3 className="product-name">
-            <Link to={`/product/${product.slug}`}>{product.name}</Link>
+            <Link to={`/product/${product.id}`}>{product.name}</Link>
           </h3>
           <h4 className="product-price">{formatPrice(product.price)}</h4>
           <div className="product-btns">
@@ -131,7 +133,7 @@ const HomePage: React.FC = () => {
               <FontAwesomeIcon icon={faHeartRegular2} />
               <span className="tooltipp">add to wishlist</span>
             </button>
-            <button className="quick-view" onClick={() => handleOpenQuickView(product)}>
+            <button className="quick-view" onClick={async () => await handleOpenQuickView(product)}>
               <FontAwesomeIcon icon={faEye} />
               <span className="tooltipp">quick view</span>
             </button>
@@ -150,25 +152,6 @@ const HomePage: React.FC = () => {
           </button>
         </div>
       )}
-    </div>
-  );
-
-  const renderProductWidget = (product: Product) => (
-    <div key={product.id} className="product-widget">
-      <div className="product-img">
-        <img src={getProductImage(product)} alt={product.name} />
-      </div>
-      <div className="product-body">
-        <p className="product-category">{product.category?.name || 'Category'}</p>
-        <h3
-          className="product-name product-name-hover"
-          style={{ cursor: 'pointer', transition: 'color 0.2s' }}
-          onClick={() => handleOpenQuickView(product)}
-        >
-          {product.name}
-        </h3>
-        <h4 className="product-price">{formatPrice(product.price)}</h4>
-      </div>
     </div>
   );
 
@@ -215,6 +198,26 @@ const HomePage: React.FC = () => {
     // Accessories
     return newProducts.accessories || [];
   };
+
+  // Thêm hàm mới để render sản phẩm Top Selling giống giao diện mẫu
+  const renderTopSellingProduct = (product: Product) => (
+    <div key={product.id} className="product-widget" style={{ display: 'flex', alignItems: 'center', marginBottom: 32, border: 'none', boxShadow: 'none' }}>
+      <div className="product-img" style={{ minWidth: 80, maxWidth: 80, marginRight: 24 }}>
+        <img src={getProductImage(product)} alt={product.name} style={{ width: 80, height: 60, objectFit: 'contain' }} />
+      </div>
+      <div className="product-body" style={{ flex: 1, textAlign: 'left' }}>
+        <p className="product-category">{product.category?.name || 'Category'}</p>
+        <h3
+          className="product-name product-name-hover"
+          style={{ cursor: 'pointer', transition: 'color 0.2s', marginBottom: 2 }}
+          onClick={async () => await handleOpenQuickView(product)}
+        >
+          {product.name}
+        </h3>
+        <h4 className="product-price">{formatPrice(product.price)}</h4>
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -349,22 +352,20 @@ const HomePage: React.FC = () => {
       {/* /SECTION */}
 
       {/* SECTION: TOP SELLING */}
-      <div className="section">
-        <div className="container">
-          <div className="row">
+      <div className="section" style={{ background: '#fff' }}>
+        <div className="container" style={{ maxWidth: '1400px', margin: '0 auto' }}>
+          <div className="row" style={{ justifyContent: 'center' }}>
             {[0, 1, 2].map(index => (
-              <div key={index} className="col-md-4 col-xs-6">
-                <div className="section-title">
-                  <h4 className="title">Top selling</h4>
+              <div key={index} className="col-md-4 col-xs-12" style={{ marginBottom: 24 }}>
+                <div className="section-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <h4 className="title" style={{ fontWeight: 700, fontSize: 28, letterSpacing: 1, color: '#222', marginBottom: 24, marginTop: 0 }}>TOP SELLING</h4>
                   <div className="section-nav">
                     <div id={`slick-nav-${index + 3}`} className="products-slick-nav"></div>
                   </div>
                 </div>
-                <div className="products-widget-slick" data-nav={`#slick-nav-${index + 3}`}>
+                <div>
                   {topSellingProducts && topSellingProducts.length > 0 && topSellingProducts.slice(index * 2, (index + 1) * 2).map(product => (
-                    <div key={product.id}>
-                      {renderProductWidget(product)}
-                    </div>
+                    renderTopSellingProduct(product)
                   ))}
                 </div>
               </div>

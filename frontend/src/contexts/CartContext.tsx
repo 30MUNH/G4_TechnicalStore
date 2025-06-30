@@ -38,9 +38,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             setLoading(true);
             const response = await cartService.viewCart();
-            if (response.cart) {
-                setCartItems(response.cart.cartItems || []);
-                setTotalAmount(response.cart.totalAmount || 0);
+            if (response.success && response.data) {
+                setCartItems(response.data.cartItems || []);
+                setTotalAmount(response.data.totalAmount || 0);
+            } else {
+                setCartItems([]);
+                setTotalAmount(0);
             }
             setError(null);
         } catch (err) {
@@ -62,7 +65,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (isUpdating) return;
             setIsUpdating(true);
             try {
-                await cartService.addToCart(productSlug, quantity);
+                const response = await cartService.addToCart(productSlug, quantity);
+                if (!response.success) {
+                    throw new Error(response.message || 'Failed to add item to cart');
+                }
                 await fetchCart();
             } catch (err) {
                 setError('Failed to add item to cart');
@@ -80,7 +86,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (isUpdating) return;
             setIsUpdating(true);
             try {
-                await cartService.updateQuantity(productSlug, quantity);
+                const response = await cartService.updateQuantity(productSlug, quantity);
+                if (!response.success) {
+                    throw new Error(response.message || 'Failed to update quantity');
+                }
                 await fetchCart();
             } catch (err) {
                 setError('Failed to update quantity');
@@ -98,7 +107,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (isUpdating) return;
             setIsUpdating(true);
             try {
-                await cartService.removeItem(productSlug);
+                const response = await cartService.removeItem(productSlug);
+                if (!response.success) {
+                    throw new Error(response.message || 'Failed to remove item from cart');
+                }
                 await fetchCart();
             } catch (err) {
                 setError('Failed to remove item from cart');
@@ -140,7 +152,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         setIsUpdating(true);
         try {
-            await cartService.clearCart();
+            const response = await cartService.clearCart();
+            if (!response.success) {
+                throw new Error(response.message || 'Failed to clear cart');
+            }
             setCartItems([]);
             setTotalAmount(0);
         } catch (err) {
@@ -167,6 +182,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const getFinalTotal = useCallback(() => {
         return getCartTotal() + getTax() + getShipping();
     }, [getCartTotal, getTax, getShipping]);
+
+
 
     return (
         <CartContext.Provider

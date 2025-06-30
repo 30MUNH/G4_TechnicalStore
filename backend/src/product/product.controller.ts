@@ -1,211 +1,349 @@
-import { Controller, Get, Param, QueryParam, Post, Put, Delete, Body, UseBefore } from "routing-controllers";
-
+import { Body, Controller, Delete, Get, Param, Post, Put, QueryParam, UseBefore } from "routing-controllers";
 import { Service } from "typedi";
 import { ProductService } from "./product.service";
-import { Container } from "typedi";
 import { CreateProductDto, UpdateProductDto } from "./dtos/product.dto";
 import { Auth, authorizedRoles } from "@/middlewares/auth.middleware";
 
 @Service()
 @Controller("/products")
 export class ProductController {
-  private productService: ProductService;
+    constructor(
+        private readonly productService: ProductService
+    ) {}
 
-  constructor() {
-    this.productService = Container.get(ProductService);
-  }
-
-  @Get("/")
-  async getAllProducts() {
-    try {
-      const products = await this.productService.getAllProducts();
-      return {
-        success: true,
-        data: products,
-        message: "Products retrieved successfully"
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: "Failed to retrieve products",
-        error: error.message || "Unknown error"
-      };
+    @Get("/")
+    async getAllProducts() {
+        try {
+            const products = await this.productService.getAllProducts();
+            return {
+                message: "Products retrieved successfully",
+                products
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve products",
+                error: error.message
+            };
+        }
     }
-  }
 
-  @Get("/new")
-  async getNewProducts(@QueryParam("limit") limit: number = 8) {
-    try {
-      const products = await this.productService.getNewProducts(limit);
-      return {
-        success: true,
-        data: products,
-        message: "New products retrieved successfully"
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: "Failed to retrieve new products",
-        error: error.message || "Unknown error"
-      };
+    @Get("/all-including-out-of-stock")
+    @UseBefore(Auth)
+    @UseBefore(authorizedRoles("manager", "admin"))
+    async getAllProductsIncludingOutOfStock() {
+        try {
+            const products = await this.productService.getAllProductsIncludingOutOfStock();
+            return {
+                message: "All products (including out of stock) retrieved successfully",
+                products
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve all products",
+                error: error.message
+            };
+        }
     }
-  }
 
-  @Get("/top-selling")
-  async getTopSellingProducts(@QueryParam("limit") limit: number = 6) {
-    try {
-      const products = await this.productService.getTopSellingProducts(limit);
-      return {
-        success: true,
-        data: products,
-        message: "Top selling products retrieved successfully"
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: "Failed to retrieve top selling products",
-        error: error.message || "Unknown error"
-      };
+    @Get("/out-of-stock")
+    @UseBefore(Auth)
+    @UseBefore(authorizedRoles("manager", "admin"))
+    async getOutOfStockProducts() {
+        try {
+            const products = await this.productService.getOutOfStockProducts();
+            return {
+                message: "Out of stock products retrieved successfully",
+                products
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve out of stock products",
+                error: error.message
+            };
+        }
     }
-  }
 
-  @Get("/category/:categorySlug")
-  async getProductsByCategory(@Param("categorySlug") categorySlug: string) {
-    try {
-      const products = await this.productService.getProductsByCategory(categorySlug);
-      return {
-        success: true,
-        data: products,
-        message: "Products by category retrieved successfully"
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: "Failed to retrieve products by category",
-        error: error.message || "Unknown error"
-      };
+    @Get("/new")
+    async getNewProducts(@QueryParam("limit") limit: number = 8) {
+        try {
+            const products = await this.productService.getNewProducts(limit);
+            return {
+                message: "New products retrieved successfully",
+                products
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve new products",
+                error: error.message
+            };
+        }
     }
-  }
 
-  @Get("/search")
-  async searchProducts(@QueryParam("q") keyword: string) {
-    if (!keyword || keyword.trim() === "") {
-      return {
-        success: false,
-        message: "Missing search keyword"
-      };
+    @Get("/top-selling")
+    async getTopSellingProducts(@QueryParam("limit") limit: number = 6) {
+        try {
+            const products = await this.productService.getTopSellingProducts(limit);
+            return {
+                message: "Top selling products retrieved successfully",
+                products
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve top selling products",
+                error: error.message
+            };
+        }
     }
-    try {
-      const products = await this.productService.searchProducts(keyword);
-      return {
-        success: true,
-        data: products,
-        message: "Products search result"
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: "Failed to search products",
-        error: error.message || "Unknown error"
-      };
-    }
-  }
 
-  @Get("/:id")
-  async getProductById(@Param("id") id: string) {
-    try {
-      const product = await this.productService.getProductById(id);
-      if (!product) {
-        return {
-          success: false,
-          message: "Product not found"
-        };
-      }
-      return {
-        success: true,
-        data: product,
-        message: "Product retrieved successfully"
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: "Failed to retrieve product",
-        error: error.message || "Unknown error"
-      };
+    @Get("/category/:categoryId")
+    async getProductsByCategory(@Param("categoryId") categoryId: string) {
+        try {
+            const products = await this.productService.getProductsByCategory(categoryId);
+            return {
+                message: "Products by category retrieved successfully",
+                products
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve products by category",
+                error: error.message
+            };
+        }
     }
-  }
 
-  @Post("/")
-  @UseBefore(Auth)
-  @UseBefore(authorizedRoles("manager", "admin"))
-  async createProduct(@Body() createProductDto: CreateProductDto) {
-    try {
-      const product = await this.productService.createProduct(createProductDto);
-      return {
-        success: true,
-        data: product,
-        message: "Product created successfully"
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: "Failed to create product",
-        error: error.message || "Unknown error"
-      };
+    @Get("/category-name/:categoryName")
+    async getProductsByCategoryName(@Param("categoryName") categoryName: string) {
+        try {
+            const products = await this.productService.getProductsByCategoryName(categoryName);
+            return {
+                message: "Products by category name retrieved successfully",
+                products
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve products by category name",
+                error: error.message
+            };
+        }
     }
-  }
 
-  @Put("/:id")
-  @UseBefore(Auth)
-  @UseBefore(authorizedRoles("manager", "admin"))
-  async updateProduct(
-    @Param("id") id: string,
-    @Body() updateProductDto: UpdateProductDto
-  ) {
-    try {
-      const product = await this.productService.updateProduct(id, updateProductDto);
-      if (!product) {
-        return {
-          success: false,
-          message: "Product not found"
-        };
-      }
-      return {
-        success: true,
-        data: product,
-        message: "Product updated successfully"
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: "Failed to update product",
-        error: error.message || "Unknown error"
-      };
+    @Get("/search")
+    async searchProducts(@QueryParam("q") keyword: string) {
+        if (!keyword || keyword.trim() === "") {
+            return {
+                message: "Missing search keyword"
+            };
+        }
+        try {
+            const products = await this.productService.searchProducts(keyword);
+            return {
+                message: "Products search result",
+                products
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to search products",
+                error: error.message
+            };
+        }
     }
-  }
 
-  @Delete("/:id")
-  @UseBefore(Auth)
-  @UseBefore(authorizedRoles("manager", "admin"))
-  async deleteProduct(@Param("id") id: string) {
-    try {
-      const result = await this.productService.deleteProduct(id);
-      if (!result) {
-        return {
-          success: false,
-          message: "Product not found"
-        };
-      }
-      return { 
-        success: true, 
-        message: "Product deleted successfully" 
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: "Failed to delete product",
-        error: error.message || "Unknown error"
-      };
+    @Get("/:id")
+    async getProductById(@Param("id") id: string) {
+        try {
+            const product = await this.productService.getProductById(id);
+            if (!product) {
+                return {
+                    message: "Product not found"
+                };
+            }
+            return {
+                message: "Product retrieved successfully",
+                product
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve product",
+                error: error.message
+            };
+        }
+    }
+
+    @Get("/name/:name")
+    async getProductByName(@Param("name") name: string) {
+        try {
+            const product = await this.productService.getProductByName(name);
+            if (!product) {
+                return {
+                    message: "Product not found"
+                };
+            }
+            return {
+                message: "Product retrieved successfully",
+                product
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve product",
+                error: error.message
+            };
+        }
+    }
+
+    @Post("/")
+    @UseBefore(Auth)
+    @UseBefore(authorizedRoles("manager", "admin"))
+    async createProduct(@Body() createProductDto: CreateProductDto) {
+        try {
+            const product = await this.productService.createProduct(createProductDto);
+            return {
+                message: "Product created successfully",
+                product
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to create product",
+                error: error.message
+            };
+        }
+    }
+
+    @Put("/:id")
+    @UseBefore(Auth)
+    @UseBefore(authorizedRoles("manager", "admin"))
+    async updateProduct(
+        @Param("id") id: string,
+        @Body() updateProductDto: UpdateProductDto
+    ) {
+        try {
+            const product = await this.productService.updateProduct(id, updateProductDto);
+            if (!product) {
+                return {
+                    message: "Product not found"
+                };
+            }
+            return {
+                message: "Product updated successfully",
+                product
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to update product",
+                error: error.message
+            };
+        }
+    }
+
+    @Delete("/:id")
+    @UseBefore(Auth)
+    @UseBefore(authorizedRoles("manager", "admin"))
+    async deleteProduct(@Param("id") id: string) {
+        try {
+            const result = await this.productService.deleteProduct(id);
+            if (!result) {
+                return {
+                    message: "Product not found"
+                };
+            }
+            return {
+                message: "Product deleted successfully"
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to delete product",
+                error: error.message
+            };
+        }
+    }
+
+    // Thêm endpoint để lấy sản phẩm theo main category
+    @Get("/main-category/:categoryId")
+    async getProductsByMainCategory(
+        @Param("categoryId") categoryId: string,
+        @QueryParam("limit") limit: number = 8
+    ) {
+        try {
+            const products = await this.productService.getProductsByMainCategory(categoryId, limit);
+            return {
+                message: "Products by main category retrieved successfully",
+                products
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve products by main category",
+                error: error.message
+            };
+        }
+    }
+
+    // Thêm endpoint để lấy tất cả categories
+    @Get("/categories/all")
+    async getAllCategories() {
+        try {
+            const categories = await this.productService.getAllCategories();
+            return {
+                message: "Categories retrieved successfully",
+                categories
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve categories",
+                error: error.message
+            };
+        }
+    }
+
+    // Thêm endpoint để lấy sản phẩm theo nhiều categories
+    @Get("/categories/multiple")
+    async getProductsByMultipleCategories(
+        @QueryParam("categoryIds") categoryIds: string,
+        @QueryParam("limit") limit: number = 8
+    ) {
+        if (!categoryIds) {
+            return {
+                message: "Missing category IDs"
+            };
+        }
+        
+        try {
+            const categoryIdArray = categoryIds.split(',').map(id => id.trim());
+            const products = await this.productService.getProductsByMultipleCategories(categoryIdArray, limit);
+            return {
+                message: "Products by multiple categories retrieved successfully",
+                products
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve products by multiple categories",
+                error: error.message
+            };
+        }
+    }
+
+    // Thêm endpoint để lấy sản phẩm theo loại
+    @Get("/type/:type")
+    async getProductsByType(
+        @Param("type") type: string,
+        @QueryParam("limit") limit: number = 8
+    ) {
+        if (!['laptop', 'pc', 'accessories'].includes(type)) {
+            return {
+                message: "Invalid product type. Must be laptop, pc, or accessories"
+            };
+        }
+        
+        try {
+            const products = await this.productService.getProductsByType(type as 'laptop' | 'pc' | 'accessories', limit);
+            return {
+                message: `Products by type '${type}' retrieved successfully`,
+                products
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve products by type",
+                error: error.message
+            };
+        }
     }
   }
 
@@ -218,4 +356,3 @@ export class ProductController {
   // async addComponents() {
   //   return await this.productService.addToComponents();
   // }
-}

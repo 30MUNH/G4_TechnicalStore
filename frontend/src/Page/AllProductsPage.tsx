@@ -78,10 +78,8 @@ const AllProductsPage: React.FC = () => {
     let filtered = [...products];
     if (selectedCategories.length > 0) {
       filtered = filtered.filter((p) => {
-        const categorySlug = p.category?.slug?.toLowerCase();
         const categoryName = p.category?.name?.toLowerCase();
         return selectedCategories.some(selectedCat => 
-          categorySlug === selectedCat.toLowerCase() ||
           categoryName === selectedCat.toLowerCase()
         );
       });

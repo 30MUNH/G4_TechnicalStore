@@ -45,6 +45,11 @@ interface AuthError extends Error {
     };
 }
 
+interface VerifyRegisterResponse {
+    data: string; // accessToken
+    status: number;
+}
+
 const formatPhoneNumber = (phone: string): string => {
     // Remove all non-digits
     let phoneNumber = phone.replace(/\D/g, '');
@@ -109,13 +114,13 @@ export const authService = {
                 throw new Error('Username and password are required');
             }
             const cleanedCredentials = {
-                username: credentials.username.toLowerCase().trim(),
+                username: credentials.username.trim(),
                 password: credentials.password
             };
             const response = await api.post('/account/login', cleanedCredentials);
             return response.data;
         } catch (error: unknown) {
-            if (isErrorWithMessage(error)) {
+            if (isErrorWithMessage(error) && 'response' in error) {
                 return handleAuthError(error as AuthError);
             }
             throw new Error('An unexpected error occurred');
@@ -133,13 +138,13 @@ export const authService = {
                 throw new Error('Username and OTP are required');
             }
             const cleanedData = {
-                username: verifyData.username.toLowerCase().trim(),
+                username: verifyData.username.trim(),
                 otp: verifyData.otp.trim()
             };
             const response = await api.post('/account/verify-login', cleanedData);
             return response.data;
         } catch (error: unknown) {
-            if (isErrorWithMessage(error)) {
+            if (isErrorWithMessage(error) && 'response' in error) {
                 return handleAuthError(error as AuthError);
             }
             throw new Error('An unexpected error occurred');
@@ -150,8 +155,9 @@ export const authService = {
         try {
             const response = await api.get('/account/profile');
             return response.data;
-        } catch (error) {
-            console.error('Get user profile error:', error.response?.data || error.message);
+        } catch (error: unknown) {
+            const axiosError = error as AxiosError;
+            console.error('Get user profile error:', axiosError.response?.data || axiosError.message);
             throw error;
         }
     },
@@ -175,13 +181,13 @@ export const authService = {
 
             console.log('Sending registration request with data:', {
                 ...cleanedData,
-                password: '***' // Hide password in logs
+                password: '***' 
             });
 
             const response = await api.post<ApiResponse>('/account/register', cleanedData);
             console.log('Registration response:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             const axiosError = error as AxiosError;
             console.error('Detailed registration error:', {
                 status: axiosError.response?.status,
@@ -193,9 +199,15 @@ export const authService = {
         }
     },
 
-    async verifyRegister(verifyData: VerifyRegisterData): Promise<ApiResponse> {
+    async verifyRegister(verifyData: VerifyRegisterData): Promise<VerifyRegisterResponse> {
         try {
-            // Ensure phone number is in correct format
+            console.log('Verifying registration with data:', {
+                username: verifyData.username,
+                phone: verifyData.phone,
+                roleSlug: verifyData.roleSlug,
+                otp: verifyData.otp
+            });
+            
             const formattedData = {
                 username: verifyData.username,
                 password: verifyData.password,
@@ -204,11 +216,50 @@ export const authService = {
                 otp: verifyData.otp
             };
 
-            const response = await api.post<ApiResponse>('/account/verify-register', formattedData);
-            return response.data;
-        } catch (error) {
+            console.log('Sending formatted data:', {
+                ...formattedData,
+                password: '***' // Hide password in logs
+            });
+
+            const response = await api.post('/account/verify-register', formattedData);
+            
+            console.log('Backend response:', response.data);
+            
+            // Enhanced response handling with success callback
+            const handleSuccessResponse = (accessToken: string) => {
+                console.log('🎉 OTP verification successful!');
+                
+                // Store auth token immediately upon success
+                localStorage.setItem('authToken', accessToken);
+                
+                // Success callback - you can customize this
+                const successCallback = () => {
+                    console.log('✅ User successfully registered and authenticated');
+                    // Optional: trigger any additional success actions here
+                };
+                
+                successCallback();
+                
+                return { data: accessToken, status: response.status };
+            };
+            
+            // Handle both old string format and new JSON format
+            if (typeof response.data === 'string') {
+                // Old format - treat as access token if not error message
+                if (response.data.includes('OTP') || response.data.includes('wrong') || response.data.includes('expired')) {
+                    throw new Error(response.data);
+                }
+                return handleSuccessResponse(response.data);
+            } else if (response.data && response.data.success) {
+                // New JSON format - success
+                return handleSuccessResponse(response.data.data);
+            } else {
+                // New JSON format - error
+                throw new Error(response.data?.message || 'Verification failed');
+            }
+        } catch (error: unknown) {
             const axiosError = error as AxiosError;
-            console.error('Verification error:', {
+            console.error('❌ Verification error:', {
                 status: axiosError.response?.status,
                 data: axiosError.response?.data,
                 message: axiosError.message
@@ -235,7 +286,7 @@ export const authService = {
         const user = localStorage.getItem('user');
         try {
             return user ? JSON.parse(user) : null;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Error parsing user data:', error);
             localStorage.removeItem('user');
             return null;
@@ -248,7 +299,7 @@ export const authService = {
             const formattedPhone = formatPhoneNumber(phone);
             const response = await api.post('/account/forgot-password', { username: formattedPhone });
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             if (isErrorWithMessage(error)) {
                 return handleAuthError(error as AuthError);
             }
@@ -266,11 +317,36 @@ export const authService = {
                 newPassword
             });
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             if (isErrorWithMessage(error)) {
                 return handleAuthError(error as AuthError);
             }
             throw new Error('An unexpected error occurred');
+        }
+    },
+
+    
+    async resendOTP({ phone }: { phone: string }): Promise<ApiResponse> {
+        try {
+            const formattedPhone = formatPhoneNumber(phone);
+            const response = await api.post('/account/resend-otp', { 
+                username: formattedPhone 
+            });
+            return {
+                success: true,
+                message: typeof response.data === 'string' ? response.data : 'OTP đã được gửi lại'
+            };
+        } catch (error: unknown) {
+            const axiosError = error as AxiosError;
+            console.error('Resend OTP error:', {
+                status: axiosError.response?.status,
+                data: axiosError.response?.data,
+                message: axiosError.message
+            });
+            return {
+                success: false,
+                message: (axiosError.response?.data as ApiErrorResponse)?.message || 'Không thể gửi lại OTP. Vui lòng thử lại.'
+            };
         }
     }
 }; 

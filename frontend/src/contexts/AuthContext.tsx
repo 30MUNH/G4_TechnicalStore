@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 
 interface User {
@@ -22,7 +21,6 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState(authService.getUser());
     const [token, setToken] = useState(authService.getToken());
-    const navigate = useNavigate();
 
     const login = (userData: User, token: string) => {
         setUser(userData);
@@ -56,8 +54,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 alert(event.detail.message);
             }
             
-            // Navigate to login page using React Router (no page reload)
-            navigate('/login', { replace: true });
+            // Emit a custom event for navigation instead of direct navigation
+            window.dispatchEvent(new CustomEvent('auth:logout', { 
+                detail: { redirectTo: '/login' } 
+            }));
         };
 
         // Listen for unauthorized events
@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return () => {
             window.removeEventListener('auth:unauthorized', handleUnauthorized as EventListener);
         };
-    }, [navigate]);
+    }, []);
 
     // Verify token on mount
     useEffect(() => {

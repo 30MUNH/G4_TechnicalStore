@@ -19,11 +19,38 @@
   width: 90%;
   max-width: 480px;
   text-align: center;
+  position: relative;
 }
 
-.popup h2 {
-  margin: 0 0 0.5rem;
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.header h2 {
+  margin: 0;
   font-size: 1.5rem;
+  color: #333;
+  flex: 1;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: #f5f5f5;
   color: #333;
 }
 
@@ -55,6 +82,22 @@
   border-color: #4f46e5;
   outline: none;
   background: white;
+}
+
+.otpInput.error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.errorMessage {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  text-align: center;
 }
 
 .verifyButton {
@@ -108,5 +151,13 @@
 
   .otpContainer {
     gap: 0.5rem;
+  }
+
+  .popup {
+    padding: 1.5rem;
+  }
+
+  .header h2 {
+    font-size: 1.25rem;
   }
 }

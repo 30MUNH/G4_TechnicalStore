@@ -1,107 +1,71 @@
 import { Service } from "typedi";
 import { Product } from "./product.entity";
 import { Category } from "./categories/category.entity";
-import { Repository } from "typeorm";
-import { DbConnection } from "@/database/dbConnection";
 import { CreateProductDto, UpdateProductDto } from "./dtos/product.dto";
-import { CPU } from "./components/cpu.entity";
-import "./components/laptop/laptop.entity";
-import { PC } from "./components/pc.entity";
-import { RAM } from "./components/ram.entity";
-import { GPU } from "./components/gpu.entity";
-import { PSU } from "./components/psu.entity";
-import { Drive } from "./components/drive.entity";
-import { Motherboard } from "./components/motherboard.entity";
-import { Cooler } from "./components/cooler.entity";
-import { Case } from "./components/case.entity";
-import { Monitor } from "./components/monitor.entity";
-import { Mouse } from "./components/mouse.entity";
-import { NetworkCard } from "./components/networkCard.entity";
-import { Headset } from "./components/headset.entity";
-import { Keyboard } from "./components/keyboard.entity";
-import { Laptop } from "./components/laptop/laptop.entity";
-
-const CATEGORY_MAP = {
-  cpu: "2cb16a49-e560-479f-9548-842b0bff9e27",
-  gpu: "c695708d-0fea-4dd9-8a31-1899fff608b7",
-  ram: "434d93f0-4a3b-48f1-806c-3d692bf785ab",
-  drive: "1a18778b-8908-4e22-86a8-878e19db8ce4",
-  motherboard: "c0ef0604-0349-441b-974f-1a672ed2be28",
-  psu: "4f7b323c-4262-4197-bc50-001b3a95f49a",
-  cooler: "336caedb-05ce-47c3-bf3c-17e6c905ea45",
-  case: "7bb510df-3279-4fe4-a5d0-1bd73da26434",
-  headset: "bc077745-98fc-474a-a6b4-48d3cbf1b389",
-  keyboard: "c27be34a-dd0e-4364-af3d-0bb4ad23e65d",
-  mouse: "d9877734-7c1a-4ff9-a152-d565747ae51c",
-  monitor: "1b24da29-8c53-452f-8f85-eab67745fce1",
-  "network-card": "fb41576b-7546-46d5-86ca-e4a5b84cffb3",
-  laptop: "8d5e884c-150d-4302-9118-ae434778ca27",
-  pc: "34d6f233-6782-48af-99fe-d485ccdfc618",
-};
+import { EntityNotFoundException, BadRequestException } from "@/exceptions/http-exceptions";
+import { Like, getManager, Not, In, MoreThan } from "typeorm";
 
 @Service()
 export class ProductService {
-  private productRepository: Repository<Product>;
-  private categoryRepository: Repository<Category>;
-  private cpuRepository: Repository<CPU>;
-  private laptopRepository: Repository<Laptop>;
-  private pcRepository: Repository<PC>;
-  private ramRepository: Repository<RAM>;
-  private gpuRepository: Repository<GPU>;
-  private psuRepository: Repository<PSU>;
-  private driveRepository: Repository<Drive>;
-  private motherboardRepository: Repository<Motherboard>;
-  private coolerRepository: Repository<Cooler>;
-  private caseRepository: Repository<Case>;
-  private monitorRepository: Repository<Monitor>;
-  private mouseRepository: Repository<Mouse>;
-  private networkCardRepository: Repository<NetworkCard>;
-  private headsetRepository: Repository<Headset>;
-  private keyboardRepository: Repository<Keyboard>;
 
-  constructor() {
-    this.initializeRepositories();
+  private async getCategoryById(id: string): Promise<Category> {
+    const category = await Category.findOne({ where: { id } });
+    if (!category) {
+      throw new EntityNotFoundException(`Category with id '${id}' not found`);
+    }
+    return category;
   }
 
-  private async initializeRepositories() {
-    const dataSource = await DbConnection.getConnection();
-    if (!dataSource) {
-      throw new Error("Database connection not available");
+  private async getCategoryByName(name: string): Promise<Category> {
+    const category = await Category.findOne({ where: { name } });
+    if (!category) {
+      throw new EntityNotFoundException(`Category with name '${name}' not found`);
     }
-    this.productRepository = dataSource.getRepository(Product);
-    this.categoryRepository = dataSource.getRepository(Category);
-    this.cpuRepository = dataSource.getRepository(CPU);
-    this.laptopRepository = dataSource.getRepository(Laptop);
-    this.pcRepository = dataSource.getRepository(PC);
-    this.ramRepository = dataSource.getRepository(RAM);
-    this.gpuRepository = dataSource.getRepository(GPU);
-    this.psuRepository = dataSource.getRepository(PSU);
-    this.driveRepository = dataSource.getRepository(Drive);
-    this.motherboardRepository = dataSource.getRepository(Motherboard);
-    this.coolerRepository = dataSource.getRepository(Cooler);
-    this.caseRepository = dataSource.getRepository(Case);
-    this.monitorRepository = dataSource.getRepository(Monitor);
-    this.mouseRepository = dataSource.getRepository(Mouse);
-    this.networkCardRepository = dataSource.getRepository(NetworkCard);
-    this.headsetRepository = dataSource.getRepository(Headset);
-    this.keyboardRepository = dataSource.getRepository(Keyboard);
+    return category;
+  }
+
+  private async getCategoriesByIds(ids: string[]): Promise<Category[]> {
+    const categories = await Category.find({ where: { id: In(ids) } });
+    if (categories.length !== ids.length) {
+      const foundIds = categories.map(cat => cat.id);
+      const missingIds = ids.filter(id => !foundIds.includes(id));
+      throw new EntityNotFoundException(`Categories not found: ${missingIds.join(', ')}`);
+    }
+    return categories;
+  }
+
+  private async getCategoriesByNames(names: string[]): Promise<Category[]> {
+    const categories = await Category.find({ 
+      where: { name: In(names) }
+    });
+    if (categories.length !== names.length) {
+      const foundNames = categories.map(cat => cat.name).filter(Boolean);
+      const missingNames = names.filter(name => !foundNames.includes(name));
+      throw new EntityNotFoundException(`Categories not found: ${missingNames.join(', ')}`);
+    }
+    return categories;
   }
 
   async getAllProducts(): Promise<Product[]> {
-    await this.ensureRepositories();
-    return await this.productRepository.find({
-      where: { isActive: true },
+    return await Product.find({
+      where: { 
+        isActive: true,
+        stock: MoreThan(0)
+      },
       relations: ["category"],
       order: { createdAt: "DESC" },
     });
   }
 
   async getNewLaptops(limit: number = 8): Promise<Product[]> {
-    await this.ensureRepositories();
-    return await this.productRepository.find({
+    // Truy vấn category Laptop theo tên chính xác
+    const laptopCategory = await this.getCategoryByName('Laptop');
+    
+    return await Product.find({
       where: {
         isActive: true,
-        categoryId: "8d5e884c-150d-4302-9118-ae434778ca27",
+        stock: MoreThan(0),
+        categoryId: laptopCategory.id,
       },
       relations: ["category"],
       order: { createdAt: "DESC" },
@@ -110,11 +74,14 @@ export class ProductService {
   }
 
   async getNewPCs(limit: number = 8): Promise<Product[]> {
-    await this.ensureRepositories();
-    return await this.productRepository.find({
+    // Truy vấn category PC theo tên chính xác
+    const pcCategory = await this.getCategoryByName('PC');
+    
+    return await Product.find({
       where: {
         isActive: true,
-        categoryId: "34d6f233-6782-48af-99fe-d485ccdfc618",
+        stock: MoreThan(0),
+        categoryId: pcCategory.id,
       },
       relations: ["category"],
       order: { createdAt: "DESC" },
@@ -123,17 +90,16 @@ export class ProductService {
   }
 
   async getNewAccessories(limit: number = 8): Promise<Product[]> {
-    await this.ensureRepositories();
-    // Accessories là các sản phẩm KHÔNG phải laptop, pc
-    return await this.productRepository
+    // Truy vấn categories Laptop và PC theo tên chính xác để loại trừ
+    const [laptopCategory, pcCategory] = await this.getCategoriesByNames(['Laptop', 'PC']);
+    
+    return await Product
       .createQueryBuilder("product")
       .leftJoinAndSelect("product.category", "category")
       .where("product.isActive = :isActive", { isActive: true })
+      .andWhere("product.stock > :stock", { stock: 0 })
       .andWhere("product.categoryId NOT IN (:...ids)", {
-        ids: [
-          "8d5e884c-150d-4302-9118-ae434778ca27",
-          "34d6f233-6782-48af-99fe-d485ccdfc618",
-        ],
+        ids: [laptopCategory.id, pcCategory.id],
       })
       .orderBy("product.createdAt", "DESC")
       .take(limit)
@@ -152,209 +118,406 @@ export class ProductService {
   async getTopSellingProducts(limit: number = 6): Promise<Product[]> {
     // For now, return products with highest stock (as a proxy for popularity)
     // In a real application, this would be based on actual sales data
-    await this.ensureRepositories();
-    return await this.productRepository.find({
-      where: { isActive: true },
+    return await Product.find({
+      where: { 
+        isActive: true,
+        stock: MoreThan(0)
+      },
       relations: ["category"],
       order: { stock: "DESC" },
       take: limit,
     });
   }
 
-  async getProductsByCategory(categorySlug: string): Promise<Product[]> {
-    // await this.ensureRepositories();
-    // const category = await this.categoryRepository.findOne({
-    //   where: { slug: categorySlug }
-    // });
+  async getProductsByCategory(categoryId: string): Promise<Product[]> {
+    await this.getCategoryById(categoryId); // Validate category exists
 
-    // if (!category) {
-    //   return [];
-    // }
-
-    // return await this.productRepository.find({
-    //   where: {
-    //     isActive: true,
-    //     categoryId: category.id
-    //   },
-    //   relations: ["category"],
-    //   order: { createdAt: "DESC" }
-    // });
-    const products: Product[] = [];
-    return products;
+    return await Product.find({
+      where: {
+        isActive: true,
+        stock: MoreThan(0),
+        categoryId: categoryId
+      },
+      relations: ["category"],
+      order: { createdAt: "DESC" }
+    });
   }
 
   async getProductById(id: string): Promise<any | null> {
-    await this.ensureRepositories();
-    const product = await this.productRepository.findOne({
-      where: { id, isActive: true },
+    const product = await Product.findOne({
+      where: { 
+        id, 
+        isActive: true,
+        stock: MoreThan(0)
+      },
       relations: ["category"],
     });
-    if (!product) return null;
+    
+    if (!product) {
+      throw new EntityNotFoundException('Product not found or out of stock');
+    }
 
     let detail = null;
-    const catId = product.categoryId;
-    switch (catId) {
-      case CATEGORY_MAP.cpu:
-        detail = await this.cpuRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.laptop:
-        detail = await this.laptopRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.pc:
-        detail = await this.pcRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.ram:
-        detail = await this.ramRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.gpu:
-        detail = await this.gpuRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.psu:
-        detail = await this.psuRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.drive:
-        detail = await this.driveRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.motherboard:
-        detail = await this.motherboardRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.cooler:
-        detail = await this.coolerRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.case:
-        detail = await this.caseRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.monitor:
-        detail = await this.monitorRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.mouse:
-        detail = await this.mouseRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP["network-card"]:
-        detail = await this.networkCardRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.headset:
-        detail = await this.headsetRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      case CATEGORY_MAP.keyboard:
-        detail = await this.keyboardRepository.findOne({
-          where: { product: { id } },
-        });
-        break;
-      default:
-        detail = null;
+    const categoryId = product.categoryId;
+    
+    if (!categoryId) {
+      throw new BadRequestException('Product category not found');
     }
-    return { ...product, ...detail };
+
+    // Lấy category để xác định loại component
+    const category = await Category.findOne({ where: { id: categoryId } });
+    if (!category || !category.name) {
+      throw new BadRequestException('Product category not found');
+    }
+
+    // Import các component entities khi cần dựa trên category name chính xác
+    switch (category.name) {
+      case 'CPU':
+        const { CPU } = await import("./components/cpu.entity");
+        detail = await CPU.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'Laptop':
+        const { Laptop } = await import("./components/laptop/laptop.entity");
+        detail = await Laptop.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'PC':
+        const { PC } = await import("./components/pc.entity");
+        detail = await PC.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'RAM':
+        const { RAM } = await import("./components/ram.entity");
+        detail = await RAM.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'GPU':
+        const { GPU } = await import("./components/gpu.entity");
+        detail = await GPU.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'PSU':
+        const { PSU } = await import("./components/psu.entity");
+        detail = await PSU.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'Drive':
+        const { Drive } = await import("./components/drive.entity");
+        detail = await Drive.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'Motherboard':
+        const { Motherboard } = await import("./components/motherboard.entity");
+        detail = await Motherboard.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'Cooler':
+        const { Cooler } = await import("./components/cooler.entity");
+        detail = await Cooler.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'Case':
+        const { Case } = await import("./components/case.entity");
+        detail = await Case.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'Monitor':
+        const { Monitor } = await import("./components/monitor.entity");
+        detail = await Monitor.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'Mouse':
+        const { Mouse } = await import("./components/mouse.entity");
+        detail = await Mouse.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'Network Card':
+        const { NetworkCard } = await import("./components/networkCard.entity");
+        detail = await NetworkCard.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'Headset':
+        const { Headset } = await import("./components/headset.entity");
+        detail = await Headset.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+      case 'Keyboard':
+        const { Keyboard } = await import("./components/keyboard.entity");
+        detail = await Keyboard.findOne({
+          where: { product: { id } },
+          relations: ["product"]
+        });
+        break;
+    }
+
+    // Nếu có detail, gộp các trường chi tiết vào product (bỏ các trường không cần thiết)
+    if (detail) {
+      const { id, createdAt, updatedAt, product: _prod, ...fields } = detail;
+      Object.assign(product, fields);
+    }
+
+    return product;
   }
 
-  async getProductBySlug(slug: string): Promise<Product | null> {
-    await this.ensureRepositories();
-    return await this.productRepository.findOne({
-      where: { slug, isActive: true },
+  async getProductByName(name: string): Promise<Product | null> {
+    return await Product.findOne({
+      where: { 
+        name, 
+        isActive: true,
+        stock: MoreThan(0)
+      },
       relations: ["category"],
     });
   }
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
-    await this.ensureRepositories();
-    const product = this.productRepository.create(createProductDto);
-    return await this.productRepository.save(product);
+    return getManager().transaction(async transactionalEntityManager => {
+      // Validate category exists
+      const category = await Category.findOne({ where: { id: createProductDto.categoryId } });
+      if (!category) {
+        throw new EntityNotFoundException('Category');
+      }
+
+      // Validate price and stock
+      if (createProductDto.price <= 0) {
+        throw new BadRequestException('Price must be greater than 0');
+      }
+
+      if (createProductDto.stock < 0) {
+        throw new BadRequestException('Stock cannot be negative');
+      }
+
+      // Check if product with same name already exists
+      const existingProduct = await Product.findOne({
+        where: { name: createProductDto.name }
+      });
+
+      if (existingProduct) {
+        throw new BadRequestException('Product with this name already exists');
+      }
+
+      const product = new Product();
+      Object.assign(product, createProductDto);
+      product.isActive = createProductDto.isActive ?? true;
+      
+      return await transactionalEntityManager.save(product);
+    });
   }
 
   async updateProduct(
     id: string,
     updateProductDto: UpdateProductDto
   ): Promise<Product | null> {
-    await this.ensureRepositories();
-    const product = await this.productRepository.findOne({
-      where: { id, isActive: true },
+    return getManager().transaction(async transactionalEntityManager => {
+      const product = await Product.findOne({ where: { id } });
+      if (!product) {
+        throw new EntityNotFoundException('Product');
+      }
+
+      // Validate category if provided
+      if (updateProductDto.categoryId) {
+        const category = await Category.findOne({ where: { id: updateProductDto.categoryId } });
+        if (!category) {
+          throw new EntityNotFoundException('Category');
+        }
+      }
+
+      // Validate price if provided
+      if (updateProductDto.price !== undefined && updateProductDto.price <= 0) {
+        throw new BadRequestException('Price must be greater than 0');
+      }
+
+      // Validate stock if provided
+      if (updateProductDto.stock !== undefined && updateProductDto.stock < 0) {
+        throw new BadRequestException('Stock cannot be negative');
+      }
+
+      // Check if product with same name already exists (excluding current product)
+      if (updateProductDto.name) {
+        const existingProduct = await Product.findOne({
+          where: { name: updateProductDto.name, id: Not(id) }
+        });
+
+        if (existingProduct) {
+          throw new BadRequestException('Product with this name already exists');
+        }
+      }
+
+      Object.assign(product, updateProductDto);
+      return await transactionalEntityManager.save(product);
     });
-
-    if (!product) {
-      return null;
-    }
-
-    Object.assign(product, updateProductDto);
-    return await this.productRepository.save(product);
   }
 
   async deleteProduct(id: string): Promise<boolean> {
-    await this.ensureRepositories();
-    const product = await this.productRepository.findOne({
-      where: { id, isActive: true },
+    return getManager().transaction(async transactionalEntityManager => {
+      const product = await Product.findOne({ where: { id } });
+      if (!product) {
+        throw new EntityNotFoundException('Product');
+      }
+
+      // Soft delete by setting isActive to false
+      product.isActive = false;
+      await transactionalEntityManager.save(product);
+      
+      return true;
     });
-
-    if (!product) {
-      return false;
-    }
-
-    product.isActive = false;
-    await this.productRepository.save(product);
-    return true;
   }
 
   async searchProducts(keyword: string): Promise<Product[]> {
-    await this.ensureRepositories();
-    return await this.productRepository
-      .createQueryBuilder("product")
-      .leftJoinAndSelect("product.category", "category")
-      .where("product.isActive = :isActive", { isActive: true })
-      .andWhere("LOWER(product.name) LIKE :keyword", {
-        keyword: `%${keyword.toLowerCase()}%`,
-      })
-      .orderBy("product.createdAt", "DESC")
-      .getMany();
+    if (!keyword || keyword.trim() === "") {
+      throw new BadRequestException('Search keyword is required');
+    }
+
+    return await Product.find({
+      where: [
+        { 
+          name: Like(`%${keyword}%`), 
+          isActive: true,
+          stock: MoreThan(0)
+        },
+        { 
+          description: Like(`%${keyword}%`), 
+          isActive: true,
+          stock: MoreThan(0)
+        }
+      ],
+      relations: ["category"],
+      order: { createdAt: "DESC" }
+    });
   }
 
-  private async ensureRepositories() {
-    if (
-      !this.productRepository ||
-      !this.categoryRepository ||
-      !this.cpuRepository ||
-      !this.laptopRepository ||
-      !this.pcRepository ||
-      !this.ramRepository ||
-      !this.gpuRepository ||
-      !this.psuRepository ||
-      !this.driveRepository ||
-      !this.motherboardRepository ||
-      !this.coolerRepository ||
-      !this.caseRepository ||
-      !this.monitorRepository ||
-      !this.mouseRepository ||
-      !this.networkCardRepository ||
-      !this.headsetRepository ||
-      !this.keyboardRepository
-    ) {
-      await this.initializeRepositories();
+  // Thêm method để lấy sản phẩm theo loại category (main category)
+  async getProductsByMainCategory(categoryId: string, limit: number = 8): Promise<Product[]> {
+    await this.getCategoryById(categoryId); // Validate category exists
+    
+    return await Product.find({
+      where: {
+        isActive: true,
+        stock: MoreThan(0),
+        categoryId: categoryId
+      },
+      relations: ["category"],
+      order: { createdAt: "DESC" },
+      take: limit
+    });
+  }
+
+  // Thêm method để lấy tất cả categories
+  async getAllCategories(): Promise<Category[]> {
+    return await Category.find({
+      order: { name: "ASC" }
+    });
+  }
+
+  // Thêm method để lấy sản phẩm theo nhiều categories
+  async getProductsByMultipleCategories(categoryIds: string[], limit: number = 8): Promise<Product[]> {
+    await this.getCategoriesByIds(categoryIds); // Validate categories exist
+    
+    return await Product.find({
+      where: {
+        isActive: true,
+        stock: MoreThan(0),
+        categoryId: In(categoryIds)
+      },
+      relations: ["category"],
+      order: { createdAt: "DESC" },
+      take: limit
+    });
+  }
+
+  // Thêm method để lấy sản phẩm theo tên category
+  async getProductsByCategoryName(categoryName: string, limit: number = 8): Promise<Product[]> {
+    const category = await this.getCategoryByName(categoryName);
+    
+    return await Product.find({
+      where: {
+        isActive: true,
+        stock: MoreThan(0),
+        categoryId: category.id
+      },
+      relations: ["category"],
+      order: { createdAt: "DESC" },
+      take: limit
+    });
+  }
+
+  // Thêm method để lấy sản phẩm theo loại (laptop, pc, accessories)
+  async getProductsByType(type: 'laptop' | 'pc' | 'accessories', limit: number = 8): Promise<Product[]> {
+    switch (type) {
+      case 'laptop':
+        return this.getNewLaptops(limit);
+      case 'pc':
+        return this.getNewPCs(limit);
+      case 'accessories':
+        return this.getNewAccessories(limit);
+      default:
+        throw new BadRequestException('Invalid product type. Must be laptop, pc, or accessories');
     }
+  }
+
+  // Thêm method để lấy sản phẩm theo category ID
+  async getProductsByCategoryId(categoryId: string, limit: number = 8): Promise<Product[]> {
+    await this.getCategoryById(categoryId); // Validate category exists
+    
+    return await Product.find({
+      where: {
+        isActive: true,
+        stock: MoreThan(0),
+        categoryId: categoryId
+      },
+      relations: ["category"],
+      order: { createdAt: "DESC" },
+      take: limit
+    });
+  }
+
+  // Thêm method để lấy tất cả sản phẩm (bao gồm cả hết hàng) - cho admin
+  async getAllProductsIncludingOutOfStock(): Promise<Product[]> {
+    return await Product.find({
+      where: { isActive: true },
+      relations: ["category"],
+      order: { createdAt: "DESC" },
+    });
+  }
+
+  // Thêm method để lấy sản phẩm hết hàng
+  async getOutOfStockProducts(): Promise<Product[]> {
+    return await Product.find({
+      where: { 
+        isActive: true,
+        stock: 0
+      },
+      relations: ["category"],
+      order: { createdAt: "DESC" },
+    });
   }
 }

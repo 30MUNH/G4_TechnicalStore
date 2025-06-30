@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Phone, Lock, Eye, EyeOff, X, Check } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './SignUp.module.css';
 import { authService } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const SignUp = ({ onNavigate }) => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     phone: '',
@@ -21,6 +23,49 @@ const SignUp = ({ onNavigate }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showOTPPopup, setShowOTPPopup] = useState(false);
   const [pendingSignup, setPendingSignup] = useState(null);
+  const [hashedPassword, setHashedPassword] = useState(null);
+
+  // Recovery state from localStorage on component mount
+  useEffect(() => {
+    const savedRegistration = localStorage.getItem('pendingRegistration');
+    if (savedRegistration) {
+      try {
+        const parsed = JSON.parse(savedRegistration);
+        // Check if not expired (10 minutes)
+        if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
+          setPendingSignup(parsed.phone);
+          setHashedPassword(parsed.hashedPassword);
+          setFormData(prev => ({
+            ...prev,
+            username: parsed.username,
+            phone: parsed.phone.replace('+84', '0') // Convert back to local format
+          }));
+          setShowOTPPopup(true);
+        } else {
+          // Expired, clean up
+          localStorage.removeItem('pendingRegistration');
+        }
+      } catch (error) {
+        localStorage.removeItem('pendingRegistration');
+      }
+    }
+  }, []);
+
+  // Save registration state to localStorage
+  const saveRegistrationState = (phone, username, hashedPassword) => {
+    const registrationData = {
+      phone,
+      username,
+      hashedPassword: hashedPassword,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('pendingRegistration', JSON.stringify(registrationData));
+  };
+
+  // Clear registration state from localStorage
+  const clearRegistrationState = () => {
+    localStorage.removeItem('pendingRegistration');
+  };
 
   const validateField = (name, value) => {
     switch (name) {
@@ -105,13 +150,16 @@ const SignUp = ({ onNavigate }) => {
         roleSlug: 'customer'
       });
 
-      if ((response && response.success) || (response && typeof response.message === 'string' && response.message.toLowerCase().includes('otp'))) {
-        setPendingSignup(formattedPhone);
-        setShowOTPPopup(true);
-        setErrors({});
-        setTimeout(() => {
-          setErrors({ general: 'Vui lòng kiểm tra tin nhắn OTP để hoàn tất đăng ký.' });
-        }, 100);
+              if ((response && response.success) || (response && typeof response.message === 'string' && response.message.toLowerCase().includes('otp'))) {
+          setPendingSignup(formattedPhone);
+          // Lấy password đã hash từ backend response
+          const passwordHashed = response.account?.password || formData.password;
+          setHashedPassword(passwordHashed);
+          setShowOTPPopup(true);
+          setErrors({});
+          
+          // Save state to localStorage for recovery
+          saveRegistrationState(formattedPhone, formData.username, passwordHashed);
       } else {
         setErrors({ general: response?.message || 'Unexpected response from server' });
       }
@@ -133,34 +181,140 @@ const SignUp = ({ onNavigate }) => {
   };
 
   const handleVerifyOTP = async (otp) => {
-    if (!pendingSignup || !formData.username) {
-      setErrors({ general: 'No pending registration session' });
+    // Try to get current state or recover from localStorage
+    let registrationData = {
+      pendingSignup,
+      username: formData.username,
+      hashedPassword
+    };
+
+    // If any required data is missing, try to recover from localStorage
+    if (!registrationData.pendingSignup || !registrationData.username || !registrationData.hashedPassword) {
+      const savedRegistration = localStorage.getItem('pendingRegistration');
+      if (savedRegistration) {
+        try {
+          const parsed = JSON.parse(savedRegistration);
+          // Check if not expired (10 minutes)
+          if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
+            registrationData = {
+              pendingSignup: parsed.phone,
+              username: parsed.username,
+              hashedPassword: parsed.hashedPassword
+            };
+            
+            // Update component state with recovered data
+            if (!pendingSignup) setPendingSignup(parsed.phone);
+            if (!hashedPassword) setHashedPassword(parsed.hashedPassword);
+            if (!formData.username) {
+              setFormData(prev => ({
+                ...prev,
+                username: parsed.username
+              }));
+            }
+          } else {
+            // Expired
+            localStorage.removeItem('pendingRegistration');
+          }
+        } catch (error) {
+          localStorage.removeItem('pendingRegistration');
+        }
+      }
+    }
+
+    // Final check
+    if (!registrationData.pendingSignup || !registrationData.username || !registrationData.hashedPassword) {
+      setErrors({ 
+        general: 'Phiên đăng ký đã hết hạn hoặc bị mất. Vui lòng đăng ký lại từ đầu.' 
+      });
+      setShowOTPPopup(false);
+      clearRegistrationState();
       return;
     }
 
     setIsSubmitting(true);
     try {
       const response = await authService.verifyRegister({
-        username: formData.username,
-        password: formData.password,
-        phone: pendingSignup,
+        username: registrationData.username,
+        password: registrationData.hashedPassword,
+        phone: registrationData.pendingSignup,
         roleSlug: 'customer',
         otp: otp
       });
 
-      if (response && response.success) {
-        alert('Account created successfully! Please login.');
-        navigate('/login');
+      console.log('OTP verification response:', response);
+
+      // Check for successful response - Enhanced success handling
+      // response.data should be the access token string when successful
+      if (response && response.data && typeof response.data === 'string' && response.status === 200) {
+        // Clear all pending states
+        setShowOTPPopup(false);
+        setPendingSignup(null);
+        setHashedPassword(null);
+        clearRegistrationState(); // Clear localStorage
+        
+        // Enhanced success callback with better UX
+        const handleSuccessCallback = () => {
+          // Store temporary success state for better UX
+          sessionStorage.setItem('registrationSuccess', JSON.stringify({
+            username: registrationData.username,
+            timestamp: Date.now()
+          }));
+          
+          // Success notification with timeout to allow user to read
+          setTimeout(() => {
+            alert('🎉 Đăng ký thành công! Vui lòng đăng nhập với tài khoản mới của bạn.');
+            navigate('/login', { 
+              state: { 
+                successMessage: 'Tài khoản đã được tạo thành công!',
+                username: registrationData.username 
+              } 
+            });
+          }, 500);
+        };
+        
+        // Execute success callback
+        handleSuccessCallback();
+        
+        // Optional: Track successful registration (for analytics)
+        console.log('✅ Registration completed successfully for:', registrationData.username);
+        
       } else {
-        setErrors({ general: response?.message || 'OTP verification failed' });
+        setErrors({ general: 'Xác thực OTP thất bại. Vui lòng thử lại.' });
       }
     } catch (error) {
-      let errorMessage = 'OTP verification failed. Please try again.';
+      console.error('OTP verification error:', error);
+
+      let errorMessage = 'Xác thực OTP thất bại. Vui lòng thử lại.';
 
       if (error.response?.status === 401) {
-        errorMessage = 'Invalid OTP code';
+        errorMessage = 'Mã OTP không đúng hoặc đã hết hạn.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Phiên xác thực đã hết hạn. Vui lòng đăng ký lại.';
+        // Clear state and localStorage when session expired
+        setShowOTPPopup(false);
+        setPendingSignup(null);
+        setHashedPassword(null);
+        clearRegistrationState();
+      } else if (error.response?.status === 400) {
+        // Handle the new JSON error response format
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else {
+          errorMessage = 'Mã OTP không hợp lệ. Vui lòng kiểm tra lại.';
+        }
       } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+        if (error.response.data.message.includes('VerificationCheck') || 
+            error.response.data.message.includes('was not found') ||
+            error.response.data.message.includes('expired')) {
+          errorMessage = 'Phiên xác thực đã hết hạn. Vui lòng đăng ký lại.';
+          // Clear state when verification session expired
+          setShowOTPPopup(false);
+          setPendingSignup(null);
+          setHashedPassword(null);
+          clearRegistrationState();
+        } else {
+          errorMessage = error.response.data.message;
+        }
       }
 
       setErrors({ general: errorMessage });
@@ -170,25 +324,60 @@ const SignUp = ({ onNavigate }) => {
   };
 
   const handleResendOTP = async () => {
-    if (!pendingSignup) {
-      setErrors({ general: 'No pending registration session' });
+    // Try to get phone from current state or localStorage
+    let phoneToResend = pendingSignup;
+    
+    if (!phoneToResend) {
+      const savedRegistration = localStorage.getItem('pendingRegistration');
+      if (savedRegistration) {
+        try {
+          const parsed = JSON.parse(savedRegistration);
+          if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
+            phoneToResend = parsed.phone;
+            setPendingSignup(parsed.phone); // Update state
+          }
+        } catch (error) {
+
+        }
+      }
+    }
+
+    if (!phoneToResend) {
+      setErrors({ general: 'Phiên đăng ký đã hết hạn. Vui lòng đăng ký lại từ đầu.' });
+      setShowOTPPopup(false);
+      clearRegistrationState();
       return;
     }
 
     try {
       const response = await authService.resendOTP({
-        phone: pendingSignup,
-        type: 'registration'
+        phone: phoneToResend
       });
 
       if (response && response.success) {
-        alert('New OTP code has been sent to your phone');
+        alert('Mã OTP mới đã được gửi về số điện thoại của bạn');
+        // Update timestamp in localStorage
+        const savedRegistration = localStorage.getItem('pendingRegistration');
+        if (savedRegistration) {
+          const parsed = JSON.parse(savedRegistration);
+          parsed.timestamp = Date.now(); // Reset timestamp
+          localStorage.setItem('pendingRegistration', JSON.stringify(parsed));
+        }
       } else {
         setErrors({ general: response?.message || 'Failed to resend OTP' });
       }
     } catch (error) {
+
       setErrors({ general: error.response?.data?.message || 'Failed to resend OTP. Please try again.' });
     }
+  };
+
+  // Handle popup close
+  const handleCloseOTP = () => {
+    setShowOTPPopup(false);
+    setPendingSignup(null);
+    setHashedPassword(null);
+    clearRegistrationState();
   };
 
   return (
@@ -251,12 +440,7 @@ const SignUp = ({ onNavigate }) => {
               {errors.phone}
             </div>
           )}
-          {formData.phone && !errors.phone && (
-            <div className={styles.successMessage}>
-              <Check className="w-4 h-4" />
-              Phone: +84{formData.phone}
-            </div>
-          )}
+
         </div>
 
         <div className={styles.formGroup}>
@@ -366,10 +550,7 @@ const SignUp = ({ onNavigate }) => {
       {showOTPPopup && (
         <OTPPopup
           isOpen={showOTPPopup}
-          onClose={() => {
-            setShowOTPPopup(false);
-            setPendingSignup(null);
-          }}
+          onClose={handleCloseOTP}
           onVerify={handleVerifyOTP}
           onResend={handleResendOTP}
           error={errors.general}
