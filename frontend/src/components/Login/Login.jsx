@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, Lock, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './Login.module.css';
@@ -11,10 +11,9 @@ const Login = ({ onNavigate }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
-    username: '', 
-    password: '',
+    username: '',
+    password: ''
   });
-
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,79 +23,77 @@ const Login = ({ onNavigate }) => {
   const validateField = (name, value) => {
     switch (name) {
       case 'username':
-        if (!value) return 'Phone number is required';
-        if (!/^0\d{9}$/.test(value)) return 'Please enter a valid 10-digit phone number (bắt đầu bằng 0)';
-        return undefined;
-
+        if (!value.trim()) {
+          return 'Username is required';
+        }
+        if (value.length < 3) {
+          return 'Username must be at least 3 characters';
+        }
+        return '';
       case 'password':
-        if (!value) return 'Password is required';
-        if (value.length < 6) return 'Password must be at least 6 characters';
-        return undefined;
-
+        if (!value) {
+          return 'Password is required';
+        }
+        if (value.length < 6) {
+          return 'Password must be at least 6 characters';
+        }
+        return '';
       default:
-        return undefined;
+        return '';
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === 'username') {
-      const numbersOnly = value.replace(/\D/g, '').slice(0, 10);
-      setFormData(prev => ({ ...prev, [name]: numbersOnly }));
-      if (errors[name]) {
-        setErrors(prev => ({ ...prev, [name]: undefined }));
-      }
-      const error = validateField(name, numbersOnly);
-      if (error) {
-        setErrors(prev => ({ ...prev, [name]: error }));
-      }
-      return;
-    }
-
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
 
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
+      const fieldError = validateField(name, value);
+      setErrors(prev => ({
+        ...prev,
+        [name]: fieldError
+      }));
     }
 
-    const error = validateField(name, value);
-    if (error) {
-      setErrors(prev => ({ ...prev, [name]: error }));
+    if (errors.general) {
+      setErrors(prev => ({
+        ...prev,
+        general: ''
+      }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    const usernameError = validateField('username', formData.username);
+    const passwordError = validateField('password', formData.password);
 
-    const newErrors = {};
-    Object.keys(formData).forEach(key => {
-      const error = validateField(key, formData[key]);
-      if (error) newErrors[key] = error;
-    });
-
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length > 0) {
+    if (usernameError || passwordError) {
+      setErrors({
+        username: usernameError,
+        password: passwordError
+      });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const phoneNumber = formData.username.replace(/\D/g, '');
-      const formattedPhone = phoneNumber && phoneNumber.length === 10 && phoneNumber.startsWith('0')
-        ? '+84' + phoneNumber.slice(1)
-        : phoneNumber;
-
       const loginData = {
-        username: formattedPhone,
+        username: formData.username.trim(),
         password: formData.password
       };
+
+      console.log('Sending login data:', loginData);
 
       const response = await authService.login(loginData);
 
       if (response && typeof response === 'string' && response.toLowerCase().includes('otp')) {
-        setPendingLogin(formattedPhone);
+        setPendingLogin(formData.username.trim());
         setShowOTPPopup(true);
         setErrors({});
         setTimeout(() => {
@@ -107,10 +104,11 @@ const Login = ({ onNavigate }) => {
       }
     } catch (error) {
       console.error('Login error:', error);
+      console.log('Error response:', error.response?.data);
       let errorMessage = 'Login failed. Please check your credentials.';
 
       if (error.response?.status === 401) {
-        errorMessage = 'Invalid phone number or password';
+        errorMessage = 'Invalid username or password';
       } else if (error.response?.status === 400) {
         errorMessage = error.response.data?.message || 'Invalid input format';
       } else if (!navigator.onLine) {
@@ -169,8 +167,7 @@ const Login = ({ onNavigate }) => {
 
     try {
       const response = await authService.resendOTP({
-        phone: pendingLogin,
-        type: 'login'
+        username: pendingLogin
       });
 
       if (response && response.success) {
@@ -200,20 +197,16 @@ const Login = ({ onNavigate }) => {
         <div className={styles.formGroup}>
           <div className={styles.inputWrapper}>
             <div className={styles.inputIcon}>
-              <Phone size={20} />
-            </div>
-            <div className={styles.prefixWrapper}>
-              +84
+              <User size={20} />
             </div>
             <input
-              type="tel"
+              type="text"
               name="username"
-              placeholder="Enter 10 digits"
+              placeholder="Enter username or phone number"
               value={formData.username}
               onChange={handleInputChange}
-              className={`${styles.input} ${styles.withPrefix} ${errors.username ? styles.error : ''}`}
-              autoComplete="tel"
-              maxLength={10}
+              className={`${styles.input} ${errors.username ? styles.error : ''}`}
+              autoComplete="username"
             />
           </div>
           {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
