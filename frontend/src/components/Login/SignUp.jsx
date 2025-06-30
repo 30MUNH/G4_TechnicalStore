@@ -23,6 +23,7 @@ const SignUp = ({ onNavigate }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showOTPPopup, setShowOTPPopup] = useState(false);
   const [pendingSignup, setPendingSignup] = useState(null);
+  const [hashedPassword, setHashedPassword] = useState(null);
 
   const validateField = (name, value) => {
     switch (name) {
@@ -114,6 +115,9 @@ const SignUp = ({ onNavigate }) => {
         setTimeout(() => {
           setErrors({ general: 'Vui lòng kiểm tra tin nhắn OTP để hoàn tất đăng ký.' });
         }, 100);
+        if (response.account && response.account.password) {
+          setHashedPassword(response.account.password);
+        }
       } else {
         setErrors({ general: response?.message || 'Unexpected response from server' });
       }
@@ -135,7 +139,7 @@ const SignUp = ({ onNavigate }) => {
   };
 
   const handleVerifyOTP = async (otp) => {
-    if (!pendingSignup || !formData.username) {
+    if (!pendingSignup || !formData.username || !hashedPassword) {
       setErrors({ general: 'No pending registration session' });
       return;
     }
@@ -144,26 +148,19 @@ const SignUp = ({ onNavigate }) => {
     try {
       const response = await authService.verifyRegister({
         username: formData.username,
-        password: formData.password,
+        password: hashedPassword,
         phone: pendingSignup,
         roleSlug: 'customer',
         otp: otp
       });
 
       if (response && typeof response.data === 'string') {
-        const accessToken = response.data;
+        setShowOTPPopup(false);
+        setPendingSignup(null);
+        setHashedPassword(null);
         
-        const userData = {
-          username: formData.username,
-          phone: pendingSignup,
-          role: 'customer',
-          isRegistered: true
-        };
-
-        login(userData, accessToken);
-        
-        alert('Đăng ký thành công! Chào mừng bạn đến với hệ thống.');
-        navigate('/');
+        alert('Đăng ký thành công! Vui lòng đăng nhập với tài khoản mới của bạn.');
+        navigate('/login');
       } else {
         setErrors({ general: 'Xác thực OTP thất bại. Vui lòng thử lại.' });
       }
@@ -181,7 +178,7 @@ const SignUp = ({ onNavigate }) => {
             error.response.data.message.includes('was not found')) {
           errorMessage = 'Phiên xác thực đã hết hạn. Vui lòng đăng ký lại.';
         } else {
-          errorMessage = error.response.data.message;
+        errorMessage = error.response.data.message;
         }
       }
 
@@ -390,6 +387,7 @@ const SignUp = ({ onNavigate }) => {
           onClose={() => {
             setShowOTPPopup(false);
             setPendingSignup(null);
+            setHashedPassword(null); // Clear hashed password when closing popup
           }}
           onVerify={handleVerifyOTP}
           onResend={handleResendOTP}

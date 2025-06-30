@@ -167,7 +167,8 @@ const Login = ({ onNavigate }) => {
 
     try {
       const response = await authService.resendOTP({
-        username: pendingLogin
+        phone: pendingLogin,
+        type: 'login'
       });
 
       if (response && response.success) {
