@@ -5,9 +5,11 @@ import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './SignUp.module.css';
 import { authService } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const SignUp = ({ onNavigate }) => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     phone: '',
@@ -148,19 +150,39 @@ const SignUp = ({ onNavigate }) => {
         otp: otp
       });
 
-      if (response && response.success) {
-        alert('Account created successfully! Please login.');
-        navigate('/login');
+      if (response && typeof response.data === 'string') {
+        const accessToken = response.data;
+        
+        const userData = {
+          username: formData.username,
+          phone: pendingSignup,
+          role: 'customer',
+          isRegistered: true
+        };
+
+        login(userData, accessToken);
+        
+        alert('Đăng ký thành công! Chào mừng bạn đến với hệ thống.');
+        navigate('/');
       } else {
-        setErrors({ general: response?.message || 'OTP verification failed' });
+        setErrors({ general: 'Xác thực OTP thất bại. Vui lòng thử lại.' });
       }
     } catch (error) {
-      let errorMessage = 'OTP verification failed. Please try again.';
+      let errorMessage = 'Xác thực OTP thất bại. Vui lòng thử lại.';
 
       if (error.response?.status === 401) {
-        errorMessage = 'Invalid OTP code';
+        errorMessage = 'Mã OTP không đúng hoặc đã hết hạn.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Phiên xác thực đã hết hạn. Vui lòng đăng ký lại.';
+      } else if (error.response?.status === 400) {
+        errorMessage = 'Mã OTP không hợp lệ. Vui lòng kiểm tra lại.';
       } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+        if (error.response.data.message.includes('VerificationCheck') || 
+            error.response.data.message.includes('was not found')) {
+          errorMessage = 'Phiên xác thực đã hết hạn. Vui lòng đăng ký lại.';
+        } else {
+          errorMessage = error.response.data.message;
+        }
       }
 
       setErrors({ general: errorMessage });
@@ -177,12 +199,11 @@ const SignUp = ({ onNavigate }) => {
 
     try {
       const response = await authService.resendOTP({
-        phone: pendingSignup,
-        type: 'registration'
+        phone: pendingSignup
       });
 
       if (response && response.success) {
-        alert('New OTP code has been sent to your phone');
+        alert('Mã OTP mới đã được gửi về số điện thoại của bạn');
       } else {
         setErrors({ general: response?.message || 'Failed to resend OTP' });
       }

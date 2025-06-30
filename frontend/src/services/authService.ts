@@ -45,6 +45,11 @@ interface AuthError extends Error {
     };
 }
 
+interface VerifyRegisterResponse {
+    data: string; // accessToken
+    status: number;
+}
+
 const formatPhoneNumber = (phone: string): string => {
     // Remove all non-digits
     let phoneNumber = phone.replace(/\D/g, '');
@@ -109,7 +114,7 @@ export const authService = {
                 throw new Error('Username and password are required');
             }
             const cleanedCredentials = {
-                username: credentials.username.toLowerCase().trim(),
+                username: credentials.username.trim(),
                 password: credentials.password
             };
             const response = await api.post('/account/login', cleanedCredentials);
@@ -133,7 +138,7 @@ export const authService = {
                 throw new Error('Username and OTP are required');
             }
             const cleanedData = {
-                username: verifyData.username.toLowerCase().trim(),
+                username: verifyData.username.trim(),
                 otp: verifyData.otp.trim()
             };
             const response = await api.post('/account/verify-login', cleanedData);
@@ -175,7 +180,7 @@ export const authService = {
 
             console.log('Sending registration request with data:', {
                 ...cleanedData,
-                password: '***' // Hide password in logs
+                password: '***' 
             });
 
             const response = await api.post<ApiResponse>('/account/register', cleanedData);
@@ -193,9 +198,8 @@ export const authService = {
         }
     },
 
-    async verifyRegister(verifyData: VerifyRegisterData): Promise<ApiResponse> {
+    async verifyRegister(verifyData: VerifyRegisterData): Promise<VerifyRegisterResponse> {
         try {
-            // Ensure phone number is in correct format
             const formattedData = {
                 username: verifyData.username,
                 password: verifyData.password,
@@ -204,8 +208,8 @@ export const authService = {
                 otp: verifyData.otp
             };
 
-            const response = await api.post<ApiResponse>('/account/verify-register', formattedData);
-            return response.data;
+            const response = await api.post('/account/verify-register', formattedData);
+            return response; // Trả về toàn bộ response, không chỉ response.data
         } catch (error) {
             const axiosError = error as AxiosError;
             console.error('Verification error:', {
@@ -271,6 +275,30 @@ export const authService = {
                 return handleAuthError(error as AuthError);
             }
             throw new Error('An unexpected error occurred');
+        }
+    },
+
+    
+    async resendOTP({ username }: { username: string }): Promise<ApiResponse> {
+        try {
+            const response = await api.post('/account/resend-otp', { 
+                username: username.trim()
+            });
+            return {
+                success: true,
+                message: typeof response.data === 'string' ? response.data : 'OTP đã được gửi lại'
+            };
+        } catch (error) {
+            const axiosError = error as AxiosError;
+            console.error('Resend OTP error:', {
+                status: axiosError.response?.status,
+                data: axiosError.response?.data,
+                message: axiosError.message
+            });
+            return {
+                success: false,
+                message: (axiosError.response?.data as any)?.message || 'Không thể gửi lại OTP. Vui lòng thử lại.'
+            };
         }
     }
 }; 
