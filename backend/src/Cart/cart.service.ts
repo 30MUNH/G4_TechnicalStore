@@ -4,11 +4,12 @@ import { Account } from '@/auth/account/account.entity';
 import { Product } from '@/product/product.entity';
 import { AddToCartDto } from './dtos/cart.dto';
 import { Service } from 'typedi';
-import { LessThan, getManager } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { EntityNotFoundException, BadRequestException } from '@/exceptions/http-exceptions';
 
 @Service()
 export class CartService {
+  constructor(private dataSource: DataSource) {}
 
   private async getOrCreateCart(username: string): Promise<Cart> {
     const account = await Account.findOne({ where: { username } });
@@ -66,7 +67,7 @@ export class CartService {
   }
 
   async addToCart(username: string, addToCartDto: AddToCartDto): Promise<Cart> {
-    return getManager().transaction(async transactionalEntityManager => {
+    return this.dataSource.transaction(async transactionalEntityManager => {
       const cart = await this.getOrCreateCart(username);
       
       // Lock the product row for update

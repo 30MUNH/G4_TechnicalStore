@@ -22,11 +22,13 @@ export class CartController {
         try {
             const cart = await this.cartService.addToCart(user.username, addToCartDto);
             return {
-                message: "Product added to cart successfully",
-                cart
+                success: true,
+                data: cart,
+                message: "Product added to cart successfully"
             };
         } catch (error: any) {
             return {
+                success: false,
                 message: "Failed to add product to cart",
                 error: error.message
             };
@@ -40,11 +42,13 @@ export class CartController {
         try {
             const cart = await this.cartService.viewCart(user.username);
             return {
-                message: "Cart retrieved successfully",
-                cart
+                success: true,
+                data: cart,
+                message: "Cart retrieved successfully"
             };
         } catch (error: any) {
             return {
+                success: false,
                 message: "Failed to retrieve cart",
                 error: error.message
             };
@@ -62,11 +66,13 @@ export class CartController {
         try {
             const cart = await this.cartService.increaseQuantity(user.username, productSlug, amount);
             return {
-                message: "Product quantity increased successfully",
-                cart
+                success: true,
+                data: cart,
+                message: "Product quantity increased successfully"
             };
         } catch (error: any) {
             return {
+                success: false,
                 message: "Failed to increase product quantity",
                 error: error.message
             };
@@ -84,11 +90,13 @@ export class CartController {
         try {
             const cart = await this.cartService.decreaseQuantity(user.username, productSlug, amount);
             return {
-                message: "Product quantity decreased successfully",
-                cart
+                success: true,
+                data: cart,
+                message: "Product quantity decreased successfully"
             };
         } catch (error: any) {
             return {
+                success: false,
                 message: "Failed to decrease product quantity",
                 error: error.message
             };
@@ -105,11 +113,13 @@ export class CartController {
         try {
             const cart = await this.cartService.removeItem(user.username, productSlug);
             return {
-                message: "Product removed from cart successfully",
-                cart
+                success: true,
+                data: cart,
+                message: "Product removed from cart successfully"
             };
         } catch (error: any) {
             return {
+                success: false,
                 message: "Failed to remove product from cart",
                 error: error.message
             };
@@ -123,10 +133,12 @@ export class CartController {
         try {
             await this.cartService.clearCart(user.username);
             return {
+                success: true,
                 message: "Cart cleared successfully"
             };
         } catch (error: any) {
             return {
+                success: false,
                 message: "Failed to clear cart",
                 error: error.message
             };

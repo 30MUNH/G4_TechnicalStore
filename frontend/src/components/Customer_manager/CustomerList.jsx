@@ -22,6 +22,33 @@ const CustomerList = () => {
   const [endDate, setEndDate] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // Simple notification function
+  const showNotification = (message, type = 'info') => {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+      color: white;
+      border-radius: 4px;
+      z-index: 10000;
+      font-family: Arial, sans-serif;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      max-width: 300px;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 3000);
+  };
+
   const fetchCustomers = async () => {
     try {
       setLoading(true);
@@ -32,13 +59,13 @@ const CustomerList = () => {
       } else {
         setCustomers([]);
         setError(response?.message || "Không thể tải danh sách khách hàng");
-        alert(response?.message || "Không thể tải danh sách khách hàng");
+        showNotification(response?.message || "Không thể tải danh sách khách hàng", 'error');
       }
     } catch (err) {
       setCustomers([]);
       const errorMsg = err.response?.data?.message || err.message || "Không thể tải danh sách khách hàng";
       setError(errorMsg);
-      alert(errorMsg);
+      showNotification(errorMsg, 'error');
     } finally {
       setLoading(false);
     }
@@ -78,15 +105,15 @@ const CustomerList = () => {
       }
       
       if (response?.success) {
-        alert(editedCustomer.id ? "Cập nhật khách hàng thành công" : "Thêm khách hàng thành công");
+        showNotification(editedCustomer.id ? "Cập nhật khách hàng thành công" : "Thêm khách hàng thành công", 'success');
         setShowEditModal(false);
         setSelectedCustomer(null);
         setRefreshTrigger(prev => prev + 1);
       } else {
-        alert(response?.message || "Không thể lưu thông tin khách hàng");
+        showNotification(response?.message || "Không thể lưu thông tin khách hàng", 'error');
       }
     } catch (error) {
-      alert("Không thể lưu thông tin khách hàng: " + (error.response?.data?.message || error.message));
+      showNotification("Không thể lưu thông tin khách hàng: " + (error.response?.data?.message || error.message), 'error');
     }
   };
 
@@ -99,15 +126,15 @@ const CustomerList = () => {
     try {
       const response = await customerService.deleteCustomer(selectedCustomer.id);
       if (response?.success) {
-        alert("Xóa khách hàng thành công");
+        showNotification("Xóa khách hàng thành công", 'success');
         setShowDeleteModal(false);
         setSelectedCustomer(null);
         setRefreshTrigger(prev => prev + 1);
       } else {
-        alert(response?.message || "Không thể xóa khách hàng");
+        showNotification(response?.message || "Không thể xóa khách hàng", 'error');
       }
     } catch (error) {
-      alert("Không thể xóa khách hàng: " + (error.response?.data?.message || error.message));
+      showNotification("Không thể xóa khách hàng: " + (error.response?.data?.message || error.message), 'error');
     }
   };
 
@@ -121,13 +148,13 @@ const CustomerList = () => {
 
       const response = await customerService.importCustomers(formData);
       if (response?.success) {
-        alert("Nhập dữ liệu thành công");
+        showNotification("Nhập dữ liệu thành công", 'success');
         setRefreshTrigger(prev => prev + 1);
       } else {
-        alert(response?.message || "Không thể nhập dữ liệu");
+        showNotification(response?.message || "Không thể nhập dữ liệu", 'error');
       }
     } catch (error) {
-      alert("Không thể nhập dữ liệu: " + (error.response?.data?.message || error.message));
+      showNotification("Không thể nhập dữ liệu: " + (error.response?.data?.message || error.message), 'error');
     }
   };
 
@@ -146,10 +173,10 @@ const CustomerList = () => {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        alert(response?.message || "Không thể xuất dữ liệu");
+        showNotification(response?.message || "Không thể xuất dữ liệu", 'error');
       }
     } catch (error) {
-      alert("Không thể xuất dữ liệu: " + (error.response?.data?.message || error.message));
+      showNotification("Không thể xuất dữ liệu: " + (error.response?.data?.message || error.message), 'error');
     }
   };
 
