@@ -33,7 +33,6 @@ export class Product extends NamedEntity {
     orderDetails: OrderDetail[];
 
     @ManyToOne(() => Category, (category) => category.products)
-    @JoinColumn({ name: 'categoryId' })
     category: Category;
 
     @OneToMany(() => Image, (image) => image.product)
