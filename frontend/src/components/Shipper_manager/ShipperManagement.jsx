@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faSearch,
@@ -13,26 +13,21 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import Modal from "./Modal";
 import ShipperForm from "./ShipperForm";
+import { shipperService } from '../../services/shipperService';
 import styles from './ShipperManagement.module.css';
 
 
-const vehicleTypes = [
-  { value: '', label: 'Loại phương tiện' },
-  { value: 'motorbike', label: 'Xe máy' },
-  { value: 'car', label: 'Ô tô' },
-  { value: 'truck', label: 'Xe tải' }
-];
-
 const statusOptions = [
   { value: '', label: 'Trạng thái' },
-  { value: 'Active', label: 'Đi làm' },
-  { value: 'Inactive', label: 'Nghỉ' }
+  { value: 'Active', label: 'Đã đăng ký' },
+  { value: 'Inactive', label: 'Chưa đăng ký' }
 ];
 
 function ShipperManagement() {
   const [shippers, setShippers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [vehicleTypeFilter, setVehicleTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [startDateFrom, setStartDateFrom] = useState('');
   const [startDateTo, setStartDateTo] = useState('');
@@ -41,23 +36,75 @@ function ShipperManagement() {
   const [modalMode, setModalMode] = useState('view');
   const [selectedShipper, setSelectedShipper] = useState(null);
 
+  // Simple notification function
+  const showNotification = (message, type = 'info') => {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+      color: white;
+      border-radius: 4px;
+      z-index: 10000;
+      font-family: Arial, sans-serif;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      max-width: 300px;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 3000);
+  };
+
   const itemsPerPage = 5;
 
+  // Fetch shippers from API
+  useEffect(() => {
+    fetchShippers();
+  }, []);
 
-  const filteredShippers = shippers.filter(shipper => {
+  const fetchShippers = async () => {
+    try {
+      setLoading(true);
+      const response = await shipperService.getAllShippers();
+      if (response.success && response.data) {
+        setShippers(response.data);
+        setError(null);
+      } else {
+        setError(response.message || 'Failed to fetch shippers');
+        setShippers([]);
+      }
+    } catch (err) {
+      setError('Failed to fetch shippers');
+      console.error('Error fetching shippers:', err);
+      setShippers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredShippers = Array.isArray(shippers) ? shippers.filter(shipper => {
     const matchesSearch = !searchTerm || 
-      shipper.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      shipper.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       shipper.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      shipper.employeeId.toLowerCase().includes(searchTerm.toLowerCase());
+      shipper.username?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesVehicleType = !vehicleTypeFilter || shipper.vehicleType === vehicleTypeFilter;
-    const matchesStatus = !statusFilter || shipper.status === statusFilter;
+    const matchesStatus = !statusFilter || 
+      (statusFilter === 'Active' && shipper.isRegistered) ||
+      (statusFilter === 'Inactive' && !shipper.isRegistered);
     
-    const matchesDateRange = (!startDateFrom || shipper.startDate >= startDateFrom) &&
-                            (!startDateTo || shipper.startDate <= startDateTo);
+    const matchesDateRange = (!startDateFrom || new Date(shipper.createdAt) >= new Date(startDateFrom)) &&
+                            (!startDateTo || new Date(shipper.createdAt) <= new Date(startDateTo));
 
-    return matchesSearch && matchesVehicleType && matchesStatus && matchesDateRange;
-  });
+    return matchesSearch && matchesStatus && matchesDateRange;
+  }) : [];
 
 
   const totalPages = Math.ceil(filteredShippers.length / itemsPerPage);
@@ -76,28 +123,42 @@ function ShipperManagement() {
     setSelectedShipper(null);
   };
 
-  const handleSave = (formData) => {
-    if (modalMode === 'add') {
-      const newShipper = {
-        id: Date.now().toString(),
-        ...formData,
-        rating: 0,
-        totalDeliveries: 0
-      };
-      setShippers(prev => [...prev, newShipper]);
-    } else if (modalMode === 'edit' && selectedShipper) {
-      setShippers(prev => 
-        prev.map(shipper => 
-          shipper.id === selectedShipper.id ? { ...shipper, ...formData } : shipper
-        )
-      );
+  const handleSave = async (formData) => {
+    try {
+      let response;
+      if (modalMode === 'add') {
+        response = await shipperService.createShipper(formData);
+      } else if (modalMode === 'edit' && selectedShipper) {
+        response = await shipperService.updateShipper(selectedShipper.id, formData);
+      }
+      
+      if (response?.success) {
+        showNotification(modalMode === 'add' ? 'Tạo shipper thành công' : 'Cập nhật shipper thành công', 'success');
+        closeModal();
+        fetchShippers(); // Refresh the list
+      } else {
+        showNotification(response?.message || 'Thao tác thất bại', 'error');
+      }
+    } catch (error) {
+      console.error('Error saving shipper:', error);
+      showNotification('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message), 'error');
     }
-    closeModal();
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm('Bạn có chắc chắn muốn xóa shipper này?')) {
-      setShippers(shippers.filter(shipper => shipper.id !== id));
+      try {
+        const response = await shipperService.deleteShipper(id);
+        if (response?.success) {
+          showNotification('Xóa shipper thành công', 'success');
+          fetchShippers(); // Refresh the list
+        } else {
+          showNotification(response?.message || 'Xóa shipper thất bại', 'error');
+        }
+      } catch (error) {
+        console.error('Error deleting shipper:', error);
+        showNotification('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message), 'error');
+      }
     }
   };
 
@@ -114,37 +175,15 @@ function ShipperManagement() {
     );
   };
 
-  const getVehicleTypeLabel = (type) => {
-    const vehicleLabels = {
-      'motorbike': 'Xe máy',
-      'car': 'Ô tô', 
-      'truck': 'Xe tải'
-    };
-    return vehicleLabels[type] || type;
-  };
+  // Removed getVehicleTypeLabel as it's not needed for shipper account management
 
-  const renderStars = (rating) => {
-    return (
-      <div className={styles.rating}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <FontAwesomeIcon
-            key={star}
-            icon={faStar}
-            className={`${styles.star} ${star <= rating ? styles.starFilled : styles.starEmpty}`}
-          />
-        ))}
-        <span className={styles.ratingText}>
-          {rating.toFixed(1)}
-        </span>
-      </div>
-    );
-  };
+  // Removed renderStars function as rating is not applicable for shipper account management
 
   const getModalTitle = () => {
     switch (modalMode) {
-      case 'view': return 'Shipper Information';
-      case 'edit': return 'Edit Shipper';
-      case 'add': return 'Thêm đơn giao';
+      case 'view': return 'Thông tin Shipper';
+      case 'edit': return 'Chỉnh sửa Shipper';
+      case 'add': return 'Thêm Shipper mới';
       default: return '';
     }
   };
@@ -181,7 +220,7 @@ function ShipperManagement() {
                 onClick={() => openModal('add')}
               >
                 <FontAwesomeIcon icon={faPlus} className={styles.buttonIcon} />
-                Thêm đơn giao
+                Thêm Shipper
               </button>
             </div>
           </div>
@@ -203,15 +242,7 @@ function ShipperManagement() {
               />
             </div>
             
-            <select
-              className={styles.filterSelect}
-              value={vehicleTypeFilter}
-              onChange={(e) => setVehicleTypeFilter(e.target.value)}
-            >
-              {vehicleTypes.map(type => (
-                <option key={type.value} value={type.value}>{type.label}</option>
-              ))}
-            </select>
+            {/* Removed vehicle type filter as it's not applicable for shipper account management */}
 
             <select
               className={styles.filterSelect}
@@ -240,13 +271,11 @@ function ShipperManagement() {
           <table className={styles.table}>
             <thead className={styles.tableHeader}>
               <tr>
-                <th className={styles.tableHeaderCell}>Mã đơn</th>
-                <th className={styles.tableHeaderCell}>Tên shipper</th>
-                <th className={styles.tableHeaderCell}>Phương tiện</th>
-                <th className={styles.tableHeaderCell}>Trạng thái</th>
-                <th className={styles.tableHeaderCell}>Khu vực</th>
+                <th className={styles.tableHeaderCell}>Username</th>
+                <th className={styles.tableHeaderCell}>Họ và tên</th>
                 <th className={styles.tableHeaderCell}>Số điện thoại</th>
-                <th className={styles.tableHeaderCell}>Ngày giao hàng</th>
+                <th className={styles.tableHeaderCell}>Trạng thái</th>
+                <th className={styles.tableHeaderCell}>Ngày tạo</th>
                 <th className={styles.tableHeaderCell}>Thao tác</th>
               </tr>
             </thead>
@@ -255,31 +284,21 @@ function ShipperManagement() {
                 paginatedShippers.map((shipper) => (
                   <tr key={shipper.id} className={styles.tableRow}>
                     <td className={styles.tableCell}>
-                      <div className={styles.employeeId}>{shipper.employeeId}</div>
+                      <div className={styles.username}>{shipper.username}</div>
                     </td>
                     <td className={styles.tableCell}>
-                      <div className={styles.shipperInfo}>
-                        <div className={styles.shipperName}>{shipper.fullname}</div>
-                        <div className={styles.shipperPhone}>{shipper.phone}</div>
+                      <div className={styles.shipperName}>{shipper.name || shipper.fullName}</div>
+                    </td>
+                    <td className={styles.tableCell}>
+                      <div className={styles.phone}>{shipper.phone}</div>
+                    </td>
+                    <td className={styles.tableCell}>
+                      {getStatusBadge(shipper.isRegistered ? 'Active' : 'Inactive')}
+                    </td>
+                    <td className={styles.tableCell}>
+                      <div className={styles.createdAt}>
+                        {new Date(shipper.createdAt).toLocaleDateString('vi-VN')}
                       </div>
-                    </td>
-                    <td className={styles.tableCell}>
-                      <div className={styles.vehicleInfo}>
-                        <div className={styles.vehicleType}>{getVehicleTypeLabel(shipper.vehicleType)}</div>
-                        <div className={styles.vehiclePlate}>{shipper.vehiclePlate}</div>
-                      </div>
-                    </td>
-                    <td className={styles.tableCell}>
-                      {getStatusBadge(shipper.status)}
-                    </td>
-                    <td className={styles.tableCell}>
-                      <div className={styles.workingAreas}>{shipper.workingAreas.join(', ')}</div>
-                    </td>
-                    <td className={styles.tableCell}>
-                      <div className={styles.deliveryCount}>{shipper.totalDeliveries}</div>
-                    </td>
-                    <td className={styles.tableCell}>
-                      {renderStars(shipper.rating)}
                     </td>
                     <td className={styles.tableCell}>
                       <div className={styles.actionButtons}>
@@ -310,12 +329,12 @@ function ShipperManagement() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className={styles.emptyState}>
+                  <td colSpan={6} className={styles.emptyState}>
                     <div className={styles.emptyContent}>
-                      <div className={styles.emptyIcon}>📦</div>
-                      <h3 className={styles.emptyTitle}>Không có đơn giao nào</h3>
+                      <div className={styles.emptyIcon}>👤</div>
+                      <h3 className={styles.emptyTitle}>Không có shipper nào</h3>
                       <p className={styles.emptyText}>
-                        Chưa có đơn giao nào trong hệ thống hoặc không khớp với bộ lọc
+                        {loading ? 'Đang tải...' : (error ? error : 'Chưa có shipper nào trong hệ thống hoặc không khớp với bộ lọc')}
                       </p>
                     </div>
                   </td>
