@@ -120,7 +120,7 @@ export const authService = {
             const response = await api.post('/account/login', cleanedCredentials);
             return response.data;
         } catch (error: unknown) {
-            if (isErrorWithMessage(error)) {
+            if (isErrorWithMessage(error) && 'response' in error) {
                 return handleAuthError(error as AuthError);
             }
             throw new Error('An unexpected error occurred');
@@ -144,7 +144,7 @@ export const authService = {
             const response = await api.post('/account/verify-login', cleanedData);
             return response.data;
         } catch (error: unknown) {
-            if (isErrorWithMessage(error)) {
+            if (isErrorWithMessage(error) && 'response' in error) {
                 return handleAuthError(error as AuthError);
             }
             throw new Error('An unexpected error occurred');
@@ -200,6 +200,7 @@ export const authService = {
 
     async verifyRegister(verifyData: VerifyRegisterData): Promise<VerifyRegisterResponse> {
         try {
+            
             const formattedData = {
                 username: verifyData.username,
                 password: verifyData.password,
@@ -279,10 +280,11 @@ export const authService = {
     },
 
     
-    async resendOTP({ username }: { username: string }): Promise<ApiResponse> {
+    async resendOTP({ phone }: { phone: string }): Promise<ApiResponse> {
         try {
+            const formattedPhone = formatPhoneNumber(phone);
             const response = await api.post('/account/resend-otp', { 
-                username: username.trim()
+                username: formattedPhone 
             });
             return {
                 success: true,
@@ -297,7 +299,7 @@ export const authService = {
             });
             return {
                 success: false,
-                message: (axiosError.response?.data as any)?.message || 'Không thể gửi lại OTP. Vui lòng thử lại.'
+                message: (axiosError.response?.data as ApiErrorResponse)?.message || 'Không thể gửi lại OTP. Vui lòng thử lại.'
             };
         }
     }
