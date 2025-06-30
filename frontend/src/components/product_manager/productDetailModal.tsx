@@ -7,24 +7,6 @@ interface ProductDetailModalProps {
   product: any; // Để nhận các trường động cho từng loại
 }
 
-const CATEGORY_MAP = {
-  cpu: '2cb16a49-e560-479f-9548-842b0bff9e27',
-  gpu: 'c695708d-0fea-4dd9-8a31-1899fff608b7',
-  ram: '434d93f0-4a3b-48f1-806c-3d692bf785ab',
-  drive: '1a18778b-8908-4e22-86a8-878e19db8ce4',
-  motherboard: 'c0ef0604-0349-441b-974f-1a672ed2be28',
-  psu: '4f7b323c-4262-4197-bc50-001b3a95f49a',
-  cooler: '336caedb-05ce-47c3-bf3c-17e6c905ea45',
-  case: '7bb510df-3279-4fe4-a5d0-1bd73da26434',
-  headset: 'bc077745-98fc-474a-a6b4-48d3cbf1b389',
-  keyboard: 'c27be34a-dd0e-4364-af3d-0bb4ad23e65d',
-  mouse: 'd9877734-7c1a-4ff9-a152-d565747ae51c',
-  monitor: '1b24da29-8c53-452f-8f85-eab67745fce1',
-  'network-card': 'fb41576b-7546-46d5-86ca-e4a5b84cffb3',
-  laptop: '8d5e884c-150d-4302-9118-ae434778ca27',
-  pc: '34d6f233-6782-48af-99fe-d485ccdfc618',
-};
-
 const overlayStyle: React.CSSProperties = {
   position: 'fixed',
   top: 0,
@@ -80,7 +62,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
 
   if (!isOpen || !product) return null;
 
-  const catId = product.categoryId;
+  const categoryName = product.category?.name;
 
   const renderDetail = () => {
     // Helper lấy field: lấy trực tiếp từ product
@@ -89,56 +71,62 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
       return '-';
     };
     
-    if (catId === CATEGORY_MAP.laptop) {
+    // Helper xử lý boolean fields
+    const getBoolean = (field: string) => {
+      const value = get(field);
+      if (value === '-') return '-';
+      return value ? 'Có' : 'Không';
+    };
+    
+
+    
+    if (categoryName === 'Laptop') {
       return <>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
-        <div><b>Screen size:</b> {get('screenSize') !== '-' ? `${get('screenSize')}"` : '-'}</div>
+        <div><b>Screen size:</b> {get('screenSize') !== '-' && get('screenSize') !== null ? `${get('screenSize')}"` : '-'}</div>
+        <div><b>Screen type:</b> {get('screenType')}</div>
         <div><b>Resolution:</b> {get('resolution')}</div>
-        <div><b>Processor:</b> {get('cpu')}</div>
-        <div><b>RAM:</b> {get('ramGb') !== '-' ? `${get('ramGb')} GB` : '-'}</div>
-        <div><b>Storage:</b> {get('storageGb') !== '-' ? `${get('storageGb')} GB` : '-'}</div>
-        <div><b>Storage type:</b> {get('storageType')}</div>
-        <div><b>Graphics:</b> {get('graphics')}</div>
-        <div><b>Battery life:</b> {get('batteryLifeHours') !== '-' ? `${get('batteryLifeHours')} h` : '-'}</div>
-        <div><b>Weight:</b> {get('weightKg') !== '-' ? `${get('weightKg')} kg` : '-'}</div>
+        <div><b>Battery life:</b> {get('batteryLifeHours') !== '-' && get('batteryLifeHours') !== null ? `${get('batteryLifeHours')} h` : '-'}</div>
+        <div><b>Weight:</b> {get('weightKg') !== '-' && get('weightKg') !== null ? `${get('weightKg')} kg` : '-'}</div>
         <div><b>OS:</b> {get('os')}</div>
+        <div><b>RAM count:</b> {get('ramCount')}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.pc) {
+    if (categoryName === 'PC') {
       return <>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
         <div><b>Processor:</b> {get('processor')}</div>
-        <div><b>RAM:</b> {get('ramGb') !== '-' ? `${get('ramGb')} GB` : '-'}</div>
-        <div><b>Storage:</b> {get('storageGb') !== '-' ? `${get('storageGb')} GB` : '-'}</div>
+        <div><b>RAM:</b> {get('ramGb') !== '-' && get('ramGb') !== null ? `${get('ramGb')} GB` : '-'}</div>
+        <div><b>Storage:</b> {get('storageGb') !== '-' && get('storageGb') !== null ? `${get('storageGb')} GB` : '-'}</div>
         <div><b>Storage type:</b> {get('storageType')}</div>
         <div><b>Graphics:</b> {get('graphics')}</div>
         <div><b>Form factor:</b> {get('formFactor')}</div>
-        <div><b>Power supply:</b> {get('powerSupplyWattage') !== '-' ? `${get('powerSupplyWattage')} W` : '-'}</div>
+        <div><b>Power supply:</b> {get('powerSupplyWattage') !== '-' && get('powerSupplyWattage') !== null ? `${get('powerSupplyWattage')} W` : '-'}</div>
         <div><b>OS:</b> {get('operatingSystem')}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.drive) {
+    if (categoryName === 'Drive') {
       return <>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
         <div><b>Type:</b> {get('type')}</div>
-        <div><b>Capacity:</b> {get('capacityGb') !== '-' ? `${get('capacityGb')} GB` : '-'}</div>
+        <div><b>Capacity:</b> {get('capacityGb') !== '-' && get('capacityGb') !== null ? `${get('capacityGb')} GB` : '-'}</div>
         <div><b>Interface:</b> {get('interface')}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.monitor) {
+    if (categoryName === 'Monitor') {
       return <>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
-        <div><b>Size:</b> {get('sizeInch') !== '-' ? `${get('sizeInch')}"` : '-'}</div>
+        <div><b>Size:</b> {get('sizeInch') !== '-' && get('sizeInch') !== null ? `${get('sizeInch')}"` : '-'}</div>
         <div><b>Resolution:</b> {get('resolution')}</div>
-        <div><b>Refresh rate:</b> {get('refreshRate') !== '-' ? `${get('refreshRate')} Hz` : '-'}</div>
+        <div><b>Refresh rate:</b> {get('refreshRate') !== '-' && get('refreshRate') !== null ? `${get('refreshRate')} Hz` : '-'}</div>
         <div><b>Panel type:</b> {get('panelType')}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.cpu) {
+    if (categoryName === 'CPU') {
       return <>
         <div><b>Cores:</b> {get('cores')}</div>
         <div><b>Threads:</b> {get('threads')}</div>
@@ -150,7 +138,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Integrated Graphics:</b> {get('integratedGraphics')}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.cooler) {
+    if (categoryName === 'Cooler') {
       return <>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
@@ -159,41 +147,41 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Fan size:</b> {get('fanSizeMm') !== '-' ? `${get('fanSizeMm')} mm` : '-'}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.ram) {
+    if (categoryName === 'RAM') {
       return <>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
-        <div><b>Capacity:</b> {get('capacityGb') !== '-' ? `${get('capacityGb')} GB` : '-'}</div>
-        <div><b>Speed:</b> {get('speedMhz') !== '-' ? `${get('speedMhz')} MHz` : '-'}</div>
+        <div><b>Capacity:</b> {get('capacityGb') !== '-' && get('capacityGb') !== null ? `${get('capacityGb')} GB` : '-'}</div>
+        <div><b>Speed:</b> {get('speedMhz') !== '-' && get('speedMhz') !== null ? `${get('speedMhz')} MHz` : '-'}</div>
         <div><b>Type:</b> {get('type')}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.psu) {
+    if (categoryName === 'PSU') {
       return <>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
-        <div><b>Wattage:</b> {get('wattage') !== '-' ? `${get('wattage')} W` : '-'}</div>
+        <div><b>Wattage:</b> {get('wattage') !== '-' && get('wattage') !== null ? `${get('wattage')} W` : '-'}</div>
         <div><b>Efficiency rating:</b> {get('efficiencyRating')}</div>
         <div><b>Modular:</b> {get('modular')}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.case) {
+    if (categoryName === 'Case') {
       return <>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
         <div><b>Form factor support:</b> {get('formFactorSupport')}</div>
-        <div><b>Has RGB:</b> {get('hasRgb') !== undefined ? (get('hasRgb') ? 'Có' : 'Không') : '-'}</div>
+        <div><b>Has RGB:</b> {getBoolean('hasRgb')}</div>
         <div><b>Side panel type:</b> {get('sidePanelType')}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.headset) {
+    if (categoryName === 'Headset') {
       return <>
-        <div><b>Has microphone:</b> {get('hasMicrophone') !== undefined ? (get('hasMicrophone') ? 'Có' : 'Không') : '-'}</div>
+        <div><b>Has microphone:</b> {getBoolean('hasMicrophone')}</div>
         <div><b>Connectivity:</b> {get('connectivity')}</div>
-        <div><b>Surround sound:</b> {get('surroundSound') !== undefined ? (get('surroundSound') ? 'Có' : 'Không') : '-'}</div>
+        <div><b>Surround sound:</b> {getBoolean('surroundSound')}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.motherboard) {
+    if (categoryName === 'Motherboard') {
       return <>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
@@ -204,38 +192,38 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Max RAM:</b> {get('maxRam') !== '-' ? `${get('maxRam')} GB` : '-'}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.keyboard) {
+    if (categoryName === 'Keyboard') {
       return <>
         <div><b>Type:</b> {get('type')}</div>
         <div><b>Switch type:</b> {get('switchType')}</div>
         <div><b>Connectivity:</b> {get('connectivity')}</div>
         <div><b>Layout:</b> {get('layout')}</div>
-        <div><b>Has RGB:</b> {get('hasRgb') !== undefined ? (get('hasRgb') ? 'Có' : 'Không') : '-'}</div>
+        <div><b>Has RGB:</b> {getBoolean('hasRgb')}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.gpu) {
+    if (categoryName === 'GPU') {
       return <>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
-        <div><b>VRAM:</b> {get('vram') !== '-' ? `${get('vram')} GB` : '-'}</div>
+        <div><b>VRAM:</b> {get('vram') !== '-' && get('vram') !== null ? `${get('vram')} GB` : '-'}</div>
         <div><b>Chipset:</b> {get('chipset')}</div>
         <div><b>Memory type:</b> {get('memoryType')}</div>
-        <div><b>Length:</b> {get('lengthMm') !== '-' ? `${get('lengthMm')} mm` : '-'}</div>
+        <div><b>Length:</b> {get('lengthMm') !== '-' && get('lengthMm') !== null ? `${get('lengthMm')} mm` : '-'}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP.mouse) {
+    if (categoryName === 'Mouse') {
       return <>
         <div><b>Type:</b> {get('type')}</div>
         <div><b>DPI:</b> {get('dpi') !== '-' ? `${get('dpi')}` : '-'}</div>
         <div><b>Connectivity:</b> {get('connectivity')}</div>
-        <div><b>Has RGB:</b> {get('hasRgb') !== undefined ? (get('hasRgb') ? 'Có' : 'Không') : '-'}</div>
+        <div><b>Has RGB:</b> {getBoolean('hasRgb')}</div>
       </>;
     }
-    if (catId === CATEGORY_MAP['network-card']) {
+    if (categoryName === 'Network Card') {
       return <>
         <div><b>Type:</b> {get('type')}</div>
         <div><b>Interface:</b> {get('interface')}</div>
-        <div><b>Speed:</b> {get('speedMbps') !== '-' ? `${get('speedMbps')} Mbps` : '-'}</div>
+        <div><b>Speed:</b> {get('speedMbps') !== '-' && get('speedMbps') !== null ? `${get('speedMbps')} Mbps` : '-'}</div>
       </>;
     }
     // Trường hợp mặc định (sản phẩm chung)
@@ -253,11 +241,20 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
       <div style={{ ...modalStyle, position: 'relative' }} onClick={e => e.stopPropagation()}>
         <button style={closeBtnStyle} onClick={onClose} title="Đóng">×</button>
         <div style={{ display: 'flex', flexDirection: 'row', gap: 32, alignItems: 'flex-start' }}>
-          <img src={product.url} alt={product.name} style={{ width: 200, height: 200, objectFit: 'contain', borderRadius: 12, background: '#f5f5f5' }} />
+          <img 
+            src={product.url || '/img/product01.png'} 
+            alt={product.name} 
+            style={{ width: 200, height: 200, objectFit: 'contain', borderRadius: 12, background: '#f5f5f5' }}
+            onError={(e) => {
+              e.currentTarget.src = '/img/product01.png';
+            }}
+          />
           <div style={{ flex: 1, textAlign: 'left' }}>
             <h3 style={{ margin: 0 }}>{product.name}</h3>
-            <div style={{ color: '#ff2d55', fontWeight: 700, fontSize: 20, margin: '8px 0' }}>{product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</div>
-            <div style={{ marginBottom: 8 }}><b>Danh mục:</b> {product.category?.name}</div>
+            <div style={{ color: '#ff2d55', fontWeight: 700, fontSize: 20, margin: '8px 0' }}>
+              {product.price ? product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : 'Giá không có sẵn'}
+            </div>
+            <div style={{ marginBottom: 8 }}><b>Danh mục:</b> {product.category?.name || 'Không có danh mục'}</div>
             {renderDetail()}
           </div>
         </div>

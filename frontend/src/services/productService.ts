@@ -58,8 +58,8 @@ class ProductService {
   async getProductById(id: string): Promise<Product | null> {
     try {
       const response = await api.get<ApiResponse<Product>>(`/products/${id}`);
-      if (response.data && response.data.product) {
-        return response.data.product;
+      if (response.data && response.data.data && response.data.data.product) {
+        return response.data.data.product;
       }
       return null;
     } catch (error) {
