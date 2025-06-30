@@ -46,18 +46,17 @@ const SignUp = ({ onNavigate }) => {
           localStorage.removeItem('pendingRegistration');
         }
       } catch (error) {
-
         localStorage.removeItem('pendingRegistration');
       }
     }
   }, []);
 
   // Save registration state to localStorage
-  const saveRegistrationState = (phone, username, password) => {
+  const saveRegistrationState = (phone, username, hashedPassword) => {
     const registrationData = {
       phone,
       username,
-      hashedPassword: password,
+      hashedPassword: hashedPassword,
       timestamp: Date.now()
     };
     localStorage.setItem('pendingRegistration', JSON.stringify(registrationData));
@@ -151,29 +150,20 @@ const SignUp = ({ onNavigate }) => {
         roleSlug: 'customer'
       });
 
-
-
-      if ((response && response.success) || (response && typeof response.message === 'string' && response.message.toLowerCase().includes('otp'))) {
-        setPendingSignup(formattedPhone);
-        setShowOTPPopup(true);
-        setErrors({});
-        
-        // Save hashed password from response or use original password as fallback
-        let passwordToSave = formData.password; // Fallback to original password
-        if (response.account && response.account.password) {
-          passwordToSave = response.account.password;
-          setHashedPassword(response.account.password);
-        } else {
-          setHashedPassword(formData.password);
-        }
-        
-        // Save state to localStorage for recovery
-        saveRegistrationState(formattedPhone, formData.username, passwordToSave);
+              if ((response && response.success) || (response && typeof response.message === 'string' && response.message.toLowerCase().includes('otp'))) {
+          setPendingSignup(formattedPhone);
+          // Lấy password đã hash từ backend response
+          const passwordHashed = response.account?.password || formData.password;
+          setHashedPassword(passwordHashed);
+          setShowOTPPopup(true);
+          setErrors({});
+          
+          // Save state to localStorage for recovery
+          saveRegistrationState(formattedPhone, formData.username, passwordHashed);
       } else {
         setErrors({ general: response?.message || 'Unexpected response from server' });
       }
     } catch (error) {
-
       let errorMessage = 'Registration failed. Please try again.';
 
       if (error.response?.status === 409) {
@@ -198,8 +188,6 @@ const SignUp = ({ onNavigate }) => {
       hashedPassword
     };
 
-
-
     // If any required data is missing, try to recover from localStorage
     if (!registrationData.pendingSignup || !registrationData.username || !registrationData.hashedPassword) {
       const savedRegistration = localStorage.getItem('pendingRegistration');
@@ -223,14 +211,11 @@ const SignUp = ({ onNavigate }) => {
                 username: parsed.username
               }));
             }
-            
-
           } else {
             // Expired
             localStorage.removeItem('pendingRegistration');
           }
         } catch (error) {
-
           localStorage.removeItem('pendingRegistration');
         }
       }
@@ -256,18 +241,48 @@ const SignUp = ({ onNavigate }) => {
         otp: otp
       });
 
-      if (response && typeof response.data === 'string') {
+      console.log('OTP verification response:', response);
+
+      // Check for successful response - Enhanced success handling
+      // response.data should be the access token string when successful
+      if (response && response.data && typeof response.data === 'string' && response.status === 200) {
+        // Clear all pending states
         setShowOTPPopup(false);
         setPendingSignup(null);
         setHashedPassword(null);
         clearRegistrationState(); // Clear localStorage
         
-        alert('Đăng ký thành công! Vui lòng đăng nhập với tài khoản mới của bạn.');
-        navigate('/login');
+        // Enhanced success callback with better UX
+        const handleSuccessCallback = () => {
+          // Store temporary success state for better UX
+          sessionStorage.setItem('registrationSuccess', JSON.stringify({
+            username: registrationData.username,
+            timestamp: Date.now()
+          }));
+          
+          // Success notification with timeout to allow user to read
+          setTimeout(() => {
+            alert('🎉 Đăng ký thành công! Vui lòng đăng nhập với tài khoản mới của bạn.');
+            navigate('/login', { 
+              state: { 
+                successMessage: 'Tài khoản đã được tạo thành công!',
+                username: registrationData.username 
+              } 
+            });
+          }, 500);
+        };
+        
+        // Execute success callback
+        handleSuccessCallback();
+        
+        // Optional: Track successful registration (for analytics)
+        console.log('✅ Registration completed successfully for:', registrationData.username);
+        
       } else {
         setErrors({ general: 'Xác thực OTP thất bại. Vui lòng thử lại.' });
       }
     } catch (error) {
+      console.error('OTP verification error:', error);
 
       let errorMessage = 'Xác thực OTP thất bại. Vui lòng thử lại.';
 
@@ -281,10 +296,16 @@ const SignUp = ({ onNavigate }) => {
         setHashedPassword(null);
         clearRegistrationState();
       } else if (error.response?.status === 400) {
-        errorMessage = 'Mã OTP không hợp lệ. Vui lòng kiểm tra lại.';
+        // Handle the new JSON error response format
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else {
+          errorMessage = 'Mã OTP không hợp lệ. Vui lòng kiểm tra lại.';
+        }
       } else if (error.response?.data?.message) {
         if (error.response.data.message.includes('VerificationCheck') || 
-            error.response.data.message.includes('was not found')) {
+            error.response.data.message.includes('was not found') ||
+            error.response.data.message.includes('expired')) {
           errorMessage = 'Phiên xác thực đã hết hạn. Vui lòng đăng ký lại.';
           // Clear state when verification session expired
           setShowOTPPopup(false);

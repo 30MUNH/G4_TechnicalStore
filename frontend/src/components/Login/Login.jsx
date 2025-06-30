@@ -137,10 +137,36 @@ const Login = ({ onNavigate }) => {
       const response = await authService.verifyLogin(verifyData);
 
       if (response && typeof response === 'string') {
-        login({ username: pendingLogin }, response);
-        setShowOTPPopup(false);
-        setPendingLogin(null);
-        navigate('/');
+        // Enhanced success callback for login
+        const handleLoginSuccess = () => {
+          // Store success state for better UX
+          sessionStorage.setItem('loginSuccess', JSON.stringify({
+            username: pendingLogin,
+            timestamp: Date.now()
+          }));
+          
+          // Successful login - authenticate user
+          login({ username: pendingLogin }, response);
+          
+          // Clear OTP popup and pending state
+          setShowOTPPopup(false);
+          setPendingLogin(null);
+          
+          // Success logging
+          console.log('🎉 Login successful for user:', pendingLogin);
+          
+          // Navigate with success state
+          navigate('/', { 
+            state: { 
+              welcomeMessage: `Chào mừng bạn trở lại!`,
+              loginTime: new Date().toLocaleTimeString('vi-VN')
+            } 
+          });
+        };
+        
+        // Execute success callback
+        handleLoginSuccess();
+        
       } else {
         throw new Error('Invalid response format');
       }
