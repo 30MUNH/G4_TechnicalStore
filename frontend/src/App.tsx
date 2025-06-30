@@ -1,6 +1,6 @@
 import './App.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import ContactUs from "./components/About/ContactUs.jsx";
 import Aboutus from "./components/About/Aboutus.jsx";
 import Login from "./components/Login/Login.jsx";
@@ -14,13 +14,33 @@ import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import Navigation from './components/Navigation';
 import Header from './components/header';
-import { Fragment } from 'react';
+import { Fragment, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import CustomerList from "./components/Customer_manager/CustomerList.jsx";
 import ShipperManagement from "./components/Shipper_manager/ShipperManagement.jsx";
 
 function AuthBgWrapper({ children }: { children: ReactNode }) {
   return <div className="auth-bg-custom">{children}</div>;
+}
+
+// Component để handle navigation events từ AuthContext
+function AuthNavigationHandler() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleAuthLogout = (event: CustomEvent) => {
+      const redirectTo = event.detail?.redirectTo || '/login';
+      navigate(redirectTo, { replace: true });
+    };
+
+    window.addEventListener('auth:logout', handleAuthLogout as EventListener);
+    
+    return () => {
+      window.removeEventListener('auth:logout', handleAuthLogout as EventListener);
+    };
+  }, [navigate]);
+
+  return null; // Component này chỉ handle events, không render gì
 }
 
 // Tách logic route để dùng useLocation
@@ -33,6 +53,7 @@ function AppContent() {
 
   return (
     <Fragment>
+      <AuthNavigationHandler />
       {!shouldHide && <Header />}
       {!shouldHide && <Navigation />}
 
