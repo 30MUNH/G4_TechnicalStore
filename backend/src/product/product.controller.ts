@@ -345,4 +345,14 @@ export class ProductController {
             };
         }
     }
-} 
+  }
+
+  // @Post("/add-products")
+  // async addProducts() {
+  //   return await this.productService.addProducts();
+  // }
+
+  // @Post("/add-components")
+  // async addComponents() {
+  //   return await this.productService.addToComponents();
+  // }
