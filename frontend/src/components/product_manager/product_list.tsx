@@ -13,22 +13,31 @@ const ProductList: React.FC = () => {
 
   const [filterKeyword, setFilterKeyword] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [categories, setCategories] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const products = await productService.getAllProducts();
+        setIsSearching(true);
+        const [products, categoriesData] = await Promise.all([
+          productService.getAllProducts(),
+          productService.getCategories()
+        ]);
         setProducts(products);
         setFilteredProducts(products);
+        setCategories(categoriesData);
       } catch (err: any) {
         setError("Đã có lỗi xảy ra khi gọi API: " + err.message);
       } finally {
         setLoading(false);
+        setIsSearching(false);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
   const handleSearch = () => {
@@ -41,10 +50,18 @@ const ProductList: React.FC = () => {
         statusFilter === "all" ||
         (statusFilter === "true" && product.isActive) ||
         (statusFilter === "false" && !product.isActive);
-      return matchKeyword && matchStatus;
+      const matchCategory =
+        categoryFilter === "all" ||
+        product.category?.id === categoryFilter;
+      return matchKeyword && matchStatus && matchCategory;
     });
     setFilteredProducts(filtered);
   };
+
+  // Auto search when filters change
+  useEffect(() => {
+    handleSearch();
+  }, [filterKeyword, statusFilter, categoryFilter]);
 
   const handleDetail = (id: string) => {
     navigate(`/products/${id}`);
@@ -57,55 +74,117 @@ const ProductList: React.FC = () => {
 
   return (
     <div className="product-list-container">
-      <h2>Danh Sách Sản phẩm</h2>
+      <h2>Product List</h2>
+      
+      {/* Search result info */}
+      {(filterKeyword || statusFilter !== "all" || categoryFilter !== "all") && (
+        <div style={{ 
+          marginBottom: '15px', 
+          padding: '10px', 
+          backgroundColor: '#e3f2fd', 
+          borderRadius: '5px',
+          border: '1px solid #bbdefb'
+        }}>
+          <strong>Filter results:</strong>
+          <span style={{ marginLeft: '10px', color: '#1976d2' }}>
+            {filteredProducts.length} products
+          </span>
+          {(filterKeyword || statusFilter !== "all" || categoryFilter !== "all") && (
+            <span style={{ marginLeft: '10px', fontSize: '0.9em', color: '#666' }}>
+              (From total {products.length} products)
+            </span>
+          )}
+        </div>
+      )}
 
       <div
         className="filter-section"
         style={{ display: "flex", gap: "10px", marginBottom: "20px" }}
       >
         <div className="filter-group">
-          <label>Trạng thái:</label>
+          <label>Status:</label>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             style={{ marginLeft: "5px" }}
           >
-            <option value="all">Tất cả</option>
-            <option value="true">Hoạt động</option>
-            <option value="false">Không hoạt động</option>
+            <option value="all">All</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
           </select>
         </div>
 
         <div className="filter-group">
-          <label>Tên sản phẩm:</label>
+          <label>Category:</label>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            style={{ marginLeft: "5px" }}
+          >
+            <option value="all">All categories</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label>Product name:</label>
           <input
             type="text"
-            placeholder="Nhập tên sản phẩm"
+            placeholder="Enter product name"
             value={filterKeyword}
             onChange={(e) => setFilterKeyword(e.target.value)}
             style={{ marginLeft: "5px" }}
+            disabled={isSearching}
           />
         </div>
 
-        <button className="search-button" onClick={handleSearch}>
-          Tìm kiếm
+        <button 
+          className="search-button" 
+          onClick={handleSearch}
+          disabled={isSearching}
+          style={{ opacity: isSearching ? 0.7 : 1 }}
+        >
+          {isSearching ? 'Searching...' : 'Search'}
+        </button>
+        <button 
+          className="reset-button" 
+          onClick={() => {
+            setFilterKeyword("");
+            setStatusFilter("all");
+            setCategoryFilter("all");
+          }}
+          style={{ 
+            backgroundColor: '#6c757d', 
+            color: 'white', 
+            border: 'none', 
+            padding: '8px 16px', 
+            borderRadius: '4px', 
+            cursor: 'pointer',
+            marginLeft: '10px'
+          }}
+        >
+          Reset
         </button>
         <button className="add-button" onClick={handleAddNew}>
-          Thêm mới
+          Add new
         </button>
       </div>
 
       <table className="product-table">
         <thead>
           <tr>
-            <th>STT</th>
-            <th>Tên</th>
-            <th>Danh mục</th>
-            <th>Ảnh</th>
-            <th>Giá</th>
-            <th>Hàng tồn kho</th>
-            <th>Trạng thái</th>
-            <th>Chi tiết</th>
+            <th>No.</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Image</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th>Detail</th>
           </tr>
         </thead>
         <tbody>
@@ -126,12 +205,12 @@ const ProductList: React.FC = () => {
                     }}
                   />
                 </td>
-                <td>{product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</td>
+                <td>{product.price.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</td>
                 <td>{product.stock}</td>
-                <td>{product.isActive ? "Hoạt động" : "Không hoạt động"}</td>
+                <td>{product.isActive ? "Active" : "Inactive"}</td>
                 <td>
                   <button onClick={() => handleDetail(product.id)}>
-                    Chi tiết
+                    Detail
                   </button>
                 </td>
               </tr>
@@ -139,7 +218,7 @@ const ProductList: React.FC = () => {
           ) : (
             <tr>
               <td colSpan={8} style={{ textAlign: "center" }}>
-                Không có dữ liệu hiển thị
+                No data to display
               </td>
             </tr>
           )}

@@ -13,6 +13,7 @@ const Header = () => {
   const { cartItems, getCartTotal } = useCart();
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = React.useState("");
+  const [isSearching, setIsSearching] = React.useState(false);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
@@ -24,9 +25,28 @@ const Header = () => {
 
   const handleSearch = async (e) => {
     e.preventDefault();
+    console.log("SEARCH SUBMIT:", searchValue);
     if (!searchValue.trim()) return;
-    const results = await productService.searchProducts(searchValue.trim());
-    navigate('/all-products', { state: { searchResults: results, searchKeyword: searchValue.trim() } });
+    setIsSearching(true);
+    try {
+      const results = await productService.searchProducts(searchValue.trim());
+      console.log("SEARCH API RESULT:", results);
+      navigate('/all-products', { 
+        state: { 
+          searchResults: results, 
+          searchKeyword: searchValue.trim() 
+        } 
+      });
+    } catch (error) {
+      console.error('Search error:', error);
+      navigate('/all-products', { 
+        state: { 
+          searchKeyword: searchValue.trim() 
+        } 
+      });
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -67,7 +87,7 @@ const Header = () => {
               {/* LOGO */}
               <div className="col-md-3">
                 <div className="header-logo">
-                  <Link to="../Page/HomePage.tsx" className="logo">
+                  <Link to="/" className="logo">
                     <img src="/img/logo.png" alt="" />
                   </Link>
                 </div>
@@ -78,8 +98,22 @@ const Header = () => {
               <div className="col-md-6">
                 <div className="header-search">
                   <form style={{ display: 'flex', width: '100%' }} onSubmit={handleSearch}>
-                    <input className="input" placeholder="Search here" style={{ flex: 1 }} value={searchValue} onChange={e => setSearchValue(e.target.value)} />
-                    <button className="search-btn" type="submit">Search</button>
+                    <input 
+                      className="input" 
+                      placeholder="Search for products..." 
+                      style={{ flex: 1 }} 
+                      value={searchValue} 
+                      onChange={e => setSearchValue(e.target.value)}
+                      disabled={isSearching}
+                    />
+                    <button 
+                      className="search-btn" 
+                      type="submit" 
+                      disabled={isSearching}
+                      style={{ opacity: isSearching ? 0.7 : 1 }}
+                    >
+                      {isSearching ? 'Searching...' : 'Search'}
+                    </button>
                   </form>
                 </div>
               </div>
