@@ -11,62 +11,174 @@ console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
 
 let isRedirecting = false;
 
+// Helper to check if we're in registration flow
+const checkRegistrationFlow = () => {
+    const justRegistered = sessionStorage.getItem('registrationSuccess');
+    const currentPath = window.location.pathname;
+    
+    console.log('🔍 Registration flow check:', {
+        hasRegistrationFlag: !!justRegistered,
+        currentPath,
+        isLoginPage: currentPath === '/login',
+        isSignupPage: currentPath === '/signup'
+    });
+    
+    if (justRegistered) {
+        try {
+            const regData = JSON.parse(justRegistered);
+            const timeSinceReg = Date.now() - regData.timestamp;
+            console.log('📊 Registration timing:', {
+                timestamp: new Date(regData.timestamp).toLocaleTimeString(),
+                timeSinceReg,
+                isWithinGracePeriod: timeSinceReg < 10000
+            });
+            
+            if (timeSinceReg < 3000) { // Reduced to 3 seconds grace period
+                return true;
+            }
+        } catch (e) {
+            console.warn('❌ Invalid registration data:', e);
+        }
+    }
+    
+    // Also block if we're on signup or just navigated to login
+    if (currentPath === '/signup' || currentPath === '/login') {
+        console.log('🚫 Blocking API calls on auth pages');
+        return true;
+    }
+    
+    return false;
+};
+
 const authRoutes = [
     '/account/login',
     '/account/verify-login',
     '/account/register',
     '/account/verify-register',
-    '/account/verify-registration'
+    '/account/verify-registration',
+    '/account/resend-otp',
+    '/account/forgot-password',
+    '/account/verify-change-password'
 ];
 
 api.interceptors.request.use(
     (config) => {
         const url = config.url || '';
-        console.log("Gửi request đến:", (config.baseURL || "") + url, "với method:", config.method?.toUpperCase());
+        console.log("🌐 API Request:", {
+            url: (config.baseURL || "") + url,
+            method: config.method?.toUpperCase(),
+            isAuthRoute: authRoutes.some(route => url.includes(route))
+        });
+        
         if (config.data) {
-            console.log("Request data:", {
+            console.log("📤 Request data:", {
                 ...config.data,
                 password: config.data.password ? '***' : undefined
             });
         }
         
-        if (!authRoutes.some(route => url.includes(route))) {
+        // Check if this route needs authentication
+        const needsAuth = !authRoutes.some(route => url.includes(route));
+        if (needsAuth) {
             const token = localStorage.getItem('authToken');
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
+            
+            // Only block API calls during registration flow if we don't have a token
+            if (!token) {
+                const inRegistrationFlow = checkRegistrationFlow();
+                if (inRegistrationFlow) {
+                    console.log("🚫 BLOCKING API call during registration flow (no token):", url);
+                    console.log("⏱️ Registration grace period active");
+                    // Reject the request with a custom error
+                    return Promise.reject(new Error('API_BLOCKED_REGISTRATION_FLOW'));
+                }
             }
+            
+            console.log("🔐 Authentication check:", {
+                needsAuth: true,
+                hasToken: !!token,
+                tokenLength: token?.length,
+                tokenStart: token?.substring(0, 20) + '...' || 'No token',
+                inRegistrationFlow: !token && checkRegistrationFlow(),
+                url: url,
+                currentHeaders: Object.keys(config.headers || {})
+            });
+            
+            if (token) {
+                config.headers.Authorization = token;
+                console.log("✅ Authorization header added:", {
+                    headerSet: !!config.headers.Authorization,
+                    headerLength: config.headers.Authorization?.length,
+                    url: url
+                });
+            } else {
+                console.warn("⚠️ No auth token found for protected route:", {
+                    url: url,
+                    localStorage: !!localStorage.getItem('authToken'),
+                    localStorageLength: localStorage.getItem('authToken')?.length
+                });
+            }
+        } else {
+            console.log("🔓 Auth route - no token needed");
         }
+        
         return config;
     },
     (error) => {
-        console.error("Request error:", error.message);
+        console.error("❌ Request error:", error.message);
         return Promise.reject(error);
     }
 );
 
 api.interceptors.response.use(
     (response) => {
-        console.log("Response success:", {
+        console.log("📨 Response success:", {
             status: response.status,
-            data: response.data
+            url: response.config?.url,
+            method: response.config?.method?.toUpperCase(),
+            dataType: typeof response.data,
+            dataPreview: typeof response.data === 'string' ? 
+                response.data.substring(0, 100) + (response.data.length > 100 ? '...' : '') :
+                response.data
         });
         return response;
     },
     (error) => {
-        console.error('API Error:', {
+        // Handle blocked API calls during registration
+        if (error.message === 'API_BLOCKED_REGISTRATION_FLOW') {
+            console.log("🚫 API call blocked during registration - this is expected");
+            // Return a resolved promise with empty data to avoid breaking UI
+            return Promise.resolve({
+                data: { success: false, message: 'Registration flow active' },
+                status: 200,
+                statusText: 'OK',
+                headers: {},
+                config: error.config
+            });
+        }
+        
+        console.error('❌ API Error:', {
             status: error.response?.status,
+            statusText: error.response?.statusText,
+            url: error.config?.url,
+            method: error.config?.method?.toUpperCase(),
             data: error.response?.data,
             message: error.message,
-            url: error.config?.url
+            hasAuthHeader: !!error.config?.headers?.Authorization
         });
         
         if (error.response?.status === 401 && !isRedirecting) {
             const currentPath = window.location.pathname;
             const authPages = ['/login', '/signup', '/forgot-password', '/reset-password'];
             
+            console.log("🚨 401 Unauthorized detected:", {
+                currentPath,
+                isAuthPage: authPages.includes(currentPath),
+                willRedirect: !authPages.includes(currentPath)
+            });
+            
             if (!authPages.includes(currentPath)) {
                 isRedirecting = true;
-                console.log('401 Unauthorized - Clearing auth data and redirecting');
+                console.log('🧹 Clearing auth data and redirecting...');
                 
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('user');
