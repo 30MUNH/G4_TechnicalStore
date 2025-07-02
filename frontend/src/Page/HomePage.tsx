@@ -15,9 +15,11 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 
 const HomePage: React.FC = () => {
+  console.log('🏠 HomePage Debug - Component initializing');
+  
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, token } = useAuth();
   const [newProducts, setNewProducts] = useState<{ laptops: Product[]; pcs: Product[]; accessories: Product[] }>({ laptops: [], pcs: [], accessories: [] });
   const [topSellingProducts, setTopSellingProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +28,37 @@ const HomePage: React.FC = () => {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [addToCartStatus, setAddToCartStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+
+  // Debug auth state changes - FIXED: Remove isAuthenticated function from dependencies
+  useEffect(() => {
+    const authStatus = isAuthenticated();
+    console.log('🏠 HomePage Debug - Auth state changed:', {
+      isAuthenticated: authStatus,
+      hasUser: !!user,
+      hasToken: !!token,
+      userInfo: user ? { username: user.username, role: user.role } : null,
+      tokenLength: token?.length,
+      localStorageToken: !!localStorage.getItem('authToken'),
+      localStorageUser: !!localStorage.getItem('user')
+    });
+  }, [user, token]);
+
+  // Debug registration success state
+  useEffect(() => {
+    const registrationSuccess = sessionStorage.getItem('registrationSuccess');
+    if (registrationSuccess) {
+      try {
+        const regData = JSON.parse(registrationSuccess);
+        console.log('🎉 HomePage Debug - Registration success detected:', {
+          username: regData.username,
+          timestamp: new Date(regData.timestamp).toLocaleString(),
+          timeSinceReg: Date.now() - regData.timestamp
+        });
+      } catch (e) {
+        console.warn('⚠️ HomePage Debug - Invalid registration success data');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     console.log("HomePage useEffect chạy");
@@ -81,7 +114,17 @@ const HomePage: React.FC = () => {
   };
 
   const handleAddToCart = async (product: Product) => {
+    console.log('🛒 HomePage Debug - Add to cart clicked:', {
+      productId: product.id,
+      productName: product.name,
+      productSlug: product.slug,
+      isAuthenticated: isAuthenticated(),
+      hasToken: !!localStorage.getItem('authToken'),
+      hasUser: !!localStorage.getItem('user')
+    });
+
     if (!isAuthenticated()) {
+      console.log('❌ HomePage Debug - User not authenticated, redirecting to login');
       navigate('/login', { 
         state: { 
           returnUrl: window.location.pathname,
@@ -92,13 +135,16 @@ const HomePage: React.FC = () => {
     }
 
     try {
+      console.log('📤 HomePage Debug - Calling addToCart with product ID:', product.id);
       await addToCart(product.id, 1);
+      console.log('✅ HomePage Debug - Add to cart successful');
       setAddToCartStatus({
         message: 'Product added to cart successfully!',
         type: 'success'
       });
       setTimeout(() => setAddToCartStatus(null), 3000);
     } catch (error) {
+      console.error('❌ HomePage Debug - Add to cart failed:', error);
       setAddToCartStatus({
         message: 'Failed to add product to cart',
         type: 'error'

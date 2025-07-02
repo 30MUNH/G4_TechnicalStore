@@ -6,6 +6,8 @@ import { useCart } from '../contexts/CartContext';
 import { orderService } from '../services/orderService';
 
 const CartPage = () => {
+    console.log('🛒 CartPage Debug - Component initializing');
+    
     const navigate = useNavigate();
     const [showOrderHistory, setShowOrderHistory] = useState(false);
     const [orders, setOrders] = useState([]);
@@ -22,38 +24,98 @@ const CartPage = () => {
         getShipping
     } = useCart();
 
+    // Removed cart data debug to prevent console spam - data available via window.authService.debugAuthState()
+
+    // Debug state changes
+    useEffect(() => {
+        console.log('🛒 CartPage Debug - State changed:', {
+            showOrderHistory,
+            ordersCount: orders.length,
+            loading,
+            error
+        });
+    }, [showOrderHistory, orders, loading, error]);
+
     const handleQuantityChange = (productId, newQuantity) => {
+        console.log('🔄 CartPage Debug - Quantity change requested:', {
+            productId,
+            newQuantity,
+            willRemove: newQuantity <= 0
+        });
+        
         if (newQuantity <= 0) {
+            console.log('🗑️ CartPage Debug - Removing item due to zero quantity');
             removeFromCart(productId);
         } else {
+            console.log('🔢 CartPage Debug - Updating quantity');
             updateQuantity(productId, newQuantity);
         }
     };
 
     const handleProceedToCheckout = () => {
+        console.log('💳 CartPage Debug - Proceeding to checkout:', {
+            cartItemsCount: cartItems?.length,
+            finalTotal: getFinalTotal()
+        });
         navigate('/checkout');
     };
 
     const handleViewOrderHistory = async () => {
+        console.log('📋 CartPage Debug - Loading order history');
         setShowOrderHistory(true);
         setLoading(true);
+        setError(null);
+        
         try {
+            console.log('📤 CartPage Debug - Calling orderService.getOrders');
             const response = await orderService.getOrders();
+            console.log('📨 CartPage Debug - Order history response:', {
+                success: !!response,
+                ordersCount: response?.orders?.length || 0,
+                orders: response?.orders
+            });
             setOrders(response.orders || []);
         } catch (err) {
-            setError(err.message || 'Không thể tải lịch sử đơn hàng');
+            console.error('❌ CartPage Debug - Failed to load order history:', err);
+            const errorMessage = err.message || 'Không thể tải lịch sử đơn hàng';
+            setError(errorMessage);
         } finally {
+            console.log('🔄 CartPage Debug - Setting loading to false');
             setLoading(false);
         }
     };
 
+    const handleBackToCart = () => {
+        console.log('🔙 CartPage Debug - Going back to cart from order history');
+        setShowOrderHistory(false);
+        setError(null);
+    };
+
+    const handleContinueShopping = () => {
+        console.log('🛍️ CartPage Debug - Continuing shopping, navigating to home');
+        navigate('/');
+    };
+
     // Add cart-page-active class to body to remove main-content padding
     useEffect(() => {
+        console.log('🛒 CartPage Debug - Adding cart-page-active class to body');
         document.body.classList.add('cart-page-active');
-        return () => document.body.classList.remove('cart-page-active');
+        return () => {
+            console.log('🧹 CartPage Debug - Removing cart-page-active class from body');
+            document.body.classList.remove('cart-page-active');
+        };
+    }, []);
+
+    // Component mount/unmount debug
+    useEffect(() => {
+        console.log('🛒 CartPage Debug - Component mounted');
+        return () => {
+            console.log('🛒 CartPage Debug - Component unmounting');
+        };
     }, []);
 
     if (showOrderHistory) {
+        console.log('📋 CartPage Debug - Rendering order history view');
         return (
             <div style={{ margin: 0, padding: 0 }}>
                 {/* Header */}
@@ -111,7 +173,7 @@ const CartPage = () => {
                     ) : (
                         <OrderHistory 
                             orders={orders} 
-                            onBackToCart={() => setShowOrderHistory(false)} 
+                            onBackToCart={handleBackToCart} 
                         />
                     )}
                 </div>
@@ -119,6 +181,7 @@ const CartPage = () => {
         );
     }
 
+    console.log('🛒 CartPage Debug - Rendering main cart view');
     return (
         <div style={{ margin: 0, padding: 0 }}>
             {/* Cart page header */}
@@ -167,7 +230,7 @@ const CartPage = () => {
                     onRemoveItem={removeFromCart}
                     onCheckout={handleProceedToCheckout}
                     onViewOrderHistory={handleViewOrderHistory}
-                    onContinueShopping={() => navigate('/')}
+                    onContinueShopping={handleContinueShopping}
                     subtotal={getCartTotal()}
                     shippingFee={getShipping()}
                     totalAmount={getFinalTotal()}

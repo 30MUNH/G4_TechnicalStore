@@ -47,7 +47,7 @@ export class AccountController{
     @Post('/login')
     async login(@Body() body: CredentialsDto){
         const account = await this.accountService.login(body);
-        await this.twilioService.sendOtp(account.username);
+        await this.twilioService.sendOtp(account.phone);
         return "Check OTP message to complete login";
     }
 
@@ -69,7 +69,8 @@ export class AccountController{
 
     @Post('/resend-otp')
     async resendOtp(@BodyParam('username') username: string){
-        await this.twilioService.sendOtp(username);
+        const account = await this.accountService.findAccountByUsername(username);
+        await this.twilioService.sendOtp(account.phone);
         return "OTP resent";
     }
 
@@ -93,7 +94,7 @@ export class AccountController{
         const account = await this.accountService.findAccountByUsername(user.username);
         const checkOldPassword = await this.accountService.checkOldPassword(account, oldPassword);
         if(!checkOldPassword) return "Wrong old password";
-        await this.twilioService.sendOtp(account.username);
+        await this.twilioService.sendOtp(account.phone);
         return "Check OTP message to complete password change";
     }
 
@@ -111,13 +112,14 @@ export class AccountController{
     @Post('/forgot-password')
     async forgotPassword(@BodyParam("username") username: string){
         const account = await this.accountService.findAccountByUsername(username);
-        await this.twilioService.sendOtp(account.username);
+        await this.twilioService.sendOtp(account.phone);
         return "Check OTP message to reset password";
     }
 
     @Post('/send-otp')
     async sendOtp(@BodyParam('username') username: string){
-        return await this.twilioService.sendOtp(username);
+        const account = await this.accountService.findAccountByUsername(username);
+        return await this.twilioService.sendOtp(account.phone);
     }
 
     @Post('/verify-otp')

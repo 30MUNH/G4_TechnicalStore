@@ -4,6 +4,18 @@ import styles from './CheckoutForm.module.css';
 import { useVietnamProvinces } from '../../Hook/useVietnamProvinces.jsx';
 
 const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOrder, onBackToCart, isProcessing = false, error = null }) => {
+    console.log('💳 CheckoutForm Debug - Component rendered with props:', {
+        cartItemsCount: cartItems?.length,
+        cartItems,
+        subtotal,
+        shippingFee,
+        totalAmount,
+        isProcessing,
+        error,
+        onPlaceOrder: typeof onPlaceOrder,
+        onBackToCart: typeof onBackToCart
+    });
+
     const { provinces, loading, error: provincesError } = useVietnamProvinces();
     const [formData, setFormData] = useState({
         fullName: '',
@@ -15,64 +27,164 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
         commune: ''
     });
 
+    console.log('🏙️ CheckoutForm Debug - Provinces data:', {
+        provinces: provinces ? Object.keys(provinces).length : 0,
+        loading,
+        provincesError
+    });
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        console.log('📝 CheckoutForm Debug - Input change:', { name, value });
+        setFormData(prev => {
+            const newData = { ...prev, [name]: value };
+            console.log('📝 CheckoutForm Debug - Updated form data:', newData);
+            return newData;
+        });
     };
 
     const handleLocationChange = (e) => {
         const { name, value } = e.target;
+        console.log('🌍 CheckoutForm Debug - Location change:', { name, value });
         
         // Reset dependent fields when parent location changes
         if (name === 'city') {
-            setFormData(prev => ({
-                ...prev,
-                city: value,
-                ward: '',
-                commune: ''
-            }));
+            setFormData(prev => {
+                const newData = {
+                    ...prev,
+                    city: value,
+                    ward: '',
+                    commune: ''
+                };
+                console.log('🏙️ CheckoutForm Debug - City changed, reset ward/commune:', newData);
+                return newData;
+            });
         } else if (name === 'ward') {
-            setFormData(prev => ({
-                ...prev,
-                ward: value,
-                commune: ''
-            }));
+            setFormData(prev => {
+                const newData = {
+                    ...prev,
+                    ward: value,
+                    commune: ''
+                };
+                console.log('🏘️ CheckoutForm Debug - Ward changed, reset commune:', newData);
+                return newData;
+            });
         } else {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
+            setFormData(prev => {
+                const newData = { ...prev, [name]: value };
+                console.log('🏠 CheckoutForm Debug - Location updated:', newData);
+                return newData;
+            });
         }
     };
 
     // Get available options for dropdowns
     const getCityOptions = () => {
-        return Object.keys(provinces || {});
+        const cities = Object.keys(provinces || {});
+        console.log('🏙️ CheckoutForm Debug - Available cities:', cities.length);
+        return cities;
     };
 
     const getWardOptions = () => {
-        if (!formData.city || !provinces[formData.city]) return [];
-        return Object.keys(provinces[formData.city]);
+        if (!formData.city || !provinces[formData.city]) {
+            console.log('🏘️ CheckoutForm Debug - No wards available for city:', formData.city);
+            return [];
+        }
+        const wards = Object.keys(provinces[formData.city]);
+        console.log('🏘️ CheckoutForm Debug - Available wards for', formData.city, ':', wards.length);
+        return wards;
     };
 
     const getCommuneOptions = () => {
-        if (!formData.city || !formData.ward || !provinces[formData.city]?.[formData.ward]) return [];
-        return provinces[formData.city][formData.ward];
+        if (!formData.city || !formData.ward || !provinces[formData.city]?.[formData.ward]) {
+            console.log('🏠 CheckoutForm Debug - No communes available for:', { city: formData.city, ward: formData.ward });
+            return [];
+        }
+        const communes = provinces[formData.city][formData.ward];
+        console.log('🏠 CheckoutForm Debug - Available communes:', communes.length);
+        return communes;
+    };
+
+    const validateFormData = () => {
+        console.log('✅ CheckoutForm Debug - Validating form data:', formData);
+        const requiredFields = ['fullName', 'phone', 'email', 'address', 'city', 'ward', 'commune'];
+        const missingFields = requiredFields.filter(field => !formData[field]);
+        
+        if (missingFields.length > 0) {
+            console.error('❌ CheckoutForm Debug - Missing required fields:', missingFields);
+            return false;
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            console.error('❌ CheckoutForm Debug - Invalid email format:', formData.email);
+            return false;
+        }
+
+        // Validate phone format
+        const phoneRegex = /^[0-9]{10,11}$/;
+        if (!phoneRegex.test(formData.phone.replace(/\s/g, ''))) {
+            console.error('❌ CheckoutForm Debug - Invalid phone format:', formData.phone);
+            return false;
+        }
+
+        console.log('✅ CheckoutForm Debug - Form validation passed');
+        return true;
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-            onPlaceOrder(formData);
+        console.log('🚀 CheckoutForm Debug - Form submission started:', {
+            formData,
+            cartItemsCount: cartItems?.length,
+            totalAmount
+        });
+
+        if (!validateFormData()) {
+            console.error('❌ CheckoutForm Debug - Form validation failed, preventing submission');
+            return;
+        }
+
+        if (!cartItems || cartItems.length === 0) {
+            console.error('❌ CheckoutForm Debug - No cart items to checkout');
+            return;
+        }
+
+        if (typeof onPlaceOrder !== 'function') {
+            console.error('❌ CheckoutForm Debug - onPlaceOrder is not a function:', typeof onPlaceOrder);
+            return;
+        }
+
+        console.log('🚀 CheckoutForm Debug - Calling onPlaceOrder with form data');
+        onPlaceOrder(formData);
     };
 
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
-            .format(amount)
-            .replace('₫', 'đ');
+        console.log('💰 CheckoutForm Debug - Formatting currency:', { amount, type: typeof amount });
+        try {
+            const formatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
+                .format(amount)
+                .replace('₫', 'đ');
+            return formatted;
+        } catch (error) {
+            console.error('❌ CheckoutForm Debug - Currency formatting error:', error, { amount });
+            return `${amount} đ`;
+        }
     };
+
+    // Validate props
+    if (!Array.isArray(cartItems)) {
+        console.error('❌ CheckoutForm Debug - cartItems is not an array:', cartItems);
+        return <div>Error: Invalid cart data</div>;
+    }
+
+    if (typeof subtotal !== 'number' || typeof totalAmount !== 'number') {
+        console.error('❌ CheckoutForm Debug - Invalid amount types:', { 
+            subtotal: typeof subtotal, 
+            totalAmount: typeof totalAmount 
+        });
+    }
 
     return (
         <div className={styles.checkoutContainer}>
@@ -91,22 +203,25 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                 <div className={styles.orderDetails}>
                     <div className={styles.orderItems}>
                         <h2>Đơn hàng của bạn</h2>
-                        {cartItems.map(item => (
-                            <div key={item.id} className={styles.orderItem}>
-                                <img src={item.image} alt={item.name} className={styles.itemImage} />
-                                <div className={styles.itemInfo}>
-                                    <h3>{item.name}</h3>
-                                    <p className={styles.itemCategory}>{item.category}</p>
-                                    <div className={styles.itemPriceQuantity}>
-                                        <span>Số lượng: {item.quantity}</span>
-                                        <span>{formatCurrency(item.price)}</span>
+                        {cartItems.map(item => {
+                            console.log('🛒 CheckoutForm Debug - Rendering order item:', item);
+                            return (
+                                <div key={item.id} className={styles.orderItem}>
+                                    <img src={item.image} alt={item.name} className={styles.itemImage} />
+                                    <div className={styles.itemInfo}>
+                                        <h3>{item.name}</h3>
+                                        <p className={styles.itemCategory}>{item.category}</p>
+                                        <div className={styles.itemPriceQuantity}>
+                                            <span>Số lượng: {item.quantity}</span>
+                                            <span>{formatCurrency(item.price)}</span>
+                                        </div>
+                                    </div>
+                                    <div className={styles.itemTotal}>
+                                        {formatCurrency(item.price * item.quantity)}
                                     </div>
                                 </div>
-                                <div className={styles.itemTotal}>
-                                    {formatCurrency(item.price * item.quantity)}
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     <form onSubmit={handleSubmit} className={styles.shippingForm}>

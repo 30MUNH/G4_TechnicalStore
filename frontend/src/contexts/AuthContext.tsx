@@ -14,6 +14,7 @@ interface AuthContextType {
     login: (userData: User, token: string) => void;
     logout: () => void;
     isAuthenticated: () => boolean;
+    clearAuthState: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -71,16 +72,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Verify token on mount
     useEffect(() => {
+        console.group('🔑 [DEBUG] AuthContext Mount/State Check');
+        
         const token = authService.getToken();
         const user = authService.getUser();
+        
+        console.log('📊 Auth state check:', {
+            hasToken: !!token,
+            hasUser: !!user,
+            tokenLength: token?.length,
+            userInfo: user ? { username: user.username, role: user.role } : null
+        });
+        
         if (token && user) {
             setToken(token);
             setUser(user);
+            console.log('✅ Auth state restored from localStorage');
+        } else {
+            console.log('❌ No valid auth state - clearing');
+            setToken(null);
+            setUser(null);
         }
+        
+        console.groupEnd();
+    }, []);
+
+    // Add method to force clear auth state
+    const clearAuthState = () => {
+        console.log('🧹 Force clearing auth state...');
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+    };
+
+    // Listen for custom events to clear auth state and handle auto-login
+    useEffect(() => {
+        const handleClearAuth = () => {
+            console.log('📢 Received clear auth event');
+            clearAuthState();
+        };
+
+        const handleAutoLogin = (event: CustomEvent) => {
+            console.log('📢 Received auto-login event from registration:', event.detail);
+            const { user: userData, token: authToken } = event.detail;
+            if (userData && authToken) {
+                setUser(userData);
+                setToken(authToken);
+                console.log('✅ Auth state updated from registration auto-login');
+            }
+        };
+
+        window.addEventListener('auth:clear', handleClearAuth);
+        window.addEventListener('auth:login', handleAutoLogin as EventListener);
+        
+        return () => {
+            window.removeEventListener('auth:clear', handleClearAuth);
+            window.removeEventListener('auth:login', handleAutoLogin as EventListener);
+        };
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated }}>
+        <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated, clearAuthState }}>
             {children}
         </AuthContext.Provider>
     );
@@ -89,7 +142,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
+        console.warn('useAuth called without AuthProvider. Using default values.');
+        // Return default auth context instead of throwing
+        return {
+            user: null,
+            token: null,
+            login: () => {},
+            logout: () => {},
+            isAuthenticated: () => false,
+            clearAuthState: () => {}
+        };
     }
     return context;
 }; 
