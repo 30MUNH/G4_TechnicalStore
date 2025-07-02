@@ -110,13 +110,25 @@ class ProductService {
   async searchProducts(keyword: string): Promise<Product[]> {
     try {
       const response = await api.get<ApiResponse<Product[]>>(`/products/search?q=${encodeURIComponent(keyword)}`);
-      if (response.data && response.data.products) {
-        return response.data.products;
+      if (response.data && response.data.data && response.data.data.products) {
+        return response.data.data.products;
       }
       return [];
     } catch (error) {
       console.error('Error searching products:', error);
-      return [];
+      // Fallback: search locally if API fails
+      try {
+        const allProducts = await this.getAllProducts();
+        const keywordLower = keyword.toLowerCase();
+        return allProducts.filter(product => 
+          product.name.toLowerCase().includes(keywordLower) ||
+          (product.category?.name || '').toLowerCase().includes(keywordLower) ||
+          (product.description || '').toLowerCase().includes(keywordLower)
+        );
+      } catch (fallbackError) {
+        console.error('Fallback search also failed:', fallbackError);
+        return [];
+      }
     }
   }
 
