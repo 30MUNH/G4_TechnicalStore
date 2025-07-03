@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, User, Lock } from 'lucide-react';
+import { Eye, EyeOff, User, Lock, ArrowLeft } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './Login.module.css';
@@ -563,6 +563,15 @@ const Login = ({ onNavigate }) => {
 
   return (
     <FormCard>
+      <button 
+        type="button" 
+        onClick={() => navigate('/')} 
+        className={styles.backArrowBtn}
+        aria-label="Back to Home"
+      >
+        <ArrowLeft size={20} />
+      </button>
+      
       <div className={styles.authHeader}>
         <h1 className={styles.authTitle}>Welcome Back!</h1>
         <p className={styles.authSubtitle}>Sign in to access premium PC components</p>

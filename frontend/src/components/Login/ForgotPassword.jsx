@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock } from 'lucide-react';
+import { User, Lock, ArrowLeft } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './ForgotPassword.module.css';
@@ -171,6 +171,15 @@ const ForgotPassword = () => {
 
   return (
     <FormCard>
+      <button 
+        type="button" 
+        onClick={() => navigate('/login')} 
+        className={styles.backArrowBtn}
+        aria-label="Back to Sign In"
+      >
+        <ArrowLeft size={20} />
+      </button>
+      
       <div className={styles.authHeader}>
         <h1 className={styles.authTitle}>Reset Password</h1>
         <p className={styles.authSubtitle}>
@@ -256,11 +265,7 @@ const ForgotPassword = () => {
           )}
         </button>
 
-        <div className={styles.authLinks}>
-          <button type="button" onClick={() => navigate('/login')} className={styles.linkBtn}>
-            Back to Sign In
-          </button>
-        </div>
+
       </form>
 
       {showOTPPopup && (
