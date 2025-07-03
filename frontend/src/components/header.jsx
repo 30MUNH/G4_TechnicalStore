@@ -9,11 +9,24 @@ import { useCart } from '../contexts/CartContext';
 import { productService } from '../services/productService';
 
 const Header = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const { items, totalAmount } = useCart();
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = React.useState("");
   const [isSearching, setIsSearching] = React.useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
+
+  // Debug user data
+  React.useEffect(() => {
+    if (user) {
+      console.log('🔍 [DEBUG] Header - User data:', {
+        username: user.username,
+        phone: user.phone,
+        role: user.role,
+        isRegistered: user.isRegistered
+      });
+    }
+  }, [user]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
@@ -49,6 +62,12 @@ const Header = () => {
     }
   };
 
+  const handleUserDropdown = (open) => setUserDropdownOpen(open);
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <>
       {/* HEADER */}
@@ -70,7 +89,54 @@ const Header = () => {
             <ul className="header-links pull-right">
               <li>
                 {isAuthenticated() ? (
-                  <span><FontAwesomeIcon icon={faUserRegular} /> Welcome, {user?.username || 'User'}</span>
+                  <div
+                    className="user-dropdown-wrapper"
+                    style={{ position: 'relative', display: 'inline-block' }}
+                    onMouseEnter={() => handleUserDropdown(true)}
+                    onMouseLeave={() => handleUserDropdown(false)}
+                  >
+                    <span style={{ cursor: 'pointer' }}>
+                      <FontAwesomeIcon icon={faUserRegular} /> Welcome, {user?.username || 'User'}
+                      {/* Debug info */}
+                      {process.env.NODE_ENV === 'development' && (
+                        <small style={{ fontSize: '10px', color: '#999', display: 'block' }}>
+                          Debug: {JSON.stringify({ username: user?.username, hasUser: !!user })}
+                        </small>
+                      )}
+                    </span>
+                    {userDropdownOpen && (
+                      <div
+                        className="user-dropdown-menu"
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          background: '#fff',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                          zIndex: 1000,
+                          minWidth: 120,
+                          padding: '8px 0',
+                          borderRadius: 4
+                        }}
+                      >
+                        <button
+                          onClick={handleLogout}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            color: '#D10024',
+                            fontWeight: 500
+                          }}
+                        >
+                          Log out
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <Link to="/login"><FontAwesomeIcon icon={faUserRegular} /> My Account</Link>
                 )}
@@ -85,7 +151,7 @@ const Header = () => {
           <div className="container">
             <div className="row">
               {/* LOGO */}
-              <div className="col-md-3">
+              <div className="col-md-2">
                 <div className="header-logo">
                   <Link to="/" className="logo">
                     <img src="/img/logo.png" alt="" />
@@ -95,7 +161,7 @@ const Header = () => {
               {/* /LOGO */}
 
               {/* SEARCH BAR */}
-              <div className="col-md-6">
+              <div className="col-md-9">
                 <div className="header-search">
                   <form style={{ display: 'flex', width: '100%' }} onSubmit={handleSearch}>
                     <input 
@@ -120,18 +186,8 @@ const Header = () => {
               {/* /SEARCH BAR */}
 
               {/* ACCOUNT */}
-              <div className="col-md-3 clearfix">
+              <div className="col-md-1 clearfix">
                 <div className="header-ctn">
-                  {/* Wishlist */}
-                  <div>
-                    <a href="#">
-                      <FontAwesomeIcon icon={faHeart} size="lg" className="wishlist-icon" />
-                      <span className="wishlist-text">Your Wishlist</span>
-                      <div className="qty">0</div>
-                    </a>
-                  </div>
-                  {/* /Wishlist */}
-
                   {/* Cart */}
                   <div className="dropdown">
                     <Link to="/cart" className="dropdown-toggle">
