@@ -546,14 +546,13 @@ export const authService = {
     // ================================
     
     /**
-     * Gửi OTP quên mật khẩu
-     * @param phone số điện thoại (9 số, không có số 0 đầu)
+     * Request password reset - gửi OTP để reset password
+     * @param username tên đăng nhập
      * @returns Promise<{ success: boolean, message: string }>
      */
-    async requestPasswordReset(phone: string) {
+    async requestPasswordReset(username: string) {
         try {
-            const formattedPhone = formatPhoneNumberForLogin(phone);
-            const response = await api.post('/account/forgot-password', { phone: formattedPhone });
+            const response = await api.post('/account/forgot-password', { username: username });
             return {
                 success: true,
                 message: typeof response.data === 'string' ? response.data : 'OTP đã được gửi'
@@ -568,44 +567,16 @@ export const authService = {
     },
 
     /**
-     * Reset password sau khi verify OTP
-     * @param phone số điện thoại  
-     * @param newPassword mật khẩu mới
-     * @returns Promise<{ success: boolean, message: string }>
-     */
-    async resetPassword({ phone, newPassword }: { phone: string, newPassword: string }) {
-        try {
-            const formattedPhone = formatPhoneNumberForLogin(phone);
-            const response = await api.post('/account/verify-change-password', {
-                username: formattedPhone,
-                otp: '', 
-                newPassword
-            });
-            return {
-                success: true,
-                message: typeof response.data === 'string' ? response.data : 'Password reset successfully'
-            };
-        } catch (error: unknown) {
-            const axiosError = error as AxiosError;
-            return {
-                success: false,
-                message: (axiosError.response?.data as ApiErrorResponse)?.message || 'Failed to reset password'
-            };
-        }
-    },
-
-    /**
      * Xác thực OTP và reset password
-     * @param phone số điện thoại (9 số, không có số 0 đầu)
+     * @param username tên đăng nhập
      * @param otp mã OTP
      * @param newPassword mật khẩu mới
      * @returns Promise<{ success: boolean, message: string }>
      */
-    async verifyResetOTP({ phone, otp, newPassword }: { phone: string, otp: string, newPassword: string }) {
+    async verifyResetOTP({ username, otp, newPassword }: { username: string, otp: string, newPassword: string }) {
         try {
-            const formattedPhone = formatPhoneNumberForLogin(phone);
-            const response = await api.post('/account/reset-password', {
-                phone: formattedPhone,
+            const response = await api.post('/account/verify-change-password', {
+                username: username,
                 otp,
                 newPassword
             });
@@ -627,8 +598,8 @@ export const authService = {
     // ================================
     
     /**
-     * Lấy thông tin profile user
-     * @returns Promise<any>
+     
+     * @returns 
      */
     async getUserProfile() {
         console.group('🔍 [DEBUG] Get User Profile Process');

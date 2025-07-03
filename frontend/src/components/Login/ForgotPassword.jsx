@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, Lock } from 'lucide-react';
+import { User, Lock } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './ForgotPassword.module.css';
@@ -10,7 +10,7 @@ const ForgotPassword = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1); 
   const [formData, setFormData] = useState({
-    phone: '',
+    username: '',
     newPassword: '',
     confirmPassword: ''
   });
@@ -22,11 +22,9 @@ const ForgotPassword = () => {
 
   const validateField = (name, value) => {
     switch (name) {
-      case 'phone':
-        if (!value.trim()) return 'Phone number is required';
-        const cleanPhone = value.replace(/\D/g, '');
-        if (cleanPhone.length !== 10) return 'Phone number must be 10 digits';
-        if (!cleanPhone.startsWith('0')) return 'Phone number must start with 0';
+      case 'username':
+        if (!value.trim()) return 'Username is required';
+        if (value.length < 3) return 'Username must be at least 3 characters';
         return undefined;
         
       case 'newPassword':
@@ -48,13 +46,7 @@ const ForgotPassword = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
-    if (name === 'phone') {
-      // Only allow digits and limit to 10 characters
-      const phoneValue = value.replace(/\D/g, '').slice(0, 10);
-      setFormData(prev => ({ ...prev, [name]: phoneValue }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
     
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
@@ -70,31 +62,29 @@ const ForgotPassword = () => {
     e.preventDefault();
     
     if (step === 1) {
-      const phoneError = validateField('phone', formData.phone);
-      if (phoneError) {
-        setErrors({ phone: phoneError });
+      const usernameError = validateField('username', formData.username);
+      if (usernameError) {
+        setErrors({ username: usernameError });
         return;
       }
 
       setIsSubmitting(true);
       try {
-        // Remove leading 0 for API call (backend expects +84xxxxxxxxx format)
-        const phoneForApi = formData.phone.slice(1); // Remove leading 0
-        const response = await authService.requestPasswordReset(phoneForApi);
+        const response = await authService.requestPasswordReset(formData.username);
         
         if (response && response.success) {
-          setPendingReset(phoneForApi);
+          setPendingReset(formData.username);
           setShowOTPPopup(true);
           setErrors({});
         } else if (response && typeof response.message === 'string' && response.message.toLowerCase().includes('otp')) {
-          setPendingReset(phoneForApi);
+          setPendingReset(formData.username);
           setShowOTPPopup(true);
           setErrors({});
         } else {
           throw new Error('Failed to send OTP');
         }
       } catch (error) {
-        setErrors({ phone: error.response?.data?.message || 'Failed to send OTP. Please try again.' });
+        setErrors({ username: error.response?.data?.message || 'Failed to send OTP. Please try again.' });
       } finally {
         setIsSubmitting(false);
       }
@@ -119,15 +109,15 @@ const ForgotPassword = () => {
       setIsSubmitting(true);
       try {
         const response = await authService.verifyResetOTP({
-          phone: pendingReset,
+          username: pendingReset,
           otp: verifiedOTP,
           newPassword: formData.newPassword
         });
 
         if (response && response.success) {
-          // Store the phone number for login page
+          // Store the username for login page
           sessionStorage.setItem('lastResetUser', JSON.stringify({
-            phone: formData.phone,
+            username: formData.username,
             timestamp: Date.now()
           }));
           
@@ -165,7 +155,7 @@ const ForgotPassword = () => {
 
     try {
       const response = await authService.resendOTP({
-        phone: pendingReset,
+        username: pendingReset,
         isForLogin: true
       });
 
@@ -184,7 +174,7 @@ const ForgotPassword = () => {
       <div className={styles.authHeader}>
         <h1 className={styles.authTitle}>Reset Password</h1>
         <p className={styles.authSubtitle}>
-          {step === 1 && "Enter your phone number to reset password"}
+          {step === 1 && "Enter your username to reset password"}
           {step === 2 && "Enter OTP code and your new password"}
         </p>
       </div>
@@ -200,20 +190,19 @@ const ForgotPassword = () => {
           <div className={styles.formGroup}>
             <div className={styles.inputWrapper}>
               <div className={styles.inputIcon}>
-                <Phone size={20} />
+                <User size={20} />
               </div>
               <input
-                type="tel"
-                name="phone"
-                placeholder="Enter 10 digits"
-                value={formData.phone}
+                type="text"
+                name="username"
+                placeholder="Enter your username"
+                value={formData.username}
                 onChange={handleInputChange}
-                className={`${styles.input} ${errors.phone ? styles.error : ''}`}
-                autoComplete="tel"
-                maxLength={10}
+                className={`${styles.input} ${errors.username ? styles.error : ''}`}
+                autoComplete="username"
               />
             </div>
-            {errors.phone && <span className={styles.errorMessage}>{errors.phone}</span>}
+            {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
           </div>
         )}
 
