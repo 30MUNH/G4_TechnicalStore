@@ -8,6 +8,7 @@ import SignUp from "./components/Login/SignUp.jsx";
 import ForgotPassword from "./components/Login/ForgotPassword.jsx";
 import HomePage from "./Page/HomePage";
 import CartPage from "./Page/CartPage.jsx";
+import CheckoutPage from "./Page/CheckoutPage.jsx";
 import AllProductsPage from "./Page/AllProductsPage";
 import ManageProduct from "./components/ManageProduct/ManageProduct";
 import { CartProvider } from "./contexts/CartContext";
@@ -63,7 +64,7 @@ function AppContent() {
   const location = useLocation();
 
   // Các route không muốn hiện header/navigation
-  const hideHeaderAndNavRoutes = ["/login", "/signup", "/forgot-password", "/about", "/contact", "/cart", "/manage-customers", "/manage-shippers"];
+  const hideHeaderAndNavRoutes = ["/login", "/signup", "/forgot-password", "/about", "/contact", "/cart", "/checkout", "/manage-customers", "/manage-shippers"];
   const shouldHide = hideHeaderAndNavRoutes.includes(location.pathname);
 
   return (
@@ -78,6 +79,7 @@ function AppContent() {
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/about" element={<Aboutus />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/login" element={<AuthBgWrapper><Login /></AuthBgWrapper>} />
         <Route path="/signup" element={<AuthBgWrapper><SignUp /></AuthBgWrapper>} />
         <Route path="/forgot-password" element={<AuthBgWrapper><ForgotPassword /></AuthBgWrapper>} />
@@ -103,7 +105,7 @@ function AppContent() {
   );
 }
 
-function App() {
+const App = () => {
   return (
     <Router>
       <AuthProvider>
@@ -113,6 +115,6 @@ function App() {
       </AuthProvider>
     </Router>
   );
-}
+};
 
 export default App;
