@@ -26,6 +26,14 @@ export class OrderService {
         return validTransitions[currentStatus]?.includes(newStatus) || false;
     }
 
+    private isAdmin(account: Account): boolean {
+        return account.role?.name?.toLowerCase().includes('admin') || false;
+    }
+
+    private isShipper(account: Account): boolean {
+        return account.role?.name?.toLowerCase().includes('shipper') || false;
+    }
+
     async createOrder(username: string, createOrderDto: CreateOrderDto): Promise<Order> {
         const cart = await this.cartService.viewCart(username);
         if (!cart.cartItems || cart.cartItems.length === 0) {
@@ -47,6 +55,26 @@ export class OrderService {
         }
 
         return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
+            const productIds = cart.cartItems.map(item => item.product.id);
+            const products = await transactionalEntityManager
+                .createQueryBuilder(Product, 'product')
+                .setLock('pessimistic_write')
+                .where('product.id IN (:...ids)', { ids: productIds })
+                .getMany();
+
+            for (const cartItem of cart.cartItems) {
+                const product = products.find(p => p.id === cartItem.product.id);
+                if (!product) {
+                    throw new Error(`Sản phẩm ${cartItem.product.name} không tồn tại`);
+                }
+                if (!product.isActive) {
+                    throw new Error(`Sản phẩm ${product.name} hiện không khả dụng`);
+                }
+                if (product.stock < cartItem.quantity) {
+                    throw new Error(`Sản phẩm ${product.name} không đủ số lượng trong kho (còn ${product.stock}, cần ${cartItem.quantity})`);
+                }
+            }
+
             const order = new Order();
             order.customer = cart.account;
             order.orderDate = new Date();
@@ -57,21 +85,7 @@ export class OrderService {
             await transactionalEntityManager.save(order);
 
             for (const cartItem of cart.cartItems) {
-                const product = await transactionalEntityManager.findOne(Product, {
-                    where: { id: cartItem.product.id }
-                });
-
-                if (!product) {
-                    throw new Error(`Sản phẩm ${cartItem.product.name} không tồn tại`);
-                }
-
-                if (!product.isActive) {
-                    throw new Error(`Sản phẩm ${product.name} hiện không khả dụng`);
-                }
-
-                if (product.stock < cartItem.quantity) {
-                    throw new Error(`Sản phẩm ${product.name} không đủ số lượng trong kho`);
-                }
+                const product = products.find(p => p.id === cartItem.product.id)!;
 
                 const orderDetail = new OrderDetail();
                 orderDetail.order = order;
@@ -108,13 +122,20 @@ export class OrderService {
         return order;
     }
 
-    async getOrdersByUsername(username: string): Promise<Order[]> {
+    async getOrdersByUsername(
+        username: string, 
+        page: number = 1, 
+        limit: number = 10
+    ): Promise<{ orders: Order[]; total: number }> {
         const account = await Account.findOne({ where: { username } });
         if (!account) {
             throw new EntityNotFoundException('Account');
         }
 
-        return Order.find({
+        const skip = (page - 1) * limit;
+
+        // Tối ưu query với eager loading và pagination
+        const [orders, total] = await Order.findAndCount({
             where: { customer: { id: account.id } },
             relations: [
                 'customer',
@@ -122,8 +143,12 @@ export class OrderService {
                 'orderDetails',
                 'orderDetails.product'
             ],
-            order: { orderDate: 'DESC' }
+            order: { orderDate: 'DESC' },
+            skip,
+            take: limit
         });
+
+        return { orders, total };
     }
 
     async updateOrderStatus(
@@ -142,7 +167,7 @@ export class OrderService {
                 throw new EntityNotFoundException('Account');
             }
 
-            const isAdmin = account.role?.name?.includes('ADMIN') || false;
+            const isAdmin = this.isAdmin(account);
             if (order.customer.id !== account.id && !isAdmin) {
                 throw new Error('Không có quyền cập nhật đơn hàng này');
             }
@@ -170,8 +195,16 @@ export class OrderService {
             }
 
             order.status = updateOrderDto.status;
-            if (updateOrderDto.status === OrderStatus.SHIPPING) {
-                order.shipper = account;
+            
+            // Chỉ admin mới có thể gán shipper, và chỉ khi chuyển sang trạng thái SHIPPING
+            if (updateOrderDto.status === OrderStatus.SHIPPING && isAdmin) {
+                // Kiểm tra xem account có phải là shipper không
+                const isShipper = this.isShipper(account);
+                if (isShipper) {
+                    order.shipper = account;
+                } else {
+                    throw new Error('Chỉ có thể gán shipper cho đơn hàng');
+                }
             }
 
             await transactionalEntityManager.save(order);

@@ -184,7 +184,7 @@ const HomePage: React.FC = () => {
           </h3>
           <h4 className="product-price">{formatPrice(product.price)}</h4>
           <div className="product-btns">
-            <button className="add-to-cart-icon">
+            <button className="add-to-cart-icon" onClick={() => handleAddToCart(product)}>
               <FontAwesomeIcon icon={faShoppingCart} />
               <span className="tooltipp">add to cart</span>
             </button>
