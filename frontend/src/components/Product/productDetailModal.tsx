@@ -258,6 +258,28 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
             {renderDetail()}
           </div>
         </div>
+        {/* Add to Cart button */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+          <button
+            style={{
+              background: '#ff2d55',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '12px 32px',
+              fontWeight: 700,
+              fontSize: 16,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+            }}
+            onClick={() => {
+              // TODO: Replace with real addToCart logic if available
+              if (window && window.alert) window.alert('Add to cart successfully!');
+            }}
+          >
+            Add to Cart
+          </button>
+        </div>
       </div>
     </div>
   );
