@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, Lock, Eye, EyeOff } from 'lucide-react';
+import { Phone, Lock } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './ForgotPassword.module.css';
@@ -15,11 +15,10 @@ const ForgotPassword = () => {
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showOTPPopup, setShowOTPPopup] = useState(false);
   const [pendingReset, setPendingReset] = useState(null);
+  const [verifiedOTP, setVerifiedOTP] = useState(null);
+  const [showOTPPopup, setShowOTPPopup] = useState(false);
 
   const validateField = (name, value) => {
     switch (name) {
@@ -27,6 +26,7 @@ const ForgotPassword = () => {
         if (!value.trim()) return 'Phone number is required';
         const cleanPhone = value.replace(/\D/g, '');
         if (cleanPhone.length !== 10) return 'Phone number must be 10 digits';
+        if (!cleanPhone.startsWith('0')) return 'Phone number must start with 0';
         return undefined;
         
       case 'newPassword':
@@ -47,7 +47,14 @@ const ForgotPassword = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'phone') {
+      // Only allow digits and limit to 10 characters
+      const phoneValue = value.replace(/\D/g, '').slice(0, 10);
+      setFormData(prev => ({ ...prev, [name]: phoneValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
     
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
@@ -71,23 +78,18 @@ const ForgotPassword = () => {
 
       setIsSubmitting(true);
       try {
-        const response = await authService.requestPasswordReset(formData.phone.replace(/\D/g, ''));
+        // Remove leading 0 for API call (backend expects +84xxxxxxxxx format)
+        const phoneForApi = formData.phone.slice(1); // Remove leading 0
+        const response = await authService.requestPasswordReset(phoneForApi);
+        
         if (response && response.success) {
-          setPendingReset(formData.phone.replace(/\D/g, ''));
+          setPendingReset(phoneForApi);
           setShowOTPPopup(true);
           setErrors({});
-          setTimeout(() => {
-            setErrors({ general: 'Vui lòng kiểm tra tin nhắn OTP để đặt lại mật khẩu.' });
-          }, 100);
-          setStep(2);
         } else if (response && typeof response.message === 'string' && response.message.toLowerCase().includes('otp')) {
-          setPendingReset(formData.phone.replace(/\D/g, ''));
+          setPendingReset(phoneForApi);
           setShowOTPPopup(true);
           setErrors({});
-          setTimeout(() => {
-            setErrors({ general: 'Vui lòng kiểm tra tin nhắn OTP để đặt lại mật khẩu.' });
-          }, 100);
-          setStep(2);
         } else {
           throw new Error('Failed to send OTP');
         }
@@ -96,7 +98,8 @@ const ForgotPassword = () => {
       } finally {
         setIsSubmitting(false);
       }
-    } else if (step === 3) {
+    } else if (step === 2) {
+      // Validate password fields for step 2
       const newPasswordError = validateField('newPassword', formData.newPassword);
       const confirmPasswordError = validateField('confirmPassword', formData.confirmPassword);
       
@@ -108,14 +111,26 @@ const ForgotPassword = () => {
         return;
       }
 
+      if (!verifiedOTP) {
+        setErrors({ general: 'OTP verification required' });
+        return;
+      }
+
       setIsSubmitting(true);
       try {
-        const response = await authService.resetPassword({
+        const response = await authService.verifyResetOTP({
           phone: pendingReset,
+          otp: verifiedOTP,
           newPassword: formData.newPassword
         });
 
         if (response && response.success) {
+          // Store the phone number for login page
+          sessionStorage.setItem('lastResetUser', JSON.stringify({
+            phone: formData.phone,
+            timestamp: Date.now()
+          }));
+          
           alert('Password has been reset successfully!');
           navigate('/login');
         } else {
@@ -135,24 +150,11 @@ const ForgotPassword = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const response = await authService.verifyResetOTP({
-        phone: pendingReset,
-        otp: otp
-      });
-
-      if (response && response.success) {
-        setShowOTPPopup(false);
-        setStep(3);
-      } else {
-        throw new Error('Invalid OTP');
-      }
-    } catch (error) {
-      setErrors({ general: error.response?.data?.message || 'Invalid OTP. Please try again.' });
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Store the verified OTP and move to step 2
+    setVerifiedOTP(otp);
+    setShowOTPPopup(false);
+    setStep(2);
+    setErrors({});
   };
 
   const handleResendOTP = async () => {
@@ -164,11 +166,11 @@ const ForgotPassword = () => {
     try {
       const response = await authService.resendOTP({
         phone: pendingReset,
-        type: 'reset'
+        isForLogin: true
       });
 
       if (response && response.success) {
-        alert('New OTP code has been sent to your phone');
+        setErrors({ general: 'New OTP sent to your phone' });
       } else {
         throw new Error('Failed to resend OTP');
       }
@@ -183,8 +185,7 @@ const ForgotPassword = () => {
         <h1 className={styles.authTitle}>Reset Password</h1>
         <p className={styles.authSubtitle}>
           {step === 1 && "Enter your phone number to reset password"}
-          {step === 2 && "Enter the OTP code sent to your phone"}
-          {step === 3 && "Create your new password"}
+          {step === 2 && "Enter OTP code and your new password"}
         </p>
       </div>
 
@@ -204,19 +205,19 @@ const ForgotPassword = () => {
               <input
                 type="tel"
                 name="phone"
-                placeholder="Enter your phone number"
+                placeholder="Enter 10 digits"
                 value={formData.phone}
                 onChange={handleInputChange}
                 className={`${styles.input} ${errors.phone ? styles.error : ''}`}
                 autoComplete="tel"
-                maxLength={11}
+                maxLength={10}
               />
             </div>
             {errors.phone && <span className={styles.errorMessage}>{errors.phone}</span>}
           </div>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <>
             <div className={styles.formGroup}>
               <div className={styles.inputWrapper}>
@@ -224,7 +225,7 @@ const ForgotPassword = () => {
                   <Lock size={20} />
                 </div>
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type="password"
                   name="newPassword"
                   placeholder="Enter new password"
                   value={formData.newPassword}
@@ -232,14 +233,6 @@ const ForgotPassword = () => {
                   className={`${styles.input} ${errors.newPassword ? styles.error : ''}`}
                   autoComplete="new-password"
                 />
-                <button
-                  type="button"
-                  className={styles.passwordToggle}
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
               </div>
               {errors.newPassword && <span className={styles.errorMessage}>{errors.newPassword}</span>}
             </div>
@@ -250,7 +243,7 @@ const ForgotPassword = () => {
                   <Lock size={20} />
                 </div>
                 <input
-                  type={showConfirmPassword ? "text" : "password"}
+                  type="password"
                   name="confirmPassword"
                   placeholder="Confirm new password"
                   value={formData.confirmPassword}
@@ -258,14 +251,6 @@ const ForgotPassword = () => {
                   className={`${styles.input} ${errors.confirmPassword ? styles.error : ''}`}
                   autoComplete="new-password"
                 />
-                <button
-                  type="button"
-                  className={styles.passwordToggle}
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  tabIndex={-1}
-                >
-                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
               </div>
               {errors.confirmPassword && <span className={styles.errorMessage}>{errors.confirmPassword}</span>}
             </div>
@@ -278,9 +263,7 @@ const ForgotPassword = () => {
           disabled={isSubmitting}
         >
           {isSubmitting ? 'Processing...' : (
-            step === 1 ? 'Send OTP' :
-            step === 3 ? 'Reset Password' :
-            'Verify OTP'
+            step === 1 ? 'Send OTP' : 'Reset Password'
           )}
         </button>
 
@@ -297,7 +280,6 @@ const ForgotPassword = () => {
           onClose={() => {
             setShowOTPPopup(false);
             setPendingReset(null);
-            navigate('/login');
           }}
           onVerify={handleVerifyOTP}
           onResend={handleResendOTP}

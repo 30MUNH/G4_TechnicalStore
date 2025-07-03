@@ -117,7 +117,6 @@ const HomePage: React.FC = () => {
     console.log('🛒 HomePage Debug - Add to cart clicked:', {
       productId: product.id,
       productName: product.name,
-      productSlug: product.slug,
       isAuthenticated: isAuthenticated(),
       hasToken: !!localStorage.getItem('authToken'),
       hasUser: !!localStorage.getItem('user')
@@ -131,6 +130,16 @@ const HomePage: React.FC = () => {
           message: 'Please login to add items to cart'
         } 
       });
+      return;
+    }
+
+    if (!product.id) {
+      console.error('❌ HomePage Debug - Product missing ID');
+      setAddToCartStatus({
+        message: 'Invalid product data',
+        type: 'error'
+      });
+      setTimeout(() => setAddToCartStatus(null), 3000);
       return;
     }
 

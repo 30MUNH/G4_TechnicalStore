@@ -11,7 +11,7 @@ import CartPage from "./Page/CartPage.jsx";
 import AllProductsPage from "./Page/AllProductsPage";
 import ManageProduct from "./components/ManageProduct/ManageProduct";
 import { CartProvider } from "./contexts/CartContext";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Navigation from './components/Navigation';
 import Header from './components/header';
 import { Fragment, useEffect } from 'react';
@@ -21,6 +21,21 @@ import ShipperManagement from "./components/Shipper_manager/ShipperManagement.js
 
 function AuthBgWrapper({ children }: { children: ReactNode }) {
   return <div className="auth-bg-custom">{children}</div>;
+}
+
+// Protected Route Component for admin access
+function ProtectedRoute({ children, requireAdmin = false }: { children: ReactNode, requireAdmin?: boolean }) {
+  const { user, isAuthenticated } = useAuth();
+
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (requireAdmin && (!user || (user.role !== 'manager' && user.role !== 'admin'))) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
 }
 
 // Component để handle navigation events từ AuthContext
@@ -40,7 +55,7 @@ function AuthNavigationHandler() {
     };
   }, [navigate]);
 
-  return null; // Component này chỉ handle events, không render gì
+  return null;
 }
 
 // Tách logic route để dùng useLocation
@@ -66,9 +81,21 @@ function AppContent() {
         <Route path="/login" element={<AuthBgWrapper><Login /></AuthBgWrapper>} />
         <Route path="/signup" element={<AuthBgWrapper><SignUp /></AuthBgWrapper>} />
         <Route path="/forgot-password" element={<AuthBgWrapper><ForgotPassword /></AuthBgWrapper>} />
-        <Route path="/manage-product" element={<ManageProduct />} />
-        <Route path="/manage-customers" element={<CustomerList />} />
-        <Route path="/manage-shippers" element={<ShipperManagement />} />
+        <Route path="/manage-product" element={
+          <ProtectedRoute requireAdmin={true}>
+            <ManageProduct />
+          </ProtectedRoute>
+        } />
+        <Route path="/manage-customers" element={
+          <ProtectedRoute requireAdmin={true}>
+            <CustomerList />
+          </ProtectedRoute>
+        } />
+        <Route path="/manage-shippers" element={
+          <ProtectedRoute requireAdmin={true}>
+            <ShipperManagement />
+          </ProtectedRoute>
+        } />
         {/* Redirect any unknown paths to home page */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
