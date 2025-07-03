@@ -114,19 +114,43 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             throw new Error(errorMessage);
         }
 
+        // Handle nested response structure from ResponseInterceptor
+        // Actual structure: { success: true, statusCode: 200, data: { success: true, data: Cart } }
+        let cartEntity = response.data;
+        
+        // Check if response is wrapped by ResponseInterceptor
+        if (response.data && response.data.success && response.data.data) {
+            cartEntity = response.data.data; // Unwrap nested response
+            console.log(`🛒 [CART CONTEXT] Unwrapped nested response for ${operation}`);
+        }
+        
+        console.log(`🛒 [CART CONTEXT] Processing cart entity:`, {
+            hasCartItems: !!cartEntity?.cartItems,
+            cartItemsLength: cartEntity?.cartItems?.length || 0,
+            totalAmount: cartEntity?.totalAmount,
+            cartItemsData: cartEntity?.cartItems,
+            originalResponse: response,
+            unwrappedEntity: cartEntity
+        });
+        
         // Handle successful response with cart data
-        if (response.data && typeof response.data === 'object' && 'cartItems' in response.data) {
-            const cartData = response.data as { cartItems: CartItem[]; totalAmount: number };
+        if (cartEntity && typeof cartEntity === 'object' && cartEntity.cartItems !== undefined) {
             dispatch({
                 type: 'SET_CART',
                 payload: {
-                    items: cartData.cartItems,
-                    totalAmount: cartData.totalAmount || 0,
+                    items: cartEntity.cartItems || [],
+                    totalAmount: cartEntity.totalAmount || 0,
                 },
             });
         } else if (operation === 'CLEAR_CART') {
             // Clear cart doesn't return cart data
             dispatch({ type: 'CLEAR_CART' });
+        } else {
+            console.warn(`🛒 [CART CONTEXT] Unexpected response structure for ${operation}:`, {
+                response,
+                cartEntity,
+                hasCartItems: !!cartEntity?.cartItems
+            });
         }
     };
 
@@ -292,15 +316,26 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <CartContext.Provider value={contextValue}>
-            {children}
-        </CartContext.Provider>
+        <div data-provider="cart">
+            <CartContext.Provider value={contextValue}>
+                {children}
+            </CartContext.Provider>
+        </div>
     );
 };
 
 export const useCart = (): CartContextType => {
     const context = useContext(CartContext);
     if (context === undefined) {
+        console.error('🛒 [useCart] Context is undefined. Make sure component is wrapped in CartProvider');
+        console.error('🛒 [useCart] Current component tree might not have CartProvider as parent');
+        console.error('🛒 [useCart] CartContext:', CartContext);
+        console.error('🛒 [useCart] Current location:', window.location.pathname);
+        
+        // Check if we have providers in DOM
+        const providers = document.querySelectorAll('[data-provider="cart"]');
+        console.error('🛒 [useCart] Cart providers in DOM:', providers.length);
+        
         throw new Error('useCart must be used within a CartProvider');
     }
     return context;

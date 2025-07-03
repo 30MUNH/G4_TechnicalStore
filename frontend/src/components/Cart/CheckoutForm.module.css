@@ -151,35 +151,62 @@
 .shippingForm {
   background: white;
   border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 32px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 24px;
+  text-align: left;
 }
 
 .shippingForm h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 28px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.shippingForm h2::before {
+  content: "👤";
   font-size: 18px;
-  color: #333;
-  margin: 0 0 24px 0;
 }
 
 .formGroup {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .formGroup label {
   display: block;
-  margin-bottom: 8px;
-  color: #333;
-  font-size: 14px;
+  margin-bottom: 10px;
+  color: #374151;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-align: left;
 }
 
 .formGroup input,
 .formGroup select {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #333;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #1f2937;
+  background-color: #fafafa;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-align: left;
+}
+
+.formGroup input:hover,
+.formGroup select:hover {
+  border-color: #d1d5db;
   background-color: white;
 }
 
@@ -190,35 +217,56 @@
 .formGroup input:focus,
 .formGroup select:focus {
   outline: none;
-  border-color: #2f80ed;
+  border-color: #3b82f6;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
 }
 
 .formGroup select:disabled {
-  background-color: #f5f5f5;
-  color: #999;
+  background-color: #f9fafb;
+  color: #9ca3af;
   cursor: not-allowed;
+  border-color: #e5e7eb;
 }
 
-.loadingText {
+.formGroup small {
   display: block;
-  font-size: 12px;
-  color: #666;
-  margin-top: 4px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #6b7280;
   font-style: italic;
-}
-
-.errorText {
-  display: block;
-  font-size: 12px;
-  color: #e74c3c;
-  margin-top: 4px;
-  font-weight: 500;
+  text-align: left;
 }
 
 .formRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+/* Thêm style cho địa chỉ section */
+.addressSection {
+  margin-top: 32px;
+}
+
+.addressSection h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 28px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.addressSection h2::before {
+  content: "📍";
+  font-size: 18px;
 }
 
 .orderSummary {
@@ -327,24 +375,39 @@
 
   .orderItem {
     grid-template-columns: 1fr;
-    text-align: center;
+    text-align: left;
     padding: 16px;
   }
 
   .itemImage {
-    margin: 0 auto;
+    margin: 0;
   }
 
   .itemInfo {
-    align-items: center;
+    align-items: flex-start;
   }
 
   .itemTotal {
-    text-align: center;
+    text-align: left;
   }
 
   .formRow {
     grid-template-columns: 1fr;
+  }
+
+  .shippingForm {
+    padding: 20px;
+  }
+
+  .shippingForm h2,
+  .addressSection h2 {
+    font-size: 18px;
+  }
+
+  .formGroup input,
+  .formGroup select {
+    padding: 12px 14px;
+    font-size: 16px; /* Prevent zoom on iOS */
   }
 }
 

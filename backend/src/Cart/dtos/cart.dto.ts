@@ -1,23 +1,35 @@
-import { IsString, IsInt, Min, IsNumber } from 'class-validator';
+import { IsString, IsInt, Min } from 'class-validator';
 
 export class AddToCartDto {
   @IsString()
-  productSlug: string;
+  productId: string;
 
   @IsInt()
   @Min(1)
   quantity: number;
 }
 
-export class CartItemDto {
-  @IsString()
-  productSlug: string;
-
-  @IsInt()
-  @Min(1)
+export class CartItemResponseDto {
+  id: string;
   quantity: number;
+  product: {
+    id: string;
+    name: string;
+    slug: string;
+    price: number;
+    url?: string;
+    stock: number;
+    category?: string;
+    isActive: boolean;
+  };
+}
 
-  @IsNumber()
-  @Min(0)
-  price: number;
+export class CartResponseDto {
+  id: string;
+  totalAmount: number;
+  cartItems: CartItemResponseDto[];
+  account: {
+    id: string;
+    username: string;
+  };
 }

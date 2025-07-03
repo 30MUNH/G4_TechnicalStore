@@ -4,8 +4,6 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { orderService } from '../services/orderService';
 import CheckoutForm from '../components/Cart/CheckoutForm';
-import Header from '../components/header';
-import Footer from '../components/footer';
 import './CheckoutPage.css';
 
 const CheckoutPage = () => {
@@ -88,120 +86,85 @@ const CheckoutPage = () => {
     // Show loading while checking authentication
     if (!isInitialized || loading) {
         return (
-            <>
-                <Header />
-                <div style={{ 
-                    minHeight: '60vh', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center' 
-                }}>
-                    <h3>Loading checkout...</h3>
-                </div>
-                <Footer />
-            </>
+            <div style={{ 
+                minHeight: '100vh', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                backgroundColor: '#f8f9fa'
+            }}>
+                <h3>Loading checkout...</h3>
+            </div>
         );
     }
 
     // Show error state
     if (error) {
         return (
-            <>
-                <Header />
-                <div style={{ 
-                    minHeight: '60vh', 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    alignItems: 'center', 
-                    justifyContent: 'center' 
-                }}>
-                    <h3>Error loading cart</h3>
-                    <p>{error}</p>
-                    <button 
-                        onClick={() => navigate('/cart')}
-                        style={{
-                            padding: '10px 20px',
-                            backgroundColor: '#007bff',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        Go to Cart
-                    </button>
-                </div>
-                <Footer />
-            </>
+            <div style={{ 
+                minHeight: '100vh', 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center', 
+                justifyContent: 'center',
+                backgroundColor: '#f8f9fa'
+            }}>
+                <h3>Error loading cart</h3>
+                <p>{error}</p>
+                <button 
+                    onClick={() => navigate('/cart')}
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    Go to Cart
+                </button>
+            </div>
         );
     }
 
+    // Transform cart items to match CheckoutForm expected format
+    const transformedCartItems = items.map(item => ({
+        id: item.product.id,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        category: item.product.category?.name || 'Product',
+        image: item.product.url || '/img/product01.png'
+    }));
+
+    const subtotal = totalAmount;
+    const shippingFee = subtotal > 1000000 ? 0 : 30000; // Free shipping over 1M VND
+    const finalTotal = subtotal + shippingFee;
+
+    const handleBackToCart = () => {
+        navigate('/cart');
+    };
+
     return (
-        <>
-            <Header />
-            <div className="checkout-page">
-                <div className="container">
-                    <div className="row">
-                        <div className="col-md-8">
-                            <div className="checkout-form-section">
-                                <h2>Checkout Information</h2>
-                                {orderError && (
-                                    <div className="alert alert-danger">
-                                        {orderError}
-                                    </div>
-                                )}
-                                <CheckoutForm 
-                                    onSubmit={handleOrderSubmit}
-                                    loading={submitting}
-                                />
-                            </div>
-                        </div>
-                        
-                        <div className="col-md-4">
-                            <div className="order-summary">
-                                <h3>Order Summary</h3>
-                                
-                                <div className="order-items">
-                                    {items.map(item => (
-                                        <div key={item.id} className="order-item">
-                                            <div className="item-image">
-                                                <img 
-                                                    src={item.product.url || '/img/product-placeholder.png'} 
-                                                    alt={item.product.name}
-                                                    onError={(e) => {
-                                                        e.target.src = '/img/product-placeholder.png';
-                                                    }}
-                                                />
-                                            </div>
-                                            <div className="item-details">
-                                                <h4>{item.product.name}</h4>
-                                                <p>Quantity: {item.quantity}</p>
-                                                <p>Price: {formatCurrency(item.product.price)}</p>
-                                            </div>
-                                            <div className="item-total">
-                                                {formatCurrency(item.product.price * item.quantity)}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="summary-totals">
-                                    <div className="summary-row">
-                                        <span>Total Amount:</span>
-                                        <strong>{formatCurrency(totalAmount)}</strong>
-                                    </div>
-                                </div>
-
-                                <div className="checkout-note">
-                                    <p>* Final tax and shipping costs will be calculated based on your location and shipping method.</p>
-                                </div>
-                            </div>
-                        </div>
+        <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', paddingTop: '20px', paddingBottom: '20px' }}>
+            <div className="container">
+                <div className="row">
+                    <div className="col-md-12">
+                        <CheckoutForm 
+                            cartItems={transformedCartItems}
+                            subtotal={subtotal}
+                            shippingFee={shippingFee}
+                            totalAmount={finalTotal}
+                            onPlaceOrder={handleOrderSubmit}
+                            onBackToCart={handleBackToCart}
+                            isProcessing={submitting}
+                            error={orderError}
+                        />
                     </div>
                 </div>
             </div>
-            <Footer />
-        </>
+        </div>
     );
 };
 

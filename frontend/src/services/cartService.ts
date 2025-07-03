@@ -61,7 +61,7 @@ export const cartService = {
         
         try {
             const response = await api.post('/cart/add', { 
-                productSlug: productId, 
+                productId: productId, 
                 quantity 
             });
             console.log('✅ Add to cart success:', response.data);
@@ -137,7 +137,7 @@ export const cartService = {
         
         try {
             const response = await api.post('/cart/increase', {
-                productSlug: productId,
+                productId: productId,
                 amount: amount
             });
             console.log('✅ Increase quantity success:', response.data);
@@ -171,7 +171,7 @@ export const cartService = {
         
         try {
             const response = await api.post('/cart/decrease', {
-                productSlug: productId,
+                productId: productId,
                 amount: amount
             });
             console.log('✅ Decrease quantity success:', response.data);
@@ -205,7 +205,7 @@ export const cartService = {
         
         try {
             const response = await api.patch('/cart/remove', {
-                productSlug: productId
+                productId: productId
             });
             console.log('✅ Remove item success:', response.data);
             

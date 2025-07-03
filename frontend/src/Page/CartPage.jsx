@@ -5,8 +5,6 @@ import { OrderHistory } from '../components/Cart/OrderHistory';
 import { useCart } from '../contexts/CartContext';
 import { orderService } from '../services/orderService';
 import { useAuth } from '../contexts/AuthContext';
-import Header from '../components/header';
-import Footer from '../components/footer';
 
 const CartPage = () => {
     const navigate = useNavigate();
@@ -15,7 +13,17 @@ const CartPage = () => {
     const [orderLoading, setOrderLoading] = useState(false);
     const [orderError, setOrderError] = useState(null);
     const { isAuthenticated } = useAuth();
-    const { items, totalAmount, loading, error, isInitialized } = useCart();
+    const { 
+        items, 
+        totalAmount, 
+        loading, 
+        error, 
+        isInitialized,
+        increaseQuantity,
+        decreaseQuantity,
+        removeItem,
+        refreshCart
+    } = useCart();
 
     const handleViewOrderHistory = async () => {
         setShowOrderHistory(true);
@@ -37,6 +45,64 @@ const CartPage = () => {
         setShowOrderHistory(false);
         setOrderError(null);
     };
+
+    // Handlers for CartView
+    const handleUpdateQuantity = async (productId, newQuantity) => {
+        try {
+            const currentItem = items.find(item => item.product.id === productId);
+            if (!currentItem) return;
+
+            // If new quantity is 0 or less, remove item
+            if (newQuantity <= 0) {
+                await handleRemoveItem(productId);
+                return;
+            }
+
+            const difference = newQuantity - currentItem.quantity;
+            
+            if (difference > 0) {
+                await increaseQuantity(productId, difference);
+            } else if (difference < 0) {
+                await decreaseQuantity(productId, Math.abs(difference));
+            }
+        } catch (error) {
+            console.error('Failed to update quantity:', error);
+        }
+    };
+
+    const handleRemoveItem = async (productId) => {
+        try {
+            await removeItem(productId);
+        } catch (error) {
+            console.error('Failed to remove item:', error);
+        }
+    };
+
+    const handleCheckout = () => {
+        if (transformedCartItems.length === 0) {
+            alert('Giỏ hàng trống! Vui lòng thêm sản phẩm trước khi thanh toán.');
+            return;
+        }
+        navigate('/checkout');
+    };
+
+    const handleContinueShopping = () => {
+        navigate('/');
+    };
+
+    // Transform cart items to match CartView expected format
+    const transformedCartItems = items.map(item => ({
+        id: item.product.id, // Use product ID for cart operations
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        category: item.product.category?.name || 'Product', // Extract name from category object
+        image: item.product.url || '/img/product01.png'
+    }));
+
+    const subtotal = totalAmount;
+    const shippingFee = subtotal > 1000000 ? 0 : 30000; // Free shipping over 1M VND
+    const finalTotal = subtotal + shippingFee;
 
     // Add cart-page-active class to body to remove main-content padding
     useEffect(() => {
@@ -61,51 +127,43 @@ const CartPage = () => {
     // Show loading while checking authentication
     if (!isInitialized || loading) {
         return (
-            <>
-                <Header />
-                <div style={{ 
-                    minHeight: '60vh', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center' 
-                }}>
-                    <h3>Loading cart...</h3>
-                </div>
-                <Footer />
-            </>
+            <div style={{ 
+                minHeight: '60vh', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center' 
+            }}>
+                <h3>Loading cart...</h3>
+            </div>
         );
     }
 
     // Show error state
     if (error) {
         return (
-            <>
-                <Header />
-                <div style={{ 
-                    minHeight: '60vh', 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    alignItems: 'center', 
-                    justifyContent: 'center' 
-                }}>
-                    <h3>Error loading cart</h3>
-                    <p>{error}</p>
-                    <button 
-                        onClick={() => window.location.reload()}
-                        style={{
-                            padding: '10px 20px',
-                            backgroundColor: '#007bff',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        Retry
-                    </button>
-                </div>
-                <Footer />
-            </>
+            <div style={{ 
+                minHeight: '60vh', 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center', 
+                justifyContent: 'center' 
+            }}>
+                <h3>Error loading cart</h3>
+                <p>{error}</p>
+                <button 
+                    onClick={() => window.location.reload()}
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    Retry
+                </button>
+            </div>
         );
     }
 
@@ -176,19 +234,25 @@ const CartPage = () => {
     }
 
     return (
-        <>
-            <Header />
-            <div style={{ minHeight: '80vh', paddingTop: '20px', paddingBottom: '20px' }}>
-                <div className="container">
-                    <div className="row">
-                        <div className="col-md-12">
-                            <CartView />
-                        </div>
+        <div style={{ minHeight: '80vh', paddingTop: '20px', paddingBottom: '20px' }}>
+            <div className="container">
+                <div className="row">
+                    <div className="col-md-12">
+                        <CartView 
+                            cartItems={transformedCartItems}
+                            onUpdateQuantity={handleUpdateQuantity}
+                            onRemoveItem={handleRemoveItem}
+                            onCheckout={handleCheckout}
+                            onViewOrderHistory={handleViewOrderHistory}
+                            onContinueShopping={handleContinueShopping}
+                            subtotal={subtotal}
+                            shippingFee={shippingFee}
+                            totalAmount={finalTotal}
+                        />
                     </div>
                 </div>
             </div>
-            <Footer />
-        </>
+        </div>
     );
 };
 
