@@ -5,6 +5,11 @@ import { CreateCustomerDto, UpdateCustomerDto } from "./dtos/customer.dtos";
 import { EntityNotFoundException, BadRequestException } from "@/exceptions/http-exceptions";
 import * as bcrypt from 'bcrypt';
 import { getManager } from 'typeorm';
+import { Cart } from "@/Cart/cart.entity";
+import { Feedback } from "@/feedback/feedback.entity";
+import { SMSNotification } from "@/notification/smsNotification.entity";
+import { Marketing } from "@/marketing/marketing.entity";
+import { RefreshToken } from "@/auth/jwt/refreshToken.entity";
 
 const SALT_ROUNDS = 8;
 
@@ -174,6 +179,48 @@ export class CustomerService {
     try {
       return getManager().transaction(async transactionalEntityManager => {
         const account = await this.getCustomerById(id);
+
+        // Xóa mềm cart liên kết (nếu có)
+        const cart = await transactionalEntityManager.findOne(Cart, { 
+          where: { account: { id: account.id } } 
+        });
+        if (cart) {
+          await transactionalEntityManager.softRemove(cart);
+        }
+
+        // Xóa mềm feedback liên kết
+        const feedbacks = await transactionalEntityManager.find(Feedback, { 
+          where: { account: { id: account.id } } 
+        });
+        if (feedbacks.length > 0) {
+          await transactionalEntityManager.softRemove(feedbacks);
+        }
+
+        // Xóa mềm SMS notifications liên kết
+        const smsNotifications = await transactionalEntityManager.find(SMSNotification, { 
+          where: { account: { id: account.id } } 
+        });
+        if (smsNotifications.length > 0) {
+          await transactionalEntityManager.softRemove(smsNotifications);
+        }
+
+        // Xóa mềm marketing campaigns liên kết
+        const marketingCampaigns = await transactionalEntityManager.find(Marketing, { 
+          where: { account: { id: account.id } } 
+        });
+        if (marketingCampaigns.length > 0) {
+          await transactionalEntityManager.softRemove(marketingCampaigns);
+        }
+
+        // Xóa mềm refresh tokens liên kết
+        const refreshTokens = await transactionalEntityManager.find(RefreshToken, { 
+          where: { account: { id: account.id } } 
+        });
+        if (refreshTokens.length > 0) {
+          await transactionalEntityManager.softRemove(refreshTokens);
+        }
+
+        // Cuối cùng xóa mềm account
         await transactionalEntityManager.softRemove(account);
       });
     } catch (error) {

@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsEnum, IsOptional, ValidateIf, IsNotEmpty, Length } from 'class-validator';
 
 export enum OrderStatus {
     PENDING = 'Đang chờ',
@@ -12,7 +12,9 @@ export class UpdateOrderDto {
     @IsEnum(OrderStatus)
     status: OrderStatus;
 
+    @ValidateIf(o => o.status === OrderStatus.CANCELLED)
     @IsString()
-    @IsOptional()
+    @IsNotEmpty()
+    @Length(10, 500, { message: 'Lý do hủy đơn hàng phải có độ dài từ 10 đến 500 ký tự' })
     cancelReason?: string;
 } 
