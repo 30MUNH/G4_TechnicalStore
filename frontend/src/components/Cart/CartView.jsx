@@ -1,225 +1,117 @@
 import React from 'react';
-import { FaHistory, FaShoppingBag, FaShoppingCart, FaTrash } from 'react-icons/fa';
+import { useCart } from '../../contexts/CartContext';
+import { useNavigate } from 'react-router-dom';
+import CartItem from './CartItem';
 import styles from './CartView.module.css';
 
-const CartView = ({ 
-    cartItems, 
-    onUpdateQuantity, 
-    onRemoveItem, 
-    onCheckout, 
-    onViewOrderHistory, 
-    onContinueShopping,
-    subtotal, 
-    shippingFee, 
-    totalAmount 
-}) => {
-    console.log('🛒 CartView Debug - Component rendered with props:', {
-        cartItemsCount: cartItems?.length,
-        cartItems: cartItems,
-        subtotal,
-        shippingFee,
-        totalAmount,
-        onUpdateQuantity: typeof onUpdateQuantity,
-        onRemoveItem: typeof onRemoveItem,
-        onCheckout: typeof onCheckout,
-        onViewOrderHistory: typeof onViewOrderHistory,
-        onContinueShopping: typeof onContinueShopping
-    });
-
-    const formatCurrency = (amount) => {
-        console.log('💰 CartView Debug - Formatting currency:', { amount, type: typeof amount });
-        try {
-            const formatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
-                .format(amount)
-                .replace('₫', 'đ');
-            console.log('💰 CartView Debug - Currency formatted:', { original: amount, formatted });
-            return formatted;
-        } catch (error) {
-            console.error('❌ CartView Debug - Currency formatting error:', error, { amount });
-            return `${amount} đ`;
-        }
-    };
-
-    const handleUpdateQuantity = (itemId, newQuantity) => {
-        console.log('🔄 CartView Debug - Update quantity called:', {
-            itemId,
-            newQuantity,
-            type: typeof newQuantity
-        });
-        if (typeof onUpdateQuantity === 'function') {
-            onUpdateQuantity(itemId, newQuantity);
-        } else {
-            console.error('❌ CartView Debug - onUpdateQuantity is not a function:', typeof onUpdateQuantity);
-        }
-    };
-
-    const handleRemoveItem = (itemId) => {
-        console.log('🗑️ CartView Debug - Remove item called:', { itemId });
-        if (typeof onRemoveItem === 'function') {
-            onRemoveItem(itemId);
-        } else {
-            console.error('❌ CartView Debug - onRemoveItem is not a function:', typeof onRemoveItem);
-        }
-    };
+const CartView = () => {
+    const { items, totalAmount, loading, error, clearCart } = useCart();
+    const navigate = useNavigate();
 
     const handleCheckout = () => {
-        console.log('💳 CartView Debug - Checkout called:', {
-            cartItemsCount: cartItems?.length,
-            totalAmount,
-            hasCheckoutFunction: typeof onCheckout === 'function'
-        });
-        if (typeof onCheckout === 'function') {
-            onCheckout();
-        } else {
-            console.error('❌ CartView Debug - onCheckout is not a function:', typeof onCheckout);
+        navigate('/checkout');
+    };
+
+    const handleClearCart = async () => {
+        try {
+            await clearCart();
+        } catch (error) {
+            console.error('Failed to clear cart:', error);
         }
     };
 
-    const handleViewOrderHistory = () => {
-        console.log('📋 CartView Debug - View order history called');
-        if (typeof onViewOrderHistory === 'function') {
-            onViewOrderHistory();
-        } else {
-            console.error('❌ CartView Debug - onViewOrderHistory is not a function:', typeof onViewOrderHistory);
-        }
-    };
-
-    const handleContinueShopping = () => {
-        console.log('🛍️ CartView Debug - Continue shopping called');
-        if (typeof onContinueShopping === 'function') {
-            onContinueShopping();
-        } else {
-            console.error('❌ CartView Debug - onContinueShopping is not a function:', typeof onContinueShopping);
-        }
-    };
-
-    // Validate cart data
-    if (!Array.isArray(cartItems)) {
-        console.error('❌ CartView Debug - cartItems is not an array:', cartItems);
-        return <div>Error: Invalid cart data</div>;
+    if (loading) {
+        return (
+            <div className={styles.cartView}>
+                <div className={styles.loading}>
+                    <p>Loading cart...</p>
+                </div>
+            </div>
+        );
     }
 
-    // Validate numeric values
-    if (typeof subtotal !== 'number') {
-        console.warn('⚠️ CartView Debug - Invalid subtotal type:', typeof subtotal, subtotal);
+    if (error) {
+        return (
+            <div className={styles.cartView}>
+                <div className={styles.error}>
+                    <p>Error: {error}</p>
+                </div>
+            </div>
+        );
     }
-    if (typeof shippingFee !== 'number') {
-        console.warn('⚠️ CartView Debug - Invalid shippingFee type:', typeof shippingFee, shippingFee);
-    }
-    if (typeof totalAmount !== 'number') {
-        console.warn('⚠️ CartView Debug - Invalid totalAmount type:', typeof totalAmount, totalAmount);
+
+    if (!items || items.length === 0) {
+        return (
+            <div className={styles.cartView}>
+                <div className={styles.emptyCart}>
+                    <h2>Your cart is empty</h2>
+                    <p>Add some products to get started</p>
+                    <button 
+                        className={styles.continueShopping}
+                        onClick={() => navigate('/products')}
+                    >
+                        Continue Shopping
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     return (
         <div className={styles.cartView}>
             <div className={styles.cartHeader}>
-                <h1>
-                    Giỏ hàng
-                    <span className={styles.itemCount}>({cartItems.length} sản phẩm trong giỏ)</span>
-                </h1>
-                <button onClick={handleViewOrderHistory} className={styles.historyButton}>
-                    <FaHistory />
-                    Lịch sử đơn hàng
+                <h2>Shopping Cart ({items.length} items)</h2>
+                <button 
+                    className={styles.clearCartBtn}
+                    onClick={handleClearCart}
+                    disabled={loading}
+                >
+                    Clear Cart
                 </button>
             </div>
 
-            {cartItems.length === 0 ? (
-                <div className={styles.emptyCart}>
-                    <FaShoppingCart className={styles.emptyCartIcon} />
-                    <h2>Giỏ hàng của bạn đang trống</h2>
-                    <p>Hãy thêm sản phẩm vào giỏ hàng và quay lại để tiến hành thanh toán</p>
-                    <button onClick={handleContinueShopping} className={styles.continueShoppingButton}>
-                        <FaShoppingBag />
-                        Tiếp tục mua sắm
-                    </button>
+            <div className={styles.cartContent}>
+                <div className={styles.cartItems}>
+                    {items.map((item) => (
+                        <CartItem 
+                            key={item.id} 
+                            item={item}
+                        />
+                    ))}
                 </div>
-            ) : (
-                <div className={styles.cartContent}>
-                    <div className={styles.cartItems}>
-                        {cartItems.map(item => {
-                            console.log('🛒 CartView Debug - Rendering cart item:', item);
-                            return (
-                                <div key={item.id} className={styles.cartItem}>
-                                    <img src={item.image} alt={item.name} className={styles.itemImage} />
-                                    <div className={styles.itemDetails}>
-                                        <h3>{item.name}</h3>
-                                        <p className={styles.itemCategory}>{item.category}</p>
-                                        <p className={styles.itemPrice}>{formatCurrency(item.price)}</p>
-                                        <div className={styles.quantityControls}>
-                                            <button 
-                                                onClick={() => handleUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
-                                                className={styles.quantityButton}
-                                                aria-label="Giảm số lượng"
-                                            >
-                                                -
-                                            </button>
-                                            <span className={styles.quantity}>{item.quantity}</span>
-                                            <button 
-                                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                                                className={styles.quantityButton}
-                                                aria-label="Tăng số lượng"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className={styles.itemActions}>
-                                        <div className={styles.itemTotal}>
-                                            <span>Thành tiền:</span>
-                                            <span className={styles.totalValue}>
-                                                {formatCurrency(item.price * item.quantity)}
-                                            </span>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleRemoveItem(item.id)}
-                                            className={styles.removeButton}
-                                            aria-label="Xóa sản phẩm"
-                                        >
-                                            <FaTrash />
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
+
+                <div className={styles.cartSummary}>
+                    <h3>Order Summary</h3>
+                    
+                    <div className={styles.summaryRow}>
+                        <span>Total Amount:</span>
+                        <span className={styles.totalAmount}>
+                            {totalAmount.toLocaleString('vi-VN')} ₫
+                        </span>
                     </div>
-                    <div className={styles.cartSummary}>
-                        <h2>Tóm tắt đơn hàng</h2>
-                        <div className={styles.summaryDetails}>
-                            <div className={styles.summaryRow}>
-                                <span>Tạm tính ({cartItems.length} sản phẩm)</span>
-                                <span>{formatCurrency(subtotal)}</span>
-                            </div>
-                            <div className={styles.summaryRow}>
-                                <span>Phí vận chuyển</span>
-                                <span>{shippingFee === 0 ? 'Miễn phí' : formatCurrency(shippingFee)}</span>
-                            </div>
-                            <div className={`${styles.summaryRow} ${styles.total}`}>
-                                <span>Tổng cộng</span>
-                                <span>{formatCurrency(totalAmount)}</span>
-                            </div>
-                        </div>
+
+                    <div className={styles.note}>
+                        <p>* Tax and shipping will be calculated at checkout</p>
+                    </div>
+
+                    <div className={styles.cartActions}>
                         <button 
-                            onClick={handleCheckout}
-                            className={styles.checkoutButton}
-                            disabled={cartItems.length === 0}
-                        >
-                            Thanh toán
-                        </button>
-                        <button 
-                            onClick={handleContinueShopping} 
                             className={styles.continueShoppingBtn}
+                            onClick={() => navigate('/products')}
                         >
-                            <FaShoppingBag />
-                            Tiếp tục mua sắm
+                            Continue Shopping
                         </button>
-                        {totalAmount > 1000000 && shippingFee === 0 && (
-                            <p className={styles.shippingPromo}>
-                                Miễn phí vận chuyển cho đơn hàng trên 1.000.000đ
-                            </p>
-                        )}
+                        
+                        <button 
+                            className={styles.checkoutBtn}
+                            onClick={handleCheckout}
+                            disabled={loading}
+                        >
+                            Proceed to Checkout
+                        </button>
                     </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 };

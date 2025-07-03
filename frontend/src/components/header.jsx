@@ -10,7 +10,7 @@ import { productService } from '../services/productService';
 
 const Header = () => {
   const { isAuthenticated, user } = useAuth();
-  const { cartItems, getCartTotal } = useCart();
+  const { items, totalAmount } = useCart();
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = React.useState("");
   const [isSearching, setIsSearching] = React.useState(false);
@@ -21,7 +21,7 @@ const Header = () => {
       .replace('₫', 'đ');
   };
 
-  const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const totalItems = items ? items.reduce((total, item) => total + item.quantity, 0) : 0;
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -140,10 +140,10 @@ const Header = () => {
                       <div className="qty">{totalItems}</div>
                     </Link>
                     
-                    {isAuthenticated() && cartItems.length > 0 && (
+                    {isAuthenticated() && items && items.length > 0 && (
                       <div className="cart-dropdown">
                         <div className="cart-list">
-                          {cartItems.slice(0, 3).map(item => (
+                          {items.slice(0, 3).map(item => (
                             <div key={item.id} className="product-widget">
                               <div className="product-img">
                                 <img src="/img/product01.png" alt={item.product.name} />
@@ -165,7 +165,7 @@ const Header = () => {
                         </div>
                         <div className="cart-summary">
                           <small>{totalItems} Item(s) selected</small>
-                          <h5>SUBTOTAL: {formatCurrency(getCartTotal())}</h5>
+                          <h5>SUBTOTAL: {formatCurrency(totalAmount)}</h5>
                         </div>
                         <div className="cart-btns">
                           <Link to="/cart">View Cart</Link>
