@@ -10,10 +10,12 @@ import styles from './ContactUs.module.css';
 import Fade from 'react-reveal/Fade';
 import Bounce from 'react-reveal/Bounce';
 import Zoom from 'react-reveal/Zoom';
+import { useNavigate } from 'react-router-dom';
 
 const ContactUs = () => {
     const form = useRef();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const navigate = useNavigate();
 
     const sendEmail = (e) => {
         e.preventDefault();
@@ -36,7 +38,7 @@ const ContactUs = () => {
 
     return (
         <div className={styles.contactus}>
-            <div className={styles.header}>
+            <div className={styles.header} style={{cursor:'pointer'}} onClick={() => navigate('/') }>
                 <Bounce top cascade>
                     <h1>LIÊN HỆ VỚI CHÚNG TÔI</h1>
                 </Bounce>

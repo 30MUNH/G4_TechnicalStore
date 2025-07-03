@@ -3,7 +3,7 @@ import { productService } from '../services/productService';
 import type { Product } from '../types/product';
 import './AllProductsPage.css';
 import { useLocation, useNavigate } from 'react-router-dom';
-import ProductDetailModal from '../components/product_manager/productDetailModal';
+import ProductDetailModal from '../components/Product/productDetailModal';
 
 const CATEGORY_FILTERS = [
   { key: 'laptop', label: 'Laptop' },
