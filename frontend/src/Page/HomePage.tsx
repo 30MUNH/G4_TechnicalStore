@@ -10,7 +10,7 @@ import type { Product } from '../types/product';
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import ProductDetailModal from '../components/product_manager/productDetailModal';
+import ProductDetailModal from '../components/Product/productDetailModal';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -184,9 +184,9 @@ const HomePage: React.FC = () => {
           </h3>
           <h4 className="product-price">{formatPrice(product.price)}</h4>
           <div className="product-btns">
-            <button className="add-to-wishlist">
-              <FontAwesomeIcon icon={faHeartRegular2} />
-              <span className="tooltipp">add to wishlist</span>
+            <button className="add-to-cart-icon">
+              <FontAwesomeIcon icon={faShoppingCart} />
+              <span className="tooltipp">add to cart</span>
             </button>
             <button className="quick-view" onClick={async () => await handleOpenQuickView(product)}>
               <FontAwesomeIcon icon={faEye} />
@@ -195,18 +195,6 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
-      {/* Nút Add to Cart chỉ hiện khi hover */}
-      {hoveredProductId === product.id && (
-        <div style={{ background: '#18191f', padding: '24px 0', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px', textAlign: 'center', margin: '0 -1px', marginTop: 'auto', transition: 'opacity 0.2s' }}>
-          <button 
-            className="add-to-cart-btn" 
-            style={{ background: '#D10024', color: '#fff', borderRadius: '24px', padding: '12px 36px', fontWeight: 700, fontSize: '18px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', letterSpacing: 1 }}
-            onClick={() => handleAddToCart(product)}
-          >
-            <FontAwesomeIcon icon={faShoppingCart} /> ADD TO CART
-          </button>
-        </div>
-      )}
     </div>
   );
 

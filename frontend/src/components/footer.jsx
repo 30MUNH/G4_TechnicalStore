@@ -1,11 +1,21 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPhone, faMapMarker } from '@fortawesome/free-solid-svg-icons';
 import { faEnvelope as faEnvelopeRegular } from '@fortawesome/free-regular-svg-icons';
 import '../Page/HomePage.css';
 
 const Footer = () => {
+  const navigate = useNavigate();
+
+  const handleFooterNav = (type) => {
+    if (type === 'all-products') {
+      navigate('/all-products', { state: { clearFilter: true } });
+    } else if (type === 'laptop' || type === 'pc' || type === 'accessories') {
+      navigate('/all-products', { state: { filter: type } });
+    }
+  };
+
   return (
     <footer id="footer">
       <div className="section">
@@ -27,10 +37,10 @@ const Footer = () => {
               <div className="footer">
                 <h3 className="footer-title">Categories</h3>
                 <ul className="footer-links">
-                  <li><a href="#">All Products</a></li>
-                  <li><a href="#">Laptop</a></li>
-                  <li><a href="#">PC</a></li>
-                  <li><a href="#">Accessories</a></li>
+                  <li><button className="footer-link-btn" style={{background:'none',border:'none',cursor:'pointer',padding:0}} onClick={() => handleFooterNav('all-products')}>All Products</button></li>
+                  <li><button className="footer-link-btn" style={{background:'none',border:'none',cursor:'pointer',padding:0}} onClick={() => handleFooterNav('laptop')}>Laptop</button></li>
+                  <li><button className="footer-link-btn" style={{background:'none',border:'none',cursor:'pointer',padding:0}} onClick={() => handleFooterNav('pc')}>PC</button></li>
+                  <li><button className="footer-link-btn" style={{background:'none',border:'none',cursor:'pointer',padding:0}} onClick={() => handleFooterNav('accessories')}>Accessories</button></li>
                 </ul>
               </div>
             </div>

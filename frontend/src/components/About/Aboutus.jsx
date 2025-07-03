@@ -5,6 +5,7 @@ import { BsPeople, BsBox, BsStar, BsEmojiSmile } from 'react-icons/bs';
 import { Carousel } from 'react-bootstrap';
 import styles from './Aboutus.module.css';
 import Footer from '../footer';
+import { useNavigate } from 'react-router-dom';
 
 function Aboutus() {
     const scrollToMission = (e) => {
@@ -12,6 +13,7 @@ function Aboutus() {
         const missionElement = document.getElementById("mission");
         missionElement.scrollIntoView({ behavior: "smooth" });
     };
+    const navigate = useNavigate();
 
     const stats = [
         { number: "2M+", label: "Happy Customers", icon: BsPeople },
@@ -209,7 +211,7 @@ function Aboutus() {
                     <div className={styles.ctaSection}>
                         <h2 className={styles.ctaTitle}>Ready to Build Your Dream Setup?</h2>
                         <p className={styles.ctaText}>Join millions of satisfied customers and start building today</p>
-                        <button className={styles.ctaButton}>Start Shopping</button>
+                        <button className={styles.ctaButton} onClick={() => navigate('/')}>Start Shopping</button>
                     </div>
                 </div>
             </section>
