@@ -35,8 +35,24 @@ export class OrderService {
     }
 
     async createOrder(username: string, createOrderDto: CreateOrderDto): Promise<Order> {
+        console.log(`🛒 [ORDER] Creating order for user: ${username}`);
+        console.log(`📦 [ORDER] Order data:`, createOrderDto);
+        
         const cart = await this.cartService.viewCart(username);
+        console.log(`🛒 [ORDER] Cart found:`, {
+            id: cart.id,
+            itemCount: cart.cartItems?.length || 0,
+            totalAmount: cart.totalAmount,
+            items: cart.cartItems?.map(item => ({
+                productId: item.product.id,
+                productName: item.product.name,
+                quantity: item.quantity,
+                price: item.product.price
+            }))
+        });
+        
         if (!cart.cartItems || cart.cartItems.length === 0) {
+            console.log(`❌ [ORDER] Cart is empty for user: ${username}`);
             throw new Error('Giỏ hàng trống');
         }
 
@@ -75,6 +91,7 @@ export class OrderService {
                 }
             }
 
+            console.log(`📋 [ORDER] Creating order entity...`);
             const order = new Order();
             order.customer = cart.account;
             order.orderDate = new Date();
@@ -82,10 +99,28 @@ export class OrderService {
             order.totalAmount = cart.totalAmount;
             order.shippingAddress = createOrderDto.shippingAddress || '';
             order.note = createOrderDto.note || '';
+            
+            console.log(`💾 [ORDER] Saving order:`, {
+                customerId: order.customer.id,
+                customerUsername: order.customer.username,
+                totalAmount: order.totalAmount,
+                shippingAddress: order.shippingAddress,
+                note: order.note
+            });
+            
             await transactionalEntityManager.save(order);
+            console.log(`✅ [ORDER] Order saved with ID: ${order.id}`);
 
+            console.log(`📝 [ORDER] Creating order details for ${cart.cartItems.length} items...`);
             for (const cartItem of cart.cartItems) {
                 const product = products.find(p => p.id === cartItem.product.id)!;
+
+                console.log(`📄 [ORDER] Creating order detail:`, {
+                    productId: product.id,
+                    productName: product.name,
+                    quantity: cartItem.quantity,
+                    price: product.price
+                });
 
                 const orderDetail = new OrderDetail();
                 orderDetail.order = order;
@@ -93,14 +128,27 @@ export class OrderService {
                 orderDetail.quantity = cartItem.quantity;
                 orderDetail.price = product.price;
                 await transactionalEntityManager.save(orderDetail);
+                console.log(`✅ [ORDER] Order detail saved for ${product.name}`);
 
+                console.log(`📦 Reducing stock for ${product.name}: ${product.stock} -> ${product.stock - cartItem.quantity}`);
                 product.stock -= cartItem.quantity;
                 await transactionalEntityManager.save(product);
+                console.log(`✅ Stock updated for ${product.name}: ${product.stock}`);
             }
 
+            console.log(`🧹 Clearing cart for user: ${username}`);
             await this.cartService.clearCart(username);
+            console.log(`✅ Cart cleared successfully`);
 
-            return this.getOrderById(order.id);
+            console.log(`🔍 [ORDER] Fetching final order data...`);
+            const finalOrder = await this.getOrderById(order.id);
+            console.log(`🎉 [ORDER] Order creation completed:`, {
+                orderId: finalOrder.id,
+                orderDetailsCount: finalOrder.orderDetails?.length || 0,
+                totalAmount: finalOrder.totalAmount
+            });
+            
+            return finalOrder;
         });
     }
 

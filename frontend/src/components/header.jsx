@@ -97,12 +97,6 @@ const Header = () => {
                   >
                     <span style={{ cursor: 'pointer' }}>
                       <FontAwesomeIcon icon={faUserRegular} /> Welcome, {user?.username || 'User'}
-                      {/* Debug info */}
-                      {process.env.NODE_ENV === 'development' && (
-                        <small style={{ fontSize: '10px', color: '#999', display: 'block' }}>
-                          Debug: {JSON.stringify({ username: user?.username, hasUser: !!user })}
-                        </small>
-                      )}
                     </span>
                     {userDropdownOpen && (
                       <div
