@@ -1,4 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../contexts/AuthContext';
 import type { Product } from '../../types/product';
 
 interface ProductDetailModalProps {
@@ -51,6 +54,11 @@ const formatDate = (dateStr?: string | null) => {
 };
 
 const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose, product }) => {
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const [addToCartStatus, setAddToCartStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+
   useEffect(() => {
     if (!isOpen) return;
     const handleEsc = (e: KeyboardEvent) => {
@@ -236,9 +244,65 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
     </>;
   };
 
+  const handleAddToCart = async () => {
+    if (!isAuthenticated()) {
+      navigate('/login', { 
+        state: { 
+          returnUrl: window.location.pathname,
+          message: 'Please login to add items to cart'
+        } 
+      });
+      return;
+    }
+
+    if (!product.id) {
+      setAddToCartStatus({
+        message: 'Invalid product data',
+        type: 'error'
+      });
+      setTimeout(() => setAddToCartStatus(null), 3000);
+      return;
+    }
+
+    try {
+      await addToCart(product.id, 1);
+      setAddToCartStatus({
+        message: 'Product added to cart successfully!',
+        type: 'success'
+      });
+      setTimeout(() => setAddToCartStatus(null), 3000);
+    } catch (error) {
+      console.error('Add to cart failed:', error);
+      setAddToCartStatus({
+        message: 'Failed to add product to cart',
+        type: 'error'
+      });
+      setTimeout(() => setAddToCartStatus(null), 3000);
+    }
+  };
+
   return (
     <div style={overlayStyle} onClick={onClose}>
       <div style={{ ...modalStyle, position: 'relative' }} onClick={e => e.stopPropagation()}>
+        {addToCartStatus && (
+          <div 
+            style={{
+              position: 'absolute',
+              top: '10px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              padding: '10px 20px',
+              borderRadius: '5px',
+              backgroundColor: addToCartStatus.type === 'success' ? '#4CAF50' : '#f44336',
+              color: 'white',
+              zIndex: 1001,
+              fontSize: '14px',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+            }}
+          >
+            {addToCartStatus.message}
+          </div>
+        )}
         <button style={closeBtnStyle} onClick={onClose} title="Đóng">×</button>
         <div style={{ display: 'flex', flexDirection: 'row', gap: 32, alignItems: 'flex-start' }}>
           <img 
@@ -257,6 +321,25 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
             <div style={{ marginBottom: 8 }}><b>Danh mục:</b> {product.category?.name || 'Không có danh mục'}</div>
             {renderDetail()}
           </div>
+        </div>
+        {/* Add to Cart button */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+          <button
+            style={{
+              background: '#ff2d55',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '12px 32px',
+              fontWeight: 700,
+              fontSize: 16,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+            }}
+            onClick={handleAddToCart}
+          >
+            Add to Cart
+          </button>
         </div>
       </div>
     </div>

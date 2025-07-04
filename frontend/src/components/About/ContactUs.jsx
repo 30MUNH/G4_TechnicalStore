@@ -10,13 +10,25 @@ import styles from './ContactUs.module.css';
 import Fade from 'react-reveal/Fade';
 import Bounce from 'react-reveal/Bounce';
 import Zoom from 'react-reveal/Zoom';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ContactUs = () => {
     const form = useRef();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const navigate = useNavigate();
+    const { user, isAuthenticated } = useAuth();
 
     const sendEmail = (e) => {
         e.preventDefault();
+        
+        // Check if user is authenticated
+        if (!isAuthenticated()) {
+            alert('Vui lòng đăng nhập để gửi yêu cầu tư vấn!');
+            navigate('/login');
+            return;
+        }
+
         setIsSubmitting(true);
         emailjs.sendForm(
             'service_rqshknr',
@@ -36,7 +48,7 @@ const ContactUs = () => {
 
     return (
         <div className={styles.contactus}>
-            <div className={styles.header}>
+            <div className={styles.header} style={{cursor:'pointer'}} onClick={() => navigate('/') }>
                 <Bounce top cascade>
                     <h1>LIÊN HỆ VỚI CHÚNG TÔI</h1>
                 </Bounce>
@@ -129,10 +141,30 @@ const ContactUs = () => {
                         </div>
                     </div>
 
+                    {!isAuthenticated() && (
+                        <div className={styles.authNotice}>
+                            <FontAwesomeIcon icon={faLock} />
+                            <p>Vui lòng <button type="button" onClick={() => navigate('/login')} className={styles.loginLink}>đăng nhập</button> để gửi yêu cầu tư vấn</p>
+                        </div>
+                    )}
+                    
+                    {isAuthenticated() && user && (
+                        <div className={styles.authSuccess}>
+                            <FontAwesomeIcon icon={faCheckCircle} />
+                            <p>Xin chào <strong>{user.username}</strong>! Bạn có thể gửi yêu cầu tư vấn.</p>
+                        </div>
+                    )}
+
                     <form ref={form} onSubmit={sendEmail}>
                         <div className={styles.formRow}>
                             <div className={styles.inputWrapper}>
-                                <input type="text" name="user_name" placeholder="Họ và tên *" required />
+                                <input 
+                                    type="text" 
+                                    name="user_name" 
+                                    placeholder="Họ và tên *" 
+                                    defaultValue={isAuthenticated() && user ? user.username : ''}
+                                    required 
+                                />
                             </div>
                             <div className={styles.inputWrapper}>
                                 <input type="email" name="user_email" placeholder="Email *" required />

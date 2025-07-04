@@ -1,8 +1,7 @@
-// SignUp Debug Utility
-// This file provides debugging tools for the signup process
+
 
 export const signupDebugUtils = {
-    // Enable/disable debug logging
+
     enableDebug: () => {
         localStorage.setItem('signupDebugEnabled', 'true');
         console.log('🛠️ Signup debug logging enabled');

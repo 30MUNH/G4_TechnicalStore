@@ -396,23 +396,17 @@ export class ProductService {
     if (!keyword || keyword.trim() === "") {
       throw new BadRequestException('Search keyword is required');
     }
+    const lowerKeyword = `%${keyword.toLowerCase()}%`;
 
-    return await Product.find({
-      where: [
-        { 
-          name: Like(`%${keyword}%`), 
-          isActive: true,
-          stock: MoreThan(0)
-        },
-        { 
-          description: Like(`%${keyword}%`), 
-          isActive: true,
-          stock: MoreThan(0)
-        }
-      ],
-      relations: ["category"],
-      order: { createdAt: "DESC" }
-    });
+    return await Product.createQueryBuilder("product")
+      .leftJoinAndSelect("product.category", "category")
+      .andWhere("product.stock > :stock", { stock: 0 })
+      .andWhere(
+        "(LOWER(product.name) LIKE :keyword OR LOWER(product.description) LIKE :keyword OR LOWER(category.name) LIKE :keyword)",
+        { keyword: lowerKeyword }
+      )
+      .orderBy("product.createdAt", "DESC")
+      .getMany();
   }
 
   // Thêm method để lấy sản phẩm theo loại category (main category)

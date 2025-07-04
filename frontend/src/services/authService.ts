@@ -67,19 +67,19 @@ const formatPhoneNumber = (phone: string): string => {
     // Remove all non-digits
     let phoneNumber = phone.replace(/\D/g, '');
     
-    // Remove leading 0 or 84 or +84
+    // Remove leading 0 or 84 if present (for backward compatibility)
     if (phoneNumber.startsWith('0')) {
         phoneNumber = phoneNumber.substring(1);
     } else if (phoneNumber.startsWith('84')) {
         phoneNumber = phoneNumber.substring(2);
     }
     
-    // Validate length after removing prefix
+    // Validate length - should be exactly 9 digits
     if (phoneNumber.length !== 9) {
-        throw new Error('Invalid phone number format. Must be 10 digits with leading 0 or 9 digits without leading 0');
+        throw new Error('Invalid phone number format. Must be exactly 9 digits');
     }
     
-    // Always return with +84 prefix
+    
     return '+84' + phoneNumber;
 };
 
@@ -134,22 +134,6 @@ function isErrorWithMessage(error: unknown): error is { message: string } {
     );
 }
 
-
-
-// ================================
-// AUTH SERVICE
-// ================================
-/**
- * HƯỚNG DẪN SỬ DỤNG SỐ ĐIỆN THOẠI:
- * 
- * - ĐĂNG KÝ: Nhập 10 số (bao gồm số 0 đầu) hoặc 9 số (không có số 0 đầu)
- *   Ví dụ: "0912345678" hoặc "912345678"
- * 
- * - LOGIN/FORGOT PASSWORD: Chỉ nhập 9 số (không có số 0 đầu)  
- *   Ví dụ: "912345678"
- * 
- * - Tất cả sẽ được convert thành format +84xxxxxxxxx để gửi lên server
- */
 export const authService = {
     // ================================
     // REGISTRATION FLOW
@@ -192,7 +176,7 @@ export const authService = {
                 username: userData.username.trim(),
                 phone: formattedPhone,
                 password: userData.password,
-                roleSlug: 'customer-hmfuCdU' // Đúng roleSlug từ database
+                roleSlug: 'customer-hmfuCdU' 
             };
 
             console.log('📤 Sending registration request:', {
@@ -232,7 +216,7 @@ export const authService = {
     /**
      * Bước 2: Xác thực OTP đăng ký - Hoàn tất tạo tài khoản
      * @param verifyData { username, password, phone, roleSlug, otp }
-     * @returns {Promise<VerifyRegisterResponse>} accessToken hoặc lỗi
+     * @returns {Promise<VerifyRegisterResponse>} 
      */
     async verifyRegister(verifyData: VerifyRegisterData): Promise<VerifyRegisterResponse> {
         console.group('🔍 [DEBUG] OTP Verification Process');
@@ -245,18 +229,18 @@ export const authService = {
         });
         
         try {
-            // Format data for API
+            
             const formattedData = {
                 username: verifyData.username,
                 password: verifyData.password,
                 phone: formatPhoneNumber(verifyData.phone),
-                roleSlug: 'customer-hmfuCdU', // Fixed roleSlug from DB
+                roleSlug: 'customer-hmfuCdU', 
                 otp: verifyData.otp
             };
 
             console.log('📤 Sending OTP verification request:', {
                 ...formattedData,
-                password: '***' // Hide password in logs
+                password: '***' 
             });
 
             const response = await api.post('/account/verify-register', formattedData);
@@ -267,7 +251,7 @@ export const authService = {
                 data: response.data
             });
             
-            // Enhanced response handling with success callback
+            
             const handleSuccessResponse = async (accessToken: string) => {
                 console.log('🎉 OTP verification successful!');
                 console.log('🔑 Received access token:', {
@@ -383,23 +367,34 @@ export const authService = {
 
     /**
      * Gửi lại OTP (có thể dùng cho cả đăng ký và login)
-     * @param phone số điện thoại
-     * @param isForLogin boolean - true nếu dùng cho login (9 số), false nếu dùng cho register (10 số)
+     * @param phone số điện thoại (cho registration)
+     * @param username tên đăng nhập (cho login) 
+     * @param isForLogin boolean - true nếu dùng cho login, false nếu dùng cho register
      * @returns Promise<ApiResponse>
      */
-    async resendOTP({ phone, isForLogin = false }: { phone: string, isForLogin?: boolean }): Promise<ApiResponse> {
+    async resendOTP({ phone, username, isForLogin = false }: { phone?: string, username?: string, isForLogin?: boolean }): Promise<ApiResponse> {
         console.group('🔍 [DEBUG] Resend OTP Process');
-        console.log('📥 Resend OTP input:', { phone, isForLogin });
+        console.log('📥 Resend OTP input:', { phone, username, isForLogin });
         
         try {
-            const formattedPhone = isForLogin ? formatPhoneNumberForLogin(phone) : formatPhoneNumber(phone);
-            console.log('📱 Phone formatting for resend:', {
-                original: phone,
-                formatted: formattedPhone,
-                isForLogin
-            });
+            let requestData;
             
-            const requestData = { username: formattedPhone };
+            if (isForLogin && username) {
+                // Login flow - use username directly
+                requestData = { username: username.trim() };
+                console.log('👤 Login flow - using username:', requestData);
+            } else if (!isForLogin && phone) {
+                // Registration flow - format phone number
+                const formattedPhone = formatPhoneNumber(phone);
+                requestData = { username: formattedPhone };
+                console.log('📱 Registration flow - formatted phone:', {
+                    original: phone,
+                    formatted: formattedPhone
+                });
+            } else {
+                throw new Error('Invalid parameters: provide username for login or phone for registration');
+            }
+            
             console.log('📤 Sending resend OTP request:', requestData);
             
             const response = await api.post('/account/resend-otp', requestData);
@@ -434,7 +429,7 @@ export const authService = {
     // ================================
     
     /**
-     * Bước 1: Đăng nhập - Gửi username và password, nhận thông báo OTP
+     
      * @param credentials { username, password }
      * @returns {Promise<string>} Thông báo OTP hoặc lỗi
      */
@@ -506,7 +501,7 @@ export const authService = {
     },
 
     /**
-     * Bước 2: Xác thực OTP đăng nhập - Hoàn tất đăng nhập và nhận token
+     
      * @param verifyData { username, otp }
      * @returns {Promise<string>} accessToken hoặc lỗi
      */
@@ -551,44 +546,50 @@ export const authService = {
     // ================================
     
     /**
-     * Gửi OTP quên mật khẩu
-     * @param phone số điện thoại (9 số, không có số 0 đầu)
-     * @returns Promise<string>
+     * Request password reset - gửi OTP để reset password
+     * @param username tên đăng nhập
+     * @returns Promise<{ success: boolean, message: string }>
      */
-    async requestPasswordReset(phone: string) {
+    async requestPasswordReset(username: string) {
         try {
-            const formattedPhone = formatPhoneNumberForLogin(phone);
-            const response = await api.post('/account/forgot-password', { username: formattedPhone });
-            return response.data;
+            const response = await api.post('/account/forgot-password', { username: username });
+            return {
+                success: true,
+                message: typeof response.data === 'string' ? response.data : 'OTP đã được gửi'
+            };
         } catch (error: unknown) {
-            if (isErrorWithMessage(error)) {
-                return handleAuthError(error as AuthError);
-            }
-            throw new Error('An unexpected error occurred');
+            const axiosError = error as AxiosError;
+            return {
+                success: false,
+                message: (axiosError.response?.data as ApiErrorResponse)?.message || 'Failed to send OTP'
+            };
         }
     },
 
     /**
-     * Xác thực OTP và đổi mật khẩu
-     * @param username số điện thoại (9 số, không có số 0 đầu)
+     * Xác thực OTP và reset password
+     * @param username tên đăng nhập
      * @param otp mã OTP
      * @param newPassword mật khẩu mới
-     * @returns Promise<string>
+     * @returns Promise<{ success: boolean, message: string }>
      */
     async verifyResetOTP({ username, otp, newPassword }: { username: string, otp: string, newPassword: string }) {
         try {
-            const formattedPhone = formatPhoneNumberForLogin(username);
             const response = await api.post('/account/verify-change-password', {
-                username: formattedPhone,
+                username: username,
                 otp,
                 newPassword
             });
-            return response.data;
+            return {
+                success: true,
+                message: typeof response.data === 'string' ? response.data : 'Password reset successfully'
+            };
         } catch (error: unknown) {
-            if (isErrorWithMessage(error)) {
-                return handleAuthError(error as AuthError);
-            }
-            throw new Error('An unexpected error occurred');
+            const axiosError = error as AxiosError;
+            return {
+                success: false,
+                message: (axiosError.response?.data as ApiErrorResponse)?.message || 'Failed to reset password'
+            };
         }
     },
 
@@ -597,8 +598,8 @@ export const authService = {
     // ================================
     
     /**
-     * Lấy thông tin profile user
-     * @returns Promise<any>
+     
+     * @returns 
      */
     async getUserProfile() {
         console.group('🔍 [DEBUG] Get User Profile Process');
@@ -670,12 +671,22 @@ export const authService = {
      * @returns any | null
      */
     getUser() {
-        const user = localStorage.getItem('user');
+        const userStr = localStorage.getItem('user');
+        return userStr ? JSON.parse(userStr) : null;
+    },
+
+    /**
+     * Get username by phone number
+     * @param phone Phone number
+     * @returns Promise<string | null> Username if found, null otherwise
+     */
+    async getUsernameByPhone(phone: string): Promise<string | null> {
         try {
-            return user ? JSON.parse(user) : null;
-        } catch (error: unknown) {
-            console.error('Error parsing user data:', error);
-            localStorage.removeItem('user');
+            const formattedPhone = formatPhoneNumber(phone);
+            const response = await api.get(`/account/username/${formattedPhone}`);
+            return response.data?.username || null;
+        } catch (error) {
+            console.error('Error getting username by phone:', error);
             return null;
         }
     },

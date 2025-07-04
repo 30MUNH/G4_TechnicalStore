@@ -9,7 +9,20 @@ const api = axios.create({
 
 console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
 
-let isRedirecting = false;
+let isRefreshing = false;
+let failedQueue: { resolve: (value: unknown) => void; reject: (error: unknown) => void; }[] = [];
+
+const processQueue = (error: Error | null, token: string | null = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    
+    failedQueue = [];
+};
 
 // Helper to check if we're in registration flow
 const checkRegistrationFlow = () => {
@@ -142,11 +155,12 @@ api.interceptors.response.use(
         });
         return response;
     },
-    (error) => {
+    async (error) => {
+        const originalRequest = error.config;
+        
         // Handle blocked API calls during registration
         if (error.message === 'API_BLOCKED_REGISTRATION_FLOW') {
             console.log("🚫 API call blocked during registration - this is expected");
-            // Return a resolved promise with empty data to avoid breaking UI
             return Promise.resolve({
                 data: { success: false, message: 'Registration flow active' },
                 status: 200,
@@ -155,7 +169,7 @@ api.interceptors.response.use(
                 config: error.config
             });
         }
-        
+
         console.error('❌ API Error:', {
             status: error.response?.status,
             statusText: error.response?.statusText,
@@ -165,21 +179,41 @@ api.interceptors.response.use(
             message: error.message,
             hasAuthHeader: !!error.config?.headers?.Authorization
         });
-        
-        if (error.response?.status === 401 && !isRedirecting) {
-            const currentPath = window.location.pathname;
-            const authPages = ['/login', '/signup', '/forgot-password', '/reset-password'];
-            
-            console.log("🚨 401 Unauthorized detected:", {
-                currentPath,
-                isAuthPage: authPages.includes(currentPath),
-                willRedirect: !authPages.includes(currentPath)
-            });
-            
-            if (!authPages.includes(currentPath)) {
-                isRedirecting = true;
-                console.log('🧹 Clearing auth data and redirecting...');
+
+        // Handle 401 error
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (isRefreshing) {
+                try {
+                    const token = await new Promise((resolve, reject) => {
+                        failedQueue.push({ resolve, reject });
+                    });
+                    originalRequest.headers['Authorization'] = token;
+                    return api(originalRequest);
+                } catch (err) {
+                    return Promise.reject(err);
+                }
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                // Try to refresh token
+                const response = await api.post('/account/refresh-token');
+                const newToken = response.data.accessToken;
                 
+                if (newToken) {
+                    localStorage.setItem('authToken', newToken);
+                    api.defaults.headers.common['Authorization'] = newToken;
+                    originalRequest.headers['Authorization'] = newToken;
+                    
+                    processQueue(null, newToken);
+                    return api(originalRequest);
+                }
+            } catch (refreshError) {
+                processQueue(new Error('Failed to refresh token'));
+                
+                // Clear auth data and redirect to login
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('user');
                 
@@ -187,11 +221,17 @@ api.interceptors.response.use(
                     detail: { message: 'Session expired. Please login again.' }
                 }));
                 
-                setTimeout(() => {
-                    isRedirecting = false;
-                }, 1000);
+                // Redirect to login page
+                if (!window.location.pathname.includes('/login')) {
+                    window.location.href = '/login';
+                }
+                
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
             }
         }
+        
         return Promise.reject(error);
     }
 );

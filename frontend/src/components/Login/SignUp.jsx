@@ -55,7 +55,7 @@ const SignUp = ({ onNavigate }) => {
           setFormData(prev => ({
             ...prev,
             username: parsed.username,
-            phone: parsed.phone.replace('+84', '0') // Convert back to local format
+            phone: parsed.phone.replace('+84', '') // Convert back to 9-digit format
           }));
           setShowOTPPopup(true);
         } else {
@@ -177,7 +177,7 @@ const SignUp = ({ onNavigate }) => {
         
       case 'phone':
         if (!value.trim()) return 'Phone number is required';
-        if (!/^0\d{9}$/.test(value)) return 'Please enter a valid 10-digit phone number (bắt đầu bằng 0)';
+        if (!/^\d{9}$/.test(value)) return 'Please enter a valid 9-digit phone number';
         return undefined;
         
       case 'password':
@@ -199,7 +199,7 @@ const SignUp = ({ onNavigate }) => {
     const { name, value } = e.target;
     
     if (name === 'phone') {
-      const phoneValue = value.replace(/\D/g, '').slice(0, 10);
+      const phoneValue = value.replace(/\D/g, '').slice(0, 9);
       setFormData(prev => ({ ...prev, [name]: phoneValue }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -243,7 +243,7 @@ const SignUp = ({ onNavigate }) => {
     setIsSubmitting(true);
     
     try {
-      const formattedPhone = '+84' + formData.phone.substring(1);
+      const formattedPhone = '+84' + formData.phone;
       console.log('📱 Phone formatting:', {
         original: formData.phone,
         formatted: formattedPhone
@@ -324,221 +324,43 @@ const SignUp = ({ onNavigate }) => {
 
   const handleVerifyOTP = async (otp) => {
     console.group('🔍 [DEBUG] OTP Verification');
-    console.log('📥 OTP input:', { otp, otpLength: otp?.length });
+    console.log('📱 Verifying OTP for phone:', pendingSignup);
     
-    // Try to get current state or recover from localStorage
-    let registrationData = {
-      pendingSignup,
-      username: formData.username,
-      hashedPassword
-    };
-
-    console.log('🔍 Current registration state:', {
-      hasPendingSignup: !!registrationData.pendingSignup,
-      hasUsername: !!registrationData.username,
-      hasHashedPassword: !!registrationData.hashedPassword
-    });
-
-    // If any required data is missing, try to recover from localStorage
-    if (!registrationData.pendingSignup || !registrationData.username || !registrationData.hashedPassword) {
-      console.log('⚠️ Missing data, attempting recovery from localStorage');
-      
-      const savedRegistration = localStorage.getItem('pendingRegistration');
-      if (savedRegistration) {
-        try {
-          const parsed = JSON.parse(savedRegistration);
-          console.log('📦 Found saved registration:', {
-            phone: parsed.phone,
-            username: parsed.username,
-            hasHashedPassword: !!parsed.hashedPassword,
-            timestamp: new Date(parsed.timestamp).toLocaleString(),
-            ageInMinutes: (Date.now() - parsed.timestamp) / (1000 * 60)
-          });
-          
-          // Check if not expired (10 minutes)
-          if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
-            registrationData = {
-              pendingSignup: parsed.phone,
-              username: parsed.username,
-              hashedPassword: parsed.hashedPassword
-            };
-            
-            console.log('✅ Successfully recovered registration data');
-            
-            // Update component state with recovered data
-            if (!pendingSignup) setPendingSignup(parsed.phone);
-            if (!hashedPassword) setHashedPassword(parsed.hashedPassword);
-            if (!formData.username) {
-              setFormData(prev => ({
-                ...prev,
-                username: parsed.username
-              }));
-            }
-          } else {
-            // Expired
-            console.log('⏰ Saved registration expired, cleaning up');
-            localStorage.removeItem('pendingRegistration');
-          }
-        } catch (error) {
-          console.error('❌ Error parsing saved registration:', error);
-          localStorage.removeItem('pendingRegistration');
-        }
-      } else {
-        console.log('📭 No saved registration found in localStorage');
-      }
-    }
-
-    // Final check
-    if (!registrationData.pendingSignup || !registrationData.username || !registrationData.hashedPassword) {
-      console.error('❌ Cannot proceed with OTP verification - missing required data');
-      setErrors({ 
-        general: 'Phiên đăng ký đã hết hạn hoặc bị mất. Vui lòng đăng ký lại từ đầu.' 
-      });
-      setShowOTPPopup(false);
-      clearRegistrationState();
+    if (!pendingSignup || !hashedPassword) {
+      console.error('❌ Missing required data:', { pendingSignup, hasHashedPassword: !!hashedPassword });
+      setErrors({ general: 'Missing registration data' });
       console.groupEnd();
       return;
     }
-
-    console.log('📤 Proceeding with OTP verification:', {
-      username: registrationData.username,
-      phone: registrationData.pendingSignup,
-      hasPassword: !!registrationData.hashedPassword,
-      otp: otp
-    });
-
-    setIsSubmitting(true);
+    
     try {
-      const verifyData = {
-        username: registrationData.username,
-        password: registrationData.hashedPassword,
-        phone: registrationData.pendingSignup,
-        roleSlug: 'customer',
-        otp: otp
-      };
+      const response = await authService.verifyOTP({
+        phone: pendingSignup,
+        otp: otp,
+        password: hashedPassword,
+        username: formData.username
+      });
       
-      console.log('📤 Calling authService.verifyRegister');
-      const response = await authService.verifyRegister(verifyData);
-
-      console.log('📨 OTP verification response:', {
-        response,
-        hasData: !!response?.data,
-        status: response?.status,
-        dataType: typeof response?.data
-      });
-
-      // Check for successful response - Enhanced success handling
-      // response.data should be the access token string when successful
-      if (response && response.data && typeof response.data === 'string' && response.status === 200) {
-        console.log('🎉 OTP verification successful!');
-        
-        // Clear all pending states
-        setShowOTPPopup(false);
-        setPendingSignup(null);
-        setHashedPassword(null);
-        clearRegistrationState(); // Clear localStorage
-        console.log('🧹 Cleared all pending states');
-        
-        // Enhanced success callback with better UX
-        const handleSuccessCallback = () => {
-          console.log('🎉 Registration success - preparing navigation...');
-          
-          // Store temporary success state for better UX
-          sessionStorage.setItem('registrationSuccess', JSON.stringify({
-            username: registrationData.username,
-            timestamp: Date.now()
-          }));
-          console.log('💾 Stored success state in sessionStorage');
-          
-          // FIX: DON'T clear auth state - let user stay logged in after registration
-          console.log('✅ Keeping auth state - user is now logged in after registration');
-          
-          // Check if token was saved by authService
-          const savedToken = localStorage.getItem('authToken');
-          const savedUser = localStorage.getItem('user');
-          console.log('🔍 Post-registration auth check:', {
-            hasToken: !!savedToken,
-            hasUser: !!savedUser,
-            tokenLength: savedToken?.length,
-            userInfo: savedUser ? JSON.parse(savedUser) : null
-          });
-          
-          // Add small delay to ensure auth context updates
-          setTimeout(() => {
-            console.log('🔄 Auth state should be updated by AuthContext now');
-            
-            // Success notification
-            alert('🎉 Đăng ký thành công! Bạn đã được đăng nhập tự động.');
-            
-            // Navigate to home page instead of login page since user is now authenticated
-            navigate('/', { 
-              state: { 
-                successMessage: 'Chào mừng bạn đến với Tech Store! Tài khoản đã được tạo thành công.',
-                isNewUser: true
-              } 
-            });
-          }, 100);
-        };
-        
-        // Execute success callback
-        handleSuccessCallback();
-        
-        // Optional: Track successful registration (for analytics)
-        console.log('✅ Registration completed successfully for:', registrationData.username);
-        
-      } else {
-        console.error('❌ OTP verification failed - unexpected response format');
-        setErrors({ general: 'Xác thực OTP thất bại. Vui lòng thử lại.' });
-      }
+      console.log('✅ OTP verification successful');
+      
+      // Store registration data for login page
+      sessionStorage.setItem('lastRegisteredUser', JSON.stringify({
+        username: formData.username,
+        timestamp: Date.now()
+      }));
+      
+      // Clear registration state
+      clearRegistrationState();
+      
+      // Redirect to login page
+      navigate('/login');
+      
     } catch (error) {
-      console.error('❌ OTP verification error:', {
-        error,
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
-
-      let errorMessage = 'Xác thực OTP thất bại. Vui lòng thử lại.';
-
-      if (error.response?.status === 401) {
-        errorMessage = 'Mã OTP không đúng hoặc đã hết hạn.';
-      } else if (error.response?.status === 404) {
-        errorMessage = 'Phiên xác thực đã hết hạn. Vui lòng đăng ký lại.';
-        // Clear state and localStorage when session expired
-        setShowOTPPopup(false);
-        setPendingSignup(null);
-        setHashedPassword(null);
-        clearRegistrationState();
-        console.log('🧹 Cleared states due to expired session');
-      } else if (error.response?.status === 400) {
-        // Handle the new JSON error response format
-        if (error.response?.data?.message) {
-          errorMessage = error.response.data.message;
-        } else {
-          errorMessage = 'Mã OTP không hợp lệ. Vui lòng kiểm tra lại.';
-        }
-      } else if (error.response?.data?.message) {
-        if (error.response.data.message.includes('VerificationCheck') || 
-            error.response.data.message.includes('was not found') ||
-            error.response.data.message.includes('expired')) {
-          errorMessage = 'Phiên xác thực đã hết hạn. Vui lòng đăng ký lại.';
-          // Clear state when verification session expired
-          setShowOTPPopup(false);
-          setPendingSignup(null);
-          setHashedPassword(null);
-          clearRegistrationState();
-          console.log('🧹 Cleared states due to verification session expiry');
-        } else {
-          errorMessage = error.response.data.message;
-        }
-      }
-
-      console.log('📝 Setting error message:', errorMessage);
-      setErrors({ general: errorMessage });
-    } finally {
-      setIsSubmitting(false);
-      console.groupEnd();
+      console.error('❌ OTP verification failed:', error);
+      setErrors({ general: error.response?.data?.message || 'Failed to verify OTP' });
     }
+    
+    console.groupEnd();
   };
 
   const handleResendOTP = async () => {
@@ -582,7 +404,8 @@ const SignUp = ({ onNavigate }) => {
     try {
       console.log('📤 Calling authService.resendOTP');
       const response = await authService.resendOTP({
-        phone: phoneToResend
+        phone: phoneToResend,
+        isForLogin: false
       });
 
       console.log('📨 Resend OTP response:', response);
@@ -665,10 +488,11 @@ const SignUp = ({ onNavigate }) => {
             <input
               type="tel"
               name="phone"
-              placeholder="Enter 10 digits"
+              placeholder="Enter 9 digits"
               value={formData.phone}
               onChange={handleInputChange}
               className={`${styles.input} ${styles.withPrefix} ${errors.phone ? styles.error : ''}`}
+              maxLength="9"
             />
           </div>
           {errors.phone && (

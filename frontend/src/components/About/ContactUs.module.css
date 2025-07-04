@@ -3,6 +3,7 @@
 .contactus {
   min-height: 100vh;
   background-color: #111;
+  padding-bottom: 50px;
 }
 
 .header {
@@ -370,6 +371,71 @@ form button svg {
   font-size: 1.25rem;
 }
 
+.authNotice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(255, 77, 0, 0.1);
+  border: 1px solid rgba(255, 77, 0, 0.3);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.authNotice svg {
+  color: #ff4d00;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.authNotice p {
+  color: #fff;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.loginLink {
+  background: none;
+  border: none;
+  color: #ff4d00;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0;
+  font-size: inherit;
+}
+
+.loginLink:hover {
+  color: #ff6600;
+}
+
+.authSuccess {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(0, 204, 102, 0.1);
+  border: 1px solid rgba(0, 204, 102, 0.3);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.authSuccess svg {
+  color: #00cc66;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.authSuccess p {
+  color: #fff;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.authSuccess strong {
+  color: #00cc66;
+}
+
 .whyUs h2 {
   color: #fff;
   font-size: 35px;
@@ -387,7 +453,7 @@ form button svg {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 17px;
+  padding: 23px;
   border-radius: 8px;
   background: #1a1a1a;
   border: 1px solid #333333;
@@ -426,20 +492,21 @@ form button svg {
 }
 
 .reason svg {
-  font-size: 1.5rem;
+  font-size: 2rem;
   flex-shrink: 0;
 }
 
 .reason h3 {
   color: #fff;
-  font-size: 1rem;
+  font-size: 1.2rem;
   margin: 0 0 0.25rem;
-  font-weight: 500;
+  font-weight: 600;
+  text-align: left;
 }
 
 .reason p {
   color: #999999;
-  font-size: 0.875rem;
+  font-size: 1rem;
   margin: 0;
   line-height: 1.4;
 }

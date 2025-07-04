@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, User, Lock } from 'lucide-react';
+import { Eye, EyeOff, User, Lock, ArrowLeft } from 'lucide-react';
 import FormCard from './FormCard';
 import OTPPopup from './OTPPopup';
 import styles from './Login.module.css';
@@ -21,6 +21,48 @@ const Login = ({ onNavigate }) => {
   const [showOTPPopup, setShowOTPPopup] = useState(false);
   const [pendingLogin, setPendingLogin] = useState(null);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
+
+  // Check for stored registration or reset data
+  useEffect(() => {
+    // Check for registration data
+    const lastRegisteredUser = sessionStorage.getItem('lastRegisteredUser');
+    if (lastRegisteredUser) {
+      try {
+        const { username, timestamp } = JSON.parse(lastRegisteredUser);
+        // Only use data if it's less than 5 minutes old
+        if (Date.now() - timestamp < 5 * 60 * 1000) {
+          setFormData(prev => ({ ...prev, username }));
+        }
+        // Clear the stored data
+        sessionStorage.removeItem('lastRegisteredUser');
+      } catch (error) {
+        console.error('Error parsing lastRegisteredUser:', error);
+      }
+    }
+
+    // Check for password reset data
+    const lastResetUser = sessionStorage.getItem('lastResetUser');
+    if (lastResetUser) {
+      try {
+        const { phone, timestamp } = JSON.parse(lastResetUser);
+        // Only use data if it's less than 5 minutes old
+        if (Date.now() - timestamp < 5 * 60 * 1000) {
+          // We need to get the username associated with this phone number
+          authService.getUsernameByPhone(phone)
+            .then(username => {
+              if (username) {
+                setFormData(prev => ({ ...prev, username }));
+              }
+            })
+            .catch(error => console.error('Error getting username:', error));
+        }
+        // Clear the stored data
+        sessionStorage.removeItem('lastResetUser');
+      } catch (error) {
+        console.error('Error parsing lastResetUser:', error);
+      }
+    }
+  }, []);
 
   // Debug helper function
   const getDebugInfo = () => {
@@ -46,26 +88,12 @@ const Login = ({ onNavigate }) => {
     switch (name) {
       case 'username':
         if (!value.trim()) {
-          return 'Username or phone number is required';
+          return 'Username is required';
         }
         
-        // Check if it's a phone number (all digits with optional leading 0)
-        const phonePattern = /^0?\d{9,10}$/;
-        if (phonePattern.test(value.replace(/\D/g, ''))) {
-          // It's a phone number - validate phone format
-          const phoneNumber = value.replace(/\D/g, '');
-          if (phoneNumber.length === 10 && phoneNumber.startsWith('0')) {
-            return ''; // Valid 10-digit phone with leading 0
-          } else if (phoneNumber.length === 9 && !phoneNumber.startsWith('0')) {
-            return ''; // Valid 9-digit phone without leading 0
-          } else {
-            return 'Phone number must be 10 digits (with leading 0) or 9 digits (without leading 0)';
-          }
-        } else {
-          // It's a username - validate username format
-          if (value.length < 3) {
-            return 'Username must be at least 3 characters';
-          }
+        // Simple username validation
+        if (value.length < 3) {
+          return 'Username must be at least 3 characters';
         }
         return '';
         
@@ -138,27 +166,10 @@ const Login = ({ onNavigate }) => {
 
     setIsSubmitting(true);
     try {
-      // Check if username is phone number and format it
-      let processedUsername = formData.username.trim();
+      // Simple username processing - just trim whitespace
+      const processedUsername = formData.username.trim();
       
-      // Detect if it's a phone number
-      const phonePattern = /^0?\d{9,10}$/;
-      const cleanPhone = processedUsername.replace(/\D/g, '');
-      
-      if (phonePattern.test(cleanPhone)) {
-        console.log('📱 Detected phone number input');
-        
-        // Format phone for login (remove leading 0 if present)
-        if (cleanPhone.startsWith('0') && cleanPhone.length === 10) {
-          processedUsername = cleanPhone.substring(1); // Remove leading 0
-          console.log('📱 Formatted phone (removed leading 0):', processedUsername);
-        } else if (cleanPhone.length === 9) {
-          processedUsername = cleanPhone;
-          console.log('📱 Phone already in correct format:', processedUsername);
-        }
-      } else {
-        console.log('👤 Detected username input:', processedUsername);
-      }
+      console.log('👤 Processing username input:', processedUsername);
 
       const loginData = {
         username: processedUsername,
@@ -168,8 +179,7 @@ const Login = ({ onNavigate }) => {
       console.log('📤 Sending login request:', { 
         username: loginData.username, 
         passwordLength: loginData.password.length,
-        originalInput: formData.username,
-        processedUsername: processedUsername
+        originalInput: formData.username
       });
 
       const response = await authService.login(loginData);
@@ -388,7 +398,7 @@ const Login = ({ onNavigate }) => {
 
     try {
       const response = await authService.resendOTP({
-        phone: pendingLogin,
+        username: pendingLogin,
         isForLogin: true
       });
 
@@ -408,7 +418,7 @@ const Login = ({ onNavigate }) => {
       if (error.response?.status === 429) {
         errorMessage = 'Too many requests. Please wait before requesting again.';
       } else if (error.response?.status === 404) {
-        errorMessage = 'Phone number not found. Please check and try again.';
+        errorMessage = 'Username not found. Please check and try again.';
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
@@ -553,6 +563,15 @@ const Login = ({ onNavigate }) => {
 
   return (
     <FormCard>
+      <button 
+        type="button" 
+        onClick={() => navigate('/')} 
+        className={styles.backArrowBtn}
+        aria-label="Back to Home"
+      >
+        <ArrowLeft size={20} />
+      </button>
+      
       <div className={styles.authHeader}>
         <h1 className={styles.authTitle}>Welcome Back!</h1>
         <p className={styles.authSubtitle}>Sign in to access premium PC components</p>
@@ -573,7 +592,7 @@ const Login = ({ onNavigate }) => {
             <input
               type="text"
               name="username"
-              placeholder="Username hoặc số điện thoại (9-10 số)"
+              placeholder="Enter your username"
               value={formData.username}
               onChange={handleInputChange}
               className={`${styles.input} ${errors.username ? styles.error : ''}`}

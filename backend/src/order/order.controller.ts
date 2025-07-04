@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseBefore } from "routing-controllers";
+import { Body, Controller, Get, Param, Patch, Post, Req, UseBefore, QueryParam } from "routing-controllers";
 import { Service } from "typedi";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dtos/create-order.dto";
@@ -36,13 +36,31 @@ export class OrderController {
 
     @Get()
     @UseBefore(Auth)
-    async getOrders(@Req() req: any) {
+    async getOrders(
+        @Req() req: any,
+        @QueryParam("page") page: number = 1,
+        @QueryParam("limit") limit: number = 10
+    ) {
         const user = req.user as AccountDetailsDto;
         try {
-            const orders = await this.orderService.getOrdersByUsername(user.username);
+            // Validate pagination parameters
+            if (page < 1) page = 1;
+            if (limit < 1 || limit > 100) limit = 10;
+
+            const orders = await this.orderService.getOrdersByUsername(
+                user.username, 
+                page, 
+                limit
+            );
             return {
                 message: "Lấy danh sách đơn hàng thành công",
-                orders
+                data: orders.orders,
+                pagination: {
+                    page,
+                    limit,
+                    total: orders.total,
+                    totalPages: Math.ceil(orders.total / limit)
+                }
             };
         } catch (error: any) {
             return {
@@ -72,9 +90,19 @@ export class OrderController {
 
     @Get("/:id")
     @UseBefore(Auth)
-    async getOrder(@Param("id") id: string) {
+    async getOrder(@Param("id") id: string, @Req() req: any) {
+        const user = req.user as AccountDetailsDto;
         try {
             const order = await this.orderService.getOrderById(id);
+            
+            // Kiểm tra quyền xem order
+            if (order.customer.username !== user.username && !this.isAdmin(user)) {
+                return {
+                    message: "Không có quyền xem đơn hàng này",
+                    error: "Unauthorized"
+                };
+            }
+            
             return {
                 message: "Lấy thông tin đơn hàng thành công",
                 order
@@ -111,5 +139,10 @@ export class OrderController {
                 error: error.message
             };
         }
+    }
+
+    // Helper method để kiểm tra quyền admin
+    private isAdmin(user: AccountDetailsDto): boolean {
+        return user.role?.name?.toLowerCase().includes('admin') || false;
     }
 } 

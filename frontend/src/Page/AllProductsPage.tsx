@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { productService } from '../services/productService';
 import type { Product } from '../types/product';
 import './AllProductsPage.css';
-import { useLocation } from 'react-router-dom';
-import ProductDetailModal from '../components/product_manager/productDetailModal';
+import { useLocation, useNavigate } from 'react-router-dom';
+import ProductDetailModal from '../components/Product/productDetailModal';
 
 const CATEGORY_FILTERS = [
   { key: 'laptop', label: 'Laptop' },
@@ -24,8 +24,8 @@ const CATEGORY_FILTERS = [
 ];
 
 const SORT_OPTIONS = [
-  { value: 'asc', label: 'Giá tăng dần' },
-  { value: 'desc', label: 'Giá giảm dần' },
+  { value: 'asc', label: 'Price: Low to High' },
+  { value: 'desc', label: 'Price: High to Low' },
 ];
 
 const PRODUCTS_PER_PAGE = 16;
@@ -38,8 +38,10 @@ const AllProductsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const location = useLocation();
+  const navigate = useNavigate();
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
 
   // Set filter theo state khi chuyển trang từ HomePage
   useEffect(() => {
@@ -60,18 +62,35 @@ const AllProductsPage: React.FC = () => {
   }, [location.state]);
 
   useEffect(() => {
-    if (location.state && location.state.searchResults) {
-      setProducts(location.state.searchResults);
-      setLoading(false);
-    } else {
-      const fetchProducts = async () => {
-        setLoading(true);
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        if (location.state && location.state.searchResults) {
+          // Nếu có kết quả search từ header
+          setProducts(location.state.searchResults);
+          setSearchKeyword(location.state.searchKeyword || '');
+        } else if (location.state && location.state.searchKeyword) {
+          // Nếu chỉ có keyword (fallback case)
+          const searchResults = await productService.searchProducts(location.state.searchKeyword);
+          setProducts(searchResults);
+          setSearchKeyword(location.state.searchKeyword);
+        } else {
+          // Load tất cả sản phẩm
+          const res = await productService.getAllProducts();
+          setProducts(res);
+          setSearchKeyword('');
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        // Fallback: load tất cả sản phẩm
         const res = await productService.getAllProducts();
         setProducts(res);
+      } finally {
         setLoading(false);
-      };
-      fetchProducts();
-    }
+      }
+    };
+
+    fetchProducts();
   }, [location.state]);
 
   useEffect(() => {
@@ -164,7 +183,7 @@ const AllProductsPage: React.FC = () => {
   return (
     <div className="all-products-page">
       <aside className="sidebar">
-        <h3>Lọc theo loại</h3>
+        <h3>Filter by type</h3>
         <ul>
           {CATEGORY_FILTERS.map((cat) => (
             <li
@@ -179,13 +198,44 @@ const AllProductsPage: React.FC = () => {
             className={selectedCategories.length === 0 ? 'active' : ''}
             onClick={handleSelectAll}
           >
-            Tất cả
+            All
           </li>
         </ul>
       </aside>
       <main className="products-main">
+        {searchKeyword && (
+          <div className="search-result-info" style={{ 
+            marginBottom: '20px', 
+            padding: '10px 15px', 
+            backgroundColor: '#f8f9fa', 
+            borderRadius: '5px',
+            border: '1px solid #e9ecef'
+          }}>
+            <strong>Search results for: "{searchKeyword}"</strong>
+            <span style={{ marginLeft: '10px', color: '#6c757d' }}>
+              ({filteredProducts.length} products)
+            </span>
+            <button 
+              onClick={() => {
+                setSearchKeyword('');
+                navigate('/all-products', { replace: true });
+              }}
+              style={{
+                marginLeft: '15px',
+                padding: '5px 10px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: 'pointer'
+              }}
+            >
+              Clear search
+            </button>
+          </div>
+        )}
         <div className="sort-bar">
-          <span>Sắp xếp theo giá:</span>
+          <span>Sort by price:</span>
           <select
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
@@ -198,12 +248,12 @@ const AllProductsPage: React.FC = () => {
           </select>
         </div>
         {loading ? (
-          <div>Đang tải sản phẩm...</div>
+          <div>Loading products...</div>
         ) : (
           <>
             <div className="products-grid">
               {paginatedProducts.length === 0 ? (
-                <div>Không có sản phẩm nào.</div>
+                <div>No products found.</div>
               ) : (
                 paginatedProducts.map((product) => (
                   <div

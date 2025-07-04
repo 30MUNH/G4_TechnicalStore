@@ -1,5 +1,5 @@
 import React from 'react';
-import './OrderHistory.module.css';
+import styles from './CartView.module.css'; // Use the same CSS module as CartView
 
 export const OrderHistory = ({ orders, onBackToCart }) => {
     console.log('📋 OrderHistory Debug - Component rendered with props:', {
@@ -58,7 +58,7 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
             const formatted = new Intl.NumberFormat('vi-VN', {
                 style: 'currency',
                 currency: 'VND'
-            }).format(amount);
+            }).format(amount).replace('₫', 'đ');
             return formatted;
         } catch (error) {
             console.error('❌ OrderHistory Debug - Currency formatting error:', error, { amount });
@@ -76,195 +76,187 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
     };
 
     return (
-        <div className="order-history-container">
-            <div className="mb-4 d-flex justify-content-between align-items-center">
-                <button
-                    className="btn"
-                    onClick={handleBackToCart}
-                    style={{
-                        background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
-                        color: 'white',
-                        border: 'none',
-                        padding: '0.5rem 1.5rem',
-                        borderRadius: '8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.95rem',
-                        fontWeight: '500',
-                        transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                        console.log('🖱️ OrderHistory Debug - Back button hover enter');
-                        e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 4px 12px rgba(30, 41, 59, 0.2)';
-                    }}
-                    onMouseLeave={(e) => {
-                        console.log('🖱️ OrderHistory Debug - Back button hover leave');
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = 'none';
-                    }}
-                >
+        <div className={styles.cartView}>
+            <div className={styles.cartHeader}>
+                <h1>
+                    📋 Lịch sử đơn hàng
+                    <span className={styles.itemCount}>({orders.length} đơn hàng)</span>
+                </h1>
+                <button onClick={handleBackToCart} className={styles.historyButton}>
                     ← Quay lại giỏ hàng
                 </button>
             </div>
 
             {orders.length === 0 ? (
-                <div className="text-center py-5">
-                    <div style={{
-                        fontSize: '4rem',
-                        marginBottom: '1rem'
-                    }}>
-                        📋
-                    </div>
-                    <h3 className="mb-3">Chưa có đơn hàng nào</h3>
-                    <p className="text-muted">
-                        Bạn chưa có đơn hàng nào trong lịch sử. Hãy mua sắm và đặt hàng nhé!
-                    </p>
+                <div className={styles.emptyCart}>
+                    <h2>Chưa có đơn hàng nào</h2>
+                    <p>Bạn chưa có đơn hàng nào trong lịch sử. Hãy mua sắm và đặt hàng nhé!</p>
+                    <button onClick={handleBackToCart} className={styles.continueShoppingButton}>
+                        🛒 Quay lại giỏ hàng
+                    </button>
                 </div>
             ) : (
-                <div className="row">
-                    {orders.map((order) => {
-                        console.log('📦 OrderHistory Debug - Rendering order:', order);
-                        
-                        // Validate order data
-                        if (!order.id) {
-                            console.error('❌ OrderHistory Debug - Order missing ID:', order);
-                        }
-                        if (!order.orderDate) {
-                            console.error('❌ OrderHistory Debug - Order missing orderDate:', order);
-                        }
-                        if (!order.status) {
-                            console.error('❌ OrderHistory Debug - Order missing status:', order);
-                        }
-                        if (!Array.isArray(order.orderDetails)) {
-                            console.warn('⚠️ OrderHistory Debug - Order details is not an array:', order.orderDetails);
-                        }
+                <div className={styles.cartContent}>
+                    <div className={styles.cartItems}>
+                        {orders.map((order) => {
+                            console.log('📦 OrderHistory Debug - Rendering order:', order);
+                            
+                            // Validate order data
+                            if (!order.id) {
+                                console.error('❌ OrderHistory Debug - Order missing ID:', order);
+                            }
+                            if (!order.orderDate) {
+                                console.error('❌ OrderHistory Debug - Order missing orderDate:', order);
+                            }
+                            if (!order.status) {
+                                console.error('❌ OrderHistory Debug - Order missing status:', order);
+                            }
+                            if (!Array.isArray(order.orderDetails)) {
+                                console.warn('⚠️ OrderHistory Debug - Order details is not an array:', order.orderDetails);
+                            }
 
-                        return (
-                            <div key={order.id} className="col-12 mb-4">
-                                <div className="card" style={{
-                                    borderRadius: '12px',
-                                    border: '1px solid #e2e8f0',
-                                    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)'
-                                }}>
-                                    <div className="card-header bg-white" style={{
+                            return (
+                                <div key={order.id} className={styles.cartItem} style={{ flexDirection: 'column' }}>
+                                    {/* Order Header */}
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        paddingBottom: '1rem',
                                         borderBottom: '1px solid #e2e8f0',
-                                        padding: '1rem 1.5rem'
+                                        marginBottom: '1rem',
+                                        width: '100%'
                                     }}>
-                                        <div className="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 className="mb-0">Đơn hàng #{order.id}</h6>
-                                                <small className="text-muted">
-                                                    Đặt ngày: {formatDate(order.orderDate)}
-                                                </small>
-                                            </div>
-                                            <div className="d-flex align-items-center">
-                                                <span className="me-2">Trạng thái:</span>
-                                                <span className="badge" style={{
-                                                    backgroundColor: getStatusColor(order.status),
-                                                    padding: '0.5em 1em',
-                                                    fontSize: '0.85em'
-                                                }}>
-                                                    {order.status}
-                                                </span>
-                                            </div>
+                                        <div>
+                                            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.2rem', color: '#1f2937' }}>
+                                                📦 Đơn hàng #{order.id}
+                                            </h3>
+                                            <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>
+                                                📅 Đặt ngày: {formatDate(order.orderDate)}
+                                            </p>
                                         </div>
-                                    </div>
-                                    <div className="card-body">
-                                        <div className="table-responsive">
-                                            <table className="table table-borderless mb-0">
-                                                <thead>
-                                                    <tr className="text-muted" style={{ fontSize: '0.9rem' }}>
-                                                        <th>Sản phẩm</th>
-                                                        <th className="text-center">Số lượng</th>
-                                                        <th className="text-end">Giá</th>
-                                                        <th className="text-end">Tổng</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {order.orderDetails?.map((item) => {
-                                                        console.log('📦 OrderHistory Debug - Rendering order detail item:', item);
-                                                        
-                                                        // Validate item data
-                                                        if (!item.id) {
-                                                            console.error('❌ OrderHistory Debug - Order detail missing ID:', item);
-                                                        }
-                                                        if (!item.product) {
-                                                            console.error('❌ OrderHistory Debug - Order detail missing product:', item);
-                                                        }
-                                                        if (typeof item.quantity !== 'number') {
-                                                            console.warn('⚠️ OrderHistory Debug - Invalid quantity type:', typeof item.quantity, item);
-                                                        }
-                                                        if (typeof item.price !== 'number') {
-                                                            console.warn('⚠️ OrderHistory Debug - Invalid price type:', typeof item.price, item);
-                                                        }
-
-                                                        return (
-                                                            <tr key={item.id}>
-                                                                <td style={{ maxWidth: '300px' }}>
-                                                                    <div className="d-flex align-items-center">
-                                                                        {item.product?.image && (
-                                                                            <img
-                                                                                src={item.product.image}
-                                                                                alt={item.product.name}
-                                                                                style={{
-                                                                                    width: '50px',
-                                                                                    height: '50px',
-                                                                                    objectFit: 'cover',
-                                                                                    borderRadius: '8px',
-                                                                                    marginRight: '1rem'
-                                                                                }}
-                                                                            />
-                                                                        )}
-                                                                        <div>
-                                                                            <div className="fw-medium">{item.product?.name}</div>
-                                                                            <small className="text-muted">
-                                                                                {item.product?.category?.name}
-                                                                            </small>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="text-center">{item.quantity}</td>
-                                                                <td className="text-end">{formatCurrency(item.price)}</td>
-                                                                <td className="text-end">{formatCurrency(item.price * item.quantity)}</td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                </tbody>
-                                                <tfoot>
-                                                    <tr>
-                                                        <td colSpan="3" className="text-end fw-medium">Tạm tính:</td>
-                                                        <td className="text-end">{formatCurrency(order.subtotal)}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td colSpan="3" className="text-end fw-medium">Phí vận chuyển:</td>
-                                                        <td className="text-end">{formatCurrency(order.shippingFee)}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td colSpan="3" className="text-end fw-medium">Thuế:</td>
-                                                        <td className="text-end">{formatCurrency(order.tax)}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td colSpan="3" className="text-end fw-bold">Tổng cộng:</td>
-                                                        <td className="text-end fw-bold">{formatCurrency(order.total)}</td>
-                                                    </tr>
-                                                </tfoot>
-                                            </table>
-                                        </div>
-                                    </div>
-                                    {order.note && (
-                                        <div className="card-footer bg-white" style={{
-                                            borderTop: '1px solid #e2e8f0',
-                                            padding: '1rem 1.5rem'
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem'
                                         }}>
-                                            <strong>Ghi chú:</strong> {order.note}
+                                            <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>Trạng thái:</span>
+                                            <span style={{
+                                                backgroundColor: getStatusColor(order.status),
+                                                color: 'white',
+                                                padding: '0.25rem 0.75rem',
+                                                borderRadius: '1rem',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '500'
+                                            }}>
+                                                {order.status}
+                                            </span>
                                         </div>
-                                    )}
+                                    </div>
+
+                                    {/* Order Items */}
+                                    <div style={{ width: '100%' }}>
+                                        {order.orderDetails?.map((item, index) => {
+                                            console.log('📦 OrderHistory Debug - Rendering order detail item:', item);
+                                            
+                                            // Validate item data
+                                            if (!item.id) {
+                                                console.error('❌ OrderHistory Debug - Order detail missing ID:', item);
+                                            }
+                                            if (!item.product) {
+                                                console.error('❌ OrderHistory Debug - Order detail missing product:', item);
+                                            }
+                                            if (typeof item.quantity !== 'number') {
+                                                console.warn('⚠️ OrderHistory Debug - Invalid quantity type:', typeof item.quantity, item);
+                                            }
+                                            if (typeof item.price !== 'number') {
+                                                console.warn('⚠️ OrderHistory Debug - Invalid price type:', typeof item.price, item);
+                                            }
+
+                                            return (
+                                                <div key={item.id} style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    padding: '0.75rem 0',
+                                                    borderBottom: index < order.orderDetails.length - 1 ? '1px solid #f3f4f6' : 'none'
+                                                }}>
+                                                    <img
+                                                        src={item.product?.image || '/img/product01.png'}
+                                                        alt={item.product?.name}
+                                                        className={styles.itemImage}
+                                                        style={{ marginRight: '1rem' }}
+                                                    />
+                                                    <div className={styles.itemDetails} style={{ flex: 1 }}>
+                                                        <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1rem' }}>
+                                                            {item.product?.name}
+                                                        </h4>
+                                                        <p className={styles.itemCategory} style={{ margin: '0 0 0.25rem 0' }}>
+                                                            {item.product?.category?.name}
+                                                        </p>
+                                                        <p className={styles.itemPrice} style={{ margin: 0 }}>
+                                                            {formatCurrency(item.price)}
+                                                        </p>
+                                                    </div>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '1rem',
+                                                        fontSize: '0.9rem'
+                                                    }}>
+                                                        <span>Số lượng: {item.quantity}</span>
+                                                        <div className={styles.itemTotal}>
+                                                            <span>Thành tiền:</span>
+                                                            <span className={styles.totalValue}>
+                                                                {formatCurrency(item.price * item.quantity)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Order Summary */}
+                                    <div style={{
+                                        marginTop: '1rem',
+                                        paddingTop: '1rem',
+                                        borderTop: '1px solid #e2e8f0',
+                                        width: '100%'
+                                    }}>
+                                        <div className={styles.summaryDetails}>
+                                            <div className={styles.summaryRow}>
+                                                <span>Tạm tính:</span>
+                                                <span>{formatCurrency(order.subtotal || 0)}</span>
+                                            </div>
+                                            <div className={styles.summaryRow}>
+                                                <span>Phí vận chuyển:</span>
+                                                <span>{formatCurrency(order.shippingFee || 0)}</span>
+                                            </div>
+                                            <div className={styles.summaryRow}>
+                                                <span>Thuế:</span>
+                                                <span>{formatCurrency(order.tax || 0)}</span>
+                                            </div>
+                                            <div className={`${styles.summaryRow} ${styles.total}`}>
+                                                <span>Tổng cộng:</span>
+                                                <span>{formatCurrency(order.total || order.totalAmount || 0)}</span>
+                                            </div>
+                                        </div>
+                                        {order.note && (
+                                            <div style={{
+                                                marginTop: '1rem',
+                                                padding: '0.75rem',
+                                                backgroundColor: '#f9fafb',
+                                                borderRadius: '0.5rem',
+                                                fontSize: '0.9rem'
+                                            }}>
+                                                <strong>💬 Ghi chú:</strong> {order.note}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
             )}
         </div>

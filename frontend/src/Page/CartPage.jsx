@@ -4,118 +4,170 @@ import CartView from '../components/Cart/CartView';
 import { OrderHistory } from '../components/Cart/OrderHistory';
 import { useCart } from '../contexts/CartContext';
 import { orderService } from '../services/orderService';
+import { useAuth } from '../contexts/AuthContext';
 
 const CartPage = () => {
-    console.log('🛒 CartPage Debug - Component initializing');
-    
     const navigate = useNavigate();
     const [showOrderHistory, setShowOrderHistory] = useState(false);
     const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    const {
-        cartItems,
-        updateQuantity,
-        removeFromCart,
-        getFinalTotal,
-        getCartTotal,
-        getTax,
-        getShipping
+    const [orderLoading, setOrderLoading] = useState(false);
+    const [orderError, setOrderError] = useState(null);
+    const { isAuthenticated } = useAuth();
+    const { 
+        items, 
+        totalAmount, 
+        loading, 
+        error, 
+        isInitialized,
+        increaseQuantity,
+        decreaseQuantity,
+        removeItem,
+        refreshCart
     } = useCart();
 
-    // Removed cart data debug to prevent console spam - data available via window.authService.debugAuthState()
-
-    // Debug state changes
-    useEffect(() => {
-        console.log('🛒 CartPage Debug - State changed:', {
-            showOrderHistory,
-            ordersCount: orders.length,
-            loading,
-            error
-        });
-    }, [showOrderHistory, orders, loading, error]);
-
-    const handleQuantityChange = (productId, newQuantity) => {
-        console.log('🔄 CartPage Debug - Quantity change requested:', {
-            productId,
-            newQuantity,
-            willRemove: newQuantity <= 0
-        });
-        
-        if (newQuantity <= 0) {
-            console.log('🗑️ CartPage Debug - Removing item due to zero quantity');
-            removeFromCart(productId);
-        } else {
-            console.log('🔢 CartPage Debug - Updating quantity');
-            updateQuantity(productId, newQuantity);
-        }
-    };
-
-    const handleProceedToCheckout = () => {
-        console.log('💳 CartPage Debug - Proceeding to checkout:', {
-            cartItemsCount: cartItems?.length,
-            finalTotal: getFinalTotal()
-        });
-        navigate('/checkout');
-    };
-
     const handleViewOrderHistory = async () => {
-        console.log('📋 CartPage Debug - Loading order history');
         setShowOrderHistory(true);
-        setLoading(true);
-        setError(null);
+        setOrderLoading(true);
+        setOrderError(null);
         
         try {
-            console.log('📤 CartPage Debug - Calling orderService.getOrders');
             const response = await orderService.getOrders();
-            console.log('📨 CartPage Debug - Order history response:', {
-                success: !!response,
-                ordersCount: response?.orders?.length || 0,
-                orders: response?.orders
-            });
             setOrders(response.orders || []);
         } catch (err) {
-            console.error('❌ CartPage Debug - Failed to load order history:', err);
-            const errorMessage = err.message || 'Không thể tải lịch sử đơn hàng';
-            setError(errorMessage);
+            console.error('Failed to load order history:', err);
+            setOrderError(err.message || 'Failed to load order history');
         } finally {
-            console.log('🔄 CartPage Debug - Setting loading to false');
-            setLoading(false);
+            setOrderLoading(false);
         }
     };
 
     const handleBackToCart = () => {
-        console.log('🔙 CartPage Debug - Going back to cart from order history');
         setShowOrderHistory(false);
-        setError(null);
+        setOrderError(null);
+    };
+
+    // Handlers for CartView
+    const handleUpdateQuantity = async (productId, newQuantity) => {
+        try {
+            const currentItem = items.find(item => item.product.id === productId);
+            if (!currentItem) return;
+
+            // If new quantity is 0 or less, remove item
+            if (newQuantity <= 0) {
+                await handleRemoveItem(productId);
+                return;
+            }
+
+            const difference = newQuantity - currentItem.quantity;
+            
+            if (difference > 0) {
+                await increaseQuantity(productId, difference);
+            } else if (difference < 0) {
+                await decreaseQuantity(productId, Math.abs(difference));
+            }
+        } catch (error) {
+            console.error('Failed to update quantity:', error);
+        }
+    };
+
+    const handleRemoveItem = async (productId) => {
+        try {
+            await removeItem(productId);
+        } catch (error) {
+            console.error('Failed to remove item:', error);
+        }
+    };
+
+    const handleCheckout = () => {
+        if (transformedCartItems.length === 0) {
+            alert('Giỏ hàng trống! Vui lòng thêm sản phẩm trước khi thanh toán.');
+            return;
+        }
+        navigate('/checkout');
     };
 
     const handleContinueShopping = () => {
-        console.log('🛍️ CartPage Debug - Continuing shopping, navigating to home');
         navigate('/');
     };
 
+    // Transform cart items to match CartView expected format
+    const transformedCartItems = items.map(item => ({
+        id: item.product.id, // Use product ID for cart operations
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        category: item.product.category?.name || 'Product', // Extract name from category object
+        image: item.product.url || '/img/product01.png'
+    }));
+
+    const subtotal = totalAmount;
+    const shippingFee = subtotal > 1000000 ? 0 : 30000; // Free shipping over 1M VND
+    const finalTotal = subtotal + shippingFee;
+
     // Add cart-page-active class to body to remove main-content padding
     useEffect(() => {
-        console.log('🛒 CartPage Debug - Adding cart-page-active class to body');
         document.body.classList.add('cart-page-active');
         return () => {
-            console.log('🧹 CartPage Debug - Removing cart-page-active class from body');
             document.body.classList.remove('cart-page-active');
         };
     }, []);
 
-    // Component mount/unmount debug
+    // Redirect if not authenticated
     useEffect(() => {
-        console.log('🛒 CartPage Debug - Component mounted');
-        return () => {
-            console.log('🛒 CartPage Debug - Component unmounting');
-        };
-    }, []);
+        if (isInitialized && !isAuthenticated()) {
+            navigate('/login', {
+                state: {
+                    returnUrl: '/cart',
+                    message: 'Please login to view your cart'
+                }
+            });
+        }
+    }, [isAuthenticated, isInitialized, navigate]);
+
+    // Show loading while checking authentication
+    if (!isInitialized || loading) {
+        return (
+            <div style={{ 
+                minHeight: '60vh', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center' 
+            }}>
+                <h3>Loading cart...</h3>
+            </div>
+        );
+    }
+
+    // Show error state
+    if (error) {
+        return (
+            <div style={{ 
+                minHeight: '60vh', 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center', 
+                justifyContent: 'center' 
+            }}>
+                <h3>Error loading cart</h3>
+                <p>{error}</p>
+                <button 
+                    onClick={() => window.location.reload()}
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
 
     if (showOrderHistory) {
-        console.log('📋 CartPage Debug - Rendering order history view');
         return (
             <div style={{ margin: 0, padding: 0 }}>
                 {/* Header */}
@@ -138,7 +190,7 @@ const CartPage = () => {
                                     gap: '0.8rem'
                                 }}>
                                     <span style={{ fontSize: '1.8rem' }}>📋</span>
-                                    Lịch sử đơn hàng
+                                    Order History
                                 </h1>
                                 <p style={{
                                     fontSize: '0.9rem',
@@ -147,7 +199,7 @@ const CartPage = () => {
                                     marginTop: '0.2rem',
                                     marginLeft: '3.4rem'
                                 }}>
-                                    {orders.length === 0 ? 'Chưa có đơn hàng' : `${orders.length} đơn hàng`}
+                                    {orders.length === 0 ? 'No orders yet' : `${orders.length} orders`}
                                 </p>
                             </div>
                         </div>
@@ -158,17 +210,17 @@ const CartPage = () => {
                     background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
                     minHeight: 'calc(100vh - 80px)'
                 }}>
-                    {error && (
+                    {orderError && (
                         <div className="alert alert-danger" role="alert">
-                            {error}
+                            {orderError}
                         </div>
                     )}
-                    {loading ? (
+                    {orderLoading ? (
                         <div className="text-center py-5">
                             <div className="spinner-border text-primary" role="status">
-                                <span className="visually-hidden">Đang tải...</span>
+                                <span className="visually-hidden">Loading...</span>
                             </div>
-                            <p className="mt-2">Đang tải lịch sử đơn hàng...</p>
+                            <p className="mt-2">Loading order history...</p>
                         </div>
                     ) : (
                         <OrderHistory 
@@ -181,60 +233,24 @@ const CartPage = () => {
         );
     }
 
-    console.log('🛒 CartPage Debug - Rendering main cart view');
     return (
-        <div style={{ margin: 0, padding: 0 }}>
-            {/* Cart page header */}
-            <nav className="navbar navbar-expand-lg" style={{
-                background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
-                padding: '1.2rem 2rem',
-                boxShadow: '0 4px 20px rgba(30, 41, 59, 0.4)',
-                margin: 0,
-                marginTop: 0,
-                borderBottom: '2px solid #0ea5e9'
-            }}>
-                <div className="container-fluid">
-                    <div className="navbar-brand text-white d-flex align-items-center">
-                        <div className="me-3" style={{
-                            fontSize: '2rem',
-                            background: 'linear-gradient(45deg, #ff6b6b, #ffd93d)',
-                            borderRadius: '12px',
-                            padding: '0.5rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '50px',
-                            height: '50px'
-                        }}>
-                            🛒
-                        </div>
-                        <div>
-                            <div style={{ fontSize: '1.4rem', fontWeight: '700', marginBottom: '0' }}>
-                                Tech Store
-                            </div>
-                            <div style={{ fontSize: '0.9rem', opacity: '0.8' }}>
-                                Giỏ hàng của bạn
-                            </div>
-                        </div>
+        <div style={{ minHeight: '80vh', paddingTop: '20px', paddingBottom: '20px' }}>
+            <div className="container">
+                <div className="row">
+                    <div className="col-md-12">
+                        <CartView 
+                            cartItems={transformedCartItems}
+                            onUpdateQuantity={handleUpdateQuantity}
+                            onRemoveItem={handleRemoveItem}
+                            onCheckout={handleCheckout}
+                            onViewOrderHistory={handleViewOrderHistory}
+                            onContinueShopping={handleContinueShopping}
+                            subtotal={subtotal}
+                            shippingFee={shippingFee}
+                            totalAmount={finalTotal}
+                        />
                     </div>
                 </div>
-            </nav>
-
-            <div className="container-fluid px-4 py-4" style={{
-                background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
-                minHeight: 'calc(100vh - 80px)'
-            }}>
-                <CartView
-                    cartItems={cartItems}
-                    onUpdateQuantity={handleQuantityChange}
-                    onRemoveItem={removeFromCart}
-                    onCheckout={handleProceedToCheckout}
-                    onViewOrderHistory={handleViewOrderHistory}
-                    onContinueShopping={handleContinueShopping}
-                    subtotal={getCartTotal()}
-                    shippingFee={getShipping()}
-                    totalAmount={getFinalTotal()}
-                />
             </div>
         </div>
     );
