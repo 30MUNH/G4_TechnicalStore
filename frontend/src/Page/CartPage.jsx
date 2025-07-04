@@ -10,7 +10,7 @@ const CartPage = () => {
     const navigate = useNavigate();
     const [showOrderHistory, setShowOrderHistory] = useState(false);
     const [orders, setOrders] = useState([]);
-    const [orderLoading, setOrderLoading] = useState(false);
+
     const [orderError, setOrderError] = useState(null);
     const { isAuthenticated } = useAuth();
     const { 
@@ -27,17 +27,40 @@ const CartPage = () => {
 
     const handleViewOrderHistory = async () => {
         setShowOrderHistory(true);
-        setOrderLoading(true);
         setOrderError(null);
         
+        // Check authentication first
+        console.log('🔐 Auth check before loading orders:', {
+            isAuthenticated: isAuthenticated(),
+            hasToken: !!localStorage.getItem('authToken'),
+            username: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user'))?.username : 'none'
+        });
+        
+        if (!isAuthenticated()) {
+            setOrderError('Vui lòng đăng nhập để xem lịch sử đơn hàng');
+            return;
+        }
+        
         try {
+            console.log('📤 Calling orderService.getOrders()...');
             const response = await orderService.getOrders();
-            setOrders(response.orders || []);
+            console.log('📋 Order history RAW response:', response);
+            console.log('📋 Response structure:', {
+                hasData: !!response.data,
+                dataType: typeof response.data,
+                dataKeys: response.data ? Object.keys(response.data) : [],
+                nestedData: response.data?.data,
+                nestedDataType: typeof response.data?.data,
+                nestedDataLength: Array.isArray(response.data?.data) ? response.data.data.length : 'not array'
+            });
+            
+            // ResponseInterceptor wraps: { success: true, data: { data: orders.orders } }
+            const orders = response.data?.data || [];
+            console.log('📋 Final orders array:', orders, 'Length:', orders.length);
+            setOrders(orders);
         } catch (err) {
-            console.error('Failed to load order history:', err);
+            console.error('❌ Failed to load order history:', err);
             setOrderError(err.message || 'Failed to load order history');
-        } finally {
-            setOrderLoading(false);
         }
     };
 
@@ -90,17 +113,17 @@ const CartPage = () => {
         navigate('/');
     };
 
-    // Transform cart items to match CartView expected format
-    const transformedCartItems = items.map(item => ({
-        id: item.product.id, // Use product ID for cart operations
-        name: item.product.name,
-        price: item.product.price,
-        quantity: item.quantity,
-        category: item.product.category?.name || 'Product', // Extract name from category object
-        image: item.product.url || '/img/product01.png'
+    // Transform cart items to match CartView expected format - with fallback for empty/undefined items
+    const transformedCartItems = (items || []).map(item => ({
+        id: item.product?.id || item.id, // Use product ID for cart operations
+        name: item.product?.name || 'Unknown Product',
+        price: item.product?.price || 0,
+        quantity: item.quantity || 1,
+        category: item.product?.category?.name || 'Product', // Extract name from category object
+        image: item.product?.url || '/img/product01.png'
     }));
 
-    const subtotal = totalAmount;
+    const subtotal = totalAmount || 0;
     const shippingFee = subtotal > 1000000 ? 0 : 30000; // Free shipping over 1M VND
     const finalTotal = subtotal + shippingFee;
 
@@ -112,31 +135,15 @@ const CartPage = () => {
         };
     }, []);
 
-    // Redirect if not authenticated
+    // Check authentication but don't block rendering
     useEffect(() => {
-        if (isInitialized && !isAuthenticated()) {
-            navigate('/login', {
-                state: {
-                    returnUrl: '/cart',
-                    message: 'Please login to view your cart'
-                }
-            });
+        if (!isAuthenticated()) {
+            console.log('🔐 Not authenticated on cart page, user will see empty cart');
+            // Don't redirect immediately - let them see the page
         }
-    }, [isAuthenticated, isInitialized, navigate]);
+    }, [isAuthenticated]);
 
-    // Show loading while checking authentication
-    if (!isInitialized || loading) {
-        return (
-            <div style={{ 
-                minHeight: '60vh', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-            }}>
-                <h3>Loading cart...</h3>
-            </div>
-        );
-    }
+    // Remove loading screen - just show cart immediately
 
     // Show error state
     if (error) {
@@ -215,19 +222,10 @@ const CartPage = () => {
                             {orderError}
                         </div>
                     )}
-                    {orderLoading ? (
-                        <div className="text-center py-5">
-                            <div className="spinner-border text-primary" role="status">
-                                <span className="visually-hidden">Loading...</span>
-                            </div>
-                            <p className="mt-2">Loading order history...</p>
-                        </div>
-                    ) : (
-                        <OrderHistory 
-                            orders={orders} 
-                            onBackToCart={handleBackToCart} 
-                        />
-                    )}
+                    <OrderHistory 
+                        orders={orders} 
+                        onBackToCart={handleBackToCart} 
+                    />
                 </div>
             </div>
         );
