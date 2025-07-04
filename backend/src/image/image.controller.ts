@@ -14,7 +14,7 @@ export class ImageController {
   
   @Post("/upload")
   async upload(@UploadedFile("file") file: Express.Multer.File) {
-    const url = await this.imageService.uploadImage(file);
-    return { url };
+    const newImage = await this.imageService.uploadImage(file);
+    return newImage.url;
   }
 }

@@ -5,6 +5,10 @@ import { Column, Entity, ManyToOne } from "typeorm";
 
 @Entity("images")
 export class Image extends BaseEntity {
+
+    @Column({ type: "varchar", length: 255 })
+    originalName: string;
+
     @Column({ type: "varchar", length: 255 })
     url: string;
     
