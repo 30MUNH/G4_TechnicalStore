@@ -1,33 +1,21 @@
 import { NoFileUploadedException } from "@/exceptions/http-exceptions";
-import { Storage } from "@google-cloud/storage";
-import * as path from "path";
+import { HttpMessages } from "@/exceptions/http-messages.constant";
+import { MinioClient } from "@/utils/minio/minio";
 import { Service } from "typedi";
-
-const storage = new Storage({
-  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-  credentials: {
-    client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-  },
-});
-const bucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME || "";
+import { Image } from "./image.entity";
 
 @Service()
 export class ImageService {
-    async uploadImage(file: Express.Multer.File): Promise<string> {
-        if(!file) throw new NoFileUploadedException();
-        const bucket = storage.bucket(bucketName);
-        const blob = bucket.file(Date.now() + path.extname(file.originalname));
-        const blobStream = blob.createWriteStream({ resumable: false, public: true });
-      
-        return new Promise((resolve, reject) => {
-          blobStream.on("error", (err) => reject(err));
-          blobStream.on("finish", () => {
-            const publicUrl = `https://storage.googleapis.com/${bucketName}/${blob.name}`;
-            resolve(publicUrl);
-          });
-          blobStream.end(file.buffer);
-        });
-    }
-}
 
+  async uploadImage(file: Express.Multer.File) {
+    if (!file) throw new NoFileUploadedException;
+      console.log('uploading');
+      const uploadedFile = await MinioClient.getInstance().upload(file);
+      const newImage = new Image();
+      newImage.originalName = file.originalname;
+      newImage.name = uploadedFile ? uploadedFile.fileName : '';
+      newImage.url = uploadedFile ? uploadedFile.url : '';
+      await newImage.save();
+      return newImage;
+  }
+}
