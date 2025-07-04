@@ -45,18 +45,8 @@ export class AccountController{
     }
 
     @Post('/login')
-    async login(@Body() body: CredentialsDto){
-        const account = await this.accountService.login(body);
-        await this.twilioService.sendOtp(account.phone);
-        return "Check OTP message to complete login";
-    }
-
-    @Post('/verify-login')
-    async verifyLogin(@BodyParam("username") username: string, @BodyParam("otp") otp: string, @Res() res: Response){
-        const account = await this.accountService.findAccountByUsername(username);
-        const result = await this.twilioService.verifyOtp(account.phone, otp);
-        if(!result) return "OTP is wrong or is expired";
-        const tokens = await this.accountService.finalizeLogin(username);
+    async login(@Body() body: CredentialsDto, @Res() res: Response){
+        const tokens = await this.accountService.login(body);
         res.cookie('refreshToken', tokens.newRefreshToken, {
             httpOnly: true,
             secure: true,
