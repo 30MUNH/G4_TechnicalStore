@@ -68,15 +68,11 @@ export class AccountService {
       await Promise.all(accounts.map((account) => account.softRemove()));
   }
 
-  async login(credentials: CredentialsDto): Promise<Account> {
+  async login(credentials: CredentialsDto): Promise<{newRefreshToken: string, accessToken: string}> {
     const account = await this.findAccountByUsername(credentials.username);
     if (!(await bcrypt.compare(credentials.password, account.password)))
       throw new AccountNotFoundException();
-    return account;
-  }
-
-  async finalizeLogin(username: string) {
-    const account = await this.findAccountByUsername(username);
+    
     const token = await RefreshToken.findOne({
       where: {
         account,
