@@ -8,6 +8,7 @@ import { CreateOrderDto } from './dtos/create-order.dto';
 import { OrderStatus, UpdateOrderDto } from './dtos/update-order.dto';
 import { EntityNotFoundException } from '@/exceptions/http-exceptions';
 import { DbConnection } from '@/database/dbConnection';
+import { Cart } from '@/Cart/cart.entity';
 
 @Service()
 export class OrderService {
@@ -38,24 +39,6 @@ export class OrderService {
         console.log(`🛒 [ORDER] Creating order for user: ${username}`);
         console.log(`📦 [ORDER] Order data:`, createOrderDto);
         
-        const cart = await this.cartService.viewCart(username);
-        console.log(`🛒 [ORDER] Cart found:`, {
-            id: cart.id,
-            itemCount: cart.cartItems?.length || 0,
-            totalAmount: cart.totalAmount,
-            items: cart.cartItems?.map(item => ({
-                productId: item.product.id,
-                productName: item.product.name,
-                quantity: item.quantity,
-                price: item.product.price
-            }))
-        });
-        
-        if (!cart.cartItems || cart.cartItems.length === 0) {
-            console.log(`❌ [ORDER] Cart is empty for user: ${username}`);
-            throw new Error('Giỏ hàng trống');
-        }
-
         if (!createOrderDto.shippingAddress) {
             throw new Error('Địa chỉ giao hàng không được để trống');
         }
@@ -65,12 +48,49 @@ export class OrderService {
             throw new Error('Địa chỉ giao hàng không được để trống');
         }
 
-        const priceValidation = await this.cartService.validateCartPrices(username);
-        if (priceValidation.hasChanges) {
-            throw new Error('Giá sản phẩm đã thay đổi, vui lòng kiểm tra lại giỏ hàng');
-        }
-
         return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
+            // Lấy cart TRONG transaction để đảm bảo data consistency
+            const account = await transactionalEntityManager.findOne(Account, { where: { username } });
+            if (!account) throw new EntityNotFoundException('Account');
+
+            const cart = await transactionalEntityManager.findOne(Cart, {
+                where: { account: { id: account.id } },
+                relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
+            });
+
+            if (!cart) throw new EntityNotFoundException('Cart');
+
+            console.log(`🛒 [ORDER] Cart found:`, {
+                id: cart.id,
+                itemCount: cart.cartItems?.length || 0,
+                totalAmount: cart.totalAmount,
+                items: cart.cartItems?.map(item => ({
+                    productId: item.product.id,
+                    productName: item.product.name,
+                    quantity: item.quantity,
+                    price: item.product.price
+                }))
+            });
+            
+            if (!cart.cartItems || cart.cartItems.length === 0) {
+                console.log(`❌ [ORDER] Cart is empty for user: ${username}`);
+                throw new Error('Giỏ hàng trống');
+            }
+
+            // Validate giá sản phẩm trong transaction
+            let hasChanges = false;
+            for (const item of cart.cartItems) {
+                const product = await transactionalEntityManager.findOne(Product, { where: { id: item.product.id } });
+                if (product && product.price !== item.product.price) {
+                    hasChanges = true;
+                    break;
+                }
+            }
+
+            if (hasChanges) {
+                throw new Error('Giá sản phẩm đã thay đổi, vui lòng kiểm tra lại giỏ hàng');
+            }
+
             const productIds = cart.cartItems.map(item => item.product.id);
             const products = await transactionalEntityManager
                 .createQueryBuilder(Product, 'product')
@@ -136,8 +156,13 @@ export class OrderService {
                 console.log(`✅ Stock updated for ${product.name}: ${product.stock}`);
             }
 
-            console.log(`🧹 Clearing cart for user: ${username}`);
-            await this.cartService.clearCart(username);
+            console.log(`🧹 Clearing cart for user: ${username} TRONG transaction`);
+            // Clear cart TRONG transaction thay vì gọi service riêng
+            if (cart.cartItems) {
+                await transactionalEntityManager.remove(cart.cartItems);
+            }
+            cart.totalAmount = 0;
+            await transactionalEntityManager.save(cart);
             console.log(`✅ Cart cleared successfully`);
 
             console.log(`🔍 [ORDER] Fetching final order data...`);
