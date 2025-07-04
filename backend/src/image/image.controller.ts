@@ -30,4 +30,10 @@ export class ImageController {
     const feedback = await this.imageService.attachImagesToFeedback(body.feedbackId, body.imagesURL);
     return "Success";
   }
+
+  @Post("/attach-to-account")
+  async attachToAccount(@Body() body: { username: string, imageURL: string }) {
+    const account = await this.imageService.attachImageToAccount(body.username, body.imageURL);
+    return "Success";
+  }
 }

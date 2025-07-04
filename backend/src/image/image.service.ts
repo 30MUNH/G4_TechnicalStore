@@ -5,6 +5,7 @@ import { Image } from "./image.entity";
 import { Product } from "@/product/product.entity";
 import { In } from "typeorm";
 import { Feedback } from "@/feedback/feedback.entity";
+import { Account } from "@/auth/account/account.entity";
 
 @Service()
 export class ImageService {
@@ -37,5 +38,15 @@ export class ImageService {
     feedback.images = images;
     await feedback.save();
     return feedback;
+  }
+
+  async attachImageToAccount(username: string, imageURL: string){
+    const account = await Account.findOne({ where: { username } });
+    if (!account) throw new EntityNotFoundException("Account");
+    const image = await Image.findOne({ where: { url: imageURL } });
+    if (!image) throw new EntityNotFoundException("Image");
+    account.image = image;
+    await account.save();
+    return account;
   }
 }
