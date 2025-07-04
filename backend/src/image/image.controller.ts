@@ -7,6 +7,7 @@ import {
 } from "routing-controllers";
 import { Service } from "typedi";
 import { ImageService } from "./image.service";
+import { AttachImageDto } from "./image.dto";
 
 @Service()
 @Controller("/image")
@@ -20,14 +21,14 @@ export class ImageController {
   }
 
   @Post("/attach-to-product")
-  async attachToProduct(@Body() body: { productSlug: string, imagesURL: string[] }) {
-    const product = await this.imageService.attachImagesToProduct(body.productSlug, body.imagesURL);
+  async attachToProduct(@Body() body: AttachImageDto) {
+    const product = await this.imageService.attachImagesToProduct(body.query, body.imagesURL);
     return "Success";
   }
 
   @Post("/attach-to-feedback")
-  async attachToFeedback(@Body() body: { feedbackId: string, imagesURL: string[] }) {
-    const feedback = await this.imageService.attachImagesToFeedback(body.feedbackId, body.imagesURL);
+  async attachToFeedback(@Body() body: AttachImageDto) {
+    const feedback = await this.imageService.attachImagesToFeedback(body.query, body.imagesURL);
     return "Success";
   }
 
