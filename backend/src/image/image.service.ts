@@ -22,8 +22,8 @@ export class ImageService {
       return newImage;
   }
 
-  async attachImagesToProduct(productSlug: string, imagesURL: string[]){
-    const product = await Product.findOne({ where: { slug: productSlug } });
+  async attachImagesToProduct(productId: string, imagesURL: string[]){
+    const product = await Product.findOne({ where: { id: productId } });
     if (!product) throw new EntityNotFoundException("Product");
     const images = await Image.find({ where: { url: In(imagesURL) } });
     product.images = images;
