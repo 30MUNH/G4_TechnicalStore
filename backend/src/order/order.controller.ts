@@ -33,8 +33,9 @@ export class OrderController {
             });
             
             return {
+                success: true,
                 message: "Đặt hàng thành công",
-                order
+                data: order
             };
         } catch (error: any) {
             console.error(`❌ [ORDER_CONTROLLER] Order creation failed:`, {
@@ -44,6 +45,7 @@ export class OrderController {
             });
             
             return {
+                success: false,
                 message: "Đặt hàng thất bại",
                 error: error.message
             };

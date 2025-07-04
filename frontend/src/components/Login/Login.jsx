@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, User, Lock, ArrowLeft } from 'lucide-react';
 import FormCard from './FormCard';
-import OTPPopup from './OTPPopup';
 import styles from './Login.module.css';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../contexts/AuthContext';
-import signupDebugUtils, { otpDebugUtils } from '../../utils/signupDebug';
 
 const Login = ({ onNavigate }) => {
   const navigate = useNavigate();
@@ -18,9 +16,6 @@ const Login = ({ onNavigate }) => {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showOTPPopup, setShowOTPPopup] = useState(false);
-  const [pendingLogin, setPendingLogin] = useState(null);
-  const [showDebugInfo, setShowDebugInfo] = useState(false);
 
   // Check for stored registration or reset data
   useEffect(() => {
@@ -64,25 +59,7 @@ const Login = ({ onNavigate }) => {
     }
   }, []);
 
-  // Debug helper function
-  const getDebugInfo = () => {
-    return {
-      formData: { 
-        username: formData.username, 
-        passwordLength: formData.password.length 
-      },
-      states: {
-        isSubmitting,
-        showOTPPopup,
-        pendingLogin: !!pendingLogin,
-        hasErrors: Object.keys(errors).length > 0
-      },
-      authState: {
-        hasToken: !!localStorage.getItem('authToken'),
-        hasUser: !!localStorage.getItem('user')
-      }
-    };
-  };
+
 
   const validateField = (name, value) => {
     switch (name) {
@@ -187,31 +164,49 @@ const Login = ({ onNavigate }) => {
       console.log('📨 Login response received:', {
         response,
         responseType: typeof response,
-        includesOTP: response?.toLowerCase?.()?.includes('otp'),
-        wrappedData: response?.data,
-        wrappedDataType: typeof response?.data
+        responseLength: typeof response === 'string' ? response.length : 'Not string'
       });
 
-      // Handle both wrapped and direct response formats
-      const responseMessage = typeof response === 'string' ? response : response?.data;
-      const hasOTP = responseMessage && typeof responseMessage === 'string' && responseMessage.toLowerCase().includes('otp');
+      // Handle direct JWT token response (no OTP)
+      const responseToken = typeof response === 'string' ? response : response?.data;
+      const isValidToken = responseToken && typeof responseToken === 'string' && responseToken.length > 10;
       
-      console.log('🔍 OTP check:', {
-        responseMessage,
-        hasOTP,
-        messageType: typeof responseMessage
+      console.log('🔍 Token validation:', {
+        responseToken: responseToken?.substring(0, 20) + '...',
+        tokenType: typeof responseToken,
+        tokenLength: responseToken?.length,
+        isValidToken
       });
 
-      if (hasOTP) {
-        console.log('✅ OTP required, showing popup');
-        setPendingLogin(processedUsername); // Use processed username
-        setShowOTPPopup(true);
-        setErrors({});
-        setTimeout(() => {
-          setErrors({ general: 'Vui lòng kiểm tra tin nhắn OTP để hoàn tất đăng nhập.' });
-        }, 100);
+      if (isValidToken) {
+        console.log('✅ Login successful, logging in user directly');
+        
+        // Store success state for better UX
+        sessionStorage.setItem('loginSuccess', JSON.stringify({
+          username: processedUsername,
+          timestamp: Date.now()
+        }));
+        
+        console.log('💾 Login success state stored');
+        
+        // Successful login - authenticate user directly
+        login({ username: processedUsername }, responseToken);
+        console.log('🔐 User authenticated via AuthContext');
+        
+        // Success logging
+        console.log('🎉 Login completed successfully for user:', processedUsername);
+        
+        // Navigate with success state
+        navigate('/', { 
+          state: { 
+            welcomeMessage: `Chào mừng bạn trở lại!`,
+            loginTime: new Date().toLocaleTimeString('vi-VN')
+          } 
+        });
+        console.log('🔄 Navigation to home page initiated');
+        
       } else {
-        console.error('❌ Unexpected response format:', response);
+        console.error('❌ Invalid login response:', response);
         setErrors({ general: 'Unexpected response from server' });
       }
     } catch (error) {
@@ -246,319 +241,47 @@ const Login = ({ onNavigate }) => {
     }
   };
 
-  const handleVerifyOTP = async (otp) => {
-    console.group('🔍 [DEBUG] OTP Verification Process');
-    
-    if (!pendingLogin) {
-      console.error('❌ No pending login session');
-      setErrors({ general: 'No pending login session' });
-      console.groupEnd();
-      return;
-    }
 
-    console.log('📥 OTP verification input:', {
-      username: pendingLogin,
-      otp: otp,
-      otpLength: otp?.length,
-      otpType: typeof otp
-    });
-
-    setIsSubmitting(true);
-    try {
-      const verifyData = {
-        username: pendingLogin,
-        otp: otp.trim()
-      };
-
-      console.log('📤 Sending OTP verification request:', {
-        username: verifyData.username,
-        otpLength: verifyData.otp.length,
-        endpoint: '/account/verify-login'
-      });
-
-      const response = await authService.verifyLogin(verifyData);
-      
-      console.log('📨 OTP verification response received:', {
-        response,
-        responseType: typeof response,
-        responseLength: typeof response === 'string' ? response.length : 'Not string',
-        isString: typeof response === 'string',
-        hasData: !!response?.data,
-        hasSuccess: !!response?.success,
-        fullStructure: response
-      });
-
-      // Handle both wrapped and direct response formats
-      const responseToken = typeof response === 'string' ? response : response?.data;
-      const isValidToken = responseToken && typeof responseToken === 'string' && responseToken.length > 10;
-      
-      console.log('🔍 Token validation:', {
-        responseToken: responseToken?.substring(0, 20) + '...',
-        tokenType: typeof responseToken,
-        tokenLength: responseToken?.length,
-        isValidToken,
-        tokenSource: typeof response === 'string' ? 'direct' : 'wrapped'
-      });
-
-      if (isValidToken) {
-        console.log('✅ OTP verification successful, logging in user');
-        
-        // Enhanced success callback for login
-        const handleLoginSuccess = () => {
-          console.log('🎉 Preparing login success callback...');
-          
-          // Store success state for better UX
-          sessionStorage.setItem('loginSuccess', JSON.stringify({
-            username: pendingLogin,
-            timestamp: Date.now()
-          }));
-          
-          console.log('💾 Login success state stored');
-          
-          // Successful login - authenticate user
-          login({ username: pendingLogin }, responseToken);
-          console.log('🔐 User authenticated via AuthContext');
-          
-          // Clear OTP popup and pending state
-          setShowOTPPopup(false);
-          setPendingLogin(null);
-          console.log('🧹 Cleared OTP popup and pending state');
-          
-          // Success logging
-          console.log('🎉 Login completed successfully for user:', pendingLogin);
-          
-          // Navigate with success state
-          navigate('/', { 
-            state: { 
-              welcomeMessage: `Chào mừng bạn trở lại!`,
-              loginTime: new Date().toLocaleTimeString('vi-VN')
-            } 
-          });
-          console.log('🔄 Navigation to home page initiated');
-        };
-        
-        // Execute success callback
-        handleLoginSuccess();
-        
-      } else {
-        console.error('❌ Invalid OTP verification response:', {
-          response,
-          expectedStringToken: 'Expected JWT token string',
-          actualResponse: response,
-          tokenCheck: {
-            hasResponseToken: !!responseToken,
-            isString: typeof responseToken === 'string',
-            hasMinLength: responseToken?.length > 10
-          }
-        });
-        throw new Error('Invalid response format');
-      }
-    } catch (error) {
-      console.error('❌ OTP verification error details:', {
-        error,
-        errorType: typeof error,
-        errorMessage: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        responseData: error.response?.data,
-        requestData: {
-          username: pendingLogin,
-          otpProvided: !!otp
-        },
-        fullError: error
-      });
-      
-      let errorMessage = 'OTP verification failed. Please try again.';
-
-      if (error.response?.status === 401) {
-        errorMessage = 'Invalid OTP code or OTP has expired';
-      } else if (error.response?.status === 404) {
-        errorMessage = 'Login session not found. Please start login again.';
-      } else if (error.response?.status === 429) {
-        errorMessage = 'Too many OTP attempts. Please try again later.';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message === 'Invalid response format') {
-        errorMessage = 'Server response format error. Please try logging in again.';
-      }
-
-      console.log('📝 Setting OTP error message:', errorMessage);
-      setErrors({ general: errorMessage });
-    } finally {
-      setIsSubmitting(false);
-      console.groupEnd();
-    }
-  };
-
-  const handleResendOTP = async () => {
-    if (!pendingLogin) {
-      setErrors({ general: 'No pending login session' });
-      return;
-    }
-
-    try {
-      const response = await authService.resendOTP({
-        username: pendingLogin,
-        isForLogin: true
-      });
-
-      if (response && response.success) {
-        alert('New OTP code has been sent to your phone');
-        setErrors(prev => ({
-          ...prev,
-          general: ''
-        }));
-      } else {
-        throw new Error(response?.message || 'Failed to resend OTP');
-      }
-    } catch (error) {
-      console.error('Resend OTP error:', error);
-      let errorMessage = 'Failed to resend OTP. Please try again.';
-      
-      if (error.response?.status === 429) {
-        errorMessage = 'Too many requests. Please wait before requesting again.';
-      } else if (error.response?.status === 404) {
-        errorMessage = 'Username not found. Please check and try again.';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      }
-      
-      setErrors({ general: errorMessage });
-    }
-  };
 
   useEffect(() => {
-    console.group('🔑 [DEBUG] Login Component Mount');
-    
-    // Check if coming from registration
-    const registrationSuccess = sessionStorage.getItem('registrationSuccess');
-    if (registrationSuccess) {
-      console.log('✅ Detected successful registration');
+    // Check for stored registration or reset data
+    const lastRegisteredUser = sessionStorage.getItem('lastRegisteredUser');
+    if (lastRegisteredUser) {
       try {
-        const regData = JSON.parse(registrationSuccess);
-        console.log('📊 Registration data:', {
-          username: regData.username,
-          timestamp: new Date(regData.timestamp).toLocaleString()
-        });
-        
-        // Pre-fill username if available
-        if (regData.username) {
-          setFormData(prev => ({ ...prev, username: regData.username }));
-          console.log('📝 Pre-filled username from registration');
+        const { username, timestamp } = JSON.parse(lastRegisteredUser);
+        // Only use data if it's less than 5 minutes old
+        if (Date.now() - timestamp < 5 * 60 * 1000) {
+          setFormData(prev => ({ ...prev, username }));
         }
-      } catch (e) {
-        console.warn('❌ Invalid registration data');
+        // Clear the stored data
+        sessionStorage.removeItem('lastRegisteredUser');
+      } catch (error) {
+        console.error('Error parsing lastRegisteredUser:', error);
       }
     }
-    
-    // Force clear any stale auth tokens to prevent 401 errors
-    const existingToken = localStorage.getItem('authToken');
-    if (existingToken) {
-      console.log('🧹 Clearing stale auth token from previous session');
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      
-      // Dispatch clear event for contexts
-      window.dispatchEvent(new CustomEvent('auth:clear'));
-    }
-    
-    // Add debug helpers to window for testing
-    window.otpDebugUtils = otpDebugUtils;
-    window.loginDebug = {
-      testCredentials: (username, password) => {
-        console.log('🧪 Testing credentials:', { username, passwordLength: password?.length });
-        setFormData({ username, password });
-      },
-      
-      getCurrentFormData: () => formData,
-      
-      simulateSubmit: () => {
-        console.log('🎭 Simulating form submission with current data');
-        handleSubmit({ preventDefault: () => {} });
-      },
-      
-      checkRegistrationData: () => {
-        const regData = sessionStorage.getItem('registrationSuccess');
-        if (regData) {
-          const parsed = JSON.parse(regData);
-          console.log('📋 Available registration data:', parsed);
-          return parsed;
+
+    // Check for password reset data
+    const lastResetUser = sessionStorage.getItem('lastResetUser');
+    if (lastResetUser) {
+      try {
+        const { phone, timestamp } = JSON.parse(lastResetUser);
+        // Only use data if it's less than 5 minutes old
+        if (Date.now() - timestamp < 5 * 60 * 1000) {
+          // We need to get the username associated with this phone number
+          authService.getUsernameByPhone(phone)
+            .then(username => {
+              if (username) {
+                setFormData(prev => ({ ...prev, username }));
+              }
+            })
+            .catch(error => console.error('Error getting username:', error));
         }
-        console.log('📭 No registration data found');
-        return null;
-      },
-      
-      // Test various username formats
-      testUsernameFormats: async (baseUsername, password) => {
-        const testCases = [
-          baseUsername,                    // Original
-          baseUsername.toLowerCase(),      // Lowercase
-          baseUsername.toUpperCase(),      // Uppercase
-          `+84${baseUsername}`,           // With +84 prefix (if phone)
-          `0${baseUsername}`,             // With 0 prefix (if phone)
-          baseUsername.replace(/^0/, ''), // Remove leading 0 (if phone)
-        ];
-        
-        console.group('🧪 Testing multiple username formats');
-        
-        for (const testUsername of testCases) {
-          console.log(`🔍 Testing username: "${testUsername}"`);
-          try {
-            const response = await authService.login({ 
-              username: testUsername, 
-              password: password 
-            });
-            console.log(`✅ SUCCESS with "${testUsername}":`, response);
-            return { success: true, username: testUsername, response };
-          } catch (error) {
-            console.log(`❌ FAILED with "${testUsername}":`, error.response?.data?.message || error.message);
-          }
-        }
-        
-        console.log('❌ All username formats failed');
-        console.groupEnd();
-        return { success: false };
-      },
-      
-      // Quick test with registration data
-      testWithRegistrationData: async () => {
-        const regData = window.loginDebug.checkRegistrationData();
-        if (!regData) {
-          console.log('❌ No registration data to test with');
-          return;
-        }
-        
-        console.log('🚀 Testing with registration username and common passwords...');
-        const commonPasswords = ['123456', 'password', 'admin', '12345678'];
-        
-        // First try with the registration username
-        for (const pwd of commonPasswords) {
-          console.log(`🔍 Testing ${regData.username} with password: ${pwd}`);
-          try {
-            const response = await authService.login({ 
-              username: regData.username, 
-              password: pwd 
-            });
-            console.log(`✅ SUCCESS:`, response);
-            return { success: true, username: regData.username, password: pwd };
-          } catch (error) {
-            console.log(`❌ Failed:`, error.response?.data?.message);
-          }
-        }
-        
-        console.log('❌ No working password found');
+        // Clear the stored data
+        sessionStorage.removeItem('lastResetUser');
+      } catch (error) {
+        console.error('Error parsing lastResetUser:', error);
       }
-    };
-    
-    // Add signupDebugUtils to window for easy access
-    window.signupDebugUtils = signupDebugUtils;
-    
-    // Add authService to window for console testing
-    window.authService = authService;
-    
-    console.log('🔓 Login page ready - clean auth state');
-    console.log('🛠️ Debug helper: window.loginDebug available');
-    console.groupEnd();
+    }
   }, []);
 
   return (
@@ -646,18 +369,7 @@ const Login = ({ onNavigate }) => {
         </div>
       </form>
 
-      {showOTPPopup && (
-        <OTPPopup
-          isOpen={showOTPPopup}
-          onClose={() => {
-            setShowOTPPopup(false);
-            setPendingLogin(null);
-          }}
-          onVerify={handleVerifyOTP}
-          onResend={handleResendOTP}
-          error={errors.general}
-        />
-      )}
+
     </FormCard>
   );
 };

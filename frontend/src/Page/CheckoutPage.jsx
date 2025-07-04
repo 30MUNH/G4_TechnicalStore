@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { orderService } from '../services/orderService';
+import { cartService } from '../services/cartService';
 import CheckoutForm from '../components/Cart/CheckoutForm';
 import './CheckoutPage.css';
 
@@ -42,9 +43,24 @@ const CheckoutPage = () => {
         setOrderError(null);
 
         try {
+            // Luôn đồng bộ cart với backend và lấy dữ liệu mới nhất
+            console.log('🔄 Refreshing cart before order...');
+            await refreshCart();
+            
+            // Lấy cart trực tiếp từ API để đảm bảo dữ liệu mới nhất
+            const cartResponse = await cartService.viewCart();
+            console.log('🛒 Current cart from API:', cartResponse);
+            
+            if (!cartResponse.success || !cartResponse.data?.cartItems || cartResponse.data.cartItems.length === 0) {
+                setOrderError('Giỏ hàng của bạn đang trống hoặc đã thay đổi. Vui lòng kiểm tra lại!');
+                setSubmitting(false);
+                return;
+            }
+
+            const currentCart = cartResponse.data;
             console.log('📤 Submitting order:', {
-                cartItems: items.length,
-                totalAmount: totalAmount,
+                cartItems: currentCart.cartItems.length,
+                totalAmount: currentCart.totalAmount,
                 orderData: formData
             });
 
@@ -64,14 +80,24 @@ const CheckoutPage = () => {
             const response = await orderService.createOrder(orderRequest);
             
             console.log('✅ Order created successfully:', response);
-            setOrderData(response);
+            
+            if (!response.success || !response.data) {
+                throw new Error(response.message || 'Đặt hàng thất bại');
+            }
 
-            // Refresh cart to reflect the cleared state
+            setOrderData(response.data);
+
+            // Refresh cart sau khi đặt hàng thành công để cập nhật trạng thái từ backend
             await refreshCart();
             
             // Show success message and navigate
+            const orderId = response.data.id || 'N/A';
+            if (orderId === 'N/A') {
+                console.warn('Warning: Order created but no ID returned');
+            }
+
             alert(`Đặt hàng thành công! 
-Mã đơn hàng: ${response.data?.order?.id || 'N/A'}
+Mã đơn hàng: ${orderId}
 Tổng tiền: ${formatCurrency(finalTotal)}
 Đơn hàng của bạn đang được xử lý.`);
             
