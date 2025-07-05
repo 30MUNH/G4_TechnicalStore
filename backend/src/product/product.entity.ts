@@ -8,9 +8,6 @@ import { Feedback } from "@/feedback/feedback.entity";
 
 @Entity('products')
 export class Product extends NamedEntity {
-    @Column({ nullable: true })
-    url: string;
-
     @Column({ default: true })
     isActive: boolean;
 

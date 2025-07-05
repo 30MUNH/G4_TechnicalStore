@@ -59,7 +59,11 @@ const Navigation: React.FC = () => {
     };
   };
 
-  const isManagerOrAdmin = user && (user.role === 'manager' || user.role === 'admin');
+  // const isManagerOrAdmin = user && (user.role === 'manager' || user.role === 'admin');
+  // const isManagerOrAdmin = true; // Always show for testing
+  const roleName = typeof user?.role === 'string' ? user.role : user?.role?.name;
+  const roleSlug = typeof user?.role === 'string' ? undefined : user?.role?.slug;
+  const isManagerOrAdmin = roleName === 'manager' || roleName === 'admin' || roleSlug === 'manager' || roleSlug === 'admin';
 
   return (
     <nav className="navigation" style={{background: '#181920', borderBottom: '2px solid #ff2d55', fontWeight: 600, boxShadow: 'none', width: '100%'}}>

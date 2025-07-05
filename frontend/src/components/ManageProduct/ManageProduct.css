@@ -213,7 +213,7 @@
   white-space: nowrap;
 }
 
-.edit-btn, .delete-btn {
+.view-btn, .edit-btn, .delete-btn {
   background: none;
   border: none;
   padding: 8px;
@@ -221,6 +221,15 @@
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
+}
+
+.view-btn {
+  color: #27ae60;
+}
+
+.view-btn:hover {
+  background: #d5f4e6;
+  color: #27ae60;
 }
 
 .edit-btn {
@@ -239,6 +248,46 @@
 .delete-btn:hover {
   background: #fdf2f2;
   color: #c0392b;
+}
+
+/* Stock status styles */
+.stock-status {
+  font-weight: 500;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.stock-status.in-stock {
+  color: #27ae60;
+  background: #d5f4e6;
+}
+
+.stock-status.low-stock {
+  color: #f39c12;
+  background: #fef5e7;
+}
+
+.stock-status.out-of-stock {
+  color: #e74c3c;
+  background: #fadbd8;
+}
+
+/* Inactive product styles */
+.inactive-product {
+  opacity: 0.6;
+  background: #f8f9fa;
+}
+
+.inactive-product:hover {
+  opacity: 0.8;
+}
+
+/* Product category styles */
+.product-category {
+  font-weight: 500;
+  color: #666;
+  font-size: 14px;
 }
 
 /* Modal Styles */

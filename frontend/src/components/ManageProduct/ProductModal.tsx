@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  stock: number;
-  categoryId: string;
-  isActive: boolean;
-  url?: string;
-}
+import type { Product } from '../../types/product';
 
 interface Category {
   id: string;
