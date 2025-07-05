@@ -129,7 +129,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (response.data.cartItems !== undefined) {
                     cartData = response.data;
                 }
-                // Check if it's wrapped (response.data.data)
+                // Check if it's wrapped (response.data.data.data) - 3 levels for interceptor
+                // @ts-ignore
+                else if (response.data.data && response.data.data.data && response.data.data.data.cartItems !== undefined) {
+                    // @ts-ignore
+                    cartData = response.data.data.data;
+                }
+                // Check if it's wrapped (response.data.data) - 2 levels fallback
                 // @ts-ignore
                 else if (response.data.data && response.data.data.cartItems !== undefined) {
                     // @ts-ignore
