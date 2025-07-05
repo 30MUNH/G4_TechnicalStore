@@ -69,7 +69,6 @@ const CheckoutPage = () => {
         setOrderError(null);
         
         try {
-
             // Kiểm tra authentication trước khi tiếp tục
             if (!isAuthenticated()) {
                 setOrderError('Vui lòng đăng nhập để đặt hàng');
@@ -87,6 +86,7 @@ const CheckoutPage = () => {
             }
             
             const currentCart = cartResponse.data.data;
+            
             // Validate thông tin khách hàng
             const requiredFields = ['fullName', 'phone', 'email', 'address', 'city', 'ward', 'commune'];
             const missingFields = requiredFields.filter(field => !formData[field]?.trim());
@@ -95,6 +95,7 @@ const CheckoutPage = () => {
                 setSubmitting(false);
                 return;
             }
+            
             // Tạo order request
             const fullAddress = [
                 formData.address.trim(),
@@ -102,6 +103,7 @@ const CheckoutPage = () => {
                 formData.ward.trim(),
                 formData.city.trim()
             ].filter(Boolean).join(', ');
+            
             const orderRequest = {
                 shippingAddress: fullAddress,
                 note: [
@@ -111,41 +113,14 @@ const CheckoutPage = () => {
                     `Số lượng sản phẩm: ${currentCart.cartItems.length}`,
                     `Tổng tiền: ${formatCurrency(currentCart.totalAmount)}`
                 ].join(' | ')
-
-            // Luôn đồng bộ cart với backend và lấy dữ liệu mới nhất
-            console.log('🔄 Refreshing cart before order...');
-            await refreshCart();
+            };
             
-            // Lấy cart trực tiếp từ API để đảm bảo dữ liệu mới nhất
-            const cartResponse = await cartService.viewCart();
-            console.log('🛒 Current cart from API:', cartResponse);
-            
-            if (!cartResponse.success || !cartResponse.data?.cartItems || cartResponse.data.cartItems.length === 0) {
-                setOrderError('Giỏ hàng của bạn đang trống hoặc đã thay đổi. Vui lòng kiểm tra lại!');
-                setSubmitting(false);
-                return;
-            }
-
-            const currentCart = cartResponse.data;
             console.log('📤 Submitting order:', {
                 cartItems: currentCart.cartItems.length,
                 totalAmount: currentCart.totalAmount,
                 orderData: formData
             });
-
-            // Format address according to backend expectations
-            const fullAddress = [
-                formData.address,
-                formData.commune,
-                formData.ward, 
-                formData.city
-            ].filter(Boolean).join(', ');
-
-            const orderRequest = {
-                shippingAddress: fullAddress,
-                note: `Customer: ${formData.fullName}, Phone: ${formData.phone}, Email: ${formData.email}`
-
-            };
+            
             const response = await orderService.createOrder(orderRequest);
             console.log('🎯 [CHECKOUT] Order response:', {
                 success: response.success,
@@ -154,7 +129,6 @@ const CheckoutPage = () => {
                 hasNestedOrderId: !!response.data?.data?.id
             });
             
-
             if (!response.success) {
                 throw new Error(response.message || 'Đặt hàng thất bại');
             }
@@ -173,39 +147,15 @@ const CheckoutPage = () => {
             
             setOrderData(orderData);
             await refreshCart();
+            
             alert(`Đặt hàng thành công!\nMã đơn hàng: ${orderData.id}\nTổng tiền: ${formatCurrency(orderData.totalAmount || currentCart.totalAmount)}\nĐơn hàng của bạn đang được xử lý.`);
+            
             navigate('/orders', {
                 state: {
                     newOrderId: orderData.id,
                     message: 'Đặt hàng thành công!'
                 }
             });
-
-            console.log('✅ Order created successfully:', response);
-            
-            if (!response.success || !response.data) {
-                throw new Error(response.message || 'Đặt hàng thất bại');
-            }
-
-            setOrderData(response.data);
-
-            // Refresh cart sau khi đặt hàng thành công để cập nhật trạng thái từ backend
-            await refreshCart();
-            
-            // Show success message and navigate
-            const orderId = response.data.id || 'N/A';
-            if (orderId === 'N/A') {
-                console.warn('Warning: Order created but no ID returned');
-            }
-
-            alert(`Đặt hàng thành công! 
-Mã đơn hàng: ${orderId}
-Tổng tiền: ${formatCurrency(finalTotal)}
-Đơn hàng của bạn đang được xử lý.`);
-            
-            // Navigate to cart which should now be empty
-            navigate('/cart');
-
 
         } catch (error) {
             setOrderError(error.message || 'Đặt hàng thất bại');
