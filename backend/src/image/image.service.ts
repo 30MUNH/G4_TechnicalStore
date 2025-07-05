@@ -22,19 +22,21 @@ export class ImageService {
       return newImage;
   }
 
-  async attachImagesToProduct(productId: string, imagesURL: string[]){
+  async attachImagesToProduct(productId: string, imagesURL: string){
     const product = await Product.findOne({ where: { id: productId } });
     if (!product) throw new EntityNotFoundException("Product");
-    const images = await Image.find({ where: { url: In(imagesURL) } });
+    const imageURLs: string[] = imagesURL.split(",");
+    const images = await Image.find({ where: { url: In(imageURLs) } });
     product.images = images;
     await product.save();
     return product;
   }
 
-  async attachImagesToFeedback(feedbackId: string, imagesURL: string[]){
+  async attachImagesToFeedback(feedbackId: string, imagesURL: string){
     const feedback = await Feedback.findOne({ where: { id: feedbackId } });
     if (!feedback) throw new EntityNotFoundException("Feedback");
-    const images = await Image.find({ where: { url: In(imagesURL) } });
+    const imageURLs: string[] = imagesURL.split(",");
+    const images = await Image.find({ where: { url: In(imageURLs) } });
     feedback.images = images;
     await feedback.save();
     return feedback;

@@ -5,6 +5,5 @@ export class AttachImageDto {
     query: string;
 
     @IsString()
-    @IsArray()
-    imagesURL: string[];
+    imagesURL: string;
 }

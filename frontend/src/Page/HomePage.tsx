@@ -304,43 +304,43 @@ const HomePage: React.FC = () => {
           <div className="row">
             {/* shop */}
             <div className="col-md-4 col-xs-6">
-              <div className="shop">
+              <div className="shop" style={{ cursor: 'pointer' }} onClick={() => navigate('/all-products', { state: { filter: 'laptop' } })}>
                 <div className="shop-img">
                   <img src="/img/shop01.png" alt="" />
                 </div>
                 <div className="shop-body">
                   <h3>Laptop<br />Collection</h3>
-                  <Link to="/category/laptop" className="cta-btn">
+                  <span className="cta-btn">
                     Shop now <FontAwesomeIcon icon={faArrowCircleRight} />
-                  </Link>
+                  </span>
                 </div>
               </div>
             </div>
             {/* /shop */}
             <div className="col-md-4 col-xs-6">
-              <div className="shop">
+              <div className="shop" style={{ cursor: 'pointer' }} onClick={() => navigate('/all-products', { state: { filter: 'accessories' } })}>
                 <div className="shop-img">
                   <img src="/img/shop03.png" alt="" />
                 </div>
                 <div className="shop-body">
                   <h3>Accessories<br />Collection</h3>
-                  <Link to="/category/keyboard" className="cta-btn">
+                  <span className="cta-btn">
                     Shop now <FontAwesomeIcon icon={faArrowCircleRight} />
-                  </Link>
+                  </span>
                 </div>
               </div>
             </div>
             {/* /shop */}
             <div className="col-md-4 col-xs-6">
-              <div className="shop">
+              <div className="shop" style={{ cursor: 'pointer' }} onClick={() => navigate('/all-products', { state: { filter: 'pc' } })}>
                 <div className="shop-img">
                   <img src="/img/shop02.png" alt="" />
                 </div>
                 <div className="shop-body">
                   <h3>PC<br />Collection</h3>
-                  <Link to="/category/pc" className="cta-btn">
+                  <span className="cta-btn">
                     Shop now <FontAwesomeIcon icon={faArrowCircleRight} />
-                  </Link>
+                  </span>
                 </div>
               </div>
             </div>
