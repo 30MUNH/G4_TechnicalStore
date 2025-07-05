@@ -83,24 +83,7 @@ const formatPhoneNumber = (phone: string): string => {
     return '+84' + phoneNumber;
 };
 
-// Format phone number for login (chỉ cần 9 số, không có số 0 đầu)
-const formatPhoneNumberForLogin = (phone: string): string => {
-    // Remove all non-digits
-    let phoneNumber = phone.replace(/\D/g, '');
-    
-    // Remove leading 0 if exists
-    if (phoneNumber.startsWith('0')) {
-        phoneNumber = phoneNumber.substring(1);
-    }
-    
-    // Validate length - chỉ cần 9 số
-    if (phoneNumber.length !== 9) {
-        throw new Error('Số điện thoại phải có đúng 9 số (không bao gồm số 0 đầu)');
-    }
-    
-    // Always return with +84 prefix
-    return '+84' + phoneNumber;
-};
+
 
 const handleAuthError = (error: AuthError): never => {
     const errorResponse = error.response?.data;
@@ -145,72 +128,26 @@ export const authService = {
      * @returns {Promise<ApiResponse>} Thông báo OTP hoặc lỗi
      */
     async register(userData: RegisterData): Promise<ApiResponse> {
-        console.group('🔍 [DEBUG] Registration Process');
-        console.log('📥 Raw input data:', {
-            username: userData.username,
-            phone: userData.phone,
-            passwordLength: userData.password?.length,
-            roleSlug: userData.roleSlug
-        });
-        
-        try {
-            // Validate required fields
-            if (!userData.phone || !userData.password || !userData.username) {
-                console.error('❌ Missing required fields:', {
-                    hasUsername: !!userData.username,
-                    hasPhone: !!userData.phone,
-                    hasPassword: !!userData.password
-                });
-                throw new Error('Username, phone number and password are required');
-            }
-
-            // Format phone number
-            const formattedPhone = formatPhoneNumber(userData.phone);
-            console.log('📱 Phone formatting:', {
-                original: userData.phone,
-                formatted: formattedPhone
-            });
-
-            // Prepare request data
-            const cleanedData = {
-                username: userData.username.trim(),
-                phone: formattedPhone,
-                password: userData.password,
-                roleSlug: 'customer-hmfuCdU' 
-            };
-
-            console.log('📤 Sending registration request:', {
-                ...cleanedData,
-                password: '***' 
-            });
-
-            // Make API call
-            const response = await api.post<ApiResponse>('/account/register', cleanedData);
-            
-            console.log('📨 Server response:', {
-                status: response.status,
-                data: response.data,
-                headers: response.headers
-            });
-            
-            console.groupEnd();
-            return response.data;
-        } catch (error: unknown) {
-            const axiosError = error as AxiosError;
-            console.error('❌ Registration error details:', {
-                status: axiosError.response?.status,
-                statusText: axiosError.response?.statusText,
-                data: axiosError.response?.data,
-                message: axiosError.message,
-                config: {
-                    url: axiosError.config?.url,
-                    method: axiosError.config?.method,
-                    data: axiosError.config?.data ? JSON.parse(axiosError.config.data) : null
-                }
-            });
-            console.groupEnd();
-            throw error;
+        // Validate required fields
+        if (!userData.phone || !userData.password || !userData.username) {
+            throw new Error('Username, phone number and password are required');
         }
+
+        // Format phone number
+        const formattedPhone = formatPhoneNumber(userData.phone);
+
+        // Prepare request data
+        const cleanedData = {
+            username: userData.username.trim(),
+            phone: formattedPhone,
+            password: userData.password,
+            roleSlug: 'customer-hmfuCdU' 
+        };
+
+        // Make API call
+        const response = await api.post<ApiResponse>('/account/register', cleanedData);
+        
+        return response.data;
     },
 
     /**
@@ -219,17 +156,7 @@ export const authService = {
      * @returns {Promise<VerifyRegisterResponse>} 
      */
     async verifyRegister(verifyData: VerifyRegisterData): Promise<VerifyRegisterResponse> {
-        console.group('🔍 [DEBUG] OTP Verification Process');
-        console.log('📥 OTP verification input:', {
-            username: verifyData.username,
-            phone: verifyData.phone,
-            roleSlug: verifyData.roleSlug,
-            otp: verifyData.otp,
-            passwordLength: verifyData.password?.length
-        });
-        
         try {
-            
             const formattedData = {
                 username: verifyData.username,
                 password: verifyData.password,
@@ -238,75 +165,29 @@ export const authService = {
                 otp: verifyData.otp
             };
 
-            console.log('📤 Sending OTP verification request:', {
-                ...formattedData,
-                password: '***' 
-            });
-
             const response = await api.post('/account/verify-register', formattedData);
             
-            console.log('📨 OTP verification response:', {
-                status: response.status,
-                dataType: typeof response.data,
-                data: response.data
-            });
-            
-            
             const handleSuccessResponse = async (accessToken: string) => {
-                console.log('🎉 OTP verification successful!');
-                console.log('🔑 Received access token:', {
-                    tokenLength: accessToken?.length,
-                    tokenStart: accessToken?.substring(0, 20) + '...',
-                    tokenType: typeof accessToken
-                });
-                
-                // FIX: Store token after successful registration to enable cart operations
-                console.log('💾 Storing token after registration...');
+                // Store token after successful registration to enable cart operations
                 localStorage.setItem('authToken', accessToken);
                 
                 // Add small delay to ensure token is available for API interceptor
-                console.log('⏳ Adding small delay for token availability...');
                 await new Promise(resolve => setTimeout(resolve, 100));
                 
                 // Fetch and store user profile after registration
                 try {
-                    console.log('👤 Fetching user profile with new token...');
-                    
-                    // Double-check token is available
-                    const savedToken = localStorage.getItem('authToken');
-                    console.log('🔍 Token check before profile fetch:', {
-                        hasToken: !!savedToken,
-                        tokenLength: savedToken?.length,
-                        tokensMatch: savedToken === accessToken
-                    });
-                    
                     // Call getUserProfile method directly from authService
                     const userProfile = await authService.getUserProfile();
                     if (userProfile) {
                         localStorage.setItem('user', JSON.stringify(userProfile));
-                        console.log('✅ User profile loaded and stored after registration:', userProfile);
                         
                         // Trigger auth context update
                         window.dispatchEvent(new CustomEvent('auth:login', {
                             detail: { user: userProfile, token: accessToken }
                         }));
-                        console.log('📢 Auth context update event dispatched');
-                    } else {
-                        console.warn('⚠️ getUserProfile returned empty data');
                     }
                 } catch (error) {
-                    const axiosError = error as AxiosError;
-                    console.error('❌ Could not load user profile after registration:', error);
-                    console.error('❌ Error details:', {
-                        status: axiosError.response?.status,
-                        statusText: axiosError.response?.statusText,
-                        data: axiosError.response?.data,
-                        hasAuthHeader: !!axiosError.config?.headers?.Authorization
-                    });
-                    
                     // Even if profile fetch fails, we still have the token
-                    console.log('💡 Token saved but profile fetch failed - user can still use cart');
-                    
                     // Try to create minimal user object from registration data
                     const minimalUser = {
                         username: verifyData.username,
@@ -315,32 +196,24 @@ export const authService = {
                         isRegistered: true
                     };
                     localStorage.setItem('user', JSON.stringify(minimalUser));
-                    console.log('💾 Stored minimal user data as fallback:', minimalUser);
                     
                     // Still trigger auth context update with minimal data
                     window.dispatchEvent(new CustomEvent('auth:login', {
                         detail: { user: minimalUser, token: accessToken }
                     }));
-                    console.log('📢 Auth context update event dispatched with minimal user data');
                 }
                 
-                console.log('✅ Registration completed with auto-login enabled');
-                
-                console.groupEnd();
                 return { data: accessToken, status: response.status };
             };
             
             // Handle both old string format and new JSON format
             if (typeof response.data === 'string') {
-                console.log('📋 String response format detected');
                 // Old format - treat as access token if not error message
                 if (response.data.includes('OTP') || response.data.includes('wrong') || response.data.includes('expired')) {
-                    console.error('❌ OTP error in string response:', response.data);
                     throw new Error(response.data);
                 }
                 return await handleSuccessResponse(response.data);
             } else if (response.data && response.data.success) {
-                console.log('📋 JSON success response format detected');
                 // New JSON format - success
                 return await handleSuccessResponse(response.data.data);
             } else {
@@ -373,50 +246,28 @@ export const authService = {
      * @returns Promise<ApiResponse>
      */
     async resendOTP({ phone, username, isForLogin = false }: { phone?: string, username?: string, isForLogin?: boolean }): Promise<ApiResponse> {
-        console.group('🔍 [DEBUG] Resend OTP Process');
-        console.log('📥 Resend OTP input:', { phone, username, isForLogin });
-        
         try {
             let requestData;
             
             if (isForLogin && username) {
                 // Login flow - use username directly
                 requestData = { username: username.trim() };
-                console.log('👤 Login flow - using username:', requestData);
             } else if (!isForLogin && phone) {
                 // Registration flow - format phone number
                 const formattedPhone = formatPhoneNumber(phone);
                 requestData = { username: formattedPhone };
-                console.log('📱 Registration flow - formatted phone:', {
-                    original: phone,
-                    formatted: formattedPhone
-                });
             } else {
                 throw new Error('Invalid parameters: provide username for login or phone for registration');
             }
             
-            console.log('📤 Sending resend OTP request:', requestData);
-            
             const response = await api.post('/account/resend-otp', requestData);
             
-            console.log('📨 Resend OTP response:', {
-                status: response.status,
-                data: response.data
-            });
-            
-            console.groupEnd();
             return {
                 success: true,
                 message: typeof response.data === 'string' ? response.data : 'OTP đã được gửi lại'
             };
         } catch (error: unknown) {
             const axiosError = error as AxiosError;
-            console.error('❌ Resend OTP error:', {
-                status: axiosError.response?.status,
-                data: axiosError.response?.data,
-                message: axiosError.message
-            });
-            console.groupEnd();
             return {
                 success: false,
                 message: (axiosError.response?.data as ApiErrorResponse)?.message || 'Không thể gửi lại OTP. Vui lòng thử lại.'
@@ -434,21 +285,8 @@ export const authService = {
      * @returns {Promise<string>} Thông báo OTP hoặc lỗi
      */
     async login(credentials: LoginCredentials): Promise<string> {
-        console.group('🔍 [DEBUG] AuthService Login Process');
-        console.log('📥 Login credentials received:', {
-            username: credentials.username,
-            usernameLength: credentials.username?.length,
-            passwordLength: credentials.password?.length,
-            usernameType: typeof credentials.username,
-            passwordType: typeof credentials.password
-        });
-        
         try {
             if (!credentials.username || !credentials.password) {
-                console.error('❌ Missing credentials:', {
-                    hasUsername: !!credentials.username,
-                    hasPassword: !!credentials.password
-                });
                 throw new Error('Username and password are required');
             }
             
@@ -457,42 +295,10 @@ export const authService = {
                 password: credentials.password
             };
             
-            console.log('📤 Cleaned credentials for API call:', {
-                username: cleanedCredentials.username,
-                passwordLength: cleanedCredentials.password.length,
-                originalUsername: credentials.username,
-                trimmed: credentials.username !== cleanedCredentials.username
-            });
-            
-            console.log('🌐 Making login API call to /account/login...');
             const response = await api.post('/account/login', cleanedCredentials);
             
-            console.log('📨 Login API response:', {
-                status: response.status,
-                dataType: typeof response.data,
-                data: response.data,
-                dataLength: typeof response.data === 'string' ? response.data.length : 'Not string'
-            });
-            
-            console.groupEnd();
             return response.data;
         } catch (error: unknown) {
-            const axiosError = error as AxiosError;
-            console.error('❌ Login error in authService:', {
-                error,
-                errorType: typeof error,
-                message: axiosError.message,
-                status: axiosError.response?.status,
-                statusText: axiosError.response?.statusText,
-                responseData: axiosError.response?.data,
-                requestData: {
-                    username: credentials.username,
-                    passwordProvided: !!credentials.password
-                }
-            });
-            
-            console.groupEnd();
-            
             if (isErrorWithMessage(error) && 'response' in error) {
                 return handleAuthError(error as AuthError);
             }
@@ -525,10 +331,9 @@ export const authService = {
                     const userProfile = await this.getUserProfile();
                     if (userProfile) {
                         localStorage.setItem('user', JSON.stringify(userProfile));
-                        console.log('✅ User profile loaded and stored after login');
                     }
                 } catch (error) {
-                    console.warn('Could not load user profile after login:', error);
+                    // Silent fail - user can still use the app
                 }
             }
             
@@ -602,43 +407,8 @@ export const authService = {
      * @returns 
      */
     async getUserProfile() {
-        console.group('🔍 [DEBUG] Get User Profile Process');
-        
-        // Check token availability before making request
-        const token = localStorage.getItem('authToken');
-        console.log('👤 getUserProfile - Token check:', {
-            hasToken: !!token,
-            tokenLength: token?.length,
-            tokenStart: token?.substring(0, 20) + '...' || 'No token'
-        });
-        
-        try {
-            console.log('📤 Making GET request to /account/details...');
-            const response = await api.get('/account/details');
-            
-            console.log('📨 getUserProfile response:', {
-                status: response.status,
-                dataType: typeof response.data,
-                data: response.data
-            });
-            
-            console.groupEnd();
-            return response.data;
-        } catch (error: unknown) {
-            const axiosError = error as AxiosError;
-            console.error('❌ Get user profile error:', {
-                status: axiosError.response?.status,
-                statusText: axiosError.response?.statusText,
-                data: axiosError.response?.data,
-                message: axiosError.message,
-                hasAuthHeader: !!axiosError.config?.headers?.Authorization,
-                authHeaderPreview: (typeof axiosError.config?.headers?.Authorization === 'string' ? 
-                    axiosError.config.headers.Authorization.substring(0, 30) + '...' : 
-                    'Non-string header')
-            });
-            console.groupEnd();
-            throw error;
-        }
+        const response = await api.get('/account/details');
+        return response.data;
     },
 
     /**
@@ -696,8 +466,6 @@ export const authService = {
      * @returns object with auth state details
      */
     debugAuthState() {
-        console.group('🔍 [DEBUG] Complete Auth State Check');
-        
         const token = this.getToken();
         const user = this.getUser();
         const isAuth = this.isAuthenticated();
@@ -723,10 +491,6 @@ export const authService = {
             timestamp: new Date().toLocaleString()
         };
         
-        console.log('📊 Auth State Summary:', authState);
-        console.log('💡 Use authService.debugAuthState() anytime to check auth state');
-        console.groupEnd();
-        
         return authState;
     }
 };
@@ -734,6 +498,4 @@ export const authService = {
 // Expose authService to window for debugging in development
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     window.authService = authService;
-    console.log('🛠️ authService exposed to window for debugging');
-    console.log('💡 Use window.authService.debugAuthState() to check auth state');
 } 

@@ -19,19 +19,11 @@ export class CartController {
         @Body() addToCartDto: AddToCartDto
     ) {
         const user = req.user as AccountDetailsDto;
-        console.log('🛒 [CartController] ADD TO CART REQUEST:', {
-            username: user.username,
-            productId: addToCartDto.productId,
-            quantity: addToCartDto.quantity
-        });
+
         
         try {
             const cart = await this.cartService.addToCart(user.username, addToCartDto);
-            console.log('✅ [CartController] ADD TO CART SUCCESS:', {
-                cartId: cart.id,
-                totalAmount: cart.totalAmount,
-                cartItemsCount: cart.cartItems?.length || 0
-            });
+
             
             return {
                 success: true,
@@ -39,12 +31,7 @@ export class CartController {
                 message: "Product added to cart successfully"
             };
         } catch (error: any) {
-            console.error('❌ [CartController] ADD TO CART ERROR:', {
-                username: user.username,
-                productId: addToCartDto.productId,
-                error: error.message,
-                stack: error.stack
-            });
+
             
             return {
                 success: false,

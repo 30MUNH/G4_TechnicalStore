@@ -46,7 +46,7 @@ export const cartService = {
                 productId: productId, 
                 quantity 
             });
-            console.log('✅ Add to cart success:', response.data);
+    
             
             // Validate backend response structure
             if (!response.data || typeof response.data.success !== 'boolean') {
@@ -75,15 +75,8 @@ export const cartService = {
     },
 
     async viewCart(): Promise<ApiResponse<Cart>> {
-        
         try {
             const response = await api.get('/cart/view');
-            console.log('✅ View cart success:', {
-                status: response.status,
-                data: response.data,
-                cartItemsCount: response.data?.data?.data?.cartItems?.length || 0,
-                totalAmount: response.data?.data?.data?.totalAmount || 0
-            });
             
             // Validate backend response structure
             if (!response.data || typeof response.data.success !== 'boolean') {
@@ -119,7 +112,7 @@ export const cartService = {
                 productId: productId,
                 amount: amount
             });
-            console.log('✅ Increase quantity success:', response.data);
+
             
             if (!response.data || typeof response.data.success !== 'boolean') {
                 throw new Error('Invalid response format from backend');
@@ -151,7 +144,7 @@ export const cartService = {
                 productId: productId,
                 amount: amount
             });
-            console.log('✅ Decrease quantity success:', response.data);
+
             
             if (!response.data || typeof response.data.success !== 'boolean') {
                 throw new Error('Invalid response format from backend');
@@ -182,7 +175,7 @@ export const cartService = {
             const response = await api.patch('/cart/remove', {
                 productId: productId
             });
-            console.log('✅ Remove item success:', response.data);
+
             
             if (!response.data || typeof response.data.success !== 'boolean') {
                 throw new Error('Invalid response format from backend');
@@ -211,7 +204,7 @@ export const cartService = {
     async clearCart(): Promise<ApiResponse<void>> {
         try {
             const response = await api.post('/cart/clear');
-            console.log('✅ Clear cart success:', response.data);
+
             
             if (!response.data || typeof response.data.success !== 'boolean') {
                 throw new Error('Invalid response format from backend');

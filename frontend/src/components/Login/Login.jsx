@@ -136,7 +136,7 @@ const Login = ({ onNavigate }) => {
         username: usernameError,
         password: passwordError
       });
-      console.log('❌ Validation failed, stopping submission');
+      // console.log removed
       console.groupEnd();
       return;
     }
@@ -146,7 +146,7 @@ const Login = ({ onNavigate }) => {
       // Simple username processing - just trim whitespace
       const processedUsername = formData.username.trim();
       
-      console.log('👤 Processing username input:', processedUsername);
+      // console.log removed
 
       const loginData = {
         username: processedUsername,
@@ -179,7 +179,7 @@ const Login = ({ onNavigate }) => {
       });
 
       if (isValidToken) {
-        console.log('✅ Login successful, logging in user directly');
+        // console.log removed
         
         // Store success state for better UX
         sessionStorage.setItem('loginSuccess', JSON.stringify({
@@ -187,14 +187,14 @@ const Login = ({ onNavigate }) => {
           timestamp: Date.now()
         }));
         
-        console.log('💾 Login success state stored');
+        // console.log removed
         
         // Successful login - authenticate user directly
         login({ username: processedUsername }, responseToken);
-        console.log('🔐 User authenticated via AuthContext');
+        // console.log removed
         
         // Success logging
-        console.log('🎉 Login completed successfully for user:', processedUsername);
+        // console.log removed
         
         // Navigate with success state
         navigate('/', { 
@@ -203,7 +203,7 @@ const Login = ({ onNavigate }) => {
             loginTime: new Date().toLocaleTimeString('vi-VN')
           } 
         });
-        console.log('🔄 Navigation to home page initiated');
+        // console.log removed
         
       } else {
         console.error('❌ Invalid login response:', response);
@@ -233,7 +233,7 @@ const Login = ({ onNavigate }) => {
         errorMessage = 'No internet connection. Please check your network.';
       }
 
-      console.log('📝 Setting error message:', errorMessage);
+      // console.log removed
       setErrors({ general: errorMessage });
     } finally {
       setIsSubmitting(false);

@@ -41,7 +41,7 @@ export class CartService {
       await newCart.save();
       return newCart;
     } catch (error) {
-      console.error('❌ [CartService] Error in getOrCreateCart:', error);
+
       throw error;
     }
   }
@@ -67,7 +67,7 @@ export class CartService {
 
       return Number(total.toFixed(2));
     } catch (error) {
-      console.error('❌ [CartService] Error in calculateTotalAmount:', error);
+
       throw error;
     }
   }
@@ -78,7 +78,7 @@ export class CartService {
       await cart.save();
       return cart;
     } catch (error) {
-      console.error('❌ [CartService] Error in updateCartTotals:', error);
+
       throw error;
     }
   }
@@ -93,7 +93,7 @@ export class CartService {
       }
 
       return dataSource.transaction(async transactionalEntityManager => {
-        console.log('🛒 [CartService] Adding to cart:', { username, product: addToCartDto.productId, quantity: addToCartDto.quantity });
+
         
         // Get cart within transaction to ensure we have the latest cart items
         const account = await transactionalEntityManager.findOne(Account, { where: { username } });
@@ -109,7 +109,7 @@ export class CartService {
           cart.account = account;
           cart.totalAmount = 0;
           cart = await transactionalEntityManager.save(cart);
-          console.log('✅ [CartService] Created new cart for user:', username);
+          
         }
         
         // Lock the product row for update
@@ -138,14 +138,14 @@ export class CartService {
           }
           existingItem.quantity = newQuantity;
           await transactionalEntityManager.save(existingItem);
-          console.log('✅ [CartService] Updated existing item quantity:', { product: product.name, newQuantity });
+          
         } else {
           const newItem = new CartItem();
           newItem.quantity = addToCartDto.quantity;
           newItem.cart = cart;
           newItem.product = product;
           await transactionalEntityManager.save(newItem);
-          console.log('✅ [CartService] Added new item to cart:', { product: product.name, quantity: addToCartDto.quantity });
+          
         }
 
         // Reload cart with updated items within transaction to get fresh data
@@ -172,27 +172,12 @@ export class CartService {
         updatedCart.totalAmount = Number(total.toFixed(2));
         await transactionalEntityManager.save(updatedCart);
         
-        console.log('✅ [CartService] Cart updated successfully:', { 
-          totalAmount: updatedCart.totalAmount,
-          cartItemsCount: updatedCart.cartItems?.length || 0
-        });
-        
-        console.log('🛒 [CartService] Final cart data:', {
-          id: updatedCart.id,
-          totalAmount: updatedCart.totalAmount,
-          cartItemsCount: updatedCart.cartItems?.length,
-          cartItems: updatedCart.cartItems?.map(item => ({
-            id: item.id,
-            quantity: item.quantity,
-            productName: item.product?.name,
-            productId: item.product?.id
-          }))
-        });
+
         
         return updatedCart;
       });
     } catch (error) {
-      console.error('❌ [CartService] Error in addToCart:', error);
+
       throw error;
     }
   }
@@ -227,7 +212,7 @@ export class CartService {
       }
 
       return dataSource.transaction(async transactionalEntityManager => {
-        console.log('🛒 [CartService] Increasing quantity:', { username, product: productId, amount });
+
         
         // Get cart within transaction to ensure we have the latest cart items
         const account = await transactionalEntityManager.findOne(Account, { where: { username } });
@@ -262,7 +247,7 @@ export class CartService {
         
         item.quantity += amount;
         await transactionalEntityManager.save(item);
-        console.log('✅ [CartService] Increased quantity successfully:', { product: product.name, newQuantity: item.quantity });
+        
         
         // Reload cart with fresh data after updating
         const reloadedCart = await transactionalEntityManager.findOne(Cart, {
@@ -288,15 +273,12 @@ export class CartService {
         reloadedCart.totalAmount = Number(total.toFixed(2));
         await transactionalEntityManager.save(reloadedCart);
         
-        console.log('✅ [CartService] Cart updated after increase:', { 
-          totalAmount: reloadedCart.totalAmount,
-          cartItemsCount: reloadedCart.cartItems?.length || 0
-        });
+
         
         return reloadedCart;
       });
     } catch (error) {
-      console.error('❌ [CartService] Error in increaseQuantity:', error);
+
       throw error;
     }
   }
@@ -311,7 +293,7 @@ export class CartService {
       }
 
       return dataSource.transaction(async transactionalEntityManager => {
-        console.log('🛒 [CartService] Decreasing quantity:', { username, product: productId, amount });
+
         
         // Get cart within transaction to ensure we have the latest cart items
         const account = await transactionalEntityManager.findOne(Account, { where: { username } });
@@ -333,10 +315,10 @@ export class CartService {
         item.quantity -= amount;
         if (item.quantity <= 0) {
           await transactionalEntityManager.remove(item);
-          console.log('✅ [CartService] Removed item from cart:', { product: item.product.name });
+
         } else {
           await transactionalEntityManager.save(item);
-          console.log('✅ [CartService] Decreased quantity successfully:', { product: item.product.name, newQuantity: item.quantity });
+
         }
         
         // Reload cart with fresh data after updating
@@ -363,15 +345,12 @@ export class CartService {
         reloadedCart.totalAmount = Number(total.toFixed(2));
         await transactionalEntityManager.save(reloadedCart);
         
-        console.log('✅ [CartService] Cart updated after decrease:', { 
-          totalAmount: reloadedCart.totalAmount,
-          cartItemsCount: reloadedCart.cartItems?.length || 0
-        });
+
         
         return reloadedCart;
       });
     } catch (error) {
-      console.error('❌ [CartService] Error in decreaseQuantity:', error);
+
       throw error;
     }
   }
@@ -384,7 +363,7 @@ export class CartService {
       }
 
       return dataSource.transaction(async transactionalEntityManager => {
-        console.log('🛒 [CartService] Removing item:', { username, product: productId });
+
         
         // Get cart within transaction to ensure we have the latest cart items
         const account = await transactionalEntityManager.findOne(Account, { where: { username } });
@@ -404,7 +383,7 @@ export class CartService {
         }
         
         await transactionalEntityManager.remove(item);
-        console.log('✅ [CartService] Removed item successfully:', { product: item.product.name });
+
         
         // Reload cart with fresh data after removing item
         const reloadedCart = await transactionalEntityManager.findOne(Cart, {
@@ -430,15 +409,12 @@ export class CartService {
         reloadedCart.totalAmount = Number(total.toFixed(2));
         await transactionalEntityManager.save(reloadedCart);
         
-        console.log('✅ [CartService] Cart updated after remove:', { 
-          totalAmount: reloadedCart.totalAmount,
-          remainingItemsCount: reloadedCart.cartItems?.length || 0
-        });
+
         
         return reloadedCart;
       });
     } catch (error) {
-      console.error('❌ [CartService] Error in removeItem:', error);
+
       throw error;
     }
   }
@@ -451,7 +427,7 @@ export class CartService {
       }
 
       return dataSource.transaction(async transactionalEntityManager => {
-        console.log('🛒 [CartService] Clearing cart:', { username });
+
         
         // Get cart within transaction to ensure we have the latest cart items
         const account = await transactionalEntityManager.findOne(Account, { where: { username } });
@@ -470,10 +446,10 @@ export class CartService {
         
         cart.totalAmount = 0;
         await transactionalEntityManager.save(cart);
-        console.log('✅ [CartService] Cart cleared successfully');
+
       });
     } catch (error) {
-      console.error('❌ [CartService] Error in clearCart:', error);
+
       throw error;
     }
   }
@@ -499,13 +475,13 @@ export class CartService {
 
       if (hasChanges) {
         const updatedCart = await this.updateCartTotals(cart);
-        console.log('✅ [CartService] Cart prices updated successfully');
+
         return { hasChanges: true, updatedCart };
       }
 
       return { hasChanges: false };
     } catch (error) {
-      console.error('❌ [CartService] Error in validateCartPrices:', error);
+
       throw error;
     }
   }

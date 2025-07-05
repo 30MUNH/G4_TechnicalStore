@@ -20,29 +20,19 @@ export class OrderController {
         @Body() createOrderDto: CreateOrderDto
     ) {
         const user = req.user as AccountDetailsDto;
-        console.log(`🎯 [ORDER_CONTROLLER] Create order request:`, {
-            username: user.username,
-            orderData: createOrderDto
-        });
+
         
         try {
             const order = await this.orderService.createOrder(user.username, createOrderDto);
-            console.log(`✅ [ORDER_CONTROLLER] Order created successfully:`, {
-                orderId: order.id,
-                username: user.username
-            });
+
             
             return {
                 success: true,
-                message: "Đặt hàng thành công",
+                message: "Thanh toán thành công",
                 data: order
             };
         } catch (error: any) {
-            console.error(`❌ [ORDER_CONTROLLER] Order creation failed:`, {
-                username: user.username,
-                error: error.message,
-                stack: error.stack
-            });
+
             
             return {
                 success: false,
