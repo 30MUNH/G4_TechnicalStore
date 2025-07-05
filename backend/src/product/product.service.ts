@@ -150,7 +150,7 @@ export class ProductService {
         isActive: true,
         stock: MoreThan(0)
       },
-      relations: ["category"],
+      relations: ["category", "images"],
     });
     
     if (!product) {
@@ -301,10 +301,12 @@ export class ProductService {
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
     return getManager().transaction(async transactionalEntityManager => {
+      console.log('Creating product with data:', createProductDto);
+      
       // Validate category exists
       const category = await Category.findOne({ where: { id: createProductDto.categoryId } });
       if (!category) {
-        throw new EntityNotFoundException('Category');
+        throw new EntityNotFoundException(`Category with id '${createProductDto.categoryId}' not found`);
       }
 
       // Validate price and stock
@@ -329,7 +331,11 @@ export class ProductService {
       Object.assign(product, createProductDto);
       product.isActive = createProductDto.isActive ?? true;
       
-      return await transactionalEntityManager.save(product);
+      console.log('Saving product:', product);
+      const savedProduct = await transactionalEntityManager.save(product);
+      console.log('Product saved successfully:', savedProduct);
+      
+      return savedProduct;
     });
   }
 
@@ -497,7 +503,6 @@ export class ProductService {
   // Thêm method để lấy tất cả sản phẩm (bao gồm cả hết hàng) - cho admin
   async getAllProductsIncludingOutOfStock(): Promise<Product[]> {
     return await Product.find({
-      where: { isActive: true },
       relations: ["category"],
       order: { createdAt: "DESC" },
     });
