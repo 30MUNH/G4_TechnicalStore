@@ -9,7 +9,7 @@ const CartItem = ({ item }) => {
     const debounceRef = useRef(null);
 
     const handleIncrease = async () => {
-        if (isUpdating) return; // Prevent multiple rapid clicks
+        if (isUpdating) return;
         
         setIsUpdating(true);
         try {
@@ -17,15 +17,15 @@ const CartItem = ({ item }) => {
         } catch (error) {
             console.error('Failed to increase quantity:', error);
         } finally {
-            setTimeout(() => setIsUpdating(false), 50); // Brief delay to prevent spam
+            setTimeout(() => setIsUpdating(false), 50); 
         }
     };
 
     const handleDecrease = async () => {
-        if (isUpdating) return; // Prevent multiple rapid clicks
+        if (isUpdating) return; 
         
         if (item.quantity <= 1) {
-            // If quantity is 1, remove the item instead of decreasing to 0
+           
             handleRemove();
             return;
         }
@@ -36,12 +36,12 @@ const CartItem = ({ item }) => {
         } catch (error) {
             console.error('Failed to decrease quantity:', error);
         } finally {
-            setTimeout(() => setIsUpdating(false), 50); // Brief delay to prevent spam
+            setTimeout(() => setIsUpdating(false), 50); 
         }
     };
 
     const handleRemove = async () => {
-        if (isUpdating) return; // Prevent multiple rapid clicks
+        if (isUpdating) return; 
         
         setIsUpdating(true);
         try {
