@@ -1,3 +1,20 @@
+// import { Product } from './product.entity';
+// import { Category } from './categories/category.entity';
+// import { CPU } from './components/cpu.entity';
+// import { GPU } from './components/gpu.entity';
+// import { RAM } from './components/ram.entity';
+// import { Drive } from './components/drive.entity';
+// import { Motherboard } from './components/motherboard.entity';
+// import { PSU } from './components/psu.entity';
+// import { Case } from './components/case.entity';
+// import { Monitor } from './components/monitor.entity';
+// import { Mouse } from './components/mouse.entity';
+// import { Keyboard } from './components/keyboard.entity';
+// import { Headset } from './components/headset.entity';
+// import { NetworkCard } from './components/networkCard.entity';
+// import { Laptop } from './components/laptop/laptop.entity';
+// import { PC } from './components/pc.entity';
+
 // async addProducts() {
 //     const caseCategory = await Category.findOne({
 //       where: { slug: "case" },
@@ -1514,4 +1531,499 @@
 //       `Successfully added ${savedComponents.length} component records`
 //     );
 //     return savedComponents;
+//   }
+
+// async addLaptops() {
+//     const laptopCategory = await Category.findOne({
+//       where: { slug: "laptop" },
+//     });
+//     if (!laptopCategory) {
+//       throw new Error("Laptop category not found");
+//     }
+
+//     const savedLaptops = [];
+
+//     // Gaming Laptops
+//     const laptop1: Product = new Product();
+//     laptop1.name = "ASUS ROG Strix G15 G513";
+//     laptop1.price = 25990000;
+//     laptop1.description = "ASUS ROG Strix G15 Gaming Laptop with AMD Ryzen 7 and RTX 3070";
+//     laptop1.stock = 8;
+//     laptop1.category = laptopCategory;
+//     await laptop1.save();
+//     savedLaptops.push(laptop1);
+//     console.log(`Added laptop: ${laptop1.name}`);
+
+//     const laptop2: Product = new Product();
+//     laptop2.name = "MSI GE76 Raider";
+//     laptop2.price = 45990000;
+//     laptop2.description = "MSI GE76 Raider Gaming Laptop with Intel Core i9 and RTX 4080";
+//     laptop2.stock = 5;
+//     laptop2.category = laptopCategory;
+//     await laptop2.save();
+//     savedLaptops.push(laptop2);
+//     console.log(`Added laptop: ${laptop2.name}`);
+
+//     const laptop3: Product = new Product();
+//     laptop3.name = "Acer Predator Helios 300";
+//     laptop3.price = 29990000;
+//     laptop3.description = "Acer Predator Helios 300 Gaming Laptop with Intel Core i7 and RTX 3060";
+//     laptop3.stock = 10;
+//     laptop3.category = laptopCategory;
+//     await laptop3.save();
+//     savedLaptops.push(laptop3);
+//     console.log(`Added laptop: ${laptop3.name}`);
+
+//     const laptop4: Product = new Product();
+//     laptop4.name = "Alienware x17 R2";
+//     laptop4.price = 65990000;
+//     laptop4.description = "Alienware x17 R2 Gaming Laptop with Intel Core i9 and RTX 4090";
+//     laptop4.stock = 3;
+//     laptop4.category = laptopCategory;
+//     await laptop4.save();
+//     savedLaptops.push(laptop4);
+//     console.log(`Added laptop: ${laptop4.name}`);
+
+//     const laptop5: Product = new Product();
+//     laptop5.name = "Razer Blade 15";
+//     laptop5.price = 52990000;
+//     laptop5.description = "Razer Blade 15 Gaming Laptop with Intel Core i7 and RTX 4070";
+//     laptop5.stock = 6;
+//     laptop5.category = laptopCategory;
+//     await laptop5.save();
+//     savedLaptops.push(laptop5);
+//     console.log(`Added laptop: ${laptop5.name}`);
+
+//     // Business/Productivity Laptops
+//     const laptop6: Product = new Product();
+//     laptop6.name = "ThinkPad X1 Carbon Gen 11";
+//     laptop6.price = 35990000;
+//     laptop6.description = "Lenovo ThinkPad X1 Carbon Business Laptop with Intel Core i7";
+//     laptop6.stock = 12;
+//     laptop6.category = laptopCategory;
+//     await laptop6.save();
+//     savedLaptops.push(laptop6);
+//     console.log(`Added laptop: ${laptop6.name}`);
+
+//     const laptop7: Product = new Product();
+//     laptop7.name = "MacBook Pro 16-inch M3";
+//     laptop7.price = 59990000;
+//     laptop7.description = "Apple MacBook Pro 16-inch with M3 Pro chip";
+//     laptop7.stock = 8;
+//     laptop7.category = laptopCategory;
+//     await laptop7.save();
+//     savedLaptops.push(laptop7);
+//     console.log(`Added laptop: ${laptop7.name}`);
+
+//     const laptop8: Product = new Product();
+//     laptop8.name = "Dell XPS 13 Plus";
+//     laptop8.price = 32990000;
+//     laptop8.description = "Dell XPS 13 Plus Ultrabook with Intel Core i7";
+//     laptop8.stock = 15;
+//     laptop8.category = laptopCategory;
+//     await laptop8.save();
+//     savedLaptops.push(laptop8);
+//     console.log(`Added laptop: ${laptop8.name}`);
+
+//     const laptop9: Product = new Product();
+//     laptop9.name = "HP Spectre x360";
+//     laptop9.price = 28990000;
+//     laptop9.description = "HP Spectre x360 2-in-1 Laptop with Intel Core i7";
+//     laptop9.stock = 10;
+//     laptop9.category = laptopCategory;
+//     await laptop9.save();
+//     savedLaptops.push(laptop9);
+//     console.log(`Added laptop: ${laptop9.name}`);
+
+//     const laptop10: Product = new Product();
+//     laptop10.name = "ASUS ZenBook Pro 15";
+//     laptop10.price = 38990000;
+//     laptop10.description = "ASUS ZenBook Pro 15 Creative Laptop with Intel Core i9";
+//     laptop10.stock = 7;
+//     laptop10.category = laptopCategory;
+//     await laptop10.save();
+//     savedLaptops.push(laptop10);
+//     console.log(`Added laptop: ${laptop10.name}`);
+
+//     console.log(`Successfully added ${savedLaptops.length} laptop products`);
+//     return savedLaptops;
+//   }
+
+// async addPCs() {
+//     const pcCategory = await Category.findOne({
+//       where: { slug: "pc" },
+//     });
+//     if (!pcCategory) {
+//       throw new Error("PC category not found");
+//     }
+
+//     const savedPCs = [];
+
+//     // Gaming PCs
+//     const pc1: Product = new Product();
+//     pc1.name = "NZXT BLD Gaming PC - RTX 4090";
+//     pc1.price = 85990000;
+//     pc1.description = "High-end Gaming PC with Intel Core i9-13900K and RTX 4090";
+//     pc1.stock = 3;
+//     pc1.category = pcCategory;
+//     await pc1.save();
+//     savedPCs.push(pc1);
+//     console.log(`Added PC: ${pc1.name}`);
+
+//     const pc2: Product = new Product();
+//     pc2.name = "Origin Chronos Gaming PC";
+//     pc2.price = 65990000;
+//     pc2.description = "Gaming PC with AMD Ryzen 9 7900X and RTX 4080";
+//     pc2.stock = 5;
+//     pc2.category = pcCategory;
+//     await pc2.save();
+//     savedPCs.push(pc2);
+//     console.log(`Added PC: ${pc2.name}`);
+
+//     const pc3: Product = new Product();
+//     pc3.name = "Corsair ONE i300 Gaming PC";
+//     pc3.price = 75990000;
+//     pc3.description = "Compact Gaming PC with Intel Core i9 and RTX 4070 Ti";
+//     pc3.stock = 4;
+//     pc3.category = pcCategory;
+//     await pc3.save();
+//     savedPCs.push(pc3);
+//     console.log(`Added PC: ${pc3.name}`);
+
+//     const pc4: Product = new Product();
+//     pc4.name = "Alienware Aurora R15";
+//     pc4.price = 55990000;
+//     pc4.description = "Alienware Aurora Gaming Desktop with Intel Core i7 and RTX 4070";
+//     pc4.stock = 6;
+//     pc4.category = pcCategory;
+//     await pc4.save();
+//     savedPCs.push(pc4);
+//     console.log(`Added PC: ${pc4.name}`);
+
+//     const pc5: Product = new Product();
+//     pc5.name = "MSI Aegis RS 13";
+//     pc5.price = 45990000;
+//     pc5.description = "MSI Gaming Desktop with Intel Core i7 and RTX 4060 Ti";
+//     pc5.stock = 8;
+//     pc5.category = pcCategory;
+//     await pc5.save();
+//     savedPCs.push(pc5);
+//     console.log(`Added PC: ${pc5.name}`);
+
+//     // Workstation PCs
+//     const pc6: Product = new Product();
+//     pc6.name = "HP Z6 G5 Workstation";
+//     pc6.price = 95990000;
+//     pc6.description = "Professional Workstation with Intel Xeon and RTX A6000";
+//     pc6.stock = 2;
+//     pc6.category = pcCategory;
+//     await pc6.save();
+//     savedPCs.push(pc6);
+//     console.log(`Added PC: ${pc6.name}`);
+
+//     const pc7: Product = new Product();
+//     pc7.name = "Dell Precision 7000";
+//     pc7.price = 78990000;
+//     pc7.description = "Dell Precision Workstation with Intel Core i9 and RTX A5000";
+//     pc7.stock = 3;
+//     pc7.category = pcCategory;
+//     await pc7.save();
+//     savedPCs.push(pc7);
+//     console.log(`Added PC: ${pc7.name}`);
+
+//     // Budget PCs
+//     const pc8: Product = new Product();
+//     pc8.name = "HP Pavilion Desktop";
+//     pc8.price = 18990000;
+//     pc8.description = "Budget Desktop PC with AMD Ryzen 5 and GTX 1660";
+//     pc8.stock = 15;
+//     pc8.category = pcCategory;
+//     await pc8.save();
+//     savedPCs.push(pc8);
+//     console.log(`Added PC: ${pc8.name}`);
+
+//     const pc9: Product = new Product();
+//     pc9.name = "ASUS VivoPC Mini";
+//     pc9.price = 12990000;
+//     pc9.description = "Compact Mini PC with Intel Core i5 for Office Work";
+//     pc9.stock = 20;
+//     pc9.category = pcCategory;
+//     await pc9.save();
+//     savedPCs.push(pc9);
+//     console.log(`Added PC: ${pc9.name}`);
+
+//     const pc10: Product = new Product();
+//     pc10.name = "Acer Aspire TC Desktop";
+//     pc10.price = 15990000;
+//     pc10.description = "Entry-level Desktop PC with AMD Ryzen 3 and integrated graphics";
+//     pc10.stock = 18;
+//     pc10.category = pcCategory;
+//     await pc10.save();
+//     savedPCs.push(pc10);
+//     console.log(`Added PC: ${pc10.name}`);
+
+//     console.log(`Successfully added ${savedPCs.length} PC products`);
+//     return savedPCs;
+//   }
+
+// async addLaptopComponents() {
+//     const laptops = await Product.find({
+//       where: { isActive: true },
+//       relations: ["category"],
+//     });
+
+//     const laptopProducts = laptops.filter((p) => p.category?.slug === "laptop");
+//     const savedLaptopComponents = [];
+
+//     for (const product of laptopProducts) {
+//       if (!product.name) continue;
+
+//       const laptop: Laptop = new Laptop();
+//       laptop.product = product;
+
+//       if (product.name.includes("ASUS ROG Strix G15 G513")) {
+//         laptop.brand = "ASUS";
+//         laptop.model = "ROG Strix G15 G513";
+//         laptop.screenSize = 15.6;
+//         laptop.screenType = "IPS";
+//         laptop.resolution = "1920x1080";
+//         laptop.batteryLifeHours = 6.0;
+//         laptop.weightKg = 2.3;
+//         laptop.os = "Windows 11";
+//         laptop.ramCount = 2;
+//       } else if (product.name.includes("MSI GE76 Raider")) {
+//         laptop.brand = "MSI";
+//         laptop.model = "GE76 Raider";
+//         laptop.screenSize = 17.3;
+//         laptop.screenType = "IPS";
+//         laptop.resolution = "1920x1080";
+//         laptop.batteryLifeHours = 4.5;
+//         laptop.weightKg = 2.9;
+//         laptop.os = "Windows 11";
+//         laptop.ramCount = 2;
+//       } else if (product.name.includes("Acer Predator Helios 300")) {
+//         laptop.brand = "Acer";
+//         laptop.model = "Predator Helios 300";
+//         laptop.screenSize = 15.6;
+//         laptop.screenType = "IPS";
+//         laptop.resolution = "1920x1080";
+//         laptop.batteryLifeHours = 5.0;
+//         laptop.weightKg = 2.5;
+//         laptop.os = "Windows 11";
+//         laptop.ramCount = 2;
+//       } else if (product.name.includes("Alienware x17 R2")) {
+//         laptop.brand = "Alienware";
+//         laptop.model = "x17 R2";
+//         laptop.screenSize = 17.3;
+//         laptop.screenType = "IPS";
+//         laptop.resolution = "2560x1440";
+//         laptop.batteryLifeHours = 4.0;
+//         laptop.weightKg = 3.1;
+//         laptop.os = "Windows 11";
+//         laptop.ramCount = 2;
+//       } else if (product.name.includes("Razer Blade 15")) {
+//         laptop.brand = "Razer";
+//         laptop.model = "Blade 15";
+//         laptop.screenSize = 15.6;
+//         laptop.screenType = "OLED";
+//         laptop.resolution = "2560x1440";
+//         laptop.batteryLifeHours = 5.5;
+//         laptop.weightKg = 2.0;
+//         laptop.os = "Windows 11";
+//         laptop.ramCount = 2;
+//       } else if (product.name.includes("ThinkPad X1 Carbon Gen 11")) {
+//         laptop.brand = "Lenovo";
+//         laptop.model = "ThinkPad X1 Carbon Gen 11";
+//         laptop.screenSize = 14.0;
+//         laptop.screenType = "IPS";
+//         laptop.resolution = "1920x1200";
+//         laptop.batteryLifeHours = 12.0;
+//         laptop.weightKg = 1.1;
+//         laptop.os = "Windows 11 Pro";
+//         laptop.ramCount = 2;
+//       } else if (product.name.includes("MacBook Pro 16-inch M3")) {
+//         laptop.brand = "Apple";
+//         laptop.model = "MacBook Pro 16-inch M3";
+//         laptop.screenSize = 16.2;
+//         laptop.screenType = "Liquid Retina XDR";
+//         laptop.resolution = "3456x2234";
+//         laptop.batteryLifeHours = 18.0;
+//         laptop.weightKg = 2.1;
+//         laptop.os = "macOS Sonoma";
+//         laptop.ramCount = 1;
+//       } else if (product.name.includes("Dell XPS 13 Plus")) {
+//         laptop.brand = "Dell";
+//         laptop.model = "XPS 13 Plus";
+//         laptop.screenSize = 13.4;
+//         laptop.screenType = "OLED";
+//         laptop.resolution = "3456x2160";
+//         laptop.batteryLifeHours = 10.0;
+//         laptop.weightKg = 1.2;
+//         laptop.os = "Windows 11";
+//         laptop.ramCount = 2;
+//       } else if (product.name.includes("HP Spectre x360")) {
+//         laptop.brand = "HP";
+//         laptop.model = "Spectre x360";
+//         laptop.screenSize = 13.5;
+//         laptop.screenType = "IPS Touch";
+//         laptop.resolution = "1920x1280";
+//         laptop.batteryLifeHours = 11.0;
+//         laptop.weightKg = 1.3;
+//         laptop.os = "Windows 11";
+//         laptop.ramCount = 2;
+//       } else if (product.name.includes("ASUS ZenBook Pro 15")) {
+//         laptop.brand = "ASUS";
+//         laptop.model = "ZenBook Pro 15";
+//         laptop.screenSize = 15.6;
+//         laptop.screenType = "OLED";
+//         laptop.resolution = "2880x1620";
+//         laptop.batteryLifeHours = 8.0;
+//         laptop.weightKg = 1.8;
+//         laptop.os = "Windows 11";
+//         laptop.ramCount = 2;
+//       }
+
+//       await laptop.save();
+//       savedLaptopComponents.push(laptop);
+//       console.log(`Added Laptop component for: ${product.name}`);
+//     }
+
+//     console.log(`Successfully added ${savedLaptopComponents.length} laptop component records`);
+//     return savedLaptopComponents;
+//   }
+
+// async addPCComponents() {
+//     const pcs = await Product.find({
+//       where: { isActive: true },
+//       relations: ["category"],
+//     });
+
+//     const pcProducts = pcs.filter((p) => p.category?.slug === "pc");
+//     const savedPCComponents = [];
+
+//     for (const product of pcProducts) {
+//       if (!product.name) continue;
+
+//       const pc: PC = new PC();
+//       pc.product = product;
+
+//       if (product.name.includes("NZXT BLD Gaming PC - RTX 4090")) {
+//         pc.brand = "NZXT";
+//         pc.model = "BLD Gaming PC";
+//         pc.processor = "Intel Core i9-13900K";
+//         pc.ramGb = 32;
+//         pc.storageGb = 2000;
+//         pc.storageType = "NVMe SSD";
+//         pc.graphics = "NVIDIA GeForce RTX 4090";
+//         pc.formFactor = "Mid Tower";
+//         pc.powerSupplyWattage = 1000;
+//         pc.operatingSystem = "Windows 11 Pro";
+//       } else if (product.name.includes("Origin Chronos Gaming PC")) {
+//         pc.brand = "Origin";
+//         pc.model = "Chronos";
+//         pc.processor = "AMD Ryzen 9 7900X";
+//         pc.ramGb = 32;
+//         pc.storageGb = 1000;
+//         pc.storageType = "NVMe SSD";
+//         pc.graphics = "NVIDIA GeForce RTX 4080";
+//         pc.formFactor = "Mid Tower";
+//         pc.powerSupplyWattage = 850;
+//         pc.operatingSystem = "Windows 11 Pro";
+//       } else if (product.name.includes("Corsair ONE i300 Gaming PC")) {
+//         pc.brand = "Corsair";
+//         pc.model = "ONE i300";
+//         pc.processor = "Intel Core i9-12900K";
+//         pc.ramGb = 32;
+//         pc.storageGb = 1000;
+//         pc.storageType = "NVMe SSD";
+//         pc.graphics = "NVIDIA GeForce RTX 4070 Ti";
+//         pc.formFactor = "Compact";
+//         pc.powerSupplyWattage = 750;
+//         pc.operatingSystem = "Windows 11 Pro";
+//       } else if (product.name.includes("Alienware Aurora R15")) {
+//         pc.brand = "Alienware";
+//         pc.model = "Aurora R15";
+//         pc.processor = "Intel Core i7-13700F";
+//         pc.ramGb = 16;
+//         pc.storageGb = 1000;
+//         pc.storageType = "NVMe SSD";
+//         pc.graphics = "NVIDIA GeForce RTX 4070";
+//         pc.formFactor = "Mid Tower";
+//         pc.powerSupplyWattage = 750;
+//         pc.operatingSystem = "Windows 11 Home";
+//       } else if (product.name.includes("MSI Aegis RS 13")) {
+//         pc.brand = "MSI";
+//         pc.model = "Aegis RS 13";
+//         pc.processor = "Intel Core i7-13700F";
+//         pc.ramGb = 16;
+//         pc.storageGb = 1000;
+//         pc.storageType = "NVMe SSD";
+//         pc.graphics = "NVIDIA GeForce RTX 4060 Ti";
+//         pc.formFactor = "Mid Tower";
+//         pc.powerSupplyWattage = 650;
+//         pc.operatingSystem = "Windows 11 Home";
+//       } else if (product.name.includes("HP Z6 G5 Workstation")) {
+//         pc.brand = "HP";
+//         pc.model = "Z6 G5 Workstation";
+//         pc.processor = "Intel Xeon W-2400";
+//         pc.ramGb = 64;
+//         pc.storageGb = 2000;
+//         pc.storageType = "NVMe SSD";
+//         pc.graphics = "NVIDIA RTX A6000";
+//         pc.formFactor = "Full Tower";
+//         pc.powerSupplyWattage = 1125;
+//         pc.operatingSystem = "Windows 11 Pro";
+//       } else if (product.name.includes("Dell Precision 7000")) {
+//         pc.brand = "Dell";
+//         pc.model = "Precision 7000";
+//         pc.processor = "Intel Core i9-13900";
+//         pc.ramGb = 32;
+//         pc.storageGb = 1000;
+//         pc.storageType = "NVMe SSD";
+//         pc.graphics = "NVIDIA RTX A5000";
+//         pc.formFactor = "Mid Tower";
+//         pc.powerSupplyWattage = 850;
+//         pc.operatingSystem = "Windows 11 Pro";
+//       } else if (product.name.includes("HP Pavilion Desktop")) {
+//         pc.brand = "HP";
+//         pc.model = "Pavilion Desktop";
+//         pc.processor = "AMD Ryzen 5 5600G";
+//         pc.ramGb = 16;
+//         pc.storageGb = 512;
+//         pc.storageType = "SATA SSD";
+//         pc.graphics = "NVIDIA GTX 1660";
+//         pc.formFactor = "Mid Tower";
+//         pc.powerSupplyWattage = 500;
+//         pc.operatingSystem = "Windows 11 Home";
+//       } else if (product.name.includes("ASUS VivoPC Mini")) {
+//         pc.brand = "ASUS";
+//         pc.model = "VivoPC Mini";
+//         pc.processor = "Intel Core i5-12400";
+//         pc.ramGb = 8;
+//         pc.storageGb = 256;
+//         pc.storageType = "SATA SSD";
+//         pc.graphics = "Intel UHD Graphics";
+//         pc.formFactor = "Mini ITX";
+//         pc.powerSupplyWattage = 90;
+//         pc.operatingSystem = "Windows 11 Home";
+//       } else if (product.name.includes("Acer Aspire TC Desktop")) {
+//         pc.brand = "Acer";
+//         pc.model = "Aspire TC";
+//         pc.processor = "AMD Ryzen 3 5300G";
+//         pc.ramGb = 8;
+//         pc.storageGb = 512;
+//         pc.storageType = "SATA SSD";
+//         pc.graphics = "AMD Radeon Graphics";
+//         pc.formFactor = "Mid Tower";
+//         pc.powerSupplyWattage = 350;
+//         pc.operatingSystem = "Windows 11 Home";
+//       }
+
+//       await pc.save();
+//       savedPCComponents.push(pc);
+//       console.log(`Added PC component for: ${product.name}`);
+//     }
+
+//     console.log(`Successfully added ${savedPCComponents.length} PC component records`);
+//     return savedPCComponents;
 //   }

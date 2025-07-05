@@ -3,29 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { orderService } from '../services/orderService';
+import { cartService } from '../services/cartService';
 import CheckoutForm from '../components/Cart/CheckoutForm';
 import './CheckoutPage.css';
 
 const CheckoutPage = () => {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
-    const { items, totalAmount, loading, error, isInitialized } = useCart();
+    const { items, totalAmount, loading, error, isInitialized, refreshCart } = useCart();
     const [orderData, setOrderData] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [orderError, setOrderError] = useState(null);
     const [validatedCart, setValidatedCart] = useState(null);
 
-    // Redirect if not authenticated
+    // Check authentication but don't block rendering
     useEffect(() => {
-        if (isInitialized && !isAuthenticated()) {
-            navigate('/login', {
-                state: {
-                    returnUrl: '/checkout',
-                    message: 'Please login to proceed with checkout'
-                }
-            });
+        if (!isAuthenticated()) {
+            console.log('🔐 Not authenticated on checkout page');
+            // Don't redirect immediately - let them see the form
         }
-    }, [isAuthenticated, isInitialized, navigate]);
+    }, [isAuthenticated]);
+
 
     // Khi vào trang checkout, luôn lấy cart mới nhất từ backend
     useEffect(() => {
@@ -50,6 +48,15 @@ const CheckoutPage = () => {
         validateCartOnMount();
     }, [isAuthenticated]);
 
+    // Check cart but don't block rendering  
+    useEffect(() => {
+        if (!items || items.length === 0) {
+            console.log('🛒 Empty cart on checkout page');
+            // Don't redirect immediately - let them see empty state
+        }
+    }, [items]);
+
+
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -62,6 +69,7 @@ const CheckoutPage = () => {
         setOrderError(null);
         
         try {
+
             // Kiểm tra authentication trước khi tiếp tục
             if (!isAuthenticated()) {
                 setOrderError('Vui lòng đăng nhập để đặt hàng');
@@ -103,6 +111,40 @@ const CheckoutPage = () => {
                     `Số lượng sản phẩm: ${currentCart.cartItems.length}`,
                     `Tổng tiền: ${formatCurrency(currentCart.totalAmount)}`
                 ].join(' | ')
+
+            // Luôn đồng bộ cart với backend và lấy dữ liệu mới nhất
+            console.log('🔄 Refreshing cart before order...');
+            await refreshCart();
+            
+            // Lấy cart trực tiếp từ API để đảm bảo dữ liệu mới nhất
+            const cartResponse = await cartService.viewCart();
+            console.log('🛒 Current cart from API:', cartResponse);
+            
+            if (!cartResponse.success || !cartResponse.data?.cartItems || cartResponse.data.cartItems.length === 0) {
+                setOrderError('Giỏ hàng của bạn đang trống hoặc đã thay đổi. Vui lòng kiểm tra lại!');
+                setSubmitting(false);
+                return;
+            }
+
+            const currentCart = cartResponse.data;
+            console.log('📤 Submitting order:', {
+                cartItems: currentCart.cartItems.length,
+                totalAmount: currentCart.totalAmount,
+                orderData: formData
+            });
+
+            // Format address according to backend expectations
+            const fullAddress = [
+                formData.address,
+                formData.commune,
+                formData.ward, 
+                formData.city
+            ].filter(Boolean).join(', ');
+
+            const orderRequest = {
+                shippingAddress: fullAddress,
+                note: `Customer: ${formData.fullName}, Phone: ${formData.phone}, Email: ${formData.email}`
+
             };
             const response = await orderService.createOrder(orderRequest);
             console.log('🎯 [CHECKOUT] Order response:', {
@@ -112,6 +154,7 @@ const CheckoutPage = () => {
                 hasNestedOrderId: !!response.data?.data?.id
             });
             
+
             if (!response.success) {
                 throw new Error(response.message || 'Đặt hàng thất bại');
             }
@@ -137,12 +180,40 @@ const CheckoutPage = () => {
                     message: 'Đặt hàng thành công!'
                 }
             });
+
+            console.log('✅ Order created successfully:', response);
+            
+            if (!response.success || !response.data) {
+                throw new Error(response.message || 'Đặt hàng thất bại');
+            }
+
+            setOrderData(response.data);
+
+            // Refresh cart sau khi đặt hàng thành công để cập nhật trạng thái từ backend
+            await refreshCart();
+            
+            // Show success message and navigate
+            const orderId = response.data.id || 'N/A';
+            if (orderId === 'N/A') {
+                console.warn('Warning: Order created but no ID returned');
+            }
+
+            alert(`Đặt hàng thành công! 
+Mã đơn hàng: ${orderId}
+Tổng tiền: ${formatCurrency(finalTotal)}
+Đơn hàng của bạn đang được xử lý.`);
+            
+            // Navigate to cart which should now be empty
+            navigate('/cart');
+
+
         } catch (error) {
             setOrderError(error.message || 'Đặt hàng thất bại');
         } finally {
             setSubmitting(false);
         }
     };
+
 
     // Show error state
     if (error) {

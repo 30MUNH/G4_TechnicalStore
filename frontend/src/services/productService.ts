@@ -48,6 +48,10 @@ class ProductService {
       if (response.data && response.data.categories) {
         return response.data.categories;
       }
+      // Fallback: try different response structure
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      }
       return [];
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -166,6 +170,10 @@ class ProductService {
       if (response.data && response.data.products) {
         return response.data.products;
       }
+      // Fallback: try different response structure
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      }
       return [];
     } catch (error) {
       console.error('Error fetching all products including out of stock:', error);
@@ -189,11 +197,24 @@ class ProductService {
   // CRUD operations for product management
   async createProduct(productData: Partial<Product>): Promise<Product> {
     try {
+      console.log('Creating product with data:', productData);
       const response = await api.post<ApiResponse<Product>>('/products', productData);
+      console.log('Create product response:', response.data);
+      
       if (response.data && response.data.product) {
         return response.data.product;
       }
-      throw new Error('Failed to create product');
+      
+      // Check for error message in response
+      if (response.data && response.data.error) {
+        throw new Error(response.data.error);
+      }
+      
+      if (response.data && response.data.message) {
+        throw new Error(response.data.message);
+      }
+      
+      throw new Error('Failed to create product - no product data received');
     } catch (error) {
       console.error('Error creating product:', error);
       throw error;
@@ -202,11 +223,24 @@ class ProductService {
 
   async updateProduct(id: string, productData: Partial<Product>): Promise<Product> {
     try {
+      console.log('Updating product with data:', productData);
       const response = await api.put<ApiResponse<Product>>(`/products/${id}`, productData);
+      console.log('Update product response:', response.data);
+      
       if (response.data && response.data.product) {
         return response.data.product;
       }
-      throw new Error('Failed to update product');
+      
+      // Check for error message in response
+      if (response.data && response.data.error) {
+        throw new Error(response.data.error);
+      }
+      
+      if (response.data && response.data.message) {
+        throw new Error(response.data.message);
+      }
+      
+      throw new Error('Failed to update product - no product data received');
     } catch (error) {
       console.error('Error updating product:', error);
       throw error;

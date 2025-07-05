@@ -8,12 +8,14 @@ interface CartState {
     items: CartItem[];
     totalAmount: number;
     loading: boolean;
+    operationLoading: boolean; // Separate loading for cart operations (add/update/remove)
     error: string | null;
     isInitialized: boolean;
 }
 
 type CartAction =
     | { type: 'SET_LOADING'; payload: boolean }
+    | { type: 'SET_OPERATION_LOADING'; payload: boolean }
     | { type: 'SET_ERROR'; payload: string | null }
     | { type: 'SET_CART'; payload: { items: CartItem[]; totalAmount: number } }
     | { type: 'CLEAR_CART' }
@@ -32,22 +34,12 @@ interface CartContextType extends CartState {
 // Define proper types for API responses
 interface CartApiResponse {
     success: boolean;
-    data?: {
-        cartItems: CartItem[];
-        totalAmount: number;
-    };
+    data?: unknown; // Make flexible to handle different wrapping structures
     message?: string;
     error?: string;
 }
 
-interface VoidApiResponse {
-    success: boolean;
-    data?: void;
-    message?: string;
-    error?: string;
-}
-
-type ApiResponse = CartApiResponse | VoidApiResponse;
+type ApiResponse = CartApiResponse;
 
 interface ApiError {
     response?: {
@@ -64,6 +56,7 @@ const initialState: CartState = {
     items: [],
     totalAmount: 0,
     loading: false,
+    operationLoading: false,
     error: null,
     isInitialized: false,
 };
@@ -72,14 +65,17 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     switch (action.type) {
         case 'SET_LOADING':
             return { ...state, loading: action.payload };
+        case 'SET_OPERATION_LOADING':
+            return { ...state, operationLoading: action.payload };
         case 'SET_ERROR':
-            return { ...state, error: action.payload, loading: false };
+            return { ...state, error: action.payload, loading: false, operationLoading: false };
         case 'SET_CART':
             return {
                 ...state,
                 items: action.payload.items,
                 totalAmount: action.payload.totalAmount,
                 loading: false,
+                operationLoading: false,
                 error: null,
                 isInitialized: true,
             };
@@ -89,6 +85,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
                 items: [],
                 totalAmount: 0,
                 loading: false,
+                operationLoading: false,
                 error: null,
             };
         case 'SET_INITIALIZED':
@@ -106,6 +103,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Helper function to handle API responses
     const handleApiResponse = (response: ApiResponse, operation: string) => {
         console.log(`🛒 [CART CONTEXT] ${operation} response:`, response);
+        console.log(`🛒 [CART CONTEXT] ${operation} detailed analysis:`, {
+            hasSuccess: !!response.success,
+            hasData: !!response.data,
+            dataType: typeof response.data,
+            dataContent: response.data
+        });
         
         if (!response.success) {
             const errorMessage = response.message || response.error || 'Unknown error occurred';
@@ -126,6 +129,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (response.data.cartItems !== undefined) {
                     cartData = response.data;
                 }
+
                 // Check if it's wrapped (response.data.data.data) - 3 levels for interceptor
                 // @ts-ignore
                 else if (response.data.data && response.data.data.data && response.data.data.data.cartItems !== undefined) {
@@ -133,6 +137,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     cartData = response.data.data.data;
                 }
                 // Check if it's wrapped (response.data.data) - 2 levels fallback
+
+                // Check if it's wrapped (response.data.data)
+
                 // @ts-ignore
                 else if (response.data.data && response.data.data.cartItems !== undefined) {
                     // @ts-ignore
@@ -196,10 +203,18 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const addToCart = async (productId: string, quantity: number): Promise<void> => {
-        dispatch({ type: 'SET_LOADING', payload: true });
+        // Prevent multiple simultaneous calls for the same product
+        if (state.operationLoading) {
+            console.log(`🛒 [CART CONTEXT] Skipping add to cart - operation already in progress`);
+            return;
+        }
+
+        // Set loading briefly to prevent spam clicks, but don't show UI loading
+        dispatch({ type: 'SET_OPERATION_LOADING', payload: true });
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
+            console.log(`🛒 [CART CONTEXT] Adding to cart: ${productId} x ${quantity}`);
             const response = await cartService.addToCart(productId, quantity);
             handleApiResponse(response, 'ADD_TO_CART');
         } catch (error) {
@@ -208,7 +223,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const increaseQuantity = async (productId: string, amount: number = 1): Promise<void> => {
-        dispatch({ type: 'SET_LOADING', payload: true });
+        if (state.operationLoading) {
+            console.log(`🛒 [CART CONTEXT] Skipping increase quantity - operation already in progress`);
+            return;
+        }
+
+        // Brief loading state to prevent spam clicks, but no UI loading shown
+        dispatch({ type: 'SET_OPERATION_LOADING', payload: true });
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
@@ -220,7 +241,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const decreaseQuantity = async (productId: string, amount: number = 1): Promise<void> => {
-        dispatch({ type: 'SET_LOADING', payload: true });
+        if (state.operationLoading) {
+            console.log(`🛒 [CART CONTEXT] Skipping decrease quantity - operation already in progress`);
+            return;
+        }
+
+        // Brief loading state to prevent spam clicks, but no UI loading shown
+        dispatch({ type: 'SET_OPERATION_LOADING', payload: true });
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
@@ -232,7 +259,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const removeItem = async (productId: string): Promise<void> => {
-        dispatch({ type: 'SET_LOADING', payload: true });
+        if (state.operationLoading) {
+            console.log(`🛒 [CART CONTEXT] Skipping remove item - operation already in progress`);
+            return;
+        }
+
+        // Brief loading state to prevent spam clicks, but no UI loading shown
+        dispatch({ type: 'SET_OPERATION_LOADING', payload: true });
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
@@ -244,7 +277,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const clearCart = async (): Promise<void> => {
-        dispatch({ type: 'SET_LOADING', payload: true });
+        if (state.operationLoading) {
+            console.log(`🛒 [CART CONTEXT] Skipping clear cart - operation already in progress`);
+            return;
+        }
+
+        // Brief loading state to prevent spam clicks, but no UI loading shown
+        dispatch({ type: 'SET_OPERATION_LOADING', payload: true });
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
@@ -271,7 +310,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 dispatch({ type: 'SET_INITIALIZED', payload: true });
                 return;
             }
-            handleApiError(error, 'REFRESH_CART');
+            // Don't throw errors for refresh - just log them
+            console.warn('🛒 [CART CONTEXT] Refresh cart failed silently:', error);
+            dispatch({ type: 'SET_INITIALIZED', payload: true });
         }
     };
 
@@ -286,13 +327,16 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const authToken = localStorage.getItem('authToken');
             
             if (!authToken) {
-                console.log('🔐 No auth token, skipping cart initialization');
+                console.log('🔐 No auth token, setting empty cart');
                 dispatch({ type: 'CLEAR_CART' });
                 dispatch({ type: 'SET_INITIALIZED', payload: true });
                 return;
             }
 
             console.log('🛒 Initializing cart with auth token');
+            // Set initialized immediately to prevent loading screen
+            dispatch({ type: 'SET_INITIALIZED', payload: true });
+            // Then refresh cart in background
             await refreshCart();
         };
 
