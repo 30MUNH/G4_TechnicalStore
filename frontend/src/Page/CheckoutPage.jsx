@@ -137,7 +137,7 @@ const CheckoutPage = () => {
             const orderData = response.data?.id ? response.data : response.data?.data;
             if (!orderData?.id) {
                 console.error('❌ [CHECKOUT] No order ID found in response:', response);
-                throw new Error('Đặt hàng thành công nhưng không nhận được mã đơn hàng');
+                throw new Error('Thanh toán thành công nhưng không nhận được mã đơn hàng');
             }
             
             console.log('✅ [CHECKOUT] Order created successfully:', {
@@ -148,12 +148,12 @@ const CheckoutPage = () => {
             setOrderData(orderData);
             await refreshCart();
             
-            alert(`Đặt hàng thành công!\nMã đơn hàng: ${orderData.id}\nTổng tiền: ${formatCurrency(orderData.totalAmount || currentCart.totalAmount)}\nĐơn hàng của bạn đang được xử lý.`);
+            alert('Thanh toán thành công');
             
             navigate('/orders', {
                 state: {
                     newOrderId: orderData.id,
-                    message: 'Đặt hàng thành công!'
+                    message: 'Thanh toán thành công'
                 }
             });
 

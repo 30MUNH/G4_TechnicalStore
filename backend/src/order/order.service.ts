@@ -37,8 +37,7 @@ export class OrderService {
     }
 
     async createOrder(username: string, createOrderDto: CreateOrderDto): Promise<Order> {
-        console.log(`🛒 [ORDER] Creating order for user: ${username}`);
-        console.log(`📦 [ORDER] Order data:`, createOrderDto);
+
         
         if (!createOrderDto.shippingAddress) {
             throw new Error('Địa chỉ giao hàng không được để trống');
@@ -52,25 +51,21 @@ export class OrderService {
         return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
 
             // Bước 1: Lấy account và kiểm tra tồn tại
-            console.log(`🔍 [ORDER] Looking up account for username: ${username}`);
+
             const account = await transactionalEntityManager.findOne(Account, { 
                 where: { username },
                 relations: ['role']
             });
             
             if (!account) {
-                console.log(`❌ [ORDER] Account not found for username: ${username}`);
+
                 throw new EntityNotFoundException('Account');
             }
             
-            console.log(`✅ [ORDER] Account found:`, {
-                id: account.id,
-                username: account.username,
-                role: account.role?.name || 'No role'
-            });
+
 
             // Bước 2: Lấy cart TRONG transaction
-            console.log(`🛒 [ORDER] Looking up cart for account: ${account.id}`);
+
 
             const cart = await transactionalEntityManager.findOne(Cart, {
                 where: { account: { id: account.id } },
@@ -78,40 +73,20 @@ export class OrderService {
             });
 
             if (!cart) {
-                console.log(`❌ [ORDER] Cart not found for account: ${account.id}`);
+
                 throw new EntityNotFoundException('Cart');
             }
 
-            console.log(`🛒 [ORDER] Cart found:`, {
-                id: cart.id,
-                accountId: cart.account.id,
-                itemCount: cart.cartItems?.length || 0,
-                totalAmount: cart.totalAmount,
-                items: cart.cartItems?.map(item => ({
-                    id: item.id,
-                    productId: item.product.id,
-                    productName: item.product.name,
-                    quantity: item.quantity,
-                    price: item.product.price,
-                    stock: item.product.stock,
-                    isActive: item.product.isActive
-                }))
-            });
+
             
             // Bước 3: Kiểm tra cart không trống
             if (!cart.cartItems || cart.cartItems.length === 0) {
-                console.log(`❌ [ORDER] Cart is empty for user: ${username}`);
-                console.log(`🛒 [ORDER] Cart details:`, {
-                    id: cart.id,
-                    cartItems: cart.cartItems,
-                    cartItemsLength: cart.cartItems?.length,
-                    totalAmount: cart.totalAmount
-                });
+
                 throw new Error('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi đặt hàng.');
             }
 
             // Bước 4: Validate từng sản phẩm trong cart
-            console.log(`✅ [ORDER] Cart validation passed: ${cart.cartItems.length} items found`);
+
             const invalidItems = [];
             
             for (const cartItem of cart.cartItems) {
@@ -124,12 +99,12 @@ export class OrderService {
             }
 
             if (invalidItems.length > 0) {
-                console.log(`❌ [ORDER] Invalid items found:`, invalidItems);
+
                 throw new Error(`Một số sản phẩm trong giỏ hàng không hợp lệ: ${invalidItems.join(', ')}`);
             }
 
             // Bước 5: Validate giá sản phẩm và lock products
-            console.log(`💰 [ORDER] Validating prices and locking products...`);
+
 
             const productIds = cart.cartItems.map(item => item.product.id);
             const products = await transactionalEntityManager
@@ -165,7 +140,7 @@ export class OrderService {
             }
 
             if (priceChanges.length > 0) {
-                console.log(`❌ [ORDER] Price changes detected:`, priceChanges);
+
                 const changeDetails = priceChanges.map(change => 
                     `${change.name}: ${change.oldPrice} → ${change.newPrice}`
                 ).join(', ');
@@ -173,14 +148,14 @@ export class OrderService {
             }
 
             if (stockIssues.length > 0) {
-                console.log(`❌ [ORDER] Stock issues found:`, stockIssues);
+
                 throw new Error(`Một số sản phẩm có vấn đề về tồn kho: ${stockIssues.join(', ')}`);
             }
 
-            console.log(`✅ [ORDER] All validations passed`);
+
 
             // Bước 6: Tạo order entity
-            console.log(`📋 [ORDER] Creating order entity...`);
+
             const order = new Order();
             order.customer = cart.account;
             order.orderDate = new Date();
@@ -189,31 +164,19 @@ export class OrderService {
             order.shippingAddress = createOrderDto.shippingAddress || '';
             order.note = createOrderDto.note || '';
             
-            console.log(`💾 [ORDER] Saving order:`, {
-                customerId: order.customer.id,
-                customerUsername: order.customer.username,
-                totalAmount: order.totalAmount,
-                shippingAddress: order.shippingAddress,
-                note: order.note
-            });
+
             
             await transactionalEntityManager.save(order);
-            console.log(`✅ [ORDER] Order saved with ID: ${order.id}`);
+
 
             // Bước 7: Tạo order details và cập nhật stock
-            console.log(`📝 [ORDER] Creating order details for ${cart.cartItems.length} items...`);
+
             let orderDetailCount = 0;
             
             for (const cartItem of cart.cartItems) {
                 const product = products.find(p => p.id === cartItem.product.id)!;
 
-                console.log(`📄 [ORDER] Creating order detail ${orderDetailCount + 1}/${cart.cartItems.length}:`, {
-                    productId: product.id,
-                    productName: product.name,
-                    quantity: cartItem.quantity,
-                    price: product.price,
-                    subtotal: product.price * cartItem.quantity
-                });
+
 
                 const orderDetail = new OrderDetail();
                 orderDetail.order = order;
@@ -223,29 +186,26 @@ export class OrderService {
                 await transactionalEntityManager.save(orderDetail);
 
                 orderDetailCount++;
-                console.log(`✅ [ORDER] Order detail saved for ${product.name}`);
+
 
                 // Cập nhật stock
                 const oldStock = product.stock;
                 product.stock -= cartItem.quantity;
                 await transactionalEntityManager.save(product);
-                console.log(`📦 [ORDER] Stock updated for ${product.name}: ${oldStock} → ${product.stock}`);
+
             }
 
             // Bước 8: Clear cart TRONG transaction
-            console.log(`🧹 [ORDER] Clearing cart for user: ${username} TRONG transaction`);
+
             if (cart.cartItems && cart.cartItems.length > 0) {
                 const removedItemsCount = cart.cartItems.length;
                 await transactionalEntityManager.remove(cart.cartItems);
-                console.log(`✅ [ORDER] Removed ${removedItemsCount} cart items`);
             }
             
             cart.totalAmount = 0;
             await transactionalEntityManager.save(cart);
-            console.log(`✅ [ORDER] Cart cleared successfully`);
 
             // Bước 9: Lấy order với đầy đủ thông tin
-            console.log(`🔍 [ORDER] Fetching final order data...`);
             const finalOrder = await transactionalEntityManager.findOne(Order, {
                 where: { id: order.id },
                 relations: [
@@ -260,15 +220,7 @@ export class OrderService {
                 throw new Error('Lỗi khi lấy thông tin đơn hàng vừa tạo');
             }
 
-            console.log(`🎉 [ORDER] Order creation completed successfully:`, {
-                orderId: finalOrder.id,
-                customerUsername: finalOrder.customer.username,
-                orderDetailsCount: finalOrder.orderDetails?.length || 0,
-                totalAmount: finalOrder.totalAmount,
-                status: finalOrder.status,
-                shippingAddress: finalOrder.shippingAddress,
-                orderDate: finalOrder.orderDate
-            });
+
             
             return finalOrder;
         });

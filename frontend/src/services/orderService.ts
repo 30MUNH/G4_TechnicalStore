@@ -15,10 +15,6 @@ export const orderService = {
     async createOrder(createOrderDto: CreateOrderDto) {
         try {
             const response = await api.post('/orders', createOrderDto);
-            console.log('✅ [ORDER_SERVICE] Order response received:', {
-                success: response.data?.success,
-                hasOrderData: !!response.data?.data
-            });
             return response.data;
         } catch (error) {
             console.error('❌ [ORDER_SERVICE] Create order failed:', error);

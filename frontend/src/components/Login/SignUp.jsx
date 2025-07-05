@@ -6,7 +6,7 @@ import OTPPopup from './OTPPopup';
 import styles from './SignUp.module.css';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../contexts/AuthContext';
-import signupDebugUtils from '../../utils/signupDebug';
+
 
 const SignUp = ({ onNavigate }) => {
   const navigate = useNavigate();
@@ -28,28 +28,14 @@ const SignUp = ({ onNavigate }) => {
 
   // Recovery state from localStorage on component mount
   useEffect(() => {
-    console.group('🔍 [DEBUG] Component Mount - Recovery Check');
-    
     const savedRegistration = localStorage.getItem('pendingRegistration');
-    console.log('📦 Checking for saved registration:', !!savedRegistration);
     
     if (savedRegistration) {
       try {
         const parsed = JSON.parse(savedRegistration);
-        const ageInMinutes = (Date.now() - parsed.timestamp) / (1000 * 60);
-        
-        console.log('📊 Saved registration details:', {
-          phone: parsed.phone,
-          username: parsed.username,
-          hasHashedPassword: !!parsed.hashedPassword,
-          timestamp: new Date(parsed.timestamp).toLocaleString(),
-          ageInMinutes: ageInMinutes.toFixed(2),
-          isExpired: ageInMinutes >= 10
-        });
         
         // Check if not expired (10 minutes)
         if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
-          console.log('✅ Recovering valid registration state');
           setPendingSignup(parsed.phone);
           setHashedPassword(parsed.hashedPassword);
           setFormData(prev => ({
@@ -60,83 +46,16 @@ const SignUp = ({ onNavigate }) => {
           setShowOTPPopup(true);
         } else {
           // Expired, clean up
-          console.log('⏰ Registration expired, cleaning up');
           localStorage.removeItem('pendingRegistration');
         }
       } catch (error) {
-        console.error('❌ Error parsing saved registration:', error);
         localStorage.removeItem('pendingRegistration');
       }
-    } else {
-      console.log('📭 No saved registration found');
     }
-    
-    console.groupEnd();
-    
-    // Add debug helper to window for easy debugging
-    window.signupDebug = {
-      // Check current form state
-      getFormState: () => ({
-        formData,
-        pendingSignup,
-        hasHashedPassword: !!hashedPassword,
-        showOTPPopup,
-        isSubmitting,
-        errors
-      }),
-      
-      // Check localStorage state
-      getStoredState: () => {
-        const stored = localStorage.getItem('pendingRegistration');
-        if (!stored) return null;
-        try {
-          const parsed = JSON.parse(stored);
-          return {
-            ...parsed,
-            ageInMinutes: (Date.now() - parsed.timestamp) / (1000 * 60),
-            isExpired: (Date.now() - parsed.timestamp) >= 10 * 60 * 1000
-          };
-        } catch (error) {
-          return { error: 'Invalid JSON in localStorage' };
-        }
-      },
-      
-      // Clear all registration state
-      clearAll: () => {
-        localStorage.removeItem('pendingRegistration');
-        sessionStorage.removeItem('registrationSuccess');
-        console.log('🧹 All registration state cleared');
-      },
-      
-      // Test phone formatting
-      testPhoneFormat: (phone) => {
-        try {
-          const formatted = '+84' + phone.replace(/\D/g, '').slice(0, 10).substring(1);
-          return { original: phone, formatted };
-        } catch (error) {
-          return { error: error.message };
-        }
-      },
-      
-      // Show debug info
-      showDebugInfo: () => {
-        console.group('🔍 SignUp Debug Information');
-        console.log('📱 Form State:', window.signupDebug.getFormState());
-        console.log('💾 Stored State:', window.signupDebug.getStoredState());
-        console.log('🔑 Auth Token:', localStorage.getItem('authToken') ? 'Present' : 'None');
-        console.log('👤 User Data:', localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : 'None');
-        console.groupEnd();
-      }
-    };
-    
-    console.log('🛠️ Debug helper added to window.signupDebug');
-    console.log('💡 Use window.signupDebug.showDebugInfo() to see current state');
-  }, [formData, pendingSignup, hashedPassword, showOTPPopup, isSubmitting, errors]);
+  }, []);
 
   // Save registration state to localStorage
   const saveRegistrationState = (phone, username, hashedPassword) => {
-    console.group('🔍 [DEBUG] Saving Registration State');
-    
     const registrationData = {
       phone,
       username,
@@ -144,28 +63,12 @@ const SignUp = ({ onNavigate }) => {
       timestamp: Date.now()
     };
     
-    console.log('💾 Saving to localStorage:', {
-      phone: registrationData.phone,
-      username: registrationData.username,
-      hasHashedPassword: !!registrationData.hashedPassword,
-      timestamp: new Date(registrationData.timestamp).toLocaleString()
-    });
-    
     localStorage.setItem('pendingRegistration', JSON.stringify(registrationData));
-    console.log('✅ Registration state saved successfully');
-    console.groupEnd();
   };
 
   // Clear registration state from localStorage
   const clearRegistrationState = () => {
-    console.group('🔍 [DEBUG] Clearing Registration State');
-    
-    const hadState = localStorage.getItem('pendingRegistration');
-    console.log('🧹 Clearing localStorage:', { hadPreviousState: !!hadState });
-    
     localStorage.removeItem('pendingRegistration');
-    console.log('✅ Registration state cleared');
-    console.groupEnd();
   };
 
   const validateField = (name, value) => {
@@ -213,30 +116,15 @@ const SignUp = ({ onNavigate }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    console.group('🔍 [DEBUG] SignUp Form Submission');
-    console.log('📥 Form data:', {
-      username: formData.username,
-      phone: formData.phone,
-      passwordLength: formData.password?.length,
-      confirmPasswordLength: formData.confirmPassword?.length
-    });
-    
     const newErrors = {};
     Object.keys(formData).forEach(key => {
       const error = validateField(key, formData[key]);
       if (error) newErrors[key] = error;
     });
     
-    console.log('🔍 Validation results:', {
-      errors: newErrors,
-      hasErrors: Object.keys(newErrors).length > 0
-    });
-    
     setErrors(newErrors);
     
     if (Object.keys(newErrors).length > 0) {
-      console.log('❌ Form validation failed, stopping submission');
-      console.groupEnd();
       return;
     }
     
@@ -244,10 +132,6 @@ const SignUp = ({ onNavigate }) => {
     
     try {
       const formattedPhone = '+84' + formData.phone;
-      console.log('📱 Phone formatting:', {
-        original: formData.phone,
-        formatted: formattedPhone
-      });
 
       const registrationData = {
         username: formData.username,
@@ -255,35 +139,14 @@ const SignUp = ({ onNavigate }) => {
         password: formData.password,
         roleSlug: 'customer'
       };
-      
-      console.log('📤 Calling authService.register with:', {
-        ...registrationData,
-        password: '***'
-      });
 
       const response = await authService.register(registrationData);
-      
-      console.log('📨 Registration response received:', {
-        response,
-        responseType: typeof response,
-        hasSuccess: response?.success,
-        hasMessage: !!response?.message
-      });
 
       if ((response && response.success) || (response && typeof response.message === 'string' && response.message.toLowerCase().includes('otp'))) {
-        console.log('✅ Registration successful, showing OTP popup');
-        
         setPendingSignup(formattedPhone);
         // Fix: Access account from correct path in response
         const accountData = response.data?.account || response.account;
         const passwordHashed = accountData?.password || formData.password;
-        
-        console.log('💾 Storing hashed password:', { 
-          hasHashedPassword: !!passwordHashed,
-          passwordSource: accountData?.password ? 'backend' : 'form',
-          accountData: accountData,
-          responsePath: response.data?.account ? 'response.data.account' : 'response.account'
-        });
         
         setHashedPassword(passwordHashed);
         setShowOTPPopup(true);
@@ -291,7 +154,6 @@ const SignUp = ({ onNavigate }) => {
         
         // Save state to localStorage for recovery
         saveRegistrationState(formattedPhone, formData.username, passwordHashed);
-        console.log('💾 Registration state saved to localStorage');
       } else {
         console.error('❌ Unexpected registration response:', response);
         setErrors({ general: response?.message || 'Unexpected response from server' });
@@ -314,7 +176,7 @@ const SignUp = ({ onNavigate }) => {
         errorMessage = 'No internet connection. Please check your network.';
       }
 
-      console.log('📝 Setting error message:', errorMessage);
+      // console.log removed
       setErrors({ general: errorMessage });
     } finally {
       setIsSubmitting(false);
@@ -324,7 +186,7 @@ const SignUp = ({ onNavigate }) => {
 
   const handleVerifyOTP = async (otp) => {
     console.group('🔍 [DEBUG] OTP Verification');
-    console.log('📱 Verifying OTP for phone:', pendingSignup);
+    // console.log removed
     
     if (!pendingSignup || !hashedPassword) {
       console.error('❌ Missing required data:', { pendingSignup, hasHashedPassword: !!hashedPassword });
@@ -341,7 +203,7 @@ const SignUp = ({ onNavigate }) => {
         username: formData.username
       });
       
-      console.log('✅ OTP verification successful');
+      // console.log removed
       
       // Store registration data for login page
       sessionStorage.setItem('lastRegisteredUser', JSON.stringify({
@@ -364,51 +226,40 @@ const SignUp = ({ onNavigate }) => {
   };
 
   const handleResendOTP = async () => {
-    console.group('🔍 [DEBUG] Resend OTP');
-    
     // Try to get phone from current state or localStorage
     let phoneToResend = pendingSignup;
-    console.log('📱 Current phone to resend:', phoneToResend);
+    // console.log removed
     
     if (!phoneToResend) {
-      console.log('⚠️ No phone in current state, checking localStorage');
+      // console.log removed
       const savedRegistration = localStorage.getItem('pendingRegistration');
       if (savedRegistration) {
         try {
           const parsed = JSON.parse(savedRegistration);
-          console.log('📦 Found saved registration for resend:', {
-            phone: parsed.phone,
-            ageInMinutes: (Date.now() - parsed.timestamp) / (1000 * 60)
-          });
           
           if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
             phoneToResend = parsed.phone;
             setPendingSignup(parsed.phone); // Update state
-            console.log('✅ Recovered phone for resend:', phoneToResend);
+            // console.log removed
           }
         } catch (error) {
-          console.error('❌ Error parsing saved registration for resend:', error);
+          // Error parsing saved registration
         }
       }
     }
 
     if (!phoneToResend) {
-      console.error('❌ No phone available for resend');
       setErrors({ general: 'Phiên đăng ký đã hết hạn. Vui lòng đăng ký lại từ đầu.' });
       setShowOTPPopup(false);
       clearRegistrationState();
-      console.groupEnd();
       return;
     }
 
     try {
-      console.log('📤 Calling authService.resendOTP');
       const response = await authService.resendOTP({
         phone: phoneToResend,
         isForLogin: false
       });
-
-      console.log('📨 Resend OTP response:', response);
 
       if (response && response.success) {
         alert('Mã OTP mới đã được gửi về số điện thoại của bạn');
@@ -418,17 +269,12 @@ const SignUp = ({ onNavigate }) => {
           const parsed = JSON.parse(savedRegistration);
           parsed.timestamp = Date.now(); // Reset timestamp
           localStorage.setItem('pendingRegistration', JSON.stringify(parsed));
-          console.log('⏰ Updated timestamp in localStorage');
         }
-      } else {
-        console.error('❌ Resend OTP failed:', response?.message);
+              } else {
         setErrors({ general: response?.message || 'Failed to resend OTP' });
       }
     } catch (error) {
-      console.error('❌ Resend OTP error:', error);
       setErrors({ general: error.response?.data?.message || 'Failed to resend OTP. Please try again.' });
-    } finally {
-      console.groupEnd();
     }
   };
 

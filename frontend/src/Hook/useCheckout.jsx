@@ -111,7 +111,7 @@ export const useCheckout = () => {
 
             // Show success message
             console.log('🎉 useCheckout Debug - Showing success message');
-            alert('Đặt hàng thành công!');
+            alert('Thanh toán thành công');
 
             return newOrder;
         } catch (error) {
