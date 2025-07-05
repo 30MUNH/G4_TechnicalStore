@@ -15,6 +15,7 @@ export class OrderService {
     constructor(
         private readonly cartService: CartService,
     ) {}
+
     private validateOrderStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): boolean {
         const validTransitions: Record<OrderStatus, OrderStatus[]> = {
             [OrderStatus.PENDING]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
@@ -68,19 +69,13 @@ export class OrderService {
                 role: account.role?.name || 'No role'
             });
 
-            // Bước 2: Lấy cart TRONG transaction (without pessimistic lock để tránh SQL error)
+            // Bước 2: Lấy cart TRONG transaction
             console.log(`🛒 [ORDER] Looking up cart for account: ${account.id}`);
-
-            // Lấy cart TRONG transaction để đảm bảo data consistency
-            const account = await transactionalEntityManager.findOne(Account, { where: { username } });
-            if (!account) throw new EntityNotFoundException('Account');
-
 
             const cart = await transactionalEntityManager.findOne(Cart, {
                 where: { account: { id: account.id } },
                 relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
             });
-
 
             if (!cart) {
                 console.log(`❌ [ORDER] Cart not found for account: ${account.id}`);
@@ -136,40 +131,6 @@ export class OrderService {
             // Bước 5: Validate giá sản phẩm và lock products
             console.log(`💰 [ORDER] Validating prices and locking products...`);
 
-            if (!cart) throw new EntityNotFoundException('Cart');
-
-            console.log(`🛒 [ORDER] Cart found:`, {
-                id: cart.id,
-                itemCount: cart.cartItems?.length || 0,
-                totalAmount: cart.totalAmount,
-                items: cart.cartItems?.map(item => ({
-                    productId: item.product.id,
-                    productName: item.product.name,
-                    quantity: item.quantity,
-                    price: item.product.price
-                }))
-            });
-            
-            if (!cart.cartItems || cart.cartItems.length === 0) {
-                console.log(`❌ [ORDER] Cart is empty for user: ${username}`);
-                throw new Error('Giỏ hàng trống');
-            }
-
-            // Validate giá sản phẩm trong transaction
-            let hasChanges = false;
-            for (const item of cart.cartItems) {
-                const product = await transactionalEntityManager.findOne(Product, { where: { id: item.product.id } });
-                if (product && product.price !== item.product.price) {
-                    hasChanges = true;
-                    break;
-                }
-            }
-
-            if (hasChanges) {
-                throw new Error('Giá sản phẩm đã thay đổi, vui lòng kiểm tra lại giỏ hàng');
-            }
-
-
             const productIds = cart.cartItems.map(item => item.product.id);
             const products = await transactionalEntityManager
                 .createQueryBuilder(Product, 'product')
@@ -203,7 +164,6 @@ export class OrderService {
                 }
             }
 
-
             if (priceChanges.length > 0) {
                 console.log(`❌ [ORDER] Price changes detected:`, priceChanges);
                 const changeDetails = priceChanges.map(change => 
@@ -220,7 +180,6 @@ export class OrderService {
             console.log(`✅ [ORDER] All validations passed`);
 
             // Bước 6: Tạo order entity
-
             console.log(`📋 [ORDER] Creating order entity...`);
             const order = new Order();
             order.customer = cart.account;
@@ -241,7 +200,6 @@ export class OrderService {
             await transactionalEntityManager.save(order);
             console.log(`✅ [ORDER] Order saved with ID: ${order.id}`);
 
-
             // Bước 7: Tạo order details và cập nhật stock
             console.log(`📝 [ORDER] Creating order details for ${cart.cartItems.length} items...`);
             let orderDetailCount = 0;
@@ -255,17 +213,6 @@ export class OrderService {
                     quantity: cartItem.quantity,
                     price: product.price,
                     subtotal: product.price * cartItem.quantity
-
-            console.log(`📝 [ORDER] Creating order details for ${cart.cartItems.length} items...`);
-            for (const cartItem of cart.cartItems) {
-                const product = products.find(p => p.id === cartItem.product.id)!;
-
-                console.log(`📄 [ORDER] Creating order detail:`, {
-                    productId: product.id,
-                    productName: product.name,
-                    quantity: cartItem.quantity,
-                    price: product.price
-
                 });
 
                 const orderDetail = new OrderDetail();
@@ -321,31 +268,6 @@ export class OrderService {
                 status: finalOrder.status,
                 shippingAddress: finalOrder.shippingAddress,
                 orderDate: finalOrder.orderDate
-
-                console.log(`✅ [ORDER] Order detail saved for ${product.name}`);
-
-                console.log(`📦 Reducing stock for ${product.name}: ${product.stock} -> ${product.stock - cartItem.quantity}`);
-                product.stock -= cartItem.quantity;
-                await transactionalEntityManager.save(product);
-                console.log(`✅ Stock updated for ${product.name}: ${product.stock}`);
-            }
-
-            console.log(`🧹 Clearing cart for user: ${username} TRONG transaction`);
-            // Clear cart TRONG transaction thay vì gọi service riêng
-            if (cart.cartItems) {
-                await transactionalEntityManager.remove(cart.cartItems);
-            }
-            cart.totalAmount = 0;
-            await transactionalEntityManager.save(cart);
-            console.log(`✅ Cart cleared successfully`);
-
-            console.log(`🔍 [ORDER] Fetching final order data...`);
-            const finalOrder = await this.getOrderById(order.id);
-            console.log(`🎉 [ORDER] Order creation completed:`, {
-                orderId: finalOrder.id,
-                orderDetailsCount: finalOrder.orderDetails?.length || 0,
-                totalAmount: finalOrder.totalAmount
-
             });
             
             return finalOrder;
@@ -456,7 +378,23 @@ export class OrderService {
             }
 
             await transactionalEntityManager.save(order);
-            return this.getOrderById(order.id);
+            
+            // Lấy order đã cập nhật với đầy đủ thông tin
+            const updatedOrder = await transactionalEntityManager.findOne(Order, {
+                where: { id: orderId },
+                relations: [
+                    'customer',
+                    'shipper',
+                    'orderDetails',
+                    'orderDetails.product'
+                ]
+            });
+
+            if (!updatedOrder) {
+                throw new Error('Lỗi khi lấy thông tin đơn hàng đã cập nhật');
+            }
+
+            return updatedOrder;
         });
     }
 
@@ -473,17 +411,39 @@ export class OrderService {
             throw new EntityNotFoundException('Account');
         }
 
-        const orders = await Order.find({
+        const [orders] = await Order.findAndCount({
             where: { customer: { id: account.id } }
         });
 
-        return {
+        const statistics = {
             total: orders.length,
-            pending: orders.filter(o => o.status === OrderStatus.PENDING).length,
-            processing: orders.filter(o => o.status === OrderStatus.PROCESSING).length,
-            shipping: orders.filter(o => o.status === OrderStatus.SHIPPING).length,
-            delivered: orders.filter(o => o.status === OrderStatus.DELIVERED).length,
-            cancelled: orders.filter(o => o.status === OrderStatus.CANCELLED).length
+            pending: 0,
+            processing: 0,
+            shipping: 0,
+            delivered: 0,
+            cancelled: 0
         };
+
+        orders.forEach(order => {
+            switch (order.status) {
+                case OrderStatus.PENDING:
+                    statistics.pending++;
+                    break;
+                case OrderStatus.PROCESSING:
+                    statistics.processing++;
+                    break;
+                case OrderStatus.SHIPPING:
+                    statistics.shipping++;
+                    break;
+                case OrderStatus.DELIVERED:
+                    statistics.delivered++;
+                    break;
+                case OrderStatus.CANCELLED:
+                    statistics.cancelled++;
+                    break;
+            }
+        });
+
+        return statistics;
     }
 } 
