@@ -64,7 +64,7 @@ const Footer = () => {
                   <li><a href="#">My Account</a></li>
                   <li><Link to="/cart" className="dropdown-toggle">View Cart</Link></li>
                   <li><a href="#">Wishlist</a></li>
-                  <li><a href="#">Track My Order</a></li>
+                  <li><Link to="/cart?showHistory=true">Track My Order</Link></li>
                 </ul>
               </div>
             </div>

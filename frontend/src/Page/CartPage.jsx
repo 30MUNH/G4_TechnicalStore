@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import CartView from '../components/Cart/CartView';
 import { OrderHistory } from '../components/Cart/OrderHistory';
 import { useCart } from '../contexts/CartContext';
@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const CartPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [showOrderHistory, setShowOrderHistory] = useState(false);
     const [orders, setOrders] = useState([]);
 
@@ -142,6 +143,16 @@ const CartPage = () => {
             // Don't redirect immediately - let them see the page
         }
     }, [isAuthenticated]);
+
+    // Check for showHistory parameter and auto-open order history
+    useEffect(() => {
+        const searchParams = new URLSearchParams(location.search);
+        if (searchParams.get('showHistory') === 'true') {
+            handleViewOrderHistory();
+            // Clean URL by removing the parameter
+            navigate('/cart', { replace: true });
+        }
+    }, [location.search]);
 
     // Remove loading screen - just show cart immediately
 
