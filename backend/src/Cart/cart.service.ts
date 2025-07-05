@@ -49,30 +49,20 @@ export class CartService {
   private async calculateTotalAmount(cart: Cart): Promise<number> {
     try {
       let total = 0;
-      const itemsToRemove: CartItem[] = [];
 
-      if (!cart.cartItems) {
+      if (!cart.cartItems || cart.cartItems.length === 0) {
         return Number(total.toFixed(2));
       }
 
       for (const item of cart.cartItems) {
         const product = await Product.findOne({ where: { id: item.product.id } });
         
-        if (!product || !product.isActive) {
-          itemsToRemove.push(item);
-        } else if (product.stock < item.quantity) {
-          itemsToRemove.push(item);
-        } else {
-          total += product.price * item.quantity;
+        // Skip invalid items but don't remove them - preserve for user review
+        if (!product || !product.isActive || !product.price || product.price <= 0 || product.stock < item.quantity) {
+          continue;
         }
-      }
-
-      if (itemsToRemove.length > 0) {
-        cart.cartItems = cart.cartItems.filter(item => !itemsToRemove.includes(item));
-        await cart.save();
-
-        const removedProducts = itemsToRemove.map(item => item.product.name).join(', ');
-        throw new BadRequestException(`Các sản phẩm sau đã bị xóa khỏi giỏ hàng do không còn tồn tại hoặc không đủ số lượng: ${removedProducts}`);
+        
+        total += product.price * item.quantity;
       }
 
       return Number(total.toFixed(2));
@@ -209,28 +199,20 @@ export class CartService {
 
   async viewCart(username: string): Promise<Cart> {
     const account = await Account.findOne({ where: { username } });
-    if (!account) throw new EntityNotFoundException('Account');
+    if (!account) {
+      throw new EntityNotFoundException('Account');
+    }
 
     const cart = await Cart.findOne({
       where: { account: { id: account.id } },
       relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
     });
 
-    if (!cart) throw new EntityNotFoundException('Cart');
+    if (!cart) {
+      throw new EntityNotFoundException('Cart');
+    }
     
     const updatedCart = await this.updateCartTotals(cart);
-    
-    console.log('🛒 [CartService] View cart data:', {
-      id: updatedCart.id,
-      totalAmount: updatedCart.totalAmount,
-      cartItemsCount: updatedCart.cartItems?.length,
-      cartItems: updatedCart.cartItems?.map(item => ({
-        id: item.id,
-        quantity: item.quantity,
-        productName: item.product?.name,
-        productSlug: item.product?.slug
-      }))
-    });
     
     return updatedCart;
   }
@@ -495,6 +477,8 @@ export class CartService {
       throw error;
     }
   }
+
+
 
   async validateCartPrices(username: string): Promise<{
     hasChanges: boolean;

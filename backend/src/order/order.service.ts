@@ -49,14 +49,92 @@ export class OrderService {
         }
 
         return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
+
+            // Bước 1: Lấy account và kiểm tra tồn tại
+            console.log(`🔍 [ORDER] Looking up account for username: ${username}`);
+            const account = await transactionalEntityManager.findOne(Account, { 
+                where: { username },
+                relations: ['role']
+            });
+            
+            if (!account) {
+                console.log(`❌ [ORDER] Account not found for username: ${username}`);
+                throw new EntityNotFoundException('Account');
+            }
+            
+            console.log(`✅ [ORDER] Account found:`, {
+                id: account.id,
+                username: account.username,
+                role: account.role?.name || 'No role'
+            });
+
+            // Bước 2: Lấy cart TRONG transaction (without pessimistic lock để tránh SQL error)
+            console.log(`🛒 [ORDER] Looking up cart for account: ${account.id}`);
+
             // Lấy cart TRONG transaction để đảm bảo data consistency
             const account = await transactionalEntityManager.findOne(Account, { where: { username } });
             if (!account) throw new EntityNotFoundException('Account');
+
 
             const cart = await transactionalEntityManager.findOne(Cart, {
                 where: { account: { id: account.id } },
                 relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
             });
+
+
+            if (!cart) {
+                console.log(`❌ [ORDER] Cart not found for account: ${account.id}`);
+                throw new EntityNotFoundException('Cart');
+            }
+
+            console.log(`🛒 [ORDER] Cart found:`, {
+                id: cart.id,
+                accountId: cart.account.id,
+                itemCount: cart.cartItems?.length || 0,
+                totalAmount: cart.totalAmount,
+                items: cart.cartItems?.map(item => ({
+                    id: item.id,
+                    productId: item.product.id,
+                    productName: item.product.name,
+                    quantity: item.quantity,
+                    price: item.product.price,
+                    stock: item.product.stock,
+                    isActive: item.product.isActive
+                }))
+            });
+            
+            // Bước 3: Kiểm tra cart không trống
+            if (!cart.cartItems || cart.cartItems.length === 0) {
+                console.log(`❌ [ORDER] Cart is empty for user: ${username}`);
+                console.log(`🛒 [ORDER] Cart details:`, {
+                    id: cart.id,
+                    cartItems: cart.cartItems,
+                    cartItemsLength: cart.cartItems?.length,
+                    totalAmount: cart.totalAmount
+                });
+                throw new Error('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi đặt hàng.');
+            }
+
+            // Bước 4: Validate từng sản phẩm trong cart
+            console.log(`✅ [ORDER] Cart validation passed: ${cart.cartItems.length} items found`);
+            const invalidItems = [];
+            
+            for (const cartItem of cart.cartItems) {
+                if (!cartItem.product.isActive) {
+                    invalidItems.push(`${cartItem.product.name} (không còn hoạt động)`);
+                }
+                if (cartItem.product.stock < cartItem.quantity) {
+                    invalidItems.push(`${cartItem.product.name} (không đủ tồn kho: còn ${cartItem.product.stock}, cần ${cartItem.quantity})`);
+                }
+            }
+
+            if (invalidItems.length > 0) {
+                console.log(`❌ [ORDER] Invalid items found:`, invalidItems);
+                throw new Error(`Một số sản phẩm trong giỏ hàng không hợp lệ: ${invalidItems.join(', ')}`);
+            }
+
+            // Bước 5: Validate giá sản phẩm và lock products
+            console.log(`💰 [ORDER] Validating prices and locking products...`);
 
             if (!cart) throw new EntityNotFoundException('Cart');
 
@@ -91,6 +169,7 @@ export class OrderService {
                 throw new Error('Giá sản phẩm đã thay đổi, vui lòng kiểm tra lại giỏ hàng');
             }
 
+
             const productIds = cart.cartItems.map(item => item.product.id);
             const products = await transactionalEntityManager
                 .createQueryBuilder(Product, 'product')
@@ -98,18 +177,49 @@ export class OrderService {
                 .where('product.id IN (:...ids)', { ids: productIds })
                 .getMany();
 
+            const priceChanges = [];
+            const stockIssues = [];
+
             for (const cartItem of cart.cartItems) {
-                const product = products.find(p => p.id === cartItem.product.id);
-                if (!product) {
+                const latestProduct = products.find(p => p.id === cartItem.product.id);
+                if (!latestProduct) {
                     throw new Error(`Sản phẩm ${cartItem.product.name} không tồn tại`);
                 }
-                if (!product.isActive) {
-                    throw new Error(`Sản phẩm ${product.name} hiện không khả dụng`);
+                
+                // Kiểm tra giá có thay đổi
+                if (latestProduct.price !== cartItem.product.price) {
+                    priceChanges.push({
+                        name: latestProduct.name,
+                        oldPrice: cartItem.product.price,
+                        newPrice: latestProduct.price
+                    });
                 }
-                if (product.stock < cartItem.quantity) {
-                    throw new Error(`Sản phẩm ${product.name} không đủ số lượng trong kho (còn ${product.stock}, cần ${cartItem.quantity})`);
+                
+                // Kiểm tra tồn kho
+                if (!latestProduct.isActive) {
+                    stockIssues.push(`${latestProduct.name} (sản phẩm không còn hoạt động)`);
+                } else if (latestProduct.stock < cartItem.quantity) {
+                    stockIssues.push(`${latestProduct.name} (không đủ tồn kho: còn ${latestProduct.stock}, cần ${cartItem.quantity})`);
                 }
             }
+
+
+            if (priceChanges.length > 0) {
+                console.log(`❌ [ORDER] Price changes detected:`, priceChanges);
+                const changeDetails = priceChanges.map(change => 
+                    `${change.name}: ${change.oldPrice} → ${change.newPrice}`
+                ).join(', ');
+                throw new Error(`Giá sản phẩm đã thay đổi, vui lòng kiểm tra lại giỏ hàng: ${changeDetails}`);
+            }
+
+            if (stockIssues.length > 0) {
+                console.log(`❌ [ORDER] Stock issues found:`, stockIssues);
+                throw new Error(`Một số sản phẩm có vấn đề về tồn kho: ${stockIssues.join(', ')}`);
+            }
+
+            console.log(`✅ [ORDER] All validations passed`);
+
+            // Bước 6: Tạo order entity
 
             console.log(`📋 [ORDER] Creating order entity...`);
             const order = new Order();
@@ -131,6 +241,21 @@ export class OrderService {
             await transactionalEntityManager.save(order);
             console.log(`✅ [ORDER] Order saved with ID: ${order.id}`);
 
+
+            // Bước 7: Tạo order details và cập nhật stock
+            console.log(`📝 [ORDER] Creating order details for ${cart.cartItems.length} items...`);
+            let orderDetailCount = 0;
+            
+            for (const cartItem of cart.cartItems) {
+                const product = products.find(p => p.id === cartItem.product.id)!;
+
+                console.log(`📄 [ORDER] Creating order detail ${orderDetailCount + 1}/${cart.cartItems.length}:`, {
+                    productId: product.id,
+                    productName: product.name,
+                    quantity: cartItem.quantity,
+                    price: product.price,
+                    subtotal: product.price * cartItem.quantity
+
             console.log(`📝 [ORDER] Creating order details for ${cart.cartItems.length} items...`);
             for (const cartItem of cart.cartItems) {
                 const product = products.find(p => p.id === cartItem.product.id)!;
@@ -140,6 +265,7 @@ export class OrderService {
                     productName: product.name,
                     quantity: cartItem.quantity,
                     price: product.price
+
                 });
 
                 const orderDetail = new OrderDetail();
@@ -148,6 +274,54 @@ export class OrderService {
                 orderDetail.quantity = cartItem.quantity;
                 orderDetail.price = product.price;
                 await transactionalEntityManager.save(orderDetail);
+
+                orderDetailCount++;
+                console.log(`✅ [ORDER] Order detail saved for ${product.name}`);
+
+                // Cập nhật stock
+                const oldStock = product.stock;
+                product.stock -= cartItem.quantity;
+                await transactionalEntityManager.save(product);
+                console.log(`📦 [ORDER] Stock updated for ${product.name}: ${oldStock} → ${product.stock}`);
+            }
+
+            // Bước 8: Clear cart TRONG transaction
+            console.log(`🧹 [ORDER] Clearing cart for user: ${username} TRONG transaction`);
+            if (cart.cartItems && cart.cartItems.length > 0) {
+                const removedItemsCount = cart.cartItems.length;
+                await transactionalEntityManager.remove(cart.cartItems);
+                console.log(`✅ [ORDER] Removed ${removedItemsCount} cart items`);
+            }
+            
+            cart.totalAmount = 0;
+            await transactionalEntityManager.save(cart);
+            console.log(`✅ [ORDER] Cart cleared successfully`);
+
+            // Bước 9: Lấy order với đầy đủ thông tin
+            console.log(`🔍 [ORDER] Fetching final order data...`);
+            const finalOrder = await transactionalEntityManager.findOne(Order, {
+                where: { id: order.id },
+                relations: [
+                    'customer',
+                    'shipper',
+                    'orderDetails',
+                    'orderDetails.product'
+                ]
+            });
+
+            if (!finalOrder) {
+                throw new Error('Lỗi khi lấy thông tin đơn hàng vừa tạo');
+            }
+
+            console.log(`🎉 [ORDER] Order creation completed successfully:`, {
+                orderId: finalOrder.id,
+                customerUsername: finalOrder.customer.username,
+                orderDetailsCount: finalOrder.orderDetails?.length || 0,
+                totalAmount: finalOrder.totalAmount,
+                status: finalOrder.status,
+                shippingAddress: finalOrder.shippingAddress,
+                orderDate: finalOrder.orderDate
+
                 console.log(`✅ [ORDER] Order detail saved for ${product.name}`);
 
                 console.log(`📦 Reducing stock for ${product.name}: ${product.stock} -> ${product.stock - cartItem.quantity}`);
@@ -171,6 +345,7 @@ export class OrderService {
                 orderId: finalOrder.id,
                 orderDetailsCount: finalOrder.orderDetails?.length || 0,
                 totalAmount: finalOrder.totalAmount
+
             });
             
             return finalOrder;

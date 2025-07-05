@@ -58,8 +58,10 @@ export class CartController {
     @UseBefore(Auth)
     async viewCart(@Req() req: any) {
         const user = req.user as AccountDetailsDto;
+        
         try {
             const cart = await this.cartService.viewCart(user.username);
+            
             return {
                 success: true,
                 data: cart,
@@ -163,4 +165,6 @@ export class CartController {
             };
         }
     }
+
+
 }
