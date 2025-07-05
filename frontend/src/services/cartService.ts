@@ -22,6 +22,8 @@ interface ApiResponse<T> {
     error?: string;
 }
 
+
+
 interface Cart {
     id: string;
     totalAmount: number;
@@ -32,32 +34,12 @@ interface Cart {
     };
 }
 
-// Debug helper for cart operations
-const debugCartOperation = (operation: string, data?: Record<string, unknown>) => {
-    console.group(`🛒 [CART DEBUG] ${operation}`);
-    
-    // Check auth state
-    const authToken = localStorage.getItem('authToken');
-    const userInfo = localStorage.getItem('user');
-    
-    console.log('🔐 Auth State Check:', {
-        hasAuthToken: !!authToken,
-        tokenLength: authToken?.length || 0,
-        tokenPreview: authToken ? authToken.substring(0, 20) + '...' : 'NONE',
-        hasUserInfo: !!userInfo,
-        userInfo: userInfo ? JSON.parse(userInfo) : null
-    });
-    
-    if (data) {
-        console.log('📊 Operation Data:', data);
-    }
-    
-    console.groupEnd();
-};
+
 
 export const cartService = {
+
+
     async addToCart(productId: string, quantity: number): Promise<ApiResponse<Cart>> {
-        debugCartOperation('ADD TO CART', { productId, quantity });
         
         try {
             const response = await api.post('/cart/add', { 
@@ -93,15 +75,14 @@ export const cartService = {
     },
 
     async viewCart(): Promise<ApiResponse<Cart>> {
-        debugCartOperation('VIEW CART');
         
         try {
             const response = await api.get('/cart/view');
             console.log('✅ View cart success:', {
                 status: response.status,
                 data: response.data,
-                cartItemsCount: response.data?.data?.cartItems?.length || 0,
-                totalAmount: response.data?.data?.totalAmount || 0
+                cartItemsCount: response.data?.data?.data?.cartItems?.length || 0,
+                totalAmount: response.data?.data?.data?.totalAmount || 0
             });
             
             // Validate backend response structure
@@ -133,8 +114,6 @@ export const cartService = {
     },
 
     async increaseQuantity(productId: string, amount: number = 1): Promise<ApiResponse<Cart>> {
-        debugCartOperation('INCREASE QUANTITY', { productId, amount });
-        
         try {
             const response = await api.post('/cart/increase', {
                 productId: productId,
@@ -167,8 +146,6 @@ export const cartService = {
     },
 
     async decreaseQuantity(productId: string, amount: number = 1): Promise<ApiResponse<Cart>> {
-        debugCartOperation('DECREASE QUANTITY', { productId, amount });
-        
         try {
             const response = await api.post('/cart/decrease', {
                 productId: productId,
@@ -201,8 +178,6 @@ export const cartService = {
     },
 
     async removeItem(productId: string): Promise<ApiResponse<Cart>> {
-        debugCartOperation('REMOVE ITEM', { productId });
-        
         try {
             const response = await api.patch('/cart/remove', {
                 productId: productId
@@ -234,8 +209,6 @@ export const cartService = {
     },
 
     async clearCart(): Promise<ApiResponse<void>> {
-        debugCartOperation('CLEAR CART');
-        
         try {
             const response = await api.post('/cart/clear');
             console.log('✅ Clear cart success:', response.data);

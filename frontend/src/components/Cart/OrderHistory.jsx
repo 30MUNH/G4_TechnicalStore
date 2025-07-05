@@ -224,32 +224,49 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
                                         width: '100%'
                                     }}>
                                         <div className={styles.summaryDetails}>
-                                            <div className={styles.summaryRow}>
-                                                <span>Tạm tính:</span>
-                                                <span>{formatCurrency(order.subtotal || 0)}</span>
-                                            </div>
-                                            <div className={styles.summaryRow}>
-                                                <span>Phí vận chuyển:</span>
-                                                <span>{formatCurrency(order.shippingFee || 0)}</span>
-                                            </div>
-                                            <div className={styles.summaryRow}>
-                                                <span>Thuế:</span>
-                                                <span>{formatCurrency(order.tax || 0)}</span>
-                                            </div>
-                                            <div className={`${styles.summaryRow} ${styles.total}`}>
-                                                <span>Tổng cộng:</span>
-                                                <span>{formatCurrency(order.total || order.totalAmount || 0)}</span>
-                                            </div>
+                                            {(() => {
+                                                // Tính subtotal từ orderDetails thay vì dựa vào order.subtotal
+                                                const subtotal = order.orderDetails?.reduce((sum, item) => {
+                                                    return sum + (item.price * item.quantity);
+                                                }, 0) || parseFloat(order.totalAmount) || 0;
+
+                                                const shippingFee = 0; // Miễn phí vận chuyển
+                                                const total = subtotal + shippingFee;
+
+                                                return (
+                                                    <>
+                                                        <div className={styles.summaryRow}>
+                                                            <span>Tạm tính ({order.orderDetails?.length || 0} sản phẩm):</span>
+                                                            <span>{formatCurrency(subtotal)}</span>
+                                                        </div>
+                                                        <div className={styles.summaryRow}>
+                                                            <span>Phí vận chuyển:</span>
+                                                            <span>Miễn phí</span>
+                                                        </div>
+                                                        <div className={`${styles.summaryRow} ${styles.total}`}>
+                                                            <span>Tổng cộng:</span>
+                                                            <span>{formatCurrency(total)}</span>
+                                                        </div>
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
-                                        {order.note && (
+                                        {order.shippingAddress && (
                                             <div style={{
                                                 marginTop: '1rem',
-                                                padding: '0.75rem',
-                                                backgroundColor: '#f9fafb',
+                                                padding: '1rem',
+                                                backgroundColor: '#e0f2fe',
                                                 borderRadius: '0.5rem',
-                                                fontSize: '0.9rem'
+                                                fontSize: '1.1rem',
+                                                fontWeight: 'bold',
+                                                color: '#0c4a6e',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem'
                                             }}>
-                                                <strong>💬 Ghi chú:</strong> {order.note}
+                                                <span style={{fontSize: '1.4rem'}}>📍</span>
+                                                <span>Địa chỉ giao hàng:</span>
+                                                <span style={{fontWeight: 700, fontSize: '1.15rem'}}>{order.shippingAddress}</span>
                                             </div>
                                         )}
                                     </div>

@@ -1,6 +1,9 @@
+.body {
+  width: 100%;
+}
 .cartItem {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
   padding: 1rem;
   background-color: white;
