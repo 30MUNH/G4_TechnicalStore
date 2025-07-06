@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowCircleRight, faEye, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import { faHeart as faHeartRegular2 } from '@fortawesome/free-regular-svg-icons';
@@ -18,6 +18,7 @@ const HomePage: React.FC = () => {
   console.log('🏠 HomePage Debug - Component initializing');
   
   const navigate = useNavigate();
+  const location = useLocation();
   const { addToCart } = useCart();
   const { isAuthenticated, user, token } = useAuth();
   const [newProducts, setNewProducts] = useState<{ laptops: Product[]; pcs: Product[]; accessories: Product[] }>({ laptops: [], pcs: [], accessories: [] });
@@ -28,6 +29,7 @@ const HomePage: React.FC = () => {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [addToCartStatus, setAddToCartStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+  const [paymentSuccessMessage, setPaymentSuccessMessage] = useState<string | null>(null);
 
   // Debug auth state changes - FIXED: Remove isAuthenticated function from dependencies
   useEffect(() => {
@@ -59,6 +61,26 @@ const HomePage: React.FC = () => {
       }
     }
   }, []);
+
+  // Handle payment success messages from VNPay
+  useEffect(() => {
+    const state = location.state as any;
+    if (state && state.paymentSuccess && state.message) {
+      setPaymentSuccessMessage(state.message);
+      // Clear the state
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
+
+  // Auto-hide payment success message after 5 seconds
+  useEffect(() => {
+    if (paymentSuccessMessage) {
+      const timer = setTimeout(() => {
+        setPaymentSuccessMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [paymentSuccessMessage]);
 
   useEffect(() => {
     console.log("HomePage useEffect chạy");
@@ -296,6 +318,45 @@ const HomePage: React.FC = () => {
           }}
         >
           {addToCartStatus.message}
+        </div>
+      )}
+      {paymentSuccessMessage && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '20px 30px',
+            borderRadius: '8px',
+            backgroundColor: '#28a745',
+            color: 'white',
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            textAlign: 'center',
+            fontSize: '16px',
+            fontWeight: '600',
+            maxWidth: '500px',
+            width: '90%'
+          }}
+        >
+          <div style={{ marginBottom: '8px' }}>
+            ✅ {paymentSuccessMessage}
+          </div>
+          <button
+            onClick={() => setPaymentSuccessMessage(null)}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              color: 'white',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px'
+            }}
+          >
+            Đóng
+          </button>
         </div>
       )}
       {/* SECTION: SHOP BOXES */}
