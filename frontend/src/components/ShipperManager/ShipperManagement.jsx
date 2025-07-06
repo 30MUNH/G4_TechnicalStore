@@ -24,8 +24,7 @@ const ShipperManagement = () => {
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [areaFilter, setAreaFilter] = useState('all');
-  const [vehicleFilter, setVehicleFilter] = useState('all');
+  const [createdDateFilter, setCreatedDateFilter] = useState('');
   
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -56,28 +55,75 @@ const ShipperManagement = () => {
   // Fetch shippers from API
   const fetchShippers = async () => {
     try {
+      console.log('🚀 [ShipperManagement] Starting fetchShippers');
       setLoading(true);
       setError(null);
       
       const response = await shipperService.getAllShippers();
+      console.log('📨 [ShipperManagement] API Response:', response);
       
-      if (response.success && response.data) {
-        // Ensure response.data is an array
-        const dataArray = Array.isArray(response.data) ? response.data : [];
-        const shippersData = dataArray.map(shipper => ({
-          id: shipper.id,
-          name: shipper.fullName,
-          username: shipper.username,
-          phone: shipper.phone,
-          area: mockAreas[Math.floor(Math.random() * mockAreas.length)], // Mock area
-          vehicle: mockVehicles[Math.floor(Math.random() * mockVehicles.length)], // Mock vehicle
-          orders: shipper.shipperOrders?.length || Math.floor(Math.random() * 200), // Mock or real orders
-          rating: (Math.random() * 2 + 3).toFixed(1), // Mock rating 3.0-5.0
-          status: shipper.isRegistered ? 'Active' : 'Suspended',
-          isRegistered: shipper.isRegistered,
-          createdAt: shipper.createdAt,
-          shipperOrders: shipper.shipperOrders || []
-        }));
+      if (response.success) {
+        // Handle nested response structure: response.data.data or response.data
+        const rawData = response.data?.data || response.data;
+        console.log('📊 [ShipperManagement] Raw data extracted:', rawData);
+        
+        // Ensure rawData is an array
+        const dataArray = Array.isArray(rawData) ? rawData : [];
+        console.log('📋 [ShipperManagement] Data array:', dataArray);
+        
+        const shippersData = dataArray.map(shipper => {
+          console.log('🔍 [ShipperManagement] Processing shipper:', shipper);
+          
+          // Calculate real statistics from orders
+          const totalOrders = shipper.shipperOrders?.length || 0;
+          const deliveredOrders = shipper.shipperOrders?.filter(order => order.status === 'Đã giao').length || 0;
+          const activeOrders = shipper.shipperOrders?.filter(order => ['Đang giao', 'Đang xử lý'].includes(order.status)).length || 0;
+          const cancelledOrders = shipper.shipperOrders?.filter(order => order.status === 'Đã hủy').length || 0;
+          
+          // Calculate performance metrics
+          const deliveryRate = totalOrders > 0 ? ((deliveredOrders / totalOrders) * 100).toFixed(1) : '0';
+          
+          // Calculate rating from feedback if available, otherwise from delivery performance
+          let rating = '5.0'; // Default rating for new shippers
+          if (shipper.feedbacks && shipper.feedbacks.length > 0) {
+            // Calculate average rating from feedbacks (if feedback system is implemented)
+            const avgRating = shipper.feedbacks.reduce((sum, feedback) => sum + (feedback.rating || 0), 0) / shipper.feedbacks.length;
+            rating = avgRating.toFixed(1);
+          } else if (totalOrders > 0) {
+            // Fallback: Calculate rating from delivery success rate (0-5 scale)
+            const successRate = deliveredOrders / totalOrders;
+            rating = (successRate * 5).toFixed(1);
+          }
+          
+          return {
+            id: shipper.id,
+            name: shipper.name || 'N/A',
+            username: shipper.username || 'N/A',
+            phone: shipper.phone || 'N/A',
+            
+            // Real data from database
+            totalOrders,
+            deliveredOrders,
+            activeOrders,
+            cancelledOrders,
+            deliveryRate,
+            rating,
+            
+            // Status from database
+            status: shipper.isRegistered ? 'Active' : 'Suspended',
+            isRegistered: shipper.isRegistered,
+            
+            // Real timestamps
+            createdAt: shipper.createdAt,
+            updatedAt: shipper.updatedAt,
+            
+            // Keep original order data for reference
+            shipperOrders: shipper.shipperOrders || [],
+            feedbacks: shipper.feedbacks || []
+          };
+        });
+        
+        console.log('✅ [ShipperManagement] Mapped shippers data:', shippersData);
         
         setShippers(shippersData);
         setTotalShippers(shippersData.length);
@@ -86,11 +132,12 @@ const ShipperManagement = () => {
         throw new Error(response.message || 'Failed to fetch shippers');
       }
     } catch (err) {
-      console.error('Error fetching shippers:', err);
+      console.error('💥 [ShipperManagement] Error fetching shippers:', err);
       setError('Failed to fetch shippers');
       showNotification('Failed to load shippers', 'error');
     } finally {
       setLoading(false);
+      console.log('🏁 [ShipperManagement] fetchShippers completed');
     }
   };
 
@@ -110,13 +157,19 @@ const ShipperManagement = () => {
       (statusFilter === 'active' && shipper.isRegistered) ||
       (statusFilter === 'inactive' && !shipper.isRegistered);
     
-    const matchesArea = areaFilter === 'all' || 
-      shipper.area?.toLowerCase().includes(areaFilter.toLowerCase());
+    let matchesDate = true;
+    if (createdDateFilter && shipper.createdAt) {
+      const shipperDate = new Date(shipper.createdAt);
+      const filterDate = new Date(createdDateFilter);
+      
+      // Compare only the date part (ignore time)
+      const shipperDateOnly = new Date(shipperDate.getFullYear(), shipperDate.getMonth(), shipperDate.getDate());
+      const filterDateOnly = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
+      
+      matchesDate = shipperDateOnly.getTime() === filterDateOnly.getTime();
+    }
     
-    const matchesVehicle = vehicleFilter === 'all' || 
-      shipper.vehicle?.toLowerCase().includes(vehicleFilter.toLowerCase());
-
-    return matchesSearch && matchesStatus && matchesArea && matchesVehicle;
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   // Update pagination when filtered shippers change
@@ -171,7 +224,8 @@ const ShipperManagement = () => {
         const updateData = {
           username: formData.username,
           fullName: formData.name,
-          phone: formData.phone
+          phone: formData.phone,
+          isRegistered: formData.isRegistered
         };
         
         const response = await shipperService.updateShipper(selectedShipper.id, updateData);
@@ -207,6 +261,8 @@ const ShipperManagement = () => {
       }
     }
   };
+
+
 
   // Import/Export operations (placeholder implementations)
   const handleImportData = async (event) => {
@@ -306,12 +362,10 @@ const ShipperManagement = () => {
       <FilterBar
         searchTerm={searchTerm}
         statusFilter={statusFilter}
-        areaFilter={areaFilter}
-        vehicleFilter={vehicleFilter}
+        createdDateFilter={createdDateFilter}
         onSearchChange={setSearchTerm}
         onStatusChange={setStatusFilter}
-        onAreaChange={setAreaFilter}
-        onVehicleChange={setVehicleFilter}
+        onDateChange={setCreatedDateFilter}
       />
 
       {/* Shipper Cards */}
@@ -381,9 +435,8 @@ const ShipperForm = ({ mode, initialData, onSubmit, onCancel }) => {
     name: initialData?.name || '',
     username: initialData?.username || '',
     phone: initialData?.phone || '',
-    area: initialData?.area || 'Downtown',
-    vehicle: initialData?.vehicle || 'Motorcycle',
     status: initialData?.status || 'Active',
+    isRegistered: initialData?.isRegistered !== undefined ? initialData.isRegistered : true,
     password: ''
   });
 
@@ -400,9 +453,10 @@ const ShipperForm = ({ mode, initialData, onSubmit, onCancel }) => {
       newErrors.username = 'Username must be at least 3 characters';
     }
 
-    const phoneRegex = /^[0-9]{10,11}$/;
+    // Support both formats: 0xxxxxxxxx or +84xxxxxxxxx
+    const phoneRegex = /^(0\d{9}|\+84\d{9})$/;
     if (!phoneRegex.test(formData.phone)) {
-      newErrors.phone = 'Phone number must be 10-11 digits';
+      newErrors.phone = 'Phone format: 0xxxxxxxxx or +84xxxxxxxxx';
     }
 
     if (mode === 'add' && (!formData.password || formData.password.length < 8)) {
@@ -422,7 +476,11 @@ const ShipperForm = ({ mode, initialData, onSubmit, onCancel }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Handle boolean conversion for isRegistered field
+    const finalValue = name === 'isRegistered' ? value === 'true' : value;
+    
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
 
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -430,6 +488,55 @@ const ShipperForm = ({ mode, initialData, onSubmit, onCancel }) => {
   };
 
   const isViewMode = mode === 'view';
+
+  if (isViewMode) {
+    return (
+      <div className={styles.viewContainer}>
+        {/* Basic Information */}
+        <div className={styles.viewSection}>
+          <h3 className={styles.viewSectionTitle}>Basic Information</h3>
+          <div className={styles.viewGrid}>
+            <div className={styles.viewField}>
+              <span className={styles.viewLabel}>Full Name:</span>
+              <span className={styles.viewValue}>{initialData?.name || 'N/A'}</span>
+            </div>
+            <div className={styles.viewField}>
+              <span className={styles.viewLabel}>Username:</span>
+              <span className={styles.viewValue}>{initialData?.username || 'N/A'}</span>
+            </div>
+            <div className={styles.viewField}>
+              <span className={styles.viewLabel}>Phone:</span>
+              <span className={styles.viewValue}>{initialData?.phone || 'N/A'}</span>
+            </div>
+            <div className={styles.viewField}>
+              <span className={styles.viewLabel}>Status:</span>
+              <span className={`${styles.viewValue} ${initialData?.status === 'Active' ? styles.statusActiveText : styles.statusInactiveText}`}>
+                {initialData?.status || 'N/A'}
+              </span>
+            </div>
+            <div className={styles.viewField}>
+              <span className={styles.viewLabel}>Registered:</span>
+              <span className={styles.viewValue}>{initialData?.isRegistered ? 'Yes' : 'No'}</span>
+            </div>
+            <div className={styles.viewField}>
+              <span className={styles.viewLabel}>Member Since:</span>
+              <span className={styles.viewValue}>{initialData?.createdAt ? new Date(initialData.createdAt).toLocaleDateString() : 'N/A'}</span>
+            </div>
+            <div className={styles.viewField}>
+              <span className={styles.viewLabel}>Last Updated:</span>
+              <span className={styles.viewValue}>{initialData?.updatedAt ? new Date(initialData.updatedAt).toLocaleDateString() : 'N/A'}</span>
+            </div>
+            <div className={styles.viewField}>
+              <span className={styles.viewLabel}>Rating:</span>
+              <span className={styles.viewValue}>
+                {initialData?.rating ? `⭐ ${initialData?.rating}/5.0` : '⭐ 5.0/5.0'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
@@ -476,38 +583,7 @@ const ShipperForm = ({ mode, initialData, onSubmit, onCancel }) => {
           {errors.phone && <span className={styles.errorMessage}>{errors.phone}</span>}
         </div>
 
-        <div className={styles.formField}>
-          <label className={styles.label}>Area *</label>
-          <select
-            name="area"
-            value={formData.area}
-            onChange={handleChange}
-            disabled={isViewMode}
-            required
-            className={styles.select}
-          >
-            <option value="Downtown">Downtown</option>
-            <option value="Midtown">Midtown</option>
-            <option value="Brooklyn">Brooklyn</option>
-            <option value="Queens">Queens</option>
-            <option value="Bronx">Bronx</option>
-          </select>
-        </div>
 
-        <div className={styles.formField}>
-          <label className={styles.label}>Vehicle *</label>
-          <select
-            name="vehicle"
-            value={formData.vehicle}
-            onChange={handleChange}
-            disabled={isViewMode}
-            required
-            className={styles.select}
-          >
-            <option value="Motorcycle">Motorcycle</option>
-            <option value="Small Truck">Small Truck</option>
-          </select>
-        </div>
 
         <div className={styles.formField}>
           <label className={styles.label}>Status *</label>
@@ -522,6 +598,21 @@ const ShipperForm = ({ mode, initialData, onSubmit, onCancel }) => {
             <option value="Active">Active</option>
             <option value="On Break">On Break</option>
             <option value="Suspended">Suspended</option>
+          </select>
+        </div>
+
+        <div className={styles.formField}>
+          <label className={styles.label}>Registration Status *</label>
+          <select
+            name="isRegistered"
+            value={formData.isRegistered}
+            onChange={handleChange}
+            disabled={isViewMode}
+            required
+            className={styles.select}
+          >
+            <option value={true}>Registered</option>
+            <option value={false}>Not Registered</option>
           </select>
         </div>
 

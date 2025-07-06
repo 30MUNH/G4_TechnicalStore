@@ -51,10 +51,10 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 8px;
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: 1rem;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -333,4 +333,73 @@
 .notificationInfo {
   background: #3b82f6;
   color: white;
+}
+
+/* View Mode Styles */
+.viewContainer {
+  padding: 1rem;
+}
+
+.viewSection {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #dc2626;
+}
+
+.viewSectionTitle {
+  margin: 0 0 1rem 0;
+  color: #111827;
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.viewGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.viewField {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.viewLabel {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+  text-align: left;
+}
+
+.viewValue {
+  font-size: 0.875rem;
+  color: #111827;
+  font-weight: 600;
+  text-align: right;
+}
+
+.statusActiveText {
+  color: #059669;
+}
+
+.statusInactiveText {
+  color: #dc2626;
+}
+
+.statusBusyText {
+  color: #f59e0b;
+}
+
+@media (max-width: 768px) {
+  .viewGrid {
+    grid-template-columns: 1fr;
+  }
 }

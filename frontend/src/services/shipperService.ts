@@ -7,27 +7,6 @@ import type {
   ApiError
 } from './types';
 
-
-export interface IShipper {
-  id: string;
-  username: string;
-  fullName: string;
-  phone: string;
-  role: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-  shipperOrders?: Array<{
-    id: string;
-    orderDate: string;
-    status: string;
-    totalAmount: number;
-  }>;
-  createdAt: string;
-  isRegistered: boolean;
-}
-
 export const shipperService = {
   
   async getAllShippers(): Promise<ApiResponse<IShipper[]>> {

@@ -53,11 +53,13 @@
   color: #111827;
   font-size: 1rem;
   margin-bottom: 0.25rem;
+  text-align: left;
 }
 
 .shipperId {
   font-size: 0.875rem;
   color: #6b7280;
+  text-align: left;
 }
 
 .status {
@@ -110,11 +112,12 @@
   font-size: 0.875rem;
   color: #6b7280;
   flex: 1;
+  text-align: left;
 }
 
 .infoGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 0.75rem;
   margin-top: 0.75rem;
 }
@@ -123,17 +126,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  text-align: left;
 }
 
 .statLabel {
   font-size: 0.875rem;
   color: #6b7280;
+  text-align: left;
 }
 
 .statValue {
   font-size: 0.875rem;
   font-weight: 500;
   color: #111827;
+  text-align: right;
 }
 
 .ratingContainer {
