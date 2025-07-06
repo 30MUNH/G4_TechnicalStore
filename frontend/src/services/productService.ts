@@ -166,13 +166,13 @@ class ProductService {
   // Admin methods
   async getAllProductsIncludingOutOfStock(): Promise<Product[]> {
     try {
-      const response = await api.get<ApiResponse<Product[]>>('/products/all-including-out-of-stock');
-      if (response.data && response.data.products) {
-        return response.data.products;
-      }
-      // Fallback: try different response structure
-      if (response.data && Array.isArray(response.data)) {
-        return response.data;
+      const response = await api.get('/products/admin/all');
+      if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data.products)
+      ) {
+        return response.data.data.products;
       }
       return [];
     } catch (error) {

@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCart } from '../../contexts/CartContext';
-import { useAuth } from '../../contexts/AuthContext';
 import type { Product } from '../../types/product';
 
-interface ProductDetailModalProps {
+interface ProductDetailAdminModalProps {
   isOpen: boolean;
   onClose: () => void;
-  product: any; // Để nhận các trường động cho từng loại
+  product: any;
+  onEdit?: (product: Product) => void;
 }
 
 const overlayStyle: React.CSSProperties = {
@@ -53,12 +51,7 @@ const formatDate = (dateStr?: string | null) => {
   return d.toLocaleString('vi-VN');
 };
 
-const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose, product }) => {
-  const navigate = useNavigate();
-  const { addToCart } = useCart();
-  const { isAuthenticated } = useAuth();
-  const [addToCartStatus, setAddToCartStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
-
+const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpen, onClose, product, onEdit }) => {
   useEffect(() => {
     if (!isOpen) return;
     const handleEsc = (e: KeyboardEvent) => {
@@ -73,32 +66,27 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
   const categoryName = product.category?.name;
 
   const renderDetail = () => {
-    // Helper lấy field: lấy trực tiếp từ product
     const get = (field: string) => {
       if (product && product[field] !== undefined && product[field] !== null) return product[field];
       return '-';
     };
-    
-    // Helper xử lý boolean fields
     const getBoolean = (field: string) => {
       const value = get(field);
       if (value === '-') return '-';
       return value ? 'Có' : 'Không';
     };
-    
-
-    
     if (categoryName === 'Laptop') {
       return <>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
-        <div><b>Screen size:</b> {get('screenSize') !== '-' && get('screenSize') !== null ? `${get('screenSize')}"` : '-'}</div>
+        <div><b>Screen size:</b> {get('screenSize') !== '-' && get('screenSize') !== null ? `${get('screenSize')}` : '-'}</div>
         <div><b>Screen type:</b> {get('screenType')}</div>
         <div><b>Resolution:</b> {get('resolution')}</div>
         <div><b>Battery life:</b> {get('batteryLifeHours') !== '-' && get('batteryLifeHours') !== null ? `${get('batteryLifeHours')} h` : '-'}</div>
         <div><b>Weight:</b> {get('weightKg') !== '-' && get('weightKg') !== null ? `${get('weightKg')} kg` : '-'}</div>
         <div><b>OS:</b> {get('os')}</div>
         <div><b>RAM count:</b> {get('ramCount')}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'PC') {
@@ -113,6 +101,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Form factor:</b> {get('formFactor')}</div>
         <div><b>Power supply:</b> {get('powerSupplyWattage') !== '-' && get('powerSupplyWattage') !== null ? `${get('powerSupplyWattage')} W` : '-'}</div>
         <div><b>OS:</b> {get('operatingSystem')}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'Drive') {
@@ -122,16 +111,18 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Type:</b> {get('type')}</div>
         <div><b>Capacity:</b> {get('capacityGb') !== '-' && get('capacityGb') !== null ? `${get('capacityGb')} GB` : '-'}</div>
         <div><b>Interface:</b> {get('interface')}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'Monitor') {
       return <>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
-        <div><b>Size:</b> {get('sizeInch') !== '-' && get('sizeInch') !== null ? `${get('sizeInch')}"` : '-'}</div>
+        <div><b>Size:</b> {get('sizeInch') !== '-' && get('sizeInch') !== null ? `${get('sizeInch')}` : '-'}</div>
         <div><b>Resolution:</b> {get('resolution')}</div>
         <div><b>Refresh rate:</b> {get('refreshRate') !== '-' && get('refreshRate') !== null ? `${get('refreshRate')} Hz` : '-'}</div>
         <div><b>Panel type:</b> {get('panelType')}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'CPU') {
@@ -144,6 +135,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Architecture:</b> {get('architecture')}</div>
         <div><b>TDP:</b> {get('tdp') !== '-' ? `${get('tdp')}W` : '-'}</div>
         <div><b>Integrated Graphics:</b> {get('integratedGraphics')}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'Cooler') {
@@ -153,6 +145,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Type:</b> {get('type')}</div>
         <div><b>Supported sockets:</b> {get('supportedSockets')}</div>
         <div><b>Fan size:</b> {get('fanSizeMm') !== '-' ? `${get('fanSizeMm')} mm` : '-'}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'RAM') {
@@ -162,6 +155,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Capacity:</b> {get('capacityGb') !== '-' && get('capacityGb') !== null ? `${get('capacityGb')} GB` : '-'}</div>
         <div><b>Speed:</b> {get('speedMhz') !== '-' && get('speedMhz') !== null ? `${get('speedMhz')} MHz` : '-'}</div>
         <div><b>Type:</b> {get('type')}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'PSU') {
@@ -171,6 +165,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Wattage:</b> {get('wattage') !== '-' && get('wattage') !== null ? `${get('wattage')} W` : '-'}</div>
         <div><b>Efficiency rating:</b> {get('efficiencyRating')}</div>
         <div><b>Modular:</b> {get('modular')}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'Case') {
@@ -180,6 +175,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Form factor support:</b> {get('formFactorSupport')}</div>
         <div><b>Has RGB:</b> {getBoolean('hasRgb')}</div>
         <div><b>Side panel type:</b> {get('sidePanelType')}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'Headset') {
@@ -187,6 +183,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Has microphone:</b> {getBoolean('hasMicrophone')}</div>
         <div><b>Connectivity:</b> {get('connectivity')}</div>
         <div><b>Surround sound:</b> {getBoolean('surroundSound')}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'Motherboard') {
@@ -198,6 +195,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Form factor:</b> {get('formFactor')}</div>
         <div><b>RAM slots:</b> {get('ramSlots')}</div>
         <div><b>Max RAM:</b> {get('maxRam') !== '-' ? `${get('maxRam')} GB` : '-'}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'Keyboard') {
@@ -207,6 +205,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Connectivity:</b> {get('connectivity')}</div>
         <div><b>Layout:</b> {get('layout')}</div>
         <div><b>Has RGB:</b> {getBoolean('hasRgb')}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'GPU') {
@@ -217,6 +216,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Chipset:</b> {get('chipset')}</div>
         <div><b>Memory type:</b> {get('memoryType')}</div>
         <div><b>Length:</b> {get('lengthMm') !== '-' && get('lengthMm') !== null ? `${get('lengthMm')} mm` : '-'}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'Mouse') {
@@ -225,6 +225,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>DPI:</b> {get('dpi') !== '-' ? `${get('dpi')}` : '-'}</div>
         <div><b>Connectivity:</b> {get('connectivity')}</div>
         <div><b>Has RGB:</b> {getBoolean('hasRgb')}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
     if (categoryName === 'Network Card') {
@@ -232,9 +233,10 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
         <div><b>Type:</b> {get('type')}</div>
         <div><b>Interface:</b> {get('interface')}</div>
         <div><b>Speed:</b> {get('speedMbps') !== '-' && get('speedMbps') !== null ? `${get('speedMbps')} Mbps` : '-'}</div>
+        <div><b>Stock:</b> {get('stock')}</div>
       </>;
     }
-    // Trường hợp mặc định (sản phẩm chung)
+    // Trường hợp mặc định
     return <>
       <div><b>Mô tả:</b> {get('description')}</div>
       <div><b>Tồn kho:</b> {get('stock')}</div>
@@ -244,65 +246,9 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
     </>;
   };
 
-  const handleAddToCart = async () => {
-    if (!isAuthenticated()) {
-      navigate('/login', { 
-        state: { 
-          returnUrl: window.location.pathname,
-          message: 'Please login to add items to cart'
-        } 
-      });
-      return;
-    }
-
-    if (!product.id) {
-      setAddToCartStatus({
-        message: 'Invalid product data',
-        type: 'error'
-      });
-      setTimeout(() => setAddToCartStatus(null), 3000);
-      return;
-    }
-
-    try {
-      await addToCart(product.id, 1);
-      setAddToCartStatus({
-        message: 'Product added to cart successfully!',
-        type: 'success'
-      });
-      setTimeout(() => setAddToCartStatus(null), 3000);
-    } catch (error) {
-      console.error('Add to cart failed:', error);
-      setAddToCartStatus({
-        message: 'Failed to add product to cart',
-        type: 'error'
-      });
-      setTimeout(() => setAddToCartStatus(null), 3000);
-    }
-  };
-
   return (
     <div style={overlayStyle} onClick={onClose}>
       <div style={{ ...modalStyle, position: 'relative' }} onClick={e => e.stopPropagation()}>
-        {addToCartStatus && (
-          <div 
-            style={{
-              position: 'absolute',
-              top: '10px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              padding: '10px 20px',
-              borderRadius: '5px',
-              backgroundColor: addToCartStatus.type === 'success' ? '#4CAF50' : '#f44336',
-              color: 'white',
-              zIndex: 1001,
-              fontSize: '14px',
-              boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-            }}
-          >
-            {addToCartStatus.message}
-          </div>
-        )}
         <button style={closeBtnStyle} onClick={onClose} title="Đóng">×</button>
         <div style={{ display: 'flex', flexDirection: 'row', gap: 32, alignItems: 'flex-start' }}>
           {product.images && product.images.length > 0 && (
@@ -321,11 +267,10 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
             {renderDetail()}
           </div>
         </div>
-        {/* Add to Cart button */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
           <button
             style={{
-              background: '#ff2d55',
+              background: '#ffb300',
               color: '#fff',
               border: 'none',
               borderRadius: 8,
@@ -335,9 +280,9 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
               cursor: 'pointer',
               boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
             }}
-            onClick={handleAddToCart}
+            onClick={() => onEdit && onEdit(product)}
           >
-            Add to Cart
+            Edit
           </button>
         </div>
       </div>
@@ -345,4 +290,4 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose
   );
 };
 
-export default ProductDetailModal; 
+export default ProductDetailAdminModal; 

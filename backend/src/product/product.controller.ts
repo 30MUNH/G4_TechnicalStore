@@ -45,6 +45,22 @@ export class ProductController {
         }
     }
 
+    @Get("/admin/all")
+    async getAllProductsForAdmin() {
+        try {
+            const products = await this.productService.getAllProductsIncludingOutOfStock();
+            return {
+                message: "All products for admin retrieved successfully",
+                products
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to retrieve all products for admin",
+                error: error.message
+            };
+        }
+    }
+
     @Get("/out-of-stock")
     @UseBefore(Auth)
     @UseBefore(authorizedRoles("manager", "admin"))
