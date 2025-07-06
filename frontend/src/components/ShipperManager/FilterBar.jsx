@@ -5,21 +5,18 @@ import styles from './FilterBar.module.css';
 const FilterBar = ({
   searchTerm = '',
   statusFilter = 'all',
-  areaFilter = 'all',
-  vehicleFilter = 'all',
+  createdDateFilter = '',
   onSearchChange,
   onStatusChange,
-  onAreaChange,
-  onVehicleChange,
+  onDateChange,
   onClearFilters
 }) => {
-  const hasActiveFilters = searchTerm || statusFilter !== 'all' || areaFilter !== 'all' || vehicleFilter !== 'all';
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || createdDateFilter;
 
   const handleClearFilters = () => {
     onSearchChange('');
     onStatusChange('all');
-    onAreaChange('all');
-    onVehicleChange('all');
+    onDateChange('');
     if (onClearFilters) {
       onClearFilters();
     }
@@ -33,7 +30,7 @@ const FilterBar = ({
           <Search className={styles.searchIcon} />
           <input
             type="text"
-            placeholder="Search by name, email, phone..."
+            placeholder="Search by name, username, phone..."
             className={styles.searchInput}
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -51,30 +48,14 @@ const FilterBar = ({
           <option value="inactive">Inactive</option>
         </select>
 
-        {/* Area Filter */}
-        <select
+        {/* Created Date Filter */}
+        <input
+          type="date"
           className={styles.select}
-          value={areaFilter}
-          onChange={(e) => onAreaChange(e.target.value)}
-        >
-          <option value="all">All Areas</option>
-          <option value="downtown">Downtown</option>
-          <option value="midtown">Midtown</option>
-          <option value="brooklyn">Brooklyn</option>
-          <option value="queens">Queens</option>
-          <option value="bronx">Bronx</option>
-        </select>
-
-        {/* Vehicle Filter */}
-        <select
-          className={styles.select}
-          value={vehicleFilter}
-          onChange={(e) => onVehicleChange(e.target.value)}
-        >
-          <option value="all">All Vehicles</option>
-          <option value="motorcycle">Motorcycle</option>
-          <option value="truck">Small Truck</option>
-        </select>
+          value={createdDateFilter}
+          onChange={(e) => onDateChange(e.target.value)}
+          placeholder="Filter by date"
+        />
 
         {/* Clear Filters Button */}
         {hasActiveFilters && (

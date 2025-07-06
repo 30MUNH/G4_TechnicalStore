@@ -4,7 +4,7 @@ import { Role } from "@/auth/role/role.entity";
 import { CreateCustomerDto, UpdateCustomerDto } from "./dtos/customer.dtos";
 import { EntityNotFoundException, BadRequestException } from "@/exceptions/http-exceptions";
 import * as bcrypt from 'bcrypt';
-import { getManager } from 'typeorm';
+import { DbConnection } from "@/database/dbConnection";
 import { Cart } from "@/Cart/cart.entity";
 import { Feedback } from "@/feedback/feedback.entity";
 import { SMSNotification } from "@/notification/smsNotification.entity";
@@ -16,9 +16,10 @@ const SALT_ROUNDS = 8;
 @Service()
 export class CustomerService {
   private validatePhoneNumber(phone: string): void {
-    const phoneRegex = /^0\d{9}$/;  // Format: 0xxxxxxxxx (10 digits)
+    // Support both formats: 0xxxxxxxxx (10 digits) or +84xxxxxxxxx (12 chars)
+    const phoneRegex = /^(0\d{9}|\+84\d{9})$/;
     if (!phoneRegex.test(phone)) {
-      throw new BadRequestException('Số điện thoại không hợp lệ. Phải có 10 chữ số và bắt đầu bằng số 0');
+      throw new BadRequestException('Số điện thoại không hợp lệ. Định dạng: 0xxxxxxxxx hoặc +84xxxxxxxxx');
     }
   }
 
@@ -45,7 +46,12 @@ export class CustomerService {
 
   async createCustomer(createCustomerDto: CreateCustomerDto): Promise<Account> {
     try {
-      return getManager().transaction(async transactionalEntityManager => {
+      const dataSource = await DbConnection.getConnection();
+      if (!dataSource) {
+        throw new BadRequestException("Database connection not available");
+      }
+
+      return await dataSource.manager.transaction(async transactionalEntityManager => {
         // Validate fields
         this.validateUsername(createCustomerDto.username);
         this.validatePassword(createCustomerDto.password);
@@ -69,7 +75,7 @@ export class CustomerService {
         }
 
         const customerRole = await transactionalEntityManager.findOne(Role, { 
-          where: { slug: "customer" } 
+          where: { name: "customer" } 
         });
         if (!customerRole) {
           throw new BadRequestException("Customer role not found. Please create 'customer' role first.");
@@ -92,10 +98,16 @@ export class CustomerService {
   }
 
   async getAllCustomers(): Promise<Account[]> {
-    const customerRole = await Role.findOne({ where: { slug: "customer" } });
+    const dataSource = await DbConnection.getConnection();
+    if (!dataSource) return [];
+
+    const roleRepo = dataSource.getRepository(Role);
+    const accountRepo = dataSource.getRepository(Account);
+
+    const customerRole = await roleRepo.findOne({ where: { name: "customer" } });
     if (!customerRole) return [];
 
-    return await Account.find({
+    return await accountRepo.find({
       where: { role: { id: customerRole.id } },
       relations: ["role", "customerOrders"],
       order: { createdAt: "DESC" }
@@ -103,12 +115,18 @@ export class CustomerService {
   }
 
   async getCustomerById(id: string): Promise<Account> {
-    const account = await Account.findOne({
+    const dataSource = await DbConnection.getConnection();
+    if (!dataSource) {
+      throw new BadRequestException("Database connection not available");
+    }
+
+    const accountRepo = dataSource.getRepository(Account);
+    const account = await accountRepo.findOne({
       where: { id },
       relations: ["role", "customerOrders"]
     });
     
-    if (!account || account.role.slug !== "customer") {
+    if (!account || account.role.name !== "customer") {
       throw new EntityNotFoundException("Customer");
     }
     
@@ -116,12 +134,18 @@ export class CustomerService {
   }
 
   async getCustomerByUsername(username: string): Promise<Account> {
-    const account = await Account.findOne({
+    const dataSource = await DbConnection.getConnection();
+    if (!dataSource) {
+      throw new BadRequestException("Database connection not available");
+    }
+
+    const accountRepo = dataSource.getRepository(Account);
+    const account = await accountRepo.findOne({
       where: { username },
       relations: ["role", "customerOrders"]
     });
     
-    if (!account || account.role.slug !== "customer") {
+    if (!account || account.role.name !== "customer") {
       throw new EntityNotFoundException("Customer");
     }
     
@@ -130,7 +154,12 @@ export class CustomerService {
 
   async updateCustomer(id: string, updateCustomerDto: UpdateCustomerDto): Promise<Account> {
     try {
-      return getManager().transaction(async transactionalEntityManager => {
+      const dataSource = await DbConnection.getConnection();
+      if (!dataSource) {
+        throw new BadRequestException("Database connection not available");
+      }
+
+      return await dataSource.manager.transaction(async transactionalEntityManager => {
         const account = await this.getCustomerById(id);
 
         if (updateCustomerDto.username) {
@@ -177,7 +206,12 @@ export class CustomerService {
 
   async deleteCustomer(id: string): Promise<void> {
     try {
-      return getManager().transaction(async transactionalEntityManager => {
+      const dataSource = await DbConnection.getConnection();
+      if (!dataSource) {
+        throw new BadRequestException("Database connection not available");
+      }
+
+      return await dataSource.manager.transaction(async transactionalEntityManager => {
         const account = await this.getCustomerById(id);
 
         // Xóa mềm cart liên kết (nếu có)
@@ -230,12 +264,16 @@ export class CustomerService {
   }
 
   async searchCustomers(searchTerm: string): Promise<Account[]> {
-    const customerRole = await Role.findOne({ where: { slug: "customer" } });
+    const dataSource = await DbConnection.getConnection();
+    if (!dataSource) return [];
+
+    const roleRepo = dataSource.getRepository(Role);
+    const customerRole = await roleRepo.findOne({ where: { name: "customer" } });
     if (!customerRole) return [];
 
-    return await Account.createQueryBuilder("account")
+    return await dataSource.createQueryBuilder(Account, "account")
       .innerJoinAndSelect("account.role", "role")
-      .where("role.slug = :roleSlug", { roleSlug: "customer" })
+      .where("role.name = :roleName", { roleName: "customer" })
       .andWhere("(account.name ILIKE :term OR account.username ILIKE :term OR account.phone ILIKE :term)", 
         { term: `%${searchTerm}%` })
       .getMany();

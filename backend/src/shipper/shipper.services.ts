@@ -4,16 +4,17 @@ import { Role } from "@/auth/role/role.entity";
 import { CreateShipperDto, UpdateShipperDto } from "./dtos/shipper.dtos";
 import { EntityNotFoundException, BadRequestException } from "@/exceptions/http-exceptions";
 import * as bcrypt from 'bcrypt';
-import { getManager } from 'typeorm';
+import { DbConnection } from "@/database/dbConnection";
 
 const SALT_ROUNDS = 8;
 
 @Service()
 export class ShipperService {
   private validatePhoneNumber(phone: string): void {
-    const phoneRegex = /^0\d{9}$/;  // Format: 0xxxxxxxxx (10 digits)
+    // Support both formats: 0xxxxxxxxx (10 digits) or +84xxxxxxxxx (12 chars)
+    const phoneRegex = /^(0\d{9}|\+84\d{9})$/;
     if (!phoneRegex.test(phone)) {
-      throw new BadRequestException('Số điện thoại không hợp lệ. Phải có 10 chữ số và bắt đầu bằng số 0');
+      throw new BadRequestException('Số điện thoại không hợp lệ. Định dạng: 0xxxxxxxxx hoặc +84xxxxxxxxx');
     }
   }
 
@@ -40,7 +41,11 @@ export class ShipperService {
 
   async createShipper(createShipperDto: CreateShipperDto): Promise<Account> {
     try {
-      return getManager().transaction(async transactionalEntityManager => {
+      const connection = await DbConnection.getConnection();
+      if (!connection) {
+        throw new Error('Database connection failed');
+      }
+      return connection.transaction(async transactionalEntityManager => {
         // Validate fields
         this.validateUsername(createShipperDto.username);
         this.validatePassword(createShipperDto.password);
@@ -64,7 +69,7 @@ export class ShipperService {
         }
 
         const shipperRole = await transactionalEntityManager.findOne(Role, { 
-          where: { slug: "shipper" } 
+          where: { name: "shipper" } 
         });
         if (!shipperRole) {
           throw new BadRequestException("Shipper role not found. Please create 'shipper' role first.");
@@ -87,12 +92,12 @@ export class ShipperService {
   }
 
   async getAllShippers(): Promise<Account[]> {
-    const shipperRole = await Role.findOne({ where: { slug: "shipper" } });
+    const shipperRole = await Role.findOne({ where: { name: "shipper" } });
     if (!shipperRole) return [];
 
     return await Account.find({
       where: { role: { id: shipperRole.id } },
-      relations: ["role", "shipperOrders"],
+      relations: ["role", "shipperOrders", "feedbacks"],
       order: { createdAt: "DESC" }
     });
   }
@@ -103,7 +108,7 @@ export class ShipperService {
       relations: ["role", "shipperOrders"]
     });
     
-    if (!account || account.role.slug !== "shipper") {
+    if (!account || account.role.name !== "shipper") {
       throw new EntityNotFoundException("Shipper");
     }
     
@@ -112,7 +117,11 @@ export class ShipperService {
 
   async updateShipper(id: string, updateShipperDto: UpdateShipperDto): Promise<Account> {
     try {
-      return getManager().transaction(async transactionalEntityManager => {
+      const connection = await DbConnection.getConnection();
+      if (!connection) {
+        throw new Error('Database connection failed');
+      }
+      return connection.transaction(async transactionalEntityManager => {
         const account = await this.getShipperById(id);
 
         if (updateShipperDto.username) {
@@ -148,6 +157,7 @@ export class ShipperService {
         if (updateShipperDto.username) account.username = updateShipperDto.username;
         if (updateShipperDto.fullName) account.name = updateShipperDto.fullName;
         if (updateShipperDto.phone) account.phone = updateShipperDto.phone;
+        if (updateShipperDto.isRegistered !== undefined) account.isRegistered = updateShipperDto.isRegistered;
 
         return await transactionalEntityManager.save(account);
       });
@@ -159,7 +169,11 @@ export class ShipperService {
 
   async deleteShipper(id: string): Promise<void> {
     try {
-      return getManager().transaction(async transactionalEntityManager => {
+      const connection = await DbConnection.getConnection();
+      if (!connection) {
+        throw new Error('Database connection failed');
+      }
+      return connection.transaction(async transactionalEntityManager => {
         const account = await this.getShipperById(id);
         
         // Check if shipper has active orders
@@ -181,7 +195,7 @@ export class ShipperService {
 
   async getAvailableShippers(): Promise<Account[]> {
     try {
-      const shipperRole = await Role.findOne({ where: { slug: "shipper" } });
+      const shipperRole = await Role.findOne({ where: { name: "shipper" } });
       if (!shipperRole) return [];
 
       return await Account.find({

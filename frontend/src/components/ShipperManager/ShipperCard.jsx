@@ -96,22 +96,22 @@ const ShipperCard = ({
                 </div>
                 <div className={styles.infoItem}>
                   <MapPin className={styles.infoIcon} />
-                  <span className={styles.infoText}>{shipper.area}</span>
+                  <span className={styles.infoText}>Member since: {new Date(shipper.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
 
               <div className={styles.infoGrid}>
                 <div className={styles.statItem}>
-                  <span className={styles.statLabel}>Vehicle:</span>
-                  <span className={styles.statValue}>{shipper.vehicle}</span>
+                  <span className={styles.statLabel}>Orders:</span>
+                  <span className={styles.statValue}>{shipper.totalOrders}</span>
                 </div>
                 <div className={styles.statItem}>
-                  <span className={styles.statLabel}>Orders:</span>
-                  <span className={styles.statValue}>{shipper.orders}</span>
+                  <span className={styles.statLabel}>Delivered:</span>
+                  <span className={styles.statValue}>{shipper.deliveredOrders}</span>
                 </div>
                 <div className={styles.statItem}>
                   <span className={styles.statLabel}>Rating:</span>
-                  {renderStars(shipper.rating)}
+                  {shipper.rating ? renderStars(parseFloat(shipper.rating)) : renderStars(5.0)}
                 </div>
               </div>
             </div>

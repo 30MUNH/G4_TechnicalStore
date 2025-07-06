@@ -48,6 +48,7 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
     const [selectedDistrict, setSelectedDistrict] = useState('');
     const [availableDistricts, setAvailableDistricts] = useState([]);
     const [availableWards, setAvailableWards] = useState([]);
+    const [paymentMethod, setPaymentMethod] = useState('cod'); // Default to Cash on Delivery
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -89,9 +90,43 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
         setFormData(prev => ({ ...prev, commune: wardName }));
     };
 
+    const handlePaymentMethodChange = (e) => {
+        setPaymentMethod(e.target.value);
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-            onPlaceOrder(formData);
+        
+        // Validate required fields
+        if (!formData.fullName || !formData.phone || !formData.email || 
+            !formData.address || !formData.city || !formData.ward || !formData.commune) {
+            alert('Vui lòng điền đầy đủ thông tin giao hàng');
+            return;
+        }
+        
+        if (!paymentMethod) {
+            alert('Vui lòng chọn phương thức thanh toán (COD hoặc VNPay)');
+            return;
+        }
+        
+        if (paymentMethod === 'vnpay') {
+            // VNPay payment flow (frontend only - backend integration pending)
+            const orderData = {
+                ...formData,
+                paymentMethod: paymentMethod,
+                paymentProvider: 'vnpay'
+            };
+            // TODO: Backend will handle VNPay integration
+            // For now, just pass to parent component
+            onPlaceOrder(orderData);
+        } else {
+            // COD payment flow
+            const orderData = {
+                ...formData,
+                paymentMethod: paymentMethod
+            };
+            onPlaceOrder(orderData);
+        }
     };
 
     const formatCurrency = (amount) => {
@@ -247,6 +282,8 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                                 ))}
                             </select>
                         </div>
+
+
                         </div>
                     </form>
                 </div>
@@ -268,6 +305,56 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                         </div>
                     </div>
 
+                    <div className={styles.paymentSectionSummary}>
+                        <h3>Phương thức thanh toán</h3>
+                        
+                        <div className={styles.paymentMethodsCompact}>
+                            <div className={styles.paymentOptionCompact}>
+                                <input
+                                    type="radio"
+                                    id="cod-summary"
+                                    name="paymentMethod"
+                                    value="cod"
+                                    checked={paymentMethod === 'cod'}
+                                    onChange={handlePaymentMethodChange}
+                                    className={styles.paymentRadio}
+                                />
+                                <label htmlFor="cod-summary" className={styles.paymentLabelCompact}>
+                                    <div className={styles.paymentIconCompact}>💰</div>
+                                    <div className={styles.paymentInfoCompact}>
+                                        <span className={styles.paymentTitle}>COD</span>
+                                        <span className={styles.paymentDesc}>Thanh toán khi nhận hàng</span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div className={styles.paymentOptionCompact}>
+                                <input
+                                    type="radio"
+                                    id="vnpay-summary"
+                                    name="paymentMethod"
+                                    value="vnpay"
+                                    checked={paymentMethod === 'vnpay'}
+                                    onChange={handlePaymentMethodChange}
+                                    className={styles.paymentRadio}
+                                />
+                                <label htmlFor="vnpay-summary" className={styles.paymentLabelCompact}>
+                                    <div className={styles.paymentIconCompact}>💳</div>
+                                    <div className={styles.paymentInfoCompact}>
+                                        <span className={styles.paymentTitle}>VNPay</span>
+                                        <span className={styles.paymentDesc}>Thanh toán trực tuyến</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        {paymentMethod === 'vnpay' && (
+                            <div className={styles.paymentNoteCompact}>
+                                <p>Bạn sẽ được chuyển hướng đến cổng thanh toán VNPay sau khi đặt hàng.</p>
+                            </div>
+                        )}
+                    </div>
+
                     {error && (
                         <div className={styles.errorMessage}>
                             {error}
@@ -276,11 +363,14 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
 
                     <button 
                         type="submit"
-                        className={styles.placeOrderButton}
+                        className={`${styles.placeOrderButton} ${paymentMethod === 'vnpay' ? styles.vnpayButton : styles.codButton}`}
                         onClick={handleSubmit}
                         disabled={cartItems.length === 0 || isProcessing}
                     >
-                        {isProcessing ? 'Đang xử lý...' : `Đặt hàng • ${formatCurrency(totalAmount)}`}
+                        {isProcessing ? 'Đang xử lý...' : 
+                         paymentMethod === 'vnpay' ? 
+                         `💳 Thanh toán VNPay • ${formatCurrency(totalAmount)}` : 
+                         `💰 Đặt hàng COD • ${formatCurrency(totalAmount)}`}
                     </button>
 
                     {totalAmount > 1000000 && shippingFee === 0 && (

@@ -326,6 +326,24 @@
   cursor: not-allowed;
 }
 
+.codButton {
+  background-color: #22c55e !important;
+}
+
+.codButton:hover:not(:disabled) {
+  background-color: #16a34a !important;
+  transform: translateY(-1px);
+}
+
+.vnpayButton {
+  background-color: #3b82f6 !important;
+}
+
+.vnpayButton:hover:not(:disabled) {
+  background-color: #2563eb !important;
+  transform: translateY(-1px);
+}
+
 .shippingPromo {
   margin-top: 16px;
   text-align: center;
@@ -411,6 +429,271 @@
   }
 }
 
+/* Payment Section Styles */
+.paymentSection {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 2px solid #f3f4f6;
+}
+
+.paymentSection h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.paymentSection h2::before {
+  content: "💳";
+  font-size: 18px;
+}
+
+.paymentMethods {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.paymentOption {
+  position: relative;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.paymentOption:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.paymentOption:has(:checked) {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.paymentRadio {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.paymentLabel {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  cursor: pointer;
+  gap: 16px;
+  width: 100%;
+  margin: 0;
+}
+
+.paymentIcon {
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.paymentOption:has(:checked) .paymentIcon {
+  background: #dbeafe;
+}
+
+.paymentInfo {
+  flex: 1;
+  text-align: left;
+}
+
+.paymentInfo h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.paymentInfo p {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.paymentBadge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  background: #22c55e;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.paymentOption:has(:checked) .paymentInfo h3 {
+  color: #1d4ed8;
+}
+
+.paymentOption:has(:checked) .paymentInfo p {
+  color: #3730a3;
+}
+
+.paymentNote {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f0f9ff;
+  border: 1px solid #0ea5e9;
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.noteIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.noteContent {
+  flex: 1;
+}
+
+.noteContent p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #1e40af;
+}
+
+.noteContent ul {
+  margin: 0;
+  padding-left: 16px;
+  color: #1e40af;
+}
+
+.noteContent li {
+  font-size: 13px;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+/* Compact Payment Section for Order Summary */
+.paymentSectionSummary {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.paymentSectionSummary h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+}
+
+.paymentMethodsCompact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.paymentOptionCompact {
+  position: relative;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.paymentOptionCompact:hover {
+  border-color: #d1d5db;
+}
+
+.paymentOptionCompact:has(:checked) {
+  border-color: #3b82f6;
+  background: #f8faff;
+}
+
+.paymentLabelCompact {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  cursor: pointer;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+}
+
+.paymentIconCompact {
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.paymentOptionCompact:has(:checked) .paymentIconCompact {
+  background: #dbeafe;
+}
+
+.paymentInfoCompact {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.paymentTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.paymentDesc {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.paymentOptionCompact:has(:checked) .paymentTitle {
+  color: #1d4ed8;
+}
+
+.paymentOptionCompact:has(:checked) .paymentDesc {
+  color: #3730a3;
+}
+
+.paymentNoteCompact {
+  margin-top: 12px;
+  padding: 10px;
+  background: #f0f9ff;
+  border: 1px solid #0ea5e9;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1e40af;
+}
+
+.paymentNoteCompact p {
+  margin: 0;
+  line-height: 1.4;
+}
+
 @media (max-width: 480px) {
   .orderItem {
     padding: 1rem;
@@ -419,5 +702,66 @@
   .itemImage {
     width: 120px;
     height: 120px;
+  }
+
+  .paymentLabel {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .paymentIcon {
+    font-size: 20px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .paymentInfo h3 {
+    font-size: 15px;
+  }
+
+  .paymentInfo p {
+    font-size: 13px;
+  }
+
+  .paymentNote {
+    margin-top: 12px;
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .noteIcon {
+    font-size: 18px;
+  }
+
+  .noteContent p {
+    font-size: 13px;
+  }
+
+  .noteContent li {
+    font-size: 12px;
+  }
+
+  .paymentLabelCompact {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .paymentIconCompact {
+    font-size: 16px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .paymentTitle {
+    font-size: 13px;
+  }
+
+  .paymentDesc {
+    font-size: 11px;
+  }
+
+  .paymentNoteCompact {
+    padding: 8px;
+    font-size: 11px;
   }
 }

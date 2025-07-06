@@ -10,25 +10,25 @@ const AdminDashboard: React.FC = () => {
   const stats = [
     {
       title: 'Total Customers',
-      value: '1,234',
+      value: '500',
       icon: Users,
       color: 'bg-blue-500'
     },
     {
       title: 'Products',
-      value: '856',
+      value: '100',
       icon: Package,
       color: 'bg-green-500'
     },
     {
       title: 'Shippers',
-      value: '42',
+      value: '15',
       icon: Truck,
       color: 'bg-yellow-500'
     },
     {
       title: 'Revenue',
-      value: '$2.5M',
+      value: '50.000.000 VND',
       icon: DollarSign,
       color: 'bg-red-500'
     }

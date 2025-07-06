@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, QueryParam } from "routing-controllers";
+import { Body, Controller, Delete, Get, Param, Post, Put, QueryParam, UploadedFile } from "routing-controllers";
 import { Service } from "typedi";
 import { CustomerService } from "./customer.service";
 import { CreateCustomerDto, UpdateCustomerDto } from "./dtos/customer.dtos";
@@ -121,6 +121,49 @@ export class CustomerController {
       return {
         success: false,
         message: "Failed to delete customer",
+        error: error.message || "Unknown error"
+      };
+    }
+  }
+
+  @Post("/import")
+  async importCustomers(@UploadedFile("file") file?: Express.Multer.File) {
+    try {
+      if (!file) {
+        return {
+          success: false,
+          message: "No file uploaded"
+        };
+      }
+
+      // For now, return a placeholder response
+      // TODO: Implement actual Excel parsing logic
+      return {
+        success: true,
+        message: "Import functionality is not yet implemented"
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to import customers",
+        error: error.message || "Unknown error"
+      };
+    }
+  }
+
+  @Get("/export")
+  async exportCustomers() {
+    try {
+      // For now, return a placeholder response
+      // TODO: Implement actual Excel generation logic
+      return {
+        success: true,
+        message: "Export functionality is not yet implemented"
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to export customers", 
         error: error.message || "Unknown error"
       };
     }
