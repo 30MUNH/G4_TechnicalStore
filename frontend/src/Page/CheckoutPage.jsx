@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { orderService } from '../services/orderService';
@@ -9,12 +9,14 @@ import './CheckoutPage.css';
 
 const CheckoutPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { isAuthenticated } = useAuth();
     const { items, totalAmount, loading, error, isInitialized, refreshCart } = useCart();
     const [orderData, setOrderData] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [orderError, setOrderError] = useState(null);
     const [validatedCart, setValidatedCart] = useState(null);
+    const [paymentMessage, setPaymentMessage] = useState(null);
 
     // Check authentication but don't block rendering
     useEffect(() => {
@@ -23,6 +25,32 @@ const CheckoutPage = () => {
             // Don't redirect immediately - let them see the form
         }
     }, [isAuthenticated]);
+
+    // Handle payment messages from navigation state
+    useEffect(() => {
+        const state = location.state;
+        if (state) {
+            if (state.paymentCancelled && state.message) {
+                setPaymentMessage({ type: 'warning', text: state.message });
+                // Clear the state
+                navigate(location.pathname, { replace: true });
+            } else if (state.paymentSuccess && state.message) {
+                setPaymentMessage({ type: 'success', text: state.message });
+                // Clear the state
+                navigate(location.pathname, { replace: true });
+            }
+        }
+    }, [location, navigate]);
+
+    // Auto-hide payment message after 5 seconds
+    useEffect(() => {
+        if (paymentMessage) {
+            const timer = setTimeout(() => {
+                setPaymentMessage(null);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [paymentMessage]);
 
 
     // Khi vào trang checkout, luôn lấy cart mới nhất từ backend
@@ -264,6 +292,30 @@ const CheckoutPage = () => {
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', paddingTop: '20px', paddingBottom: '20px' }}>
             <div className="container">
+                {/* Payment Message */}
+                {paymentMessage && (
+                    <div className="row">
+                        <div className="col-md-12">
+                            <div 
+                                className={`alert alert-${paymentMessage.type === 'success' ? 'success' : 'warning'} alert-dismissible fade show`}
+                                role="alert"
+                                style={{ marginBottom: '20px' }}
+                            >
+                                <strong>
+                                    {paymentMessage.type === 'success' ? '✅ ' : '⚠️ '}
+                                </strong>
+                                {paymentMessage.text}
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => setPaymentMessage(null)}
+                                    aria-label="Close"
+                                ></button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
                 <div className="row">
                     <div className="col-md-12">
                         <CheckoutForm

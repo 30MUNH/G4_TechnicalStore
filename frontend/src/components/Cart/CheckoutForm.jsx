@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './CheckoutForm.module.css';
 import { useVietnamProvinces } from '../../Hook/useVietnamProvinces';
 
@@ -22,6 +23,7 @@ const ArrowLeftIcon = () => (
 );
 
 const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOrder, onBackToCart, isProcessing = false, error = null }) => {
+    const navigate = useNavigate();
     const { provinces, loading: provincesLoading, error: provincesError } = useVietnamProvinces();
     
     // Debug provinces data
@@ -97,6 +99,10 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
     const handleSubmit = (e) => {
         e.preventDefault();
         
+        console.log('🚀 CheckoutForm handleSubmit called');
+        console.log('💳 Payment method:', paymentMethod);
+        console.log('📋 Form data:', formData);
+        
         // Validate required fields
         if (!formData.fullName || !formData.phone || !formData.email || 
             !formData.address || !formData.city || !formData.ward || !formData.commune) {
@@ -110,16 +116,30 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
         }
         
         if (paymentMethod === 'vnpay') {
-            // VNPay payment flow (frontend only - backend integration pending)
+            console.log('🏦 VNPay payment selected - navigating to VNPay page');
+            // VNPay payment flow - chuyển hướng đến trang VNPay
             const orderData = {
                 ...formData,
                 paymentMethod: paymentMethod,
                 paymentProvider: 'vnpay'
             };
-            // TODO: Backend will handle VNPay integration
-            // For now, just pass to parent component
-            onPlaceOrder(orderData);
+            
+            console.log('📤 Navigating to VNPay with data:', {
+                orderData: orderData,
+                totalAmount: totalAmount,
+                cartItemsCount: cartItems.length
+            });
+            
+            // Chuyển hướng đến trang VNPay payment với order data
+            navigate('/vnpay-payment', {
+                state: {
+                    orderData: orderData,
+                    totalAmount: totalAmount,
+                    cartItems: cartItems
+                }
+            });
         } else {
+            console.log('💰 COD payment selected - processing order');
             // COD payment flow
             const orderData = {
                 ...formData,
@@ -362,7 +382,7 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                     )}
 
                     <button 
-                        type="submit"
+                        type="button"
                         className={`${styles.placeOrderButton} ${paymentMethod === 'vnpay' ? styles.vnpayButton : styles.codButton}`}
                         onClick={handleSubmit}
                         disabled={cartItems.length === 0 || isProcessing}
