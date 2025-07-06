@@ -10,7 +10,6 @@ import HomePage from "./Page/HomePage";
 import CartPage from "./Page/CartPage.jsx";
 import CheckoutPage from "./Page/CheckoutPage.jsx";
 import AllProductsPage from "./Page/AllProductsPage";
-import ManageProduct from "./components/ManageProduct/ManageProduct";
 import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Navigation from './components/Navigation';
@@ -19,6 +18,7 @@ import { Fragment, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import CustomerList from "./components/Customer_manager/CustomerList.jsx";
 import ShipperManagement from "./components/Shipper_manager/ShipperManagement.jsx";
+import { AdminApp } from "./components/admin";
 
 function AuthBgWrapper({ children }: { children: ReactNode }) {
   return <div className="auth-bg-custom">{children}</div>;
@@ -32,7 +32,9 @@ function ProtectedRoute({ children, requireAdmin = false }: { children: ReactNod
     return <Navigate to="/login" replace />;
   }
 
-  if (requireAdmin && (!user || (user.role !== 'manager' && user.role !== 'admin'))) {
+  // For admin routes, we'll let the component handle the redirect
+  // since the user data might not be fully loaded yet
+  if (requireAdmin && !user) {
     return <Navigate to="/" replace />;
   }
 
@@ -64,7 +66,7 @@ function AppContent() {
   const location = useLocation();
 
   // Các route không muốn hiện header/navigation
-  const hideHeaderAndNavRoutes = ["/login", "/signup", "/forgot-password", "/about", "/contact", "/cart", "/checkout", "/manage-customers", "/manage-shippers"];
+  const hideHeaderAndNavRoutes = ["/login", "/signup", "/forgot-password", "/about", "/contact", "/cart", "/checkout", "/manage-customers", "/manage-shippers", "/admin"];
   const shouldHide = hideHeaderAndNavRoutes.includes(location.pathname);
 
   return (
@@ -83,11 +85,7 @@ function AppContent() {
         <Route path="/login" element={<AuthBgWrapper><Login /></AuthBgWrapper>} />
         <Route path="/signup" element={<AuthBgWrapper><SignUp /></AuthBgWrapper>} />
         <Route path="/forgot-password" element={<AuthBgWrapper><ForgotPassword /></AuthBgWrapper>} />
-        <Route path="/manage-product" element={
-          <ProtectedRoute requireAdmin={true}>
-            <ManageProduct />
-          </ProtectedRoute>
-        } />
+
         <Route path="/manage-customers" element={
           <ProtectedRoute requireAdmin={true}>
             <CustomerList />
@@ -98,6 +96,14 @@ function AppContent() {
             <ShipperManagement />
           </ProtectedRoute>
         } />
+        
+        {/* Admin Dashboard Route */}
+        <Route path="/admin" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminApp />
+          </ProtectedRoute>
+        } />
+        
         {/* Redirect any unknown paths to home page */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

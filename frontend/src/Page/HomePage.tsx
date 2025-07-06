@@ -242,7 +242,7 @@ const HomePage: React.FC = () => {
     return newProducts.accessories || [];
   };
 
-  // Thêm hàm mới để render sản phẩm Top Selling giống giao diện mẫu
+  // Thêm hàm mới để render sản phẩm Top Selling
   const renderTopSellingProduct = (product: Product) => (
     <div key={product.id} className="product-widget" style={{ display: 'flex', alignItems: 'center', marginBottom: 32, border: 'none', boxShadow: 'none' }}>
       <div className="product-img" style={{ minWidth: 80, maxWidth: 80, marginRight: 24 }}>
