@@ -100,6 +100,7 @@ export class AccountService {
       where: {
         username,
       },
+      relations: ['role'],
     });
     if (!account) throw new AccountNotFoundException();
     return account;

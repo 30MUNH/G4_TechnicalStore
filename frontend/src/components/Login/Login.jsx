@@ -196,13 +196,61 @@ const Login = ({ onNavigate }) => {
         // Success logging
         // console.log removed
         
-        // Navigate with success state
-        navigate('/', { 
-          state: { 
-            welcomeMessage: `Chào mừng bạn trở lại!`,
-            loginTime: new Date().toLocaleTimeString('vi-VN')
-          } 
-        });
+        // Fetch user profile to get role information
+        try {
+          const userProfile = await authService.getUserProfile();
+          console.log('🔍 User profile after login:', userProfile);
+          
+          // Extract user data from response structure
+          const userData = userProfile.data || userProfile;
+          
+          // Check if user has admin/manager role
+          const isAdmin = userData && (
+            userData.role === 'admin' || 
+            userData.role === 'manager' ||
+            (userData.role && userData.role.name && (
+              userData.role.name === 'admin' || 
+              userData.role.name === 'manager'
+            ))
+          );
+          
+          console.log('🔍 Is admin check:', {
+            userProfile,
+            userData,
+            role: userData?.role,
+            roleName: userData?.role?.name,
+            isAdmin
+          });
+          
+          if (isAdmin) {
+            // Redirect admin/manager to admin dashboard
+            console.log('🚀 Redirecting to admin dashboard');
+            navigate('/admin', { 
+              state: { 
+                welcomeMessage: `Chào mừng Admin trở lại!`,
+                loginTime: new Date().toLocaleTimeString('vi-VN')
+              } 
+            });
+          } else {
+            // Redirect regular users to homepage
+            console.log('🏠 Redirecting to homepage');
+            navigate('/', { 
+              state: { 
+                welcomeMessage: `Chào mừng bạn trở lại!`,
+                loginTime: new Date().toLocaleTimeString('vi-VN')
+              } 
+            });
+          }
+        } catch (error) {
+          console.error('❌ Error fetching user profile:', error);
+          // If profile fetch fails, redirect to homepage as fallback
+          navigate('/', { 
+            state: { 
+              welcomeMessage: `Chào mừng bạn trở lại!`,
+              loginTime: new Date().toLocaleTimeString('vi-VN')
+            } 
+          });
+        }
         // console.log removed
         
       } else {
