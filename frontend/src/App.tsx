@@ -24,6 +24,40 @@ function AuthBgWrapper({ children }: { children: ReactNode }) {
   return <div className="auth-bg-custom">{children}</div>;
 }
 
+// Component để kiểm tra role và chuyển hướng phù hợp khi reload trang
+function RoleBasedRedirect() {
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const checkRoleAndRedirect = async () => {
+      // Chỉ kiểm tra khi đã đăng nhập và đang ở trang chủ
+      if (isAuthenticated() && user && location.pathname === '/') {
+        const isAdmin = user && (
+          user.role === 'admin' || 
+          user.role === 'manager' ||
+          (user.role && user.role.name && (
+            user.role.name === 'admin' || 
+            user.role.name === 'manager'
+          ))
+        );
+
+        if (isAdmin) {
+          console.log('🔄 Admin user detected, redirecting to admin dashboard');
+          navigate('/admin', { replace: true });
+        }
+      }
+    };
+
+    // Thêm delay nhỏ để đảm bảo auth state đã được load
+    const timer = setTimeout(checkRoleAndRedirect, 100);
+    return () => clearTimeout(timer);
+  }, [user, isAuthenticated, navigate, location.pathname]);
+
+  return null;
+}
+
 // Protected Route Component for admin access
 function ProtectedRoute({ children, requireAdmin = false }: { children: ReactNode, requireAdmin?: boolean }) {
   const { user, isAuthenticated } = useAuth();
@@ -72,6 +106,7 @@ function AppContent() {
   return (
     <Fragment>
       <AuthNavigationHandler />
+      <RoleBasedRedirect />
       {!shouldHide && <Header />}
       {!shouldHide && <Navigation />}
 

@@ -196,7 +196,7 @@ const ProductList: React.FC = () => {
                 <td>{product.category?.name || 'N/A'}</td>
                 <td>
                   <img
-                    src={product.url}
+                    src={product.images && product.images.length > 0 ? product.images[0].url : '/img/product-default.png'}
                     alt={product.name}
                     style={{
                       width: "60px",

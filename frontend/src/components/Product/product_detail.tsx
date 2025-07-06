@@ -4,18 +4,27 @@ import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import './productDetail.css';
 
+interface ProductImage {
+  id: string;
+  url: string;
+  originalName?: string;
+  name?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 interface Product {
   id?: string;
   name: string;
   categoryId: string;
-  url: string;
+  images?: ProductImage[];
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
   deletedAt?: string | null;
   slug?: string;
   price: number;
-  description: string;
+  description: string;   
   stock: number;
 }
 
@@ -58,7 +67,7 @@ const ProductDetail: React.FC = () => {
       const initialFormData: Product = {
         name: "",
         categoryId: "",
-        url: "",
+        images: [],
         isActive: true,
         price: 0,
         description: "",
@@ -92,7 +101,7 @@ const ProductDetail: React.FC = () => {
     const errors: Record<string, string> = {};
     if (!data.name.trim()) errors.name = "Tên sản phẩm là bắt buộc";
     if (!data.categoryId.trim()) errors.categoryId = "Danh mục là bắt buộc";
-    if (!data.url.trim()) errors.url = "URL hình ảnh là bắt buộc";
+    if (!data.images || data.images.length === 0) errors.images = "Hình ảnh là bắt buộc";
     if (!data.description.trim()) errors.description = "Mô tả là bắt buộc";
     if (data.price <= 0) errors.price = "Giá phải lớn hơn 0";
     if (data.stock < 0) errors.stock = "Số lượng tồn kho không được âm";
@@ -143,7 +152,7 @@ const ProductDetail: React.FC = () => {
         categoryId: formData.categoryId,
         price: formData.price,
         stock: formData.stock,
-        url: formData.url,
+        images: formData.images,
         description: formData.description,
         isActive: formData.isActive,
       };
@@ -217,27 +226,12 @@ const ProductDetail: React.FC = () => {
       )}
       <div className="product-detail-card">
         <div className="product-detail-image-wrapper">
-          <div className="form-group">
-            <label>URL Hình ảnh:</label>
-            <input
-              type="text"
-              name="url"
-              value={formData.url}
-              onChange={handleInputChange}
-              className={`form-input ${validationErrors.url ? 'border-red-500' : ''}`}
-            />
-            {validationErrors.url && (
-              <p className="text-red-500 text-sm">{validationErrors.url}</p>
-            )}
-          </div>
-          {formData.url && (
+          {/* Chỉ hiển thị ảnh nếu có trong database */}
+          {formData.images && formData.images.length > 0 && (
             <img
-              src={formData.url}
+              src={formData.images[0].url}
               alt={formData.name}
               className="product-detail-image"
-              onError={(e) =>
-                (e.currentTarget.src = "https://via.placeholder.com/150")
-              }
             />
           )}
         </div>

@@ -21,6 +21,22 @@ function AdminApp() {
         return;
       }
 
+      // Kiểm tra role từ user data hiện tại trước
+      const isAdminFromCurrentUser = user && (
+        user.role === 'admin' || 
+        user.role === 'manager' ||
+        (user.role && user.role.name && (
+          user.role.name === 'admin' || 
+          user.role.name === 'manager'
+        ))
+      );
+
+      if (isAdminFromCurrentUser) {
+        console.log('✅ Admin access granted from current user data');
+        return;
+      }
+
+      // Nếu không có user data hoặc không phải admin, thử fetch từ API
       try {
         const userProfile = await authService.getUserProfile();
         const userData = userProfile.data || userProfile;
@@ -38,7 +54,7 @@ function AdminApp() {
           console.log('❌ Access denied - not admin');
           navigate('/', { replace: true });
         } else {
-          console.log('✅ Admin access granted');
+          console.log('✅ Admin access granted from API');
         }
       } catch (error) {
         console.error('❌ Error checking admin access:', error);
@@ -47,7 +63,7 @@ function AdminApp() {
     };
 
     checkAdminAccess();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, user]);
 
   const renderContent = () => {
     switch (activeSection) {

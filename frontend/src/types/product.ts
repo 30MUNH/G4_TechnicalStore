@@ -1,7 +1,15 @@
+export interface ProductImage {
+  id: string;
+  url: string;
+  originalName?: string;
+  name?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
-  url: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -16,6 +24,7 @@ export interface Product {
     name: string;
     slug: string;
   };
+  images: ProductImage[];
   [key: string]: any;
 }
 

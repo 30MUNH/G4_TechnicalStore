@@ -25,7 +25,12 @@ const AdminHeader: React.FC = () => {
             </div>
             <div className="hidden md:block">
               <p className="text-sm font-medium text-gray-700">{user?.username || 'Admin User'}</p>
-              <p className="text-xs text-gray-500">{user?.role || 'admin'}</p>
+              <p className="text-xs text-gray-500">
+                {typeof user?.role === 'string' 
+                  ? user.role 
+                  : (user?.role as { name: string })?.name || 'admin'
+                }
+              </p>
             </div>
           </div>
           

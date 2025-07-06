@@ -4,7 +4,7 @@ import { authService } from '../services/authService';
 interface User {
     username: string;
     phone?: string;
-    role: string;
+    role: string | { name: string };
     isRegistered: boolean;
 }
 
@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
     }, []);
 
-    // Verify token on mount
+    // Verify token on mount and refresh user data if needed
     useEffect(() => {
         console.group('🔑 [DEBUG] AuthContext Mount/State Check');
         
@@ -88,6 +88,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setToken(token);
             setUser(user);
             console.log('✅ Auth state restored from localStorage');
+            
+            // Refresh user data from API to ensure role is up-to-date
+            const refreshUserData = async () => {
+                try {
+                    const userProfile = await authService.getUserProfile();
+                    const freshUserData = userProfile.data || userProfile;
+                    
+                    if (freshUserData && freshUserData.username) {
+                        setUser(freshUserData);
+                        localStorage.setItem('user', JSON.stringify(freshUserData));
+                        console.log('✅ User data refreshed from API');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Failed to refresh user data from API, using cached data:', error);
+                }
+            };
+            
+            // Refresh user data in background
+            refreshUserData();
         } else {
             console.log('❌ No valid auth state - clearing');
             setToken(null);
