@@ -1,0 +1,336 @@
+/* ShipperManagement.module.css */
+.container {
+  padding: 1.5rem;
+  background: #f9fafb;
+  min-height: 100vh;
+}
+
+.header {
+  background: #991b1b;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.headerContent {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.headerInfo {
+  text-align: left;
+  margin-top: 0.625rem;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: white;
+  text-align: left;
+  margin-bottom: 0.25rem;
+}
+
+.description {
+  color: #fecaca;
+  margin-top: 0.25rem;
+  text-align: left;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.importButton,
+.exportButton {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.importButton:hover,
+.exportButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.addButton {
+  background: #dc2626;
+  color: white;
+}
+
+.addButton:hover {
+  background: #b91c1c;
+}
+
+.hiddenInput {
+  display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  opacity: 0 !important;
+}
+
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+
+.loadingContent {
+  text-align: center;
+}
+
+.loadingText {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.errorContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+
+.errorContent {
+  text-align: center;
+}
+
+.errorText {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #dc2626;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 42rem;
+  margin: 1rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.modalTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.closeButton {
+  color: #9ca3af;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+}
+
+.closeButton:hover {
+  color: #6b7280;
+}
+
+/* Form Styles */
+.form {
+  margin-top: 1rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.input,
+.select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #dc2626;
+  border-color: #dc2626;
+}
+
+.input:disabled,
+.select:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.errorInput {
+  border-color: #dc2626;
+}
+
+.errorMessage {
+  font-size: 0.75rem;
+  color: #dc2626;
+  margin-top: 0.25rem;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.formButton {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cancelFormButton {
+  color: #6b7280;
+  background: #f3f4f6;
+}
+
+.cancelFormButton:hover {
+  background: #e5e7eb;
+}
+
+.saveButton {
+  background: #dc2626;
+  color: white;
+}
+
+.saveButton:hover {
+  background: #b91c1c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .header {
+    padding: 1rem;
+  }
+
+  .headerContent {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .headerActions {
+    justify-content: center;
+  }
+
+  .title {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .description {
+    text-align: center;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .modalContent {
+    margin: 0.5rem;
+    padding: 1rem;
+  }
+}
+
+/* Notification styles */
+.notification {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 6px;
+  z-index: 9999;
+  font-family: system-ui, -apple-system, sans-serif;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  max-width: 18.75rem;
+  font-size: 0.875rem;
+}
+
+.notificationSuccess {
+  background: #10b981;
+  color: white;
+}
+
+.notificationError {
+  background: #ef4444;
+  color: white;
+}
+
+.notificationInfo {
+  background: #3b82f6;
+  color: white;
+}

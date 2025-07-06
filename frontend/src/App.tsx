@@ -16,8 +16,8 @@ import Navigation from './components/Navigation';
 import Header from './components/header';
 import { Fragment, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import CustomerList from "./components/Customer_manager/CustomerList.jsx";
-import ShipperManagement from "./components/Shipper_manager/ShipperManagement.jsx";
+import CustomerManagement from "./components/CustomerManager/CustomerManagement.jsx";
+import ShipperManagement from "./components/ShipperManager/ShipperManagement.jsx";
 import { AdminApp } from "./components/admin";
 
 function AuthBgWrapper({ children }: { children: ReactNode }) {
@@ -37,7 +37,7 @@ function RoleBasedRedirect() {
         const isAdmin = user && (
           user.role === 'admin' || 
           user.role === 'manager' ||
-          (user.role && user.role.name && (
+          (user.role && typeof user.role === 'object' && user.role.name && (
             user.role.name === 'admin' || 
             user.role.name === 'manager'
           ))
@@ -123,7 +123,7 @@ function AppContent() {
 
         <Route path="/manage-customers" element={
           <ProtectedRoute requireAdmin={true}>
-            <CustomerList />
+            <CustomerManagement />
           </ProtectedRoute>
         } />
         <Route path="/manage-shippers" element={
