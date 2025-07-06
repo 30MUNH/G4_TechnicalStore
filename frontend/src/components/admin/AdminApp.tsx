@@ -5,9 +5,9 @@ import { authService } from '../../services/authService';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
 import AdminDashboard from './AdminDashboard';
-import CustomerManagement from './CustomerManagement';
+import CustomerManagement from '../CustomerManager/CustomerManagement.jsx';
 import ProductManagement from './ProductManagement';
-import ShipperManagement from './ShipperManagement';
+import ShipperManagement from '../ShipperManager/ShipperManagement.jsx';
 
 function AdminApp() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -25,7 +25,7 @@ function AdminApp() {
       const isAdminFromCurrentUser = user && (
         user.role === 'admin' || 
         user.role === 'manager' ||
-        (user.role && user.role.name && (
+        (user.role && typeof user.role === 'object' && user.role.name && (
           user.role.name === 'admin' || 
           user.role.name === 'manager'
         ))

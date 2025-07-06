@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ArrowLeft, 
   Download, 
   Upload, 
   Plus, 
@@ -244,16 +243,10 @@ const ProductManagement: React.FC = () => {
     <div className="p-6 bg-gray-50 min-h-full">
       {/* Header */}
       <div className="bg-gradient-to-r from-red-900 via-red-800 to-red-900 rounded-lg p-6 mb-6 shadow-xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all duration-200">
-              <ArrowLeft size={20} className="text-white" />
-              <span className="text-white font-medium">Back</span>
-            </button>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Product Management</h1>
-              <p className="text-red-200 mt-1">Manage inventory and product information</p>
-            </div>
+        <div className="flex items-start justify-between">
+          <div className="text-left mt-[10px]">
+            <h1 className="text-3xl font-bold text-white text-left">Product Management</h1>
+            <p className="text-red-200 mt-1 text-left">Manage inventory and product information</p>
           </div>
           
           <div className="flex items-center space-x-3">
