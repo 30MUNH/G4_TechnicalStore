@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './OrderDetailModal.module.css';
+import { formatDateTime } from '../../utils/dateFormatter';
 
 const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin' }) => {
   if (!open || !order) return null;
@@ -23,7 +24,7 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
         <h3 className={styles.title}>Chi tiết đơn hàng #{order.id}</h3>
         <div className={styles.info}>
           <strong>Khách hàng:</strong> {order.customer?.name || order.customer?.username}<br />
-          <strong>Ngày đặt:</strong> {new Date(order.orderDate).toLocaleString('vi-VN')}<br />
+          <strong>Ngày đặt:</strong> {formatDateTime(order.orderDate)}<br />
           <strong>Địa chỉ giao:</strong> {order.shippingAddress}<br />
           <strong>Tổng tiền:</strong> {order.totalAmount?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}<br />
           <strong>Trạng thái:</strong> {order.status}<br />

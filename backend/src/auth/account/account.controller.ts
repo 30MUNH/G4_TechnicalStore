@@ -1,9 +1,9 @@
-import { Body, BodyParam, Controller, Delete, Get, Post, Req, Res, UseBefore } from "routing-controllers";
+import { Body, BodyParam, Controller, Delete, Get, Patch, Post, Req, Res, UseBefore } from "routing-controllers";
 import { Service } from "typedi";
 import { AccountService } from "./account.service";
-import { AccountDetailsDto, CreateAccountDto, CredentialsDto, VerifyRegisterDto } from "../dtos/account.dto";
+import { AccountDetailsDto, CreateAccountDto, CredentialsDto, UpdateAccountDto, VerifyRegisterDto } from "../dtos/account.dto";
 import { TwilioService } from "@/utils/twilio/twilio";
-import { Auth } from "@/middlewares/auth.middleware";
+import { Admin, Auth } from "@/middlewares/auth.middleware";
 import { Response } from 'express';
 
 @Service()
@@ -16,7 +16,7 @@ export class AccountController{
 
     @Post("/register")
     async register(@Body() body: CreateAccountDto){
-        const account = await this.accountService.createAccount(body);
+        const account = await this.accountService.register(body);
         await this.twilioService.sendOtp(account.phone);
         return {
             account: account,
@@ -28,7 +28,7 @@ export class AccountController{
     async verifyRegister(@Body() body: VerifyRegisterDto, @Res() res: Response){
         const result = await this.twilioService.verifyOtp(body.phone, body.otp);
         if(!result) return "OTP is wrong or is expired";
-        const tokens = await this.accountService.finalizeCreateAccount(body.username, body.password, body.phone, body.roleSlug);
+        const tokens = await this.accountService.finalizeRegistration(body.username, body.password, body.phone, body.roleSlug);
         res.cookie('refreshToken', tokens.newRefreshToken, {
             httpOnly: true,
             secure: true,
@@ -116,5 +116,32 @@ export class AccountController{
     async verifyOtp(@BodyParam('username') username: string, @BodyParam('otp') otp: string){
         const account = await this.accountService.findAccountByUsername(username);
         return this.twilioService.verifyOtp(account.phone, otp);
+    }
+
+    @Get('/all')
+    @UseBefore(Admin)
+    async getAllAccounts(){
+        return await this.accountService.getAccounts();
+    }
+
+    @Post('/create')
+    @UseBefore(Admin)
+    async createAccount(@Body() body: CreateAccountDto){
+        const account = await this.accountService.createAccount(body.username, body.password, body.phone, body.roleSlug);
+        return account;
+    }
+
+    @Patch('/update')
+    @UseBefore(Admin)
+    async updateAccount(@BodyParam('username') username: string, @Body() body: UpdateAccountDto){
+        const account = await this.accountService.updateAccount(username, body);
+        return account;
+    }
+
+    @Delete('/delete')
+    @UseBefore(Admin)
+    async deleteAccount(@BodyParam('username') username: string){
+        const account = await this.accountService.deleteAccount(username);
+        return account;
     }
 }

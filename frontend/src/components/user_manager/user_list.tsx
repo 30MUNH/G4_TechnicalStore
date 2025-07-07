@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './UserList.css';
+import { formatDateTime } from '../../utils/dateFormatter';
 
 interface User {
   id: string;
@@ -140,9 +141,7 @@ const UserList: React.FC = () => {
     }
   };
 
-  const formatDate = (dateStr: string): string => {
-    return new Date(dateStr).toLocaleString("vi-VN");
-  };
+
 
   if (loading) return <div>Đang tải dữ liệu...</div>;
   if (error) return <div>{error}</div>;
@@ -209,7 +208,7 @@ const UserList: React.FC = () => {
                 <td>{user.name}</td>
                 <td>{user.username}</td>
                 <td>{user.phone}</td>
-                <td>{formatDate(user.createdAt)}</td>
+                                  <td>{formatDateTime(user.createdAt)}</td>
                 <td>
                   <select
                     value={user.role}

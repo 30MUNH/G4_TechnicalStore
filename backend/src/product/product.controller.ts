@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, QueryParam, UseBefore 
 import { Service } from "typedi";
 import { ProductService } from "./product.service";
 import { CreateProductDto, UpdateProductDto } from "./dtos/product.dto";
-import { Auth, authorizedRoles } from "@/middlewares/auth.middleware";
+import { Auth, Staff } from "@/middlewares/auth.middleware";
 
 @Service()
 @Controller("/products")
@@ -28,8 +28,7 @@ export class ProductController {
     }
 
     @Get("/all-including-out-of-stock")
-    @UseBefore(Auth)
-    @UseBefore(authorizedRoles("manager", "admin"))
+    @UseBefore(Staff)
     async getAllProductsIncludingOutOfStock() {
         try {
             const products = await this.productService.getAllProductsIncludingOutOfStock();
@@ -62,8 +61,7 @@ export class ProductController {
     }
 
     @Get("/out-of-stock")
-    @UseBefore(Auth)
-    @UseBefore(authorizedRoles("manager", "admin"))
+    @UseBefore(Staff)
     async getOutOfStockProducts() {
         try {
             const products = await this.productService.getOutOfStockProducts();

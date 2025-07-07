@@ -97,7 +97,7 @@ const ShipperCard = ({
                 </div>
                 <div className={styles.infoItem}>
                   <MapPin className={styles.infoIcon} />
-                  <span className={styles.infoText}>Member since: {new Date(shipper.createdAt).toLocaleDateString()}</span>
+                  <span className={styles.infoText}>Member since: {formatDate(shipper.createdAt)}</span>
                 </div>
               </div>
 

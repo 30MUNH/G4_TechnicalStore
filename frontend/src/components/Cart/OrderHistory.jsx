@@ -166,7 +166,7 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
                                                 📦 Đơn hàng #{order.id}
                                             </h3>
                                             <p style={{ margin: 0, color: '#6b7280', fontSize: '1rem', textAlign: 'left' }}>
-                                                📅 Đặt ngày: {formatDate(order.orderDate)}
+                                                📅 Đặt ngày: {formatDateTime(order.orderDate)}
                                             </p>
                                         </div>
                                         <div style={{

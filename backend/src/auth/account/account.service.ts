@@ -7,7 +7,7 @@ import {
   TokenNotFoundException,
 } from "@/exceptions/http-exceptions";
 import * as bcrypt from "bcrypt";
-import { CreateAccountDto, CredentialsDto } from "../dtos/account.dto";
+import { CreateAccountDto, CredentialsDto, UpdateAccountDto } from "../dtos/account.dto";
 import { JwtService } from "../jwt/jwt.service";
 import { RefreshToken } from "../jwt/refreshToken.entity";
 import { MoreThan } from "typeorm";
@@ -17,7 +17,7 @@ const SALT_ROUNDS = 8;
 export class AccountService {
   constructor(private readonly jwtService: JwtService) {}
 
-  async createAccount(request: CreateAccountDto): Promise<Account> {
+  async register(request: CreateAccountDto): Promise<Account> {
     const role = await Role.findOne({
       where: {
         slug: request.roleSlug,
@@ -32,7 +32,7 @@ export class AccountService {
     return account;
   }
 
-  async finalizeCreateAccount(
+  async finalizeRegistration(
     username: string,
     password: string,
     phone: string,
@@ -116,6 +116,52 @@ export class AccountService {
   async changePassword(account: Account, newPassword: string) {
     account.password = await bcrypt.hash(newPassword, SALT_ROUNDS);
     await account.save();
+    return account;
+  }
+
+  async getAccounts(){
+    return await Account.find({
+      relations: ['role'],
+    });
+  }
+
+  async createAccount(username: string, password: string, phone: string, roleSlug: string){
+    const role = await Role.findOne({
+      where: {
+        slug: roleSlug,
+      },
+    });
+    if (!role) throw new EntityNotFoundException("Role");
+    const account = new Account();
+    account.username = username;
+    account.password = await bcrypt.hash(password, SALT_ROUNDS);
+    account.phone = phone;
+    account.role = role;
+    account.isRegistered = true;
+    await account.save();
+    return account;
+  }
+
+  async updateAccount(username: string, request: UpdateAccountDto){
+    const account = await this.findAccountByUsername(username);
+    if(request.username) account.username = request.username;
+    if(request.phone) account.phone = request.phone;
+    if(request.roleSlug) {
+      const role = await Role.findOne({
+        where: {
+          slug: request.roleSlug,
+        },
+      });
+      if(!role) throw new EntityNotFoundException("Role");
+      account.role = role;
+    }
+    await account.save();
+    return account;
+  }
+
+  async deleteAccount(username: string){
+    const account = await this.findAccountByUsername(username);
+    await account.softRemove();
     return account;
   }
 }

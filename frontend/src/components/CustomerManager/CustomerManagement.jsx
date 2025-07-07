@@ -14,6 +14,7 @@ import CustomerTable from './CustomerTable';
 import FilterBar from './FilterBar';
 import styles from './CustomerManagement.module.css';
 import { customerService } from '../../services/customerService';
+import { formatDate, formatDateForFilename } from '../../utils/dateFormatter';
 
 const CustomerManagement = () => {
   // State management
@@ -262,7 +263,7 @@ const CustomerManagement = () => {
         }));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `customers_${new Date().toISOString().split('T')[0]}.xlsx`);
+        link.setAttribute('download', `customers_${formatDateForFilename()}.xlsx`);
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -457,7 +458,7 @@ const CustomerDetail = ({ customer }) => (
           <span>Created Date</span>
         </div>
         <div className={styles.detailValue}>
-          {new Date(customer.createdAt).toLocaleDateString('en-US')}
+          {formatDate(customer.createdAt)}
         </div>
       </div>
       
