@@ -45,10 +45,16 @@ class ProductService {
   async getCategories(): Promise<Category[]> {
     try {
       const response = await api.get<ApiResponse<Category[]>>('/products/categories/all');
+      console.log('Categories API response:', response.data);
+      
+      // Check for the correct response structure
+      if (response.data && response.data.data && response.data.data.categories) {
+        return response.data.data.categories;
+      }
+      // Fallback: try different response structure
       if (response.data && response.data.categories) {
         return response.data.categories;
       }
-      // Fallback: try different response structure
       if (response.data && Array.isArray(response.data)) {
         return response.data;
       }
@@ -215,6 +221,19 @@ class ProductService {
     } catch (error) {
       console.error('Error deleting product:', error);
       return false;
+    }
+  }
+
+  async createProduct(data: Partial<Product>): Promise<Product | null> {
+    try {
+      const response = await api.post('/products', data);
+      if (response.data && response.data.data && response.data.data.product) {
+        return response.data.data.product;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error creating product:', error);
+      return null;
     }
   }
 }

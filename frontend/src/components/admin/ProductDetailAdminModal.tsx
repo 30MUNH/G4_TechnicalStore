@@ -77,6 +77,7 @@ const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpe
     };
     if (categoryName === 'Laptop') {
       return <>
+        <div><b>Description:</b> {get('description')}</div>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
         <div><b>Screen size:</b> {get('screenSize') !== '-' && get('screenSize') !== null ? `${get('screenSize')}` : '-'}</div>
@@ -91,6 +92,7 @@ const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpe
     }
     if (categoryName === 'PC') {
       return <>
+        <div><b>Description:</b> {get('description')}</div>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
         <div><b>Processor:</b> {get('processor')}</div>
@@ -106,6 +108,7 @@ const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpe
     }
     if (categoryName === 'Drive') {
       return <>
+        <div><b>Description:</b> {get('description')}</div>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
         <div><b>Type:</b> {get('type')}</div>
@@ -116,6 +119,7 @@ const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpe
     }
     if (categoryName === 'Monitor') {
       return <>
+        <div><b>Description:</b> {get('description')}</div>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
         <div><b>Size:</b> {get('sizeInch') !== '-' && get('sizeInch') !== null ? `${get('sizeInch')}` : '-'}</div>
@@ -127,6 +131,7 @@ const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpe
     }
     if (categoryName === 'CPU') {
       return <>
+        <div><b>Description:</b> {get('description')}</div>
         <div><b>Cores:</b> {get('cores')}</div>
         <div><b>Threads:</b> {get('threads')}</div>
         <div><b>Base Clock:</b> {get('baseClock')}</div>
@@ -140,6 +145,7 @@ const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpe
     }
     if (categoryName === 'Cooler') {
       return <>
+        <div><b>Description:</b> {get('description')}</div>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
         <div><b>Type:</b> {get('type')}</div>
@@ -150,6 +156,7 @@ const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpe
     }
     if (categoryName === 'RAM') {
       return <>
+        <div><b>Description:</b> {get('description')}</div>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
         <div><b>Capacity:</b> {get('capacityGb') !== '-' && get('capacityGb') !== null ? `${get('capacityGb')} GB` : '-'}</div>
@@ -160,6 +167,7 @@ const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpe
     }
     if (categoryName === 'PSU') {
       return <>
+        <div><b>Description:</b> {get('description')}</div>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
         <div><b>Wattage:</b> {get('wattage') !== '-' && get('wattage') !== null ? `${get('wattage')} W` : '-'}</div>
@@ -170,6 +178,7 @@ const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpe
     }
     if (categoryName === 'Case') {
       return <>
+        <div><b>Description:</b> {get('description')}</div>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
         <div><b>Form factor support:</b> {get('formFactorSupport')}</div>
@@ -180,6 +189,7 @@ const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpe
     }
     if (categoryName === 'Headset') {
       return <>
+        <div><b>Description:</b> {get('description')}</div>
         <div><b>Has microphone:</b> {getBoolean('hasMicrophone')}</div>
         <div><b>Connectivity:</b> {get('connectivity')}</div>
         <div><b>Surround sound:</b> {getBoolean('surroundSound')}</div>
@@ -188,6 +198,7 @@ const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpe
     }
     if (categoryName === 'Motherboard') {
       return <>
+        <div><b>Description:</b> {get('description')}</div>
         <div><b>Brand:</b> {get('brand')}</div>
         <div><b>Model:</b> {get('model')}</div>
         <div><b>Chipset:</b> {get('chipset')}</div>

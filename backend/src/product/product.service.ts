@@ -3,7 +3,8 @@ import { Product } from "./product.entity";
 import { Category } from "./categories/category.entity";
 import { CreateProductDto, UpdateProductDto } from "./dtos/product.dto";
 import { EntityNotFoundException, BadRequestException } from "@/exceptions/http-exceptions";
-import { Like, getManager, Not, In, MoreThan } from "typeorm";
+import { Like, Not, In, MoreThan } from "typeorm";
+import { DbConnection } from "@/database/dbConnection";
 
 @Service()
 export class ProductService {
@@ -171,111 +172,66 @@ export class ProductService {
     }
 
     // Import các component entities khi cần dựa trên category name chính xác
-    switch (category.name) {
-      case 'CPU':
+    switch (category.name.toLowerCase()) {
+      case 'cpu':
         const { CPU } = await import("./components/cpu.entity");
-        detail = await CPU.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await CPU.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'Laptop':
+      case 'laptop':
         const { Laptop } = await import("./components/laptop/laptop.entity");
-        detail = await Laptop.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await Laptop.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'PC':
+      case 'pc':
         const { PC } = await import("./components/pc.entity");
-        detail = await PC.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await PC.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'RAM':
+      case 'ram':
         const { RAM } = await import("./components/ram.entity");
-        detail = await RAM.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await RAM.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'GPU':
+      case 'gpu':
         const { GPU } = await import("./components/gpu.entity");
-        detail = await GPU.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await GPU.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'PSU':
+      case 'psu':
         const { PSU } = await import("./components/psu.entity");
-        detail = await PSU.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await PSU.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'Drive':
+      case 'drive':
         const { Drive } = await import("./components/drive.entity");
-        detail = await Drive.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await Drive.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'Motherboard':
+      case 'motherboard':
         const { Motherboard } = await import("./components/motherboard.entity");
-        detail = await Motherboard.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await Motherboard.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'Cooler':
+      case 'cooler':
         const { Cooler } = await import("./components/cooler.entity");
-        detail = await Cooler.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await Cooler.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'Case':
+      case 'case':
         const { Case } = await import("./components/case.entity");
-        detail = await Case.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await Case.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'Monitor':
+      case 'monitor':
         const { Monitor } = await import("./components/monitor.entity");
-        detail = await Monitor.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await Monitor.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'Mouse':
+      case 'mouse':
         const { Mouse } = await import("./components/mouse.entity");
-        detail = await Mouse.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await Mouse.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'Network Card':
+      case 'network card':
         const { NetworkCard } = await import("./components/networkCard.entity");
-        detail = await NetworkCard.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await NetworkCard.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'Headset':
+      case 'headset':
         const { Headset } = await import("./components/headset.entity");
-        detail = await Headset.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await Headset.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
-      case 'Keyboard':
+      case 'keyboard':
         const { Keyboard } = await import("./components/keyboard.entity");
-        detail = await Keyboard.findOne({
-          where: { product: { id } },
-          relations: ["product"]
-        });
+        detail = await Keyboard.findOne({ where: { product: { id } }, relations: ["product"] });
         break;
     }
 
@@ -300,7 +256,7 @@ export class ProductService {
   }
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
-    return getManager().transaction(async transactionalEntityManager => {
+    return DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
       console.log('Creating product with data:', createProductDto);
       
       // Validate category exists
@@ -329,11 +285,24 @@ export class ProductService {
 
       const product = new Product();
       Object.assign(product, createProductDto);
-      product.isActive = createProductDto.isActive ?? true;
+      // Set isActive theo stock
+      if (createProductDto.stock > 0) {
+        product.isActive = true;
+      } else {
+        product.isActive = false;
+      }
       
       console.log('Saving product:', product);
       const savedProduct = await transactionalEntityManager.save(product);
       console.log('Product saved successfully:', savedProduct);
+      
+      // Lưu vào bảng component đặc thù nếu có
+      try {
+        await this.updateComponentDetails(transactionalEntityManager, savedProduct, createProductDto);
+      } catch (componentError) {
+        console.error('Lỗi khi lưu vào bảng component đặc thù:', componentError);
+        throw new BadRequestException('Lỗi khi lưu vào bảng component đặc thù: ' + String(componentError));
+      }
       
       return savedProduct;
     });
@@ -341,59 +310,391 @@ export class ProductService {
 
   async updateProduct(
     id: string,
-    updateProductDto: UpdateProductDto
+    updateProductDto: any
   ): Promise<Product | null> {
-    return getManager().transaction(async transactionalEntityManager => {
-      const product = await Product.findOne({ where: { id } });
+    console.log('UpdateProduct called with:', { id, updateProductDto });
+    
+    return DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
+      const product = await Product.findOne({ 
+        where: { id },
+        relations: ['category']
+      });
       if (!product) {
+        console.log('Product not found:', id);
         throw new EntityNotFoundException('Product');
       }
+      console.log('Found product:', product.name);
+
+      // Extract product fields and component fields
+      const productFields = {
+        name: updateProductDto.name,
+        description: updateProductDto.description,
+        price: updateProductDto.price,
+        stock: updateProductDto.stock,
+        categoryId: updateProductDto.categoryId,
+        isActive: updateProductDto.isActive,
+        url: updateProductDto.url
+      };
+
+      // Remove undefined fields
+      Object.keys(productFields).forEach(key => {
+        if ((productFields as any)[key] === undefined) {
+          delete (productFields as any)[key];
+        }
+      });
 
       // Validate category if provided
-      if (updateProductDto.categoryId) {
-        const category = await Category.findOne({ where: { id: updateProductDto.categoryId } });
+      if (productFields.categoryId) {
+        const category = await Category.findOne({ where: { id: productFields.categoryId } });
         if (!category) {
           throw new EntityNotFoundException('Category');
         }
       }
 
       // Validate price if provided
-      if (updateProductDto.price !== undefined && updateProductDto.price <= 0) {
+      if (productFields.price !== undefined && productFields.price <= 0) {
+        console.log('Invalid price:', productFields.price);
         throw new BadRequestException('Price must be greater than 0');
       }
 
       // Validate stock if provided
-      if (updateProductDto.stock !== undefined && updateProductDto.stock < 0) {
+      if (productFields.stock !== undefined && productFields.stock < 0) {
+        console.log('Invalid stock:', productFields.stock);
         throw new BadRequestException('Stock cannot be negative');
       }
 
       // Check if product with same name already exists (excluding current product)
-      if (updateProductDto.name) {
+      if (productFields.name) {
         const existingProduct = await Product.findOne({
-          where: { name: updateProductDto.name, id: Not(id) }
+          where: { name: productFields.name, id: Not(id) }
         });
 
         if (existingProduct) {
+          console.log('Duplicate product name:', productFields.name);
           throw new BadRequestException('Product with this name already exists');
         }
       }
 
-      Object.assign(product, updateProductDto);
-      return await transactionalEntityManager.save(product);
+      // Update product basic fields
+      console.log('Updating product with fields:', productFields);
+      Object.assign(product, productFields);
+      
+      try {
+        const updatedProduct = await transactionalEntityManager.save(product);
+        console.log('Product updated successfully:', updatedProduct.name);
+        // Bật lại update component details
+        await this.updateComponentDetails(transactionalEntityManager, updatedProduct, updateProductDto);
+        return updatedProduct;
+      } catch (error) {
+        console.log('Error saving product:', error);
+        throw error;
+      }
     });
   }
 
+  private async updateComponentDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const category = product.category;
+    if (!category || !category.name) return;
+    switch (category.name.toLowerCase()) {
+      case 'laptop':
+        await this.updateLaptopDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'ram':
+        await this.updateRAMDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'cpu':
+        await this.updateCPUDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'gpu':
+        await this.updateGPUDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'monitor':
+        await this.updateMonitorDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'motherboard':
+        await this.updateMotherboardDetails(transactionalEntityManager, product, updateData);
+        break;
+      // Có thể bổ sung các loại khác nếu cần
+      default:
+        // For other categories, no component-specific update needed
+        break;
+    }
+  }
+
+  private async updateRAMDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { RAM } = await import("./components/ram.entity");
+    let ram = await RAM.findOne({
+      where: { product: { id: product.id } }
+    });
+    if (!ram) {
+      ram = new RAM();
+      ram.product = product;
+    }
+    // Update RAM-specific fields
+    if (updateData.brand !== undefined) ram.brand = updateData.brand;
+    if (updateData.model !== undefined) ram.model = updateData.model;
+    if (updateData.capacityGb !== undefined) ram.capacityGb = updateData.capacityGb;
+    if (updateData.speedMhz !== undefined) ram.speedMhz = updateData.speedMhz;
+    if (updateData.type !== undefined) ram.type = updateData.type;
+    console.log('[RAM] Saving RAM entity:', ram);
+    try {
+      await transactionalEntityManager.save(ram);
+      console.log('[RAM] Saved RAM entity successfully:', ram);
+    } catch (err) {
+      console.error('[RAM] Error saving RAM entity:', err);
+      throw new Error('Không thể lưu thông tin RAM cho sản phẩm');
+    }
+  }
+
+  private async updateLaptopDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { Laptop } = await import("./components/laptop/laptop.entity");
+    let laptop = await Laptop.findOne({
+      where: { product: { id: product.id } }
+    });
+    if (!laptop) {
+      laptop = new Laptop();
+      laptop.product = product;
+    }
+    // Update laptop-specific fields
+    if (updateData.brand !== undefined) laptop.brand = updateData.brand;
+    if (updateData.model !== undefined) laptop.model = updateData.model;
+    if (updateData.screenSize !== undefined) laptop.screenSize = updateData.screenSize;
+    if (updateData.screenType !== undefined) laptop.screenType = updateData.screenType;
+    if (updateData.resolution !== undefined) laptop.resolution = updateData.resolution;
+    if (updateData.batteryLifeHours !== undefined) laptop.batteryLifeHours = updateData.batteryLifeHours;
+    if (updateData.weightKg !== undefined) laptop.weightKg = updateData.weightKg;
+    if (updateData.os !== undefined) laptop.os = updateData.os;
+    if (updateData.ramCount !== undefined) laptop.ramCount = updateData.ramCount;
+    console.log('[Laptop] Saving Laptop entity:', laptop);
+    try {
+      await transactionalEntityManager.save(laptop);
+      console.log('[Laptop] Saved Laptop entity successfully:', laptop);
+    } catch (err) {
+      console.error('[Laptop] Error saving Laptop entity:', err);
+      throw new Error('Không thể lưu thông tin Laptop cho sản phẩm');
+    }
+  }
+
+  private async updateCPUDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { CPU } = await import("./components/cpu.entity");
+    let cpu = await CPU.findOne({
+      where: { product: { id: product.id } }
+    });
+    if (!cpu) {
+      cpu = new CPU();
+      cpu.product = product;
+    }
+    // Update CPU-specific fields
+    if (updateData.cores !== undefined) cpu.cores = updateData.cores;
+    if (updateData.threads !== undefined) cpu.threads = updateData.threads;
+    if (updateData.baseClock !== undefined) cpu.baseClock = updateData.baseClock;
+    if (updateData.boostClock !== undefined) cpu.boostClock = updateData.boostClock;
+    if (updateData.socket !== undefined) cpu.socket = updateData.socket;
+    if (updateData.architecture !== undefined) cpu.architecture = updateData.architecture;
+    if (updateData.tdp !== undefined) cpu.tdp = updateData.tdp;
+    if (updateData.integratedGraphics !== undefined) cpu.integratedGraphics = updateData.integratedGraphics;
+    console.log('[CPU] Saving CPU entity:', cpu);
+    try {
+      await transactionalEntityManager.save(cpu);
+      console.log('[CPU] Saved CPU entity successfully:', cpu);
+    } catch (err) {
+      console.error('[CPU] Error saving CPU entity:', err);
+      throw new Error('Không thể lưu thông tin CPU cho sản phẩm');
+    }
+  }
+
+  private async updateGPUDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { GPU } = await import("./components/gpu.entity");
+    let gpu = await GPU.findOne({
+      where: { product: { id: product.id } }
+    });
+    if (!gpu) {
+      gpu = new GPU();
+      gpu.product = product;
+    }
+    // Update GPU-specific fields
+    if (updateData.brand !== undefined) gpu.brand = updateData.brand;
+    if (updateData.model !== undefined) gpu.model = updateData.model;
+    if (updateData.vram !== undefined) gpu.vram = updateData.vram;
+    if (updateData.chipset !== undefined) gpu.chipset = updateData.chipset;
+    if (updateData.memoryType !== undefined) gpu.memoryType = updateData.memoryType;
+    if (updateData.lengthMm !== undefined) gpu.lengthMm = updateData.lengthMm;
+    console.log('[GPU] Saving GPU entity:', gpu);
+    try {
+      await transactionalEntityManager.save(gpu);
+      console.log('[GPU] Saved GPU entity successfully:', gpu);
+    } catch (err) {
+      console.error('[GPU] Error saving GPU entity:', err);
+      throw new Error('Không thể lưu thông tin GPU cho sản phẩm');
+    }
+  }
+
+  private async updateMonitorDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { Monitor } = await import("./components/monitor.entity");
+    let monitor = await Monitor.findOne({
+      where: { product: { id: product.id } }
+    });
+    if (!monitor) {
+      monitor = new Monitor();
+      monitor.product = product;
+    }
+    // Update Monitor-specific fields
+    if (updateData.brand !== undefined) monitor.brand = updateData.brand;
+    if (updateData.model !== undefined) monitor.model = updateData.model;
+    if (updateData.sizeInch !== undefined) monitor.sizeInch = updateData.sizeInch;
+    if (updateData.resolution !== undefined) monitor.resolution = updateData.resolution;
+    if (updateData.panelType !== undefined) monitor.panelType = updateData.panelType;
+    if (updateData.refreshRate !== undefined) monitor.refreshRate = updateData.refreshRate;
+    console.log('[Monitor] Saving Monitor entity:', monitor);
+    try {
+      await transactionalEntityManager.save(monitor);
+      console.log('[Monitor] Saved Monitor entity successfully:', monitor);
+    } catch (err) {
+      console.error('[Monitor] Error saving Monitor entity:', err);
+      throw new Error('Không thể lưu thông tin Monitor cho sản phẩm');
+    }
+  }
+
+  private async updateMotherboardDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { Motherboard } = await import("./components/motherboard.entity");
+    let motherboard = await Motherboard.findOne({
+      where: { product: { id: product.id } }
+    });
+    if (!motherboard) {
+      motherboard = new Motherboard();
+      motherboard.product = product;
+    }
+    // Update Motherboard-specific fields
+    if (updateData.brand !== undefined) motherboard.brand = updateData.brand;
+    if (updateData.model !== undefined) motherboard.model = updateData.model;
+    if (updateData.socket !== undefined) motherboard.socket = updateData.socket;
+    if (updateData.chipset !== undefined) motherboard.chipset = updateData.chipset;
+    if (updateData.formFactor !== undefined) motherboard.formFactor = updateData.formFactor;
+    if (updateData.ramSlots !== undefined) motherboard.ramSlots = updateData.ramSlots;
+    if (updateData.maxRam !== undefined) motherboard.maxRam = updateData.maxRam;
+    console.log('[Motherboard] Saving Motherboard entity:', motherboard);
+    try {
+      await transactionalEntityManager.save(motherboard);
+      console.log('[Motherboard] Saved Motherboard entity successfully:', motherboard);
+    } catch (err) {
+      console.error('[Motherboard] Error saving Motherboard entity:', err);
+      throw new Error('Không thể lưu thông tin Motherboard cho sản phẩm');
+    }
+  }
+
   async deleteProduct(id: string): Promise<boolean> {
-    return getManager().transaction(async transactionalEntityManager => {
-      const product = await Product.findOne({ where: { id } });
+    return DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
+      const product = await Product.findOne({ where: { id }, relations: ["category"] });
       if (!product) {
         throw new EntityNotFoundException('Product');
       }
 
-      // Soft delete by setting isActive to false
-      product.isActive = false;
-      await transactionalEntityManager.save(product);
-      
+      // Xoá các entity liên quan
+      // 1. Xoá component theo category
+      if (product.category && product.category.name) {
+        const categoryName = product.category.name.toLowerCase();
+        switch (categoryName) {
+          case 'cpu': {
+            const { CPU } = await import("./components/cpu.entity");
+            await transactionalEntityManager.delete(CPU, { product: { id } });
+            break;
+          }
+          case 'ram': {
+            const { RAM } = await import("./components/ram.entity");
+            await transactionalEntityManager.delete(RAM, { product: { id } });
+            break;
+          }
+          case 'gpu': {
+            const { GPU } = await import("./components/gpu.entity");
+            await transactionalEntityManager.delete(GPU, { product: { id } });
+            break;
+          }
+          case 'psu': {
+            const { PSU } = await import("./components/psu.entity");
+            await transactionalEntityManager.delete(PSU, { product: { id } });
+            break;
+          }
+          case 'drive': {
+            const { Drive } = await import("./components/drive.entity");
+            await transactionalEntityManager.delete(Drive, { product: { id } });
+            break;
+          }
+          case 'cooler': {
+            const { Cooler } = await import("./components/cooler.entity");
+            await transactionalEntityManager.delete(Cooler, { product: { id } });
+            break;
+          }
+          case 'motherboard': {
+            const { Motherboard } = await import("./components/motherboard.entity");
+            await transactionalEntityManager.delete(Motherboard, { product: { id } });
+            break;
+          }
+          case 'monitor': {
+            const { Monitor } = await import("./components/monitor.entity");
+            await transactionalEntityManager.delete(Monitor, { product: { id } });
+            break;
+          }
+          case 'pc': {
+            const { PC } = await import("./components/pc.entity");
+            await transactionalEntityManager.delete(PC, { product: { id } });
+            break;
+          }
+          case 'laptop': {
+            const { Laptop } = await import("./components/laptop/laptop.entity");
+            await transactionalEntityManager.delete(Laptop, { product: { id } });
+            break;
+          }
+          // Thêm các loại khác nếu có
+        }
+      }
+
+      // 2. Xoá ảnh
+      const { Image } = await import("@/image/image.entity");
+      await transactionalEntityManager.delete(Image, { product: { id } });
+
+      // 3. Xoá feedback
+      const { Feedback } = await import("@/feedback/feedback.entity");
+      await transactionalEntityManager.delete(Feedback, { product: { id } });
+
+      // 4. Xoá cartItem
+      const { CartItem } = await import("@/Cart/cartItem.entity");
+      await transactionalEntityManager.delete(CartItem, { product: { id } });
+
+      // 5. Xoá orderDetail
+      const { OrderDetail } = await import("@/order/orderDetail.entity");
+      await transactionalEntityManager.delete(OrderDetail, { product: { id } });
+
+      // 6. Xoá chính Product
+      await transactionalEntityManager.delete(Product, { id });
+
       return true;
     });
   }
