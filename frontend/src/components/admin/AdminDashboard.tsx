@@ -1,12 +1,23 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Users, 
   Package, 
   Truck, 
   DollarSign
 } from 'lucide-react';
+import { productService } from '../../services/productService';
 
 const AdminDashboard: React.FC = () => {
+  const [productCount, setProductCount] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchProductCount = async () => {
+      const products = await productService.getAllProducts();
+      setProductCount(products.length);
+    };
+    fetchProductCount();
+  }, []);
+
   const stats = [
     {
       title: 'Total Customers',
@@ -16,7 +27,7 @@ const AdminDashboard: React.FC = () => {
     },
     {
       title: 'Products',
-      value: '100',
+      value: productCount.toString(),
       icon: Package,
       color: 'bg-green-500'
     },

@@ -20,7 +20,7 @@ const CATEGORY_FILTERS = [
   { key: 'keyboard', label: 'Keyboard' },
   { key: 'gpu', label: 'GPU' },
   { key: 'mouse', label: 'Mouse' },
-  { key: 'networkCard', label: 'Network Card' },
+  { key: 'network-card', label: 'Network Card' },
 ];
 
 const SORT_OPTIONS = [
@@ -97,9 +97,9 @@ const AllProductsPage: React.FC = () => {
     let filtered = [...products];
     if (selectedCategories.length > 0) {
       filtered = filtered.filter((p) => {
-        const categoryName = p.category?.name?.toLowerCase();
+        const categorySlug = p.category?.slug?.toLowerCase();
         return selectedCategories.some(selectedCat => 
-          categoryName === selectedCat.toLowerCase()
+          categorySlug === selectedCat.toLowerCase()
         );
       });
     }
@@ -246,6 +246,10 @@ const AllProductsPage: React.FC = () => {
               </option>
             ))}
           </select>
+        </div>
+        {/* Tổng số sản phẩm */}
+        <div style={{ textAlign: 'center', margin: '16px 0', color: '#555', fontSize: 16 }}>
+          Total products: {filteredProducts.length}
         </div>
         {loading ? (
           <div>Loading products...</div>
