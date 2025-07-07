@@ -62,36 +62,32 @@ const ShipperManagement = () => {
   // Fetch shippers from API
   const fetchShippers = async () => {
     try {
-      console.log("🚀 [ShipperManagement] Starting fetchShippers");
       setLoading(true);
       setError(null);
 
       const response = await shipperService.getAllShippers();
-      console.log("📨 [ShipperManagement] API Response:", response);
 
       if (response.success) {
-        // Handle nested response structure: response.data.data or response.data
-        const rawData = response.data?.data || response.data;
-        console.log("📊 [ShipperManagement] Raw data extracted:", rawData);
+        // Backend returns nested structure: { success: true, data: { data: shippers } }
+        // User confirmed this structure by fixing CustomerManagement
+        const rawData = response.data.data;
 
         // Ensure rawData is an array
         const dataArray = Array.isArray(rawData) ? rawData : [];
-        console.log("📋 [ShipperManagement] Data array:", dataArray);
 
         const shippersData = dataArray.map((shipper) => {
-          console.log("🔍 [ShipperManagement] Processing shipper:", shipper);
 
           // Calculate real statistics from orders
           const totalOrders = shipper.shipperOrders?.length || 0;
           const deliveredOrders =
-            shipper.shipperOrders?.filter((order) => order.status === "Đã giao")
+            shipper.shipperOrders?.filter((order) => order.status === "Delivered")
               .length || 0;
           const activeOrders =
             shipper.shipperOrders?.filter((order) =>
-              ["Đang giao", "Đang xử lý"].includes(order.status)
+              ["Shipping", "Processing"].includes(order.status)
             ).length || 0;
           const cancelledOrders =
-            shipper.shipperOrders?.filter((order) => order.status === "Đã hủy")
+            shipper.shipperOrders?.filter((order) => order.status === "Cancelled")
               .length || 0;
 
           // Calculate performance metrics
@@ -144,11 +140,6 @@ const ShipperManagement = () => {
           };
         });
 
-        console.log(
-          "✅ [ShipperManagement] Mapped shippers data:",
-          shippersData
-        );
-
         setShippers(shippersData);
         setTotalShippers(shippersData.length);
         setTotalPages(Math.ceil(shippersData.length / itemsPerPage));
@@ -156,12 +147,10 @@ const ShipperManagement = () => {
         throw new Error(response.message || "Failed to fetch shippers");
       }
     } catch (err) {
-      console.error("💥 [ShipperManagement] Error fetching shippers:", err);
       setError("Failed to fetch shippers");
       showNotification("Failed to load shippers", "error");
     } finally {
       setLoading(false);
-      console.log("🏁 [ShipperManagement] fetchShippers completed");
     }
   };
 
@@ -287,7 +276,6 @@ const ShipperManagement = () => {
       }
       closeModal();
     } catch (error) {
-      console.error("Error saving shipper:", error);
       showNotification(error.message || "An error occurred", "error");
     }
   };
@@ -304,7 +292,6 @@ const ShipperManagement = () => {
           throw new Error(response.message || "Failed to delete shipper");
         }
       } catch (error) {
-        console.error("Error deleting shipper:", error);
         showNotification(error.message || "An error occurred", "error");
       }
     }
@@ -333,7 +320,6 @@ const ShipperManagement = () => {
         throw new Error('Failed to export data');
       }
     } catch (error) {
-      console.error('Export error:', error);
       showNotification('Failed to export data', 'error');
     }
   };

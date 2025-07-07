@@ -32,7 +32,7 @@ const FilterBar = ({
     <div className={styles.filterContainer}>
       <div className={styles.filterGrid}>
         {/* Search Input */}
-        <div className={styles.searchGroup}>
+        <div className={styles.searchContainer}>
           <Search className={styles.searchIcon} size={20} />
           <input
             type="text"
@@ -49,11 +49,11 @@ const FilterBar = ({
           value={statusFilter}
           onChange={(e) => onStatusChange(e.target.value)}
         >
-          <option value="all">All Status</option>
-          <option value="Processing">Processing</option>
-          <option value="Shipping">Shipping</option>
-          <option value="Delivered">Delivered</option>
-          <option value="Cancelled">Cancelled</option>
+          <option value="all">Tất cả trạng thái</option>
+          <option value="Đang xử lý">Đang xử lý</option>
+          <option value="Đang giao">Đang giao</option>
+          <option value="Đã giao">Đã giao</option>
+          <option value="Đã hủy">Đã hủy</option>
         </select>
 
         {/* Date Filter */}

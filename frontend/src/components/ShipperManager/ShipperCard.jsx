@@ -54,6 +54,20 @@ const ShipperCard = ({
     return name ? name.charAt(0).toUpperCase() : '?';
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'N/A';
+    }
+  };
+
   if (!shippers.length) {
     return (
       <div className={styles.cardContainer}>

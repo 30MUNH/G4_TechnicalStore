@@ -13,13 +13,13 @@ export const OrderHistoryPage = () => {
         const fetchStatistics = async () => {
             try {
                 const response = await orderService.getOrderStatistics();
-                if (response.message === "Lấy thống kê đơn hàng thành công") {
+                if (response.message === "Order statistics retrieved successfully") {
                     setStatistics(response.statistics);
                 } else {
                     throw new Error(response.error || 'Không thể lấy thống kê đơn hàng');
                 }
             } catch (err) {
-                setError(err.message || 'Có lỗi xảy ra khi lấy thống kê đơn hàng');
+                setError(err.message || 'An error occurred while fetching order statistics');
             } finally {
                 setLoading(false);
             }

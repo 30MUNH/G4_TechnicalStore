@@ -115,7 +115,7 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
             setIsProcessing(false);
             
         } catch (error) {
-            setError('Có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại.');
+            setError('An error occurred during payment processing. Please try again.');
             setPaymentStep('error');
             setIsProcessing(false);
         }
@@ -241,16 +241,16 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
             <div className={styles.vnpayContainer}>
                 <div className={styles.vnpayHeader}>
                     <img src="/img/logo.png" alt="VNPay" className={styles.vnpayLogo} />
-                    <h1>Thanh toán thành công</h1>
+                    <h1>Payment Successful</h1>
                 </div>
                 <div className={styles.successContainer}>
                     <div className={styles.successIcon}>✅</div>
-                    <h2>Giao dịch thành công!</h2>
-                    <p>Đơn hàng của bạn đã được thanh toán thành công</p>
+                    <h2>Transaction Completed!</h2>
+                    <p>Your order has been paid successfully</p>
                     <div className={styles.transactionDetails}>
-                        <p><strong>Mã giao dịch:</strong> VNP{Date.now()}</p>
-                        <p><strong>Số tiền:</strong> {formatCurrency(totalAmount)}</p>
-                        <p><strong>Thời gian:</strong> {formatDateTime(new Date())}</p>
+                        <p><strong>Transaction ID:</strong> VNP{Date.now()}</p>
+                        <p><strong>Amount:</strong> {formatCurrency(totalAmount)}</p>
+                        <p><strong>Time:</strong> {formatDateTime(new Date())}</p>
                     </div>
                 </div>
             </div>
@@ -262,11 +262,11 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
             <div className={styles.vnpayContainer}>
                 <div className={styles.vnpayHeader}>
                     <img src="/img/logo.png" alt="VNPay" className={styles.vnpayLogo} />
-                    <h1>Thanh toán thất bại</h1>
+                    <h1>Payment Failed</h1>
                 </div>
                 <div className={styles.errorContainer}>
                     <div className={styles.errorIcon}>❌</div>
-                    <h2>Giao dịch thất bại</h2>
+                    <h2>Transaction Failed</h2>
                     <p>{error}</p>
                     <div className={styles.errorActions}>
                         <button 
@@ -277,13 +277,13 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
                                 setCountdown(300);
                             }}
                         >
-                            Thử lại
+                            Try Again
                         </button>
                         <button 
                             className={styles.cancelButton}
                             onClick={onPaymentCancel}
                         >
-                            Hủy thanh toán
+                            Cancel Payment
                         </button>
                     </div>
                 </div>

@@ -28,7 +28,7 @@ const OrderTable = ({
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US');
+    return new Date(dateString).toLocaleDateString('vi-VN');
   };
 
   const formatCurrency = (amount) => {
@@ -38,11 +38,11 @@ const OrderTable = ({
   // Status options for admin and shipper
   const getStatusOptions = (currentStatus) => {
     if (role === 'shipper') {
-      if (currentStatus === 'Processing') return ['Shipping', 'Cancelled'];
-      if (currentStatus === 'Shipping') return ['Delivered', 'Cancelled'];
+      if (currentStatus === 'Đang xử lý') return ['Đang giao', 'Đã hủy'];
+      if (currentStatus === 'Đang giao') return ['Đã giao', 'Đã hủy'];
       return [];
     }
-    return ['Processing', 'Shipping', 'Delivered', 'Cancelled'];
+    return ['Đang xử lý', 'Đang giao', 'Đã giao', 'Đã hủy'];
   };
 
   return (
@@ -51,13 +51,13 @@ const OrderTable = ({
         <table className={styles.table}>
           <thead className={styles.tableHeader}>
             <tr>
-              <th className={styles.headerCell}>ORDER ID</th>
-              <th className={styles.headerCell}>CUSTOMER</th>
-              <th className={styles.headerCell}>ORDER DATE</th>
-              <th className={styles.headerCell}>TOTAL AMOUNT</th>
-              <th className={styles.headerCell}>STATUS</th>
-              <th className={styles.headerCell}>SHIPPING ADDRESS</th>
-              <th className={styles.headerCell}>ACTIONS</th>
+              <th className={styles.headerCell}>MÃ ĐƠN HÀNG</th>
+              <th className={styles.headerCell}>KHÁCH HÀNG</th>
+              <th className={styles.headerCell}>NGÀY ĐẶT</th>
+              <th className={styles.headerCell}>TỔNG TIỀN</th>
+              <th className={styles.headerCell}>TRẠNG THÁI</th>
+              <th className={styles.headerCell}>ĐỊA CHỈ GIAO HÀNG</th>
+              <th className={styles.headerCell}>THAO TÁC</th>
             </tr>
           </thead>
           <tbody className={styles.tableBody}>
@@ -66,9 +66,9 @@ const OrderTable = ({
                 <td colSpan="7" className={styles.emptyStateCell}>
                   <div className={styles.emptyState}>
                     <ShoppingCart className={styles.emptyIcon} />
-                    <h3 className={styles.emptyTitle}>No orders found</h3>
+                    <h3 className={styles.emptyTitle}>Không tìm thấy đơn hàng</h3>
                     <p className={styles.emptyDescription}>
-                      No orders in system or no matches with current filters
+                      Không có đơn hàng trong hệ thống hoặc không có đơn hàng nào phù hợp với bộ lọc
                     </p>
                   </div>
                 </td>
@@ -156,7 +156,7 @@ const OrderTable = ({
       {/* Pagination */}
       <div className={styles.pagination}>
         <div className={styles.paginationInfo}>
-          Showing {indexOfFirstItem + 1} to {indexOfLastItem} of {totalOrders} orders
+          Hiển thị {indexOfFirstItem + 1} đến {indexOfLastItem} của {totalOrders} đơn hàng
         </div>
         <div className={styles.paginationControls}>
           <button

@@ -59,21 +59,15 @@ const OrderManagement = ({ role = 'admin' }) => {
   // Fetch orders from API
   const fetchOrders = async () => {
     try {
-      console.log('🔄 [OrderManagement] Starting fetchOrders...');
       setLoading(true);
       setError(null);
       
       const response = await orderService.getAllOrdersForAdmin();
-      console.log('📡 [OrderManagement] API Response:', response);
       
-      if (response && response.data) {
-        console.log('✅ [OrderManagement] API Success - Raw data:', response.data);
-        
-        // Response structure: { message, data: [...orders...], pagination }
-        // Access the orders array directly from response.data
-        const ordersArray = Array.isArray(response.data) ? response.data : [];
-        console.log('🔍 [OrderManagement] Orders array after extraction:', ordersArray);
-        console.log('📊 [OrderManagement] Orders array length:', ordersArray.length);
+      if (response && response.data && response.data.data) {
+        // Response structure: interceptor wraps controller response into { data: { success, data: [...orders...], message } }
+        // Access the orders array from response.data.data
+        const ordersArray = Array.isArray(response.data.data) ? response.data.data : [];
         
         // Map the orders data
         const ordersData = ordersArray.map(order => ({
@@ -89,29 +83,23 @@ const OrderManagement = ({ role = 'admin' }) => {
           shipper: order.shipper || null
         }));
         
-        console.log('🔄 [OrderManagement] Mapped orders data:', ordersData);
-        
         setOrders(ordersData);
         setTotalOrders(ordersData.length);
         setTotalPages(Math.ceil(ordersData.length / itemsPerPage));
-        
-        console.log('💾 [OrderManagement] State updated - orders length:', ordersData.length);
       } else {
-        console.error('❌ [OrderManagement] API Failed - No data in response:', response);
         setOrders([]);
         setTotalOrders(0);
         setTotalPages(1);
       }
     } catch (err) {
-      console.error('💥 [OrderManagement] Error fetching orders:', err);
       
       // Handle 401 Unauthorized specifically
       if (err.message && err.message.includes('401')) {
-        setError('You are not authorized to view orders. Please login with admin privileges.');
-        showNotification('Please login with admin account to view orders', 'error');
+        setError('Bạn không có quyền xem đơn hàng. Vui lòng đăng nhập với tài khoản admin.');
+        showNotification('Vui lòng đăng nhập với tài khoản admin để xem đơn hàng', 'error');
       } else {
-        setError('Failed to fetch orders: ' + err.message);
-        showNotification('Failed to load orders: ' + err.message, 'error');
+        setError('Không thể tải đơn hàng: ' + err.message);
+        showNotification('Không thể tải đơn hàng: ' + err.message, 'error');
       }
       
       // Set empty state
@@ -120,7 +108,6 @@ const OrderManagement = ({ role = 'admin' }) => {
       setTotalPages(1);
     } finally {
       setLoading(false);
-      console.log('🏁 [OrderManagement] fetchOrders completed');
     }
   };
 
@@ -182,15 +169,6 @@ const OrderManagement = ({ role = 'admin' }) => {
     return matchesSearch && matchesStatus && matchesDate && matchesShipper && matchesAmount;
   });
 
-  console.log('🔍 [OrderManagement] Filter Debug:', {
-    ordersLength: orders.length,
-    filteredOrdersLength: filteredOrders.length,
-    searchTerm,
-    statusFilter,
-    dateFilter,
-    sampleOrder: orders[0]
-  });
-
   // Update pagination when filtered orders change
   useEffect(() => {
     const newTotalPages = Math.ceil(filteredOrders.length / itemsPerPage);
@@ -206,14 +184,6 @@ const OrderManagement = ({ role = 'admin' }) => {
   const getCurrentPageOrders = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentPageData = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
-    console.log('📄 [OrderManagement] getCurrentPageOrders:', {
-      currentPage,
-      startIndex,
-      itemsPerPage,
-      filteredOrdersLength: filteredOrders.length,
-      currentPageDataLength: currentPageData.length,
-      currentPageData
-    });
     return currentPageData;
   };
 
@@ -235,14 +205,13 @@ const OrderManagement = ({ role = 'admin' }) => {
       const response = await orderService.updateOrderStatus(orderId, { status: newStatus });
       
       if (response.success) {
-        showNotification('Order status updated successfully', 'success');
+        showNotification('Cập nhật trạng thái đơn hàng thành công', 'success');
         await fetchOrders(); // Refresh the list
       } else {
-        throw new Error(response.message || 'Failed to update order status');
+        throw new Error(response.message || 'Không thể cập nhật trạng thái đơn hàng');
       }
     } catch (error) {
-      console.error('Error updating order status:', error);
-      showNotification(error.message || 'An error occurred', 'error');
+      showNotification(error.message || 'Đã xảy ra lỗi', 'error');
     }
   };
 
@@ -259,17 +228,16 @@ const OrderManagement = ({ role = 'admin' }) => {
       const response = await orderService.deleteOrder(selectedOrder.id);
       
       if (response.success) {
-        showNotification('Order deleted successfully', 'success');
+        showNotification('Xoá đơn hàng thành công', 'success');
         await fetchOrders(); // Refresh the list
       } else {
-        throw new Error(response.message || 'Failed to delete order');
+        throw new Error(response.message || 'Không thể xoá đơn hàng');
       }
       
       setShowDeleteModal(false);
       setSelectedOrder(null);
     } catch (error) {
-      console.error('Error deleting order:', error);
-      showNotification(error.message || 'An error occurred', 'error');
+      showNotification(error.message || 'Đã xảy ra lỗi', 'error');
     }
   };
 
@@ -291,13 +259,12 @@ const OrderManagement = ({ role = 'admin' }) => {
         link.remove();
         window.URL.revokeObjectURL(url);
         
-        showNotification('Data exported successfully', 'success');
+        showNotification('Xuất dữ liệu thành công', 'success');
       } else {
-        throw new Error('Failed to export data');
+        throw new Error('Không thể xuất dữ liệu');
       }
     } catch (error) {
-      console.error('Export error:', error);
-      showNotification('Failed to export data', 'error');
+      showNotification('Không thể xuất dữ liệu', 'error');
     }
   };
 
@@ -308,7 +275,7 @@ const OrderManagement = ({ role = 'admin' }) => {
     setShipperFilter('all');
     setAmountFilter('all');
     setCurrentPage(1);
-    showNotification('Filters cleared', 'info');
+    showNotification('Đã xoá bộ lọc', 'info');
   };
 
   // Loading state
@@ -343,8 +310,8 @@ const OrderManagement = ({ role = 'admin' }) => {
       <div className={styles.header}>
         <div className={styles.headerContent}>
           <div className={styles.headerInfo}>
-            <h1 className={styles.title}>Order Management</h1>
-            <p className={styles.description}>Manage order information and status</p>
+            <h1 className={styles.title}>Quản lý đơn hàng</h1>
+            <p className={styles.description}>Quản lý thông tin và trạng thái đơn hàng</p>
           </div>
           
           <div className={styles.headerActions}>
@@ -353,7 +320,7 @@ const OrderManagement = ({ role = 'admin' }) => {
               onClick={handleExportData}
             >
               <Upload size={18} />
-              <span>Export Data</span>
+              <span>Xuất dữ liệu</span>
             </button>
           </div>
         </div>
@@ -417,7 +384,7 @@ const OrderManagement = ({ role = 'admin' }) => {
   // Helper function for modal title
   function getModalTitle() {
     switch (modalMode) {
-      case 'view': return 'Order Details';
+      case 'view': return 'Chi tiết đơn hàng';
       default: return '';
     }
   }
@@ -458,7 +425,7 @@ const OrderDetail = ({ order }) => (
       <div className={styles.detailField}>
         <div className={styles.detailLabel}>
           <User size={16} />
-          <span>Customer</span>
+          <span>Khách hàng</span>
         </div>
         <div className={styles.detailValue}>{order.customer?.name || order.customer?.username}</div>
       </div>
@@ -466,25 +433,25 @@ const OrderDetail = ({ order }) => (
       <div className={styles.detailField}>
         <div className={styles.detailLabel}>
           <Calendar size={16} />
-          <span>Order Date</span>
+          <span>Ngày đặt hàng</span>
         </div>
         <div className={styles.detailValue}>
-          {new Date(order.orderDate).toLocaleDateString('en-US')}
+          {new Date(order.orderDate).toLocaleDateString('vi-VN')}
         </div>
       </div>
       
       <div className={styles.detailField}>
         <div className={styles.detailLabel}>
-          <span>Total Amount</span>
+          <span>Tổng tiền</span>
         </div>
         <div className={styles.detailValue}>
-          {order.totalAmount?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+          {order.totalAmount?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
         </div>
       </div>
       
       <div className={styles.detailField}>
         <div className={styles.detailLabel}>
-          <span>Shipping Address</span>
+          <span>Địa chỉ giao hàng</span>
         </div>
         <div className={styles.detailValue}>{order.shippingAddress}</div>
       </div>
@@ -492,7 +459,7 @@ const OrderDetail = ({ order }) => (
       {order.note && (
         <div className={styles.detailField}>
           <div className={styles.detailLabel}>
-            <span>Note</span>
+            <span>Ghi chú</span>
           </div>
           <div className={styles.detailValue}>{order.note}</div>
         </div>
@@ -501,7 +468,7 @@ const OrderDetail = ({ order }) => (
       {order.cancelReason && (
         <div className={styles.detailField}>
           <div className={styles.detailLabel}>
-            <span>Cancel Reason</span>
+            <span>Lý do hủy</span>
           </div>
           <div className={styles.detailValue}>{order.cancelReason}</div>
         </div>
@@ -510,13 +477,13 @@ const OrderDetail = ({ order }) => (
 
     {order.orderDetails && order.orderDetails.length > 0 && (
       <div className={styles.orderProducts}>
-        <h4>Ordered Products</h4>
+        <h4>Sản phẩm đã đặt</h4>
         <div className={styles.productsList}>
           {order.orderDetails.map((item, index) => (
             <div key={index} className={styles.productItem}>
               <span>{item.product?.name || 'Product'}</span>
               <span>x{item.quantity}</span>
-              <span>{item.price?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+              <span>{item.price?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</span>
             </div>
           ))}
         </div>
@@ -544,16 +511,16 @@ const DeleteConfirmation = ({ order, onConfirm, onClose }) => (
         <div className={styles.deleteIcon}>
           <Trash2 size={24} color="#dc2626" />
         </div>
-        <h3 className={styles.deleteTitle}>Confirm Delete</h3>
+        <h3 className={styles.deleteTitle}>Xác nhận xóa</h3>
         <p className={styles.deleteMessage}>
-          Are you sure you want to delete order "#{order.id}"? This action cannot be undone.
+          Bạn có chắc chắn muốn xóa đơn hàng "#{order.id}"? Hành động này không thể hoàn tác.
         </p>
         <div className={styles.deleteActions}>
           <button onClick={onClose} className={styles.cancelButton}>
-            Cancel
+            Hủy
           </button>
           <button onClick={onConfirm} className={styles.confirmDeleteButton}>
-            Delete
+            Xóa
           </button>
         </div>
       </div>
