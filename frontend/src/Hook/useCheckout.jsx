@@ -111,12 +111,12 @@ export const useCheckout = () => {
 
             // Show success message
             console.log('🎉 useCheckout Debug - Showing success message');
-            alert('Thanh toán thành công');
+            alert('Payment successful');
 
             return newOrder;
         } catch (error) {
             console.error('❌ useCheckout Debug - Order processing failed:', error);
-            const errorMessage = error.message || 'Có lỗi xảy ra khi xử lý đơn hàng';
+            const errorMessage = error.message || 'An error occurred while processing the order';
             setCheckoutError(errorMessage);
             throw error;
         } finally {

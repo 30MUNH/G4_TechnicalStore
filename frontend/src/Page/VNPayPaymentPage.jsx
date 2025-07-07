@@ -36,7 +36,7 @@ const VNPayPaymentPage = () => {
             state: { 
                 paymentSuccess: true, 
                 transactionId: paymentResult.transactionId,
-                message: 'Thanh toán thành công! Đơn hàng của bạn đang được xử lý.'
+                message: 'Payment successful! Your order is being processed.'
             }
         });
     };

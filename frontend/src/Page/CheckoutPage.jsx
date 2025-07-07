@@ -165,7 +165,7 @@ const CheckoutPage = () => {
             const orderData = response.data?.id ? response.data : response.data?.data;
             if (!orderData?.id) {
                 console.error('❌ [CHECKOUT] No order ID found in response:', response);
-                throw new Error('Thanh toán thành công nhưng không nhận được mã đơn hàng');
+                throw new Error('Payment successful but order ID not received');
             }
             
             console.log('✅ [CHECKOUT] Order created successfully:', {
@@ -176,12 +176,12 @@ const CheckoutPage = () => {
             setOrderData(orderData);
             await refreshCart();
             
-            alert('Thanh toán thành công');
+            alert('Payment successful');
             
             navigate('/orders', {
                 state: {
                     newOrderId: orderData.id,
-                    message: 'Thanh toán thành công'
+                    message: 'Payment successful'
                 }
             });
 

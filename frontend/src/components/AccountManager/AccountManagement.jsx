@@ -77,6 +77,7 @@ const AccountManagement = () => {
         const accountsData = dataArray.map((account) => ({
           id: account.id,
           username: account.username,
+          name: account.name || '',
           phone: account.phone,
           role: account.role || { name: "Unknown", slug: "unknown" },
           createdAt: account.createdAt,
@@ -182,6 +183,7 @@ const AccountManagement = () => {
       if (modalMode === "add") {
         const createData = {
           username: formData.username,
+          name: formData.name,
           password: formData.password || "12345678",
           phone: formData.phone,
           roleSlug: formData.roleSlug,
@@ -195,6 +197,7 @@ const AccountManagement = () => {
         }
       } else if (modalMode === "edit") {
         const updateData = {
+          name: formData.name,
           phone: formData.phone,
           roleSlug: formData.roleSlug,
         };
@@ -365,6 +368,14 @@ const AccountDetail = ({ account }) => (
     </div>
 
     <div className={styles.detailRow}>
+      <User className={styles.detailIcon} />
+      <div>
+        <label className={styles.detailLabel}>Name</label>
+        <p className={styles.detailValue}>{account.name || 'Not provided'}</p>
+      </div>
+    </div>
+
+    <div className={styles.detailRow}>
       <Phone className={styles.detailIcon} />
       <div>
         <label className={styles.detailLabel}>Phone</label>
@@ -401,6 +412,7 @@ const AccountForm = ({
 }) => {
   const [formData, setFormData] = useState({
     username: initialData?.username || "",
+    name: initialData?.name || "",
     password: "",
     phone: initialData?.phone || "",
     roleSlug: initialData?.role?.slug || "staff",
@@ -417,6 +429,7 @@ const AccountForm = ({
       if (!formData.password.trim())
         newErrors.password = "Password is required";
     }
+    if (!formData.name.trim()) newErrors.name = "Name is required";
     if (!formData.phone.trim()) newErrors.phone = "Phone is required";
     if (!formData.roleSlug) newErrors.roleSlug = "Role is required";
 
@@ -466,6 +479,23 @@ const AccountForm = ({
           )}
         </div>
       )}
+
+      <div className={styles.formGroup}>
+        <label className={styles.label}>Name *</label>
+        <input
+          type="text"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          className={`${styles.input} ${
+            errors.name ? styles.inputError : ""
+          }`}
+          placeholder="Enter full name"
+        />
+        {errors.name && (
+          <span className={styles.errorText}>{errors.name}</span>
+        )}
+      </div>
 
       {mode === "add" && (
         <div className={styles.formGroup}>

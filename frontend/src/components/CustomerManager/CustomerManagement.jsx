@@ -56,23 +56,18 @@ const CustomerManagement = () => {
   // Fetch customers from API
   const fetchCustomers = async () => {
     try {
-      console.log('🔄 [CustomerManagement] Starting fetchCustomers...');
       setLoading(true);
       setError(null);
       
       const response = await customerService.getAllCustomers();
-      console.log('📡 [CustomerManagement] API Response:', response);
       
-      if (response.success && response.data) {
-        console.log('✅ [CustomerManagement] API Success - Raw data:', response.data);
-        
-        // Access nested data structure: response.data.data
-        const rawData = response.data.data || response.data;
-        console.log('🔍 [CustomerManagement] Raw data after extraction:', rawData);
+      if (response.success && response.data.data) {
+        // Backend returns nested structure: { success: true, data: { data: customers } }
+        // Updated based on actual API response structure
+        const rawData = response.data.data;
         
         // Ensure data is an array
         const dataArray = Array.isArray(rawData) ? rawData : [];
-        console.log('📊 [CustomerManagement] Data array length:', dataArray.length);
         
         const customersData = dataArray.map(customer => ({
           id: customer.id,
@@ -85,24 +80,17 @@ const CustomerManagement = () => {
           customerOrders: customer.customerOrders || []
         }));
         
-        console.log('🔄 [CustomerManagement] Mapped customers data:', customersData);
-        
         setCustomers(customersData);
         setTotalCustomers(customersData.length);
         setTotalPages(Math.ceil(customersData.length / itemsPerPage));
-        
-        console.log('💾 [CustomerManagement] State updated - customers length:', customersData.length);
       } else {
-        console.error('❌ [CustomerManagement] API Failed:', response);
         throw new Error(response.message || 'Failed to fetch customers');
       }
     } catch (err) {
-      console.error('💥 [CustomerManagement] Error fetching customers:', err);
       setError('Failed to fetch customers');
       showNotification('Failed to load customers', 'error');
     } finally {
       setLoading(false);
-      console.log('🏁 [CustomerManagement] fetchCustomers completed');
     }
   };
 
@@ -135,15 +123,6 @@ const CustomerManagement = () => {
     return matchesSearch && matchesStatus && matchesDate;
   });
 
-  console.log('🔍 [CustomerManagement] Filter Debug:', {
-    customersLength: customers.length,
-    filteredCustomersLength: filteredCustomers.length,
-    searchTerm,
-    statusFilter,
-    createdDateFilter,
-    sampleCustomer: customers[0]
-  });
-
   // Update pagination when filtered customers change
   useEffect(() => {
     const newTotalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
@@ -159,14 +138,6 @@ const CustomerManagement = () => {
   const getCurrentPageCustomers = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentPageData = filteredCustomers.slice(startIndex, startIndex + itemsPerPage);
-    console.log('📄 [CustomerManagement] getCurrentPageCustomers:', {
-      currentPage,
-      startIndex,
-      itemsPerPage,
-      filteredCustomersLength: filteredCustomers.length,
-      currentPageDataLength: currentPageData.length,
-      currentPageData
-    });
     return currentPageData;
   };
 
@@ -219,7 +190,6 @@ const CustomerManagement = () => {
       }
       closeModal();
     } catch (error) {
-      console.error('Error saving customer:', error);
       showNotification(error.message || 'An error occurred', 'error');
     }
   };
@@ -246,7 +216,6 @@ const CustomerManagement = () => {
       setShowDeleteModal(false);
       setSelectedCustomer(null);
     } catch (error) {
-      console.error('Error deleting customer:', error);
       showNotification(error.message || 'An error occurred', 'error');
     }
   };
@@ -274,7 +243,6 @@ const CustomerManagement = () => {
         throw new Error('Failed to export data');
       }
     } catch (error) {
-      console.error('Export error:', error);
       showNotification('Failed to export data', 'error');
     }
   };

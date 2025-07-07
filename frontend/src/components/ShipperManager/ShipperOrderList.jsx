@@ -77,7 +77,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
       }
     } catch (err) {
       console.error("❌ Error fetching orders:", err);
-      setError(err.message || "Có lỗi xảy ra khi tải danh sách đơn hàng");
+      setError(err.message || "Failed to load order list");
       setOrders([]); // Đảm bảo luôn set array
       setPagination((prev) => ({ ...prev, total: 0, totalPages: 0 }));
     } finally {
@@ -144,7 +144,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
       }
     } catch (err) {
       console.error("❌ Error updating status:", err);
-      setError(err.message || "Có lỗi xảy ra khi cập nhật trạng thái");
+              setError(err.message || "Failed to update status");
     } finally {
       setLoading(false);
     }

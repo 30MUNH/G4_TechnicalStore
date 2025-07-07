@@ -89,10 +89,10 @@ const AccountTable = ({
                     </span>
                   </div>
                 </td>
-                <td>
-                <div className={styles.accountInfo}>
+                <td className={styles.tableCell}>
+                  <div className={styles.accountInfo}>
                     <span className={styles.accountName}>
-                      {account.name}
+                      {account.name || 'Not provided'}
                     </span>
                   </div>
                 </td>
