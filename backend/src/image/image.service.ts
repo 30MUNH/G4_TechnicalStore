@@ -12,7 +12,6 @@ export class ImageService {
 
   async uploadImage(file: Express.Multer.File) {
     if (!file) throw new NoFileUploadedException;
-      console.log('uploading');
       const uploadedFile = await MinioClient.getInstance().upload(file);
       const newImage = new Image();
       newImage.originalName = file.originalname;
