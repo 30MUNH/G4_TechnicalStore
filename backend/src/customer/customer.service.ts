@@ -19,28 +19,28 @@ export class CustomerService {
     // Support both formats: 0xxxxxxxxx (10 digits) or +84xxxxxxxxx (12 chars)
     const phoneRegex = /^(0\d{9}|\+84\d{9})$/;
     if (!phoneRegex.test(phone)) {
-      throw new BadRequestException('Số điện thoại không hợp lệ. Định dạng: 0xxxxxxxxx hoặc +84xxxxxxxxx');
+      throw new BadRequestException('Invalid phone number format. Use: 0xxxxxxxxx or +84xxxxxxxxx');
     }
   }
 
   private validatePassword(password: string): void {
     if (password.length < 8) {
-      throw new BadRequestException('Mật khẩu phải có ít nhất 8 ký tự');
+      throw new BadRequestException('Password must be at least 8 characters long');
     }
     if (!/\d/.test(password)) {
-      throw new BadRequestException('Mật khẩu phải chứa ít nhất 1 số');
+      throw new BadRequestException('Password must contain at least 1 number');
     }
     if (!/[a-zA-Z]/.test(password)) {
-      throw new BadRequestException('Mật khẩu phải chứa ít nhất 1 chữ cái');
+      throw new BadRequestException('Password must contain at least 1 letter');
     }
   }
 
   private validateUsername(username: string): void {
     if (username.length < 3 || username.length > 50) {
-      throw new BadRequestException('Username phải có độ dài từ 3 đến 50 ký tự');
+      throw new BadRequestException('Username must be between 3 and 50 characters');
     }
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      throw new BadRequestException('Username chỉ được chứa chữ cái, số và dấu gạch dưới');
+      throw new BadRequestException('Username can only contain letters, numbers and underscores');
     }
   }
 
@@ -67,10 +67,10 @@ export class CustomerService {
 
         if (existingAccount) {
           if (existingAccount.username === createCustomerDto.username) {
-            throw new BadRequestException("Username đã được sử dụng");
+            throw new BadRequestException("Username already exists");
           }
           if (existingAccount.phone === createCustomerDto.phone) {
-            throw new BadRequestException("Số điện thoại đã được sử dụng");
+            throw new BadRequestException("Phone number already exists");
           }
         }
 
@@ -92,7 +92,6 @@ export class CustomerService {
         return await transactionalEntityManager.save(account);
       });
     } catch (error) {
-      console.error('❌ [CustomerService] Error in createCustomer:', error);
       throw error;
     }
   }
@@ -169,7 +168,7 @@ export class CustomerService {
               where: { username: updateCustomerDto.username } 
             });
             if (existingAccount) {
-              throw new BadRequestException("Username đã được sử dụng");
+              throw new BadRequestException("Username already exists");
             }
           }
         }
@@ -181,7 +180,7 @@ export class CustomerService {
               where: { phone: updateCustomerDto.phone } 
             });
             if (existingAccount) {
-              throw new BadRequestException("Số điện thoại đã được sử dụng");
+              throw new BadRequestException("Phone number already exists");
             }
           }
         }
@@ -199,7 +198,6 @@ export class CustomerService {
         return await transactionalEntityManager.save(account);
       });
     } catch (error) {
-      console.error('❌ [CustomerService] Error in updateCustomer:', error);
       throw error;
     }
   }
@@ -213,52 +211,43 @@ export class CustomerService {
 
       return await dataSource.manager.transaction(async transactionalEntityManager => {
         const account = await this.getCustomerById(id);
+        
+        // Check if customer has active orders or transactions
+        const hasActiveOrders = account.customerOrders?.some(order => 
+          ['PENDING', 'PROCESSING', 'SHIPPING'].includes(order.status)
+        );
 
-        // Xóa mềm cart liên kết (nếu có)
-        const cart = await transactionalEntityManager.findOne(Cart, { 
-          where: { account: { id: account.id } } 
-        });
-        if (cart) {
-          await transactionalEntityManager.softRemove(cart);
+        if (hasActiveOrders) {
+          throw new BadRequestException('Cannot delete customer with active orders');
         }
 
-        // Xóa mềm feedback liên kết
-        const feedbacks = await transactionalEntityManager.find(Feedback, { 
-          where: { account: { id: account.id } } 
+        // Clean up related data before deletion
+        const cartRepo = transactionalEntityManager.getRepository(Cart);
+        const feedbackRepo = transactionalEntityManager.getRepository(Feedback);
+        const smsRepo = transactionalEntityManager.getRepository(SMSNotification);
+        const marketingRepo = transactionalEntityManager.getRepository(Marketing);
+        const refreshTokenRepo = transactionalEntityManager.getRepository(RefreshToken);
+
+        // Remove cart items first, then cart
+        const cart = await cartRepo.findOne({
+          where: { account: { id: account.id } },
+          relations: ['cartItems']
         });
-        if (feedbacks.length > 0) {
-          await transactionalEntityManager.softRemove(feedbacks);
+        if (cart && cart.cartItems) {
+          await transactionalEntityManager.remove(cart.cartItems);
+          await transactionalEntityManager.remove(cart);
         }
 
-        // Xóa mềm SMS notifications liên kết
-        const smsNotifications = await transactionalEntityManager.find(SMSNotification, { 
-          where: { account: { id: account.id } } 
-        });
-        if (smsNotifications.length > 0) {
-          await transactionalEntityManager.softRemove(smsNotifications);
-        }
+        // Remove other related entities
+        await feedbackRepo.delete({ account: { id: account.id } });
+        await smsRepo.delete({ account: { id: account.id } });
+        await marketingRepo.delete({ account: { id: account.id } });
+        await refreshTokenRepo.delete({ account: { id: account.id } });
 
-        // Xóa mềm marketing campaigns liên kết
-        const marketingCampaigns = await transactionalEntityManager.find(Marketing, { 
-          where: { account: { id: account.id } } 
-        });
-        if (marketingCampaigns.length > 0) {
-          await transactionalEntityManager.softRemove(marketingCampaigns);
-        }
-
-        // Xóa mềm refresh tokens liên kết
-        const refreshTokens = await transactionalEntityManager.find(RefreshToken, { 
-          where: { account: { id: account.id } } 
-        });
-        if (refreshTokens.length > 0) {
-          await transactionalEntityManager.softRemove(refreshTokens);
-        }
-
-        // Cuối cùng xóa mềm account
+        // Finally remove the account
         await transactionalEntityManager.softRemove(account);
       });
     } catch (error) {
-      console.error('❌ [CustomerService] Error in deleteCustomer:', error);
       throw error;
     }
   }
@@ -267,15 +256,16 @@ export class CustomerService {
     const dataSource = await DbConnection.getConnection();
     if (!dataSource) return [];
 
-    const roleRepo = dataSource.getRepository(Role);
-    const customerRole = await roleRepo.findOne({ where: { name: "customer" } });
-    if (!customerRole) return [];
-
-    return await dataSource.createQueryBuilder(Account, "account")
-      .innerJoinAndSelect("account.role", "role")
+    const accountRepo = dataSource.getRepository(Account);
+    
+    return await accountRepo
+      .createQueryBuilder("account")
+      .leftJoinAndSelect("account.role", "role")
+      .leftJoinAndSelect("account.customerOrders", "orders")
       .where("role.name = :roleName", { roleName: "customer" })
-      .andWhere("(account.name ILIKE :term OR account.username ILIKE :term OR account.phone ILIKE :term)", 
-        { term: `%${searchTerm}%` })
+      .andWhere("(account.username ILIKE :searchTerm OR account.name ILIKE :searchTerm OR account.phone ILIKE :searchTerm)", 
+        { searchTerm: `%${searchTerm}%` })
+      .orderBy("account.createdAt", "DESC")
       .getMany();
   }
 }

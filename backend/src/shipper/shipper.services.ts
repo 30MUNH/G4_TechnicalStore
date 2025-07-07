@@ -14,28 +14,28 @@ export class ShipperService {
     // Support both formats: 0xxxxxxxxx (10 digits) or +84xxxxxxxxx (12 chars)
     const phoneRegex = /^(0\d{9}|\+84\d{9})$/;
     if (!phoneRegex.test(phone)) {
-      throw new BadRequestException('Số điện thoại không hợp lệ. Định dạng: 0xxxxxxxxx hoặc +84xxxxxxxxx');
+      throw new BadRequestException('Invalid phone number format. Use: 0xxxxxxxxx or +84xxxxxxxxx');
     }
   }
 
   private validatePassword(password: string): void {
     if (password.length < 8) {
-      throw new BadRequestException('Mật khẩu phải có ít nhất 8 ký tự');
+      throw new BadRequestException('Password must be at least 8 characters long');
     }
     if (!/\d/.test(password)) {
-      throw new BadRequestException('Mật khẩu phải chứa ít nhất 1 số');
+      throw new BadRequestException('Password must contain at least 1 number');
     }
     if (!/[a-zA-Z]/.test(password)) {
-      throw new BadRequestException('Mật khẩu phải chứa ít nhất 1 chữ cái');
+      throw new BadRequestException('Password must contain at least 1 letter');
     }
   }
 
   private validateUsername(username: string): void {
     if (username.length < 3 || username.length > 50) {
-      throw new BadRequestException('Username phải có độ dài từ 3 đến 50 ký tự');
+      throw new BadRequestException('Username must be between 3 and 50 characters');
     }
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      throw new BadRequestException('Username chỉ được chứa chữ cái, số và dấu gạch dưới');
+      throw new BadRequestException('Username can only contain letters, numbers and underscores');
     }
   }
 
@@ -61,10 +61,10 @@ export class ShipperService {
 
         if (existingAccount) {
           if (existingAccount.username === createShipperDto.username) {
-            throw new BadRequestException("Username đã được sử dụng");
+            throw new BadRequestException("Username already exists");
           }
           if (existingAccount.phone === createShipperDto.phone) {
-            throw new BadRequestException("Số điện thoại đã được sử dụng");
+            throw new BadRequestException("Phone number already exists");
           }
         }
 
@@ -86,7 +86,6 @@ export class ShipperService {
         return await transactionalEntityManager.save(account);
       });
     } catch (error) {
-      console.error('❌ [ShipperService] Error in createShipper:', error);
       throw error;
     }
   }
@@ -131,7 +130,7 @@ export class ShipperService {
               where: { username: updateShipperDto.username } 
             });
             if (existingAccount) {
-              throw new BadRequestException("Username đã được sử dụng");
+              throw new BadRequestException("Username already exists");
             }
           }
         }
@@ -143,7 +142,7 @@ export class ShipperService {
               where: { phone: updateShipperDto.phone } 
             });
             if (existingAccount) {
-              throw new BadRequestException("Số điện thoại đã được sử dụng");
+              throw new BadRequestException("Phone number already exists");
             }
           }
         }
@@ -162,7 +161,6 @@ export class ShipperService {
         return await transactionalEntityManager.save(account);
       });
     } catch (error) {
-      console.error('❌ [ShipperService] Error in updateShipper:', error);
       throw error;
     }
   }
@@ -182,13 +180,12 @@ export class ShipperService {
         );
 
         if (hasActiveOrders) {
-          throw new BadRequestException('Không thể xóa shipper đang có đơn hàng đang xử lý');
+          throw new BadRequestException('Cannot delete shipper with active orders');
         }
 
         await transactionalEntityManager.softRemove(account);
       });
     } catch (error) {
-      console.error('❌ [ShipperService] Error in deleteShipper:', error);
       throw error;
     }
   }
@@ -203,10 +200,10 @@ export class ShipperService {
           role: { id: shipperRole.id },
           isRegistered: true
         },
-        relations: ["role"]
+        relations: ["role"],
+        order: { createdAt: "DESC" }
       });
     } catch (error) {
-      console.error('❌ [ShipperService] Error in getAvailableShippers:', error);
       throw error;
     }
   }
@@ -214,10 +211,10 @@ export class ShipperService {
   async getShipperByUsername(username: string): Promise<Account> {
     const account = await Account.findOne({
       where: { username },
-      relations: ["role", "shipperOrders"]
+      relations: ["role"]
     });
     
-    if (!account || account.role.slug !== "shipper") {
+    if (!account || account.role.name !== "shipper") {
       throw new EntityNotFoundException("Shipper");
     }
     

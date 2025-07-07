@@ -11,15 +11,15 @@ import { EntityNotFoundException, BadRequestException } from '@/exceptions/http-
 export class CartService {
   private validateQuantity(quantity: number, action: 'increase' | 'decrease'): void {
     if (!Number.isInteger(quantity)) {
-      throw new BadRequestException('Số lượng phải là số nguyên');
+      throw new BadRequestException('Quantity must be an integer');
     }
     
     if (quantity <= 0) {
-      throw new BadRequestException(`Số lượng ${action === 'increase' ? 'tăng' : 'giảm'} phải lớn hơn 0`);
+      throw new BadRequestException(`${action === 'increase' ? 'Increase' : 'Decrease'} quantity must be greater than 0`);
     }
 
     if (quantity > 99) {
-      throw new BadRequestException(`Số lượng ${action === 'increase' ? 'tăng' : 'giảm'} không được vượt quá 99`);
+      throw new BadRequestException(`${action === 'increase' ? 'Increase' : 'Decrease'} quantity cannot exceed 99`);
     }
   }
 
@@ -41,7 +41,6 @@ export class CartService {
       await newCart.save();
       return newCart;
     } catch (error) {
-
       throw error;
     }
   }
@@ -67,7 +66,6 @@ export class CartService {
 
       return Number(total.toFixed(2));
     } catch (error) {
-
       throw error;
     }
   }
@@ -78,7 +76,6 @@ export class CartService {
       await cart.save();
       return cart;
     } catch (error) {
-
       throw error;
     }
   }
@@ -124,7 +121,7 @@ export class CartService {
         }
 
         if (!product.isActive) {
-          throw new BadRequestException('Sản phẩm này hiện không khả dụng');
+          throw new BadRequestException('This product is currently unavailable');
         }
 
         const existingItem = cart.cartItems?.find(
@@ -134,18 +131,16 @@ export class CartService {
         if (existingItem) {
           const newQuantity = existingItem.quantity + addToCartDto.quantity;
           if (newQuantity > product.stock) {
-            throw new BadRequestException(`Không thể thêm. Tổng số lượng (${newQuantity}) vượt quá số lượng trong kho (${product.stock})`);
+            throw new BadRequestException(`Cannot add. Total quantity (${newQuantity}) exceeds stock quantity (${product.stock})`);
           }
           existingItem.quantity = newQuantity;
           await transactionalEntityManager.save(existingItem);
-          
         } else {
           const newItem = new CartItem();
           newItem.quantity = addToCartDto.quantity;
           newItem.cart = cart;
           newItem.product = product;
           await transactionalEntityManager.save(newItem);
-          
         }
 
         // Reload cart with updated items within transaction to get fresh data
@@ -172,12 +167,9 @@ export class CartService {
         updatedCart.totalAmount = Number(total.toFixed(2));
         await transactionalEntityManager.save(updatedCart);
         
-
-        
         return updatedCart;
       });
     } catch (error) {
-
       throw error;
     }
   }
@@ -228,7 +220,7 @@ export class CartService {
         const item = cart.cartItems?.find(item => item.product?.id === productId);
         
         if (!item) {
-          throw new BadRequestException('Sản phẩm không có trong giỏ hàng');
+          throw new BadRequestException('Product not found in cart');
         }
         
         // Lock the product row for update
@@ -239,15 +231,14 @@ export class CartService {
           .getOne();
 
         if (!product) throw new EntityNotFoundException('Product');
-        if (!product.isActive) throw new BadRequestException('Sản phẩm này hiện không khả dụng');
+        if (!product.isActive) throw new BadRequestException('This product is currently unavailable');
 
         if (item.quantity + amount > product.stock) {
-          throw new BadRequestException(`Không thể tăng số lượng. Kho chỉ còn ${product.stock} sản phẩm`);
+          throw new BadRequestException(`Cannot increase quantity. Only ${product.stock} products left in stock`);
         }
         
         item.quantity += amount;
         await transactionalEntityManager.save(item);
-        
         
         // Reload cart with fresh data after updating
         const reloadedCart = await transactionalEntityManager.findOne(Cart, {
@@ -273,12 +264,9 @@ export class CartService {
         reloadedCart.totalAmount = Number(total.toFixed(2));
         await transactionalEntityManager.save(reloadedCart);
         
-
-        
         return reloadedCart;
       });
     } catch (error) {
-
       throw error;
     }
   }
@@ -293,8 +281,6 @@ export class CartService {
       }
 
       return dataSource.transaction(async transactionalEntityManager => {
-
-        
         // Get cart within transaction to ensure we have the latest cart items
         const account = await transactionalEntityManager.findOne(Account, { where: { username } });
         if (!account) throw new EntityNotFoundException('Account');
@@ -309,16 +295,14 @@ export class CartService {
         const item = cart.cartItems?.find(item => item.product?.id === productId);
         
         if (!item) {
-          throw new BadRequestException('Sản phẩm không có trong giỏ hàng');
+          throw new BadRequestException('Product not found in cart');
         }
         
         item.quantity -= amount;
         if (item.quantity <= 0) {
           await transactionalEntityManager.remove(item);
-
         } else {
           await transactionalEntityManager.save(item);
-
         }
         
         // Reload cart with fresh data after updating
@@ -345,12 +329,9 @@ export class CartService {
         reloadedCart.totalAmount = Number(total.toFixed(2));
         await transactionalEntityManager.save(reloadedCart);
         
-
-        
         return reloadedCart;
       });
     } catch (error) {
-
       throw error;
     }
   }
@@ -363,8 +344,6 @@ export class CartService {
       }
 
       return dataSource.transaction(async transactionalEntityManager => {
-
-        
         // Get cart within transaction to ensure we have the latest cart items
         const account = await transactionalEntityManager.findOne(Account, { where: { username } });
         if (!account) throw new EntityNotFoundException('Account');
@@ -379,11 +358,10 @@ export class CartService {
         const item = cart.cartItems?.find(item => item.product?.id === productId);
         
         if (!item) {
-          throw new BadRequestException('Sản phẩm không có trong giỏ hàng');
+          throw new BadRequestException('Product not found in cart');
         }
         
         await transactionalEntityManager.remove(item);
-
         
         // Reload cart with fresh data after removing item
         const reloadedCart = await transactionalEntityManager.findOne(Cart, {
@@ -409,12 +387,9 @@ export class CartService {
         reloadedCart.totalAmount = Number(total.toFixed(2));
         await transactionalEntityManager.save(reloadedCart);
         
-
-        
         return reloadedCart;
       });
     } catch (error) {
-
       throw error;
     }
   }
@@ -427,8 +402,6 @@ export class CartService {
       }
 
       return dataSource.transaction(async transactionalEntityManager => {
-
-        
         // Get cart within transaction to ensure we have the latest cart items
         const account = await transactionalEntityManager.findOne(Account, { where: { username } });
         if (!account) throw new EntityNotFoundException('Account');
@@ -446,10 +419,8 @@ export class CartService {
         
         cart.totalAmount = 0;
         await transactionalEntityManager.save(cart);
-
       });
     } catch (error) {
-
       throw error;
     }
   }

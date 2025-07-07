@@ -37,75 +37,58 @@ export class OrderService {
     }
 
     async createOrder(username: string, createOrderDto: CreateOrderDto): Promise<Order> {
-
-        
         if (!createOrderDto.shippingAddress) {
-            throw new Error('Địa chỉ giao hàng không được để trống');
+            throw new Error('Shipping address cannot be empty');
         }
 
         const shippingAddress = createOrderDto.shippingAddress.trim();
         if (!shippingAddress) {
-            throw new Error('Địa chỉ giao hàng không được để trống');
+            throw new Error('Shipping address cannot be empty');
         }
 
         return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
-
-            // Bước 1: Lấy account và kiểm tra tồn tại
-
+            // Step 1: Get account and check existence
             const account = await transactionalEntityManager.findOne(Account, { 
                 where: { username },
                 relations: ['role']
             });
             
             if (!account) {
-
                 throw new EntityNotFoundException('Account');
             }
-            
 
-
-            // Bước 2: Lấy cart TRONG transaction
-
-
+            // Step 2: Get cart WITHIN transaction
             const cart = await transactionalEntityManager.findOne(Cart, {
                 where: { account: { id: account.id } },
                 relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
             });
 
             if (!cart) {
-
                 throw new EntityNotFoundException('Cart');
             }
-
-
             
-            // Bước 3: Kiểm tra cart không trống
+            // Step 3: Check cart is not empty
             if (!cart.cartItems || cart.cartItems.length === 0) {
-
-                throw new Error('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi đặt hàng.');
+                throw new Error('Cart is empty. Please add products before placing order.');
             }
 
-            // Bước 4: Validate từng sản phẩm trong cart
-
+            // Step 4: Validate each product in cart
             const invalidItems = [];
             
             for (const cartItem of cart.cartItems) {
                 if (!cartItem.product.isActive) {
-                    invalidItems.push(`${cartItem.product.name} (không còn hoạt động)`);
+                    invalidItems.push(`${cartItem.product.name} (no longer active)`);
                 }
                 if (cartItem.product.stock < cartItem.quantity) {
-                    invalidItems.push(`${cartItem.product.name} (không đủ tồn kho: còn ${cartItem.product.stock}, cần ${cartItem.quantity})`);
+                    invalidItems.push(`${cartItem.product.name} (insufficient stock: available ${cartItem.product.stock}, needed ${cartItem.quantity})`);
                 }
             }
 
             if (invalidItems.length > 0) {
-
-                throw new Error(`Một số sản phẩm trong giỏ hàng không hợp lệ: ${invalidItems.join(', ')}`);
+                throw new Error(`Some products in cart are invalid: ${invalidItems.join(', ')}`);
             }
 
-            // Bước 5: Validate giá sản phẩm và lock products
-
-
+            // Step 5: Validate product prices and lock products
             const productIds = cart.cartItems.map(item => item.product.id);
             const products = await transactionalEntityManager
                 .createQueryBuilder(Product, 'product')
@@ -119,10 +102,10 @@ export class OrderService {
             for (const cartItem of cart.cartItems) {
                 const latestProduct = products.find(p => p.id === cartItem.product.id);
                 if (!latestProduct) {
-                    throw new Error(`Sản phẩm ${cartItem.product.name} không tồn tại`);
+                    throw new Error(`Product ${cartItem.product.name} does not exist`);
                 }
                 
-                // Kiểm tra giá có thay đổi
+                // Check price changes
                 if (latestProduct.price !== cartItem.product.price) {
                     priceChanges.push({
                         name: latestProduct.name,
@@ -131,31 +114,26 @@ export class OrderService {
                     });
                 }
                 
-                // Kiểm tra tồn kho
+                // Check stock
                 if (!latestProduct.isActive) {
-                    stockIssues.push(`${latestProduct.name} (sản phẩm không còn hoạt động)`);
+                    stockIssues.push(`${latestProduct.name} (product no longer active)`);
                 } else if (latestProduct.stock < cartItem.quantity) {
-                    stockIssues.push(`${latestProduct.name} (không đủ tồn kho: còn ${latestProduct.stock}, cần ${cartItem.quantity})`);
+                    stockIssues.push(`${latestProduct.name} (insufficient stock: available ${latestProduct.stock}, needed ${cartItem.quantity})`);
                 }
             }
 
             if (priceChanges.length > 0) {
-
                 const changeDetails = priceChanges.map(change => 
                     `${change.name}: ${change.oldPrice} → ${change.newPrice}`
                 ).join(', ');
-                throw new Error(`Giá sản phẩm đã thay đổi, vui lòng kiểm tra lại giỏ hàng: ${changeDetails}`);
+                throw new Error(`Product prices have changed, please review cart: ${changeDetails}`);
             }
 
             if (stockIssues.length > 0) {
-
-                throw new Error(`Một số sản phẩm có vấn đề về tồn kho: ${stockIssues.join(', ')}`);
+                throw new Error(`Some products have stock issues: ${stockIssues.join(', ')}`);
             }
 
-
-
-            // Bước 6: Tạo order entity
-
+            // Step 6: Create order entity
             const order = new Order();
             order.customer = cart.account;
             order.orderDate = new Date();
@@ -164,19 +142,13 @@ export class OrderService {
             order.shippingAddress = createOrderDto.shippingAddress || '';
             order.note = createOrderDto.note || '';
             
-
-            
             await transactionalEntityManager.save(order);
 
-
-            // Bước 7: Tạo order details và cập nhật stock
-
+            // Step 7: Create order details and update stock
             let orderDetailCount = 0;
             
             for (const cartItem of cart.cartItems) {
                 const product = products.find(p => p.id === cartItem.product.id)!;
-
-
 
                 const orderDetail = new OrderDetail();
                 orderDetail.order = order;
@@ -187,42 +159,36 @@ export class OrderService {
 
                 orderDetailCount++;
 
-
-                // Cập nhật stock
+                // Update stock
                 const oldStock = product.stock;
                 product.stock -= cartItem.quantity;
                 await transactionalEntityManager.save(product);
-
             }
 
-            // Bước 8: Clear cart TRONG transaction
-
+            // Step 8: Clear cart WITHIN transaction
             if (cart.cartItems && cart.cartItems.length > 0) {
-                const removedItemsCount = cart.cartItems.length;
                 await transactionalEntityManager.remove(cart.cartItems);
             }
-            
             cart.totalAmount = 0;
             await transactionalEntityManager.save(cart);
 
-            // Bước 9: Lấy order với đầy đủ thông tin
-            const finalOrder = await transactionalEntityManager.findOne(Order, {
+            // Step 9: Return order with relations
+            const savedOrder = await transactionalEntityManager.findOne(Order, {
                 where: { id: order.id },
                 relations: [
-                    'customer',
-                    'shipper',
-                    'orderDetails',
-                    'orderDetails.product'
+                    'customer', 
+                    'customer.role',
+                    'orderDetails', 
+                    'orderDetails.product',
+                    'orderDetails.product.category'
                 ]
             });
 
-            if (!finalOrder) {
-                throw new Error('Lỗi khi lấy thông tin đơn hàng vừa tạo');
+            if (!savedOrder) {
+                throw new Error('Failed to retrieve created order');
             }
 
-
-            
-            return finalOrder;
+            return savedOrder;
         });
     }
 
@@ -231,9 +197,10 @@ export class OrderService {
             where: { id: orderId },
             relations: [
                 'customer',
-                'shipper',
+                'customer.role',
                 'orderDetails',
-                'orderDetails.product'
+                'orderDetails.product',
+                'orderDetails.product.category'
             ]
         });
 
@@ -249,24 +216,19 @@ export class OrderService {
         page: number = 1, 
         limit: number = 10
     ): Promise<{ orders: Order[]; total: number }> {
-        const account = await Account.findOne({ where: { username } });
-        if (!account) {
-            throw new EntityNotFoundException('Account');
-        }
-
-        const skip = (page - 1) * limit;
-
-        // Tối ưu query với eager loading và pagination
+        const offset = (page - 1) * limit;
+        
         const [orders, total] = await Order.findAndCount({
-            where: { customer: { id: account.id } },
+            where: { customer: { username } },
             relations: [
                 'customer',
-                'shipper',
+                'customer.role',
                 'orderDetails',
-                'orderDetails.product'
+                'orderDetails.product',
+                'orderDetails.product.category'
             ],
             order: { orderDate: 'DESC' },
-            skip,
+            skip: offset,
             take: limit
         });
 
@@ -278,76 +240,47 @@ export class OrderService {
         username: string,
         updateOrderDto: UpdateOrderDto
     ): Promise<Order> {
-        return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
-            const order = await this.getOrderById(orderId);
-            const account = await Account.findOne({ 
-                where: { username },
-                relations: ['role']
-            });
-
-            if (!account) {
-                throw new EntityNotFoundException('Account');
-            }
-
-            const isAdmin = this.isAdmin(account);
-            if (order.customer.id !== account.id && !isAdmin) {
-                throw new Error('Không có quyền cập nhật đơn hàng này');
-            }
-
-            if (!this.validateOrderStatusTransition(order.status, updateOrderDto.status)) {
-                throw new Error(`Không thể chuyển trạng thái từ ${order.status} sang ${updateOrderDto.status}`);
-            }
-
-            if (updateOrderDto.status === OrderStatus.CANCELLED) {
-                if (!updateOrderDto.cancelReason?.trim()) {
-                    throw new Error('Vui lòng cung cấp lý do hủy đơn hàng');
-                }
-                order.cancelReason = updateOrderDto.cancelReason.trim();
-
-                // Hoàn trả số lượng vào kho
-                for (const detail of order.orderDetails) {
-                    const product = await transactionalEntityManager.findOne(Product, {
-                        where: { id: detail.product.id }
-                    });
-                    if (product) {
-                        product.stock += detail.quantity;
-                        await transactionalEntityManager.save(product);
-                    }
-                }
-            }
-
-            order.status = updateOrderDto.status;
-            
-            // Chỉ admin mới có thể gán shipper, và chỉ khi chuyển sang trạng thái SHIPPING
-            if (updateOrderDto.status === OrderStatus.SHIPPING && isAdmin) {
-                // Kiểm tra xem account có phải là shipper không
-                const isShipper = this.isShipper(account);
-                if (isShipper) {
-                    order.shipper = account;
-                } else {
-                    throw new Error('Chỉ có thể gán shipper cho đơn hàng');
-                }
-            }
-
-            await transactionalEntityManager.save(order);
-            
-            // Lấy order đã cập nhật với đầy đủ thông tin
-            const updatedOrder = await transactionalEntityManager.findOne(Order, {
-                where: { id: orderId },
-                relations: [
-                    'customer',
-                    'shipper',
-                    'orderDetails',
-                    'orderDetails.product'
-                ]
-            });
-
-            if (!updatedOrder) {
-                throw new Error('Lỗi khi lấy thông tin đơn hàng đã cập nhật');
-            }
-
-            return updatedOrder;
+        const account = await Account.findOne({ 
+            where: { username },
+            relations: ['role']
         });
+        
+        if (!account) {
+            throw new EntityNotFoundException('Account');
+        }
+
+        const order = await Order.findOne({
+            where: { id: orderId },
+            relations: ['customer', 'customer.role']
+        });
+
+        if (!order) {
+            throw new EntityNotFoundException('Order');
+        }
+
+        // Check permissions
+        const isOrderOwner = order.customer.username === username;
+        const hasAdminAccess = this.isAdmin(account) || this.isShipper(account);
+
+        if (!isOrderOwner && !hasAdminAccess) {
+            throw new Error('Access denied to update this order');
+        }
+
+        // Validate status transition
+        if (!this.validateOrderStatusTransition(order.status, updateOrderDto.status)) {
+            throw new Error(`Invalid status transition from ${order.status} to ${updateOrderDto.status}`);
+        }
+
+        // Update order
+        order.status = updateOrderDto.status;
+        if (updateOrderDto.cancelReason) {
+            order.cancelReason = updateOrderDto.cancelReason;
+        }
+
+        await order.save();
+
+        // Return updated order with full relations
+        return await this.getOrderById(orderId);
     }
 
     async getOrderStatistics(username: string): Promise<{
@@ -358,85 +291,74 @@ export class OrderService {
         delivered: number;
         cancelled: number;
     }> {
-        const account = await Account.findOne({ where: { username } });
-        if (!account) {
-            throw new EntityNotFoundException('Account');
-        }
+        const baseQuery = Order.createQueryBuilder('order')
+            .leftJoin('order.customer', 'customer')
+            .where('customer.username = :username', { username });
 
-        const [orders] = await Order.findAndCount({
-            where: { customer: { id: account.id } }
-        });
+        const [
+            total,
+            pending,
+            processing,
+            shipping,
+            delivered,
+            cancelled
+        ] = await Promise.all([
+            baseQuery.getCount(),
+            baseQuery.clone().andWhere('order.status = :status', { status: OrderStatus.PENDING }).getCount(),
+            baseQuery.clone().andWhere('order.status = :status', { status: OrderStatus.PROCESSING }).getCount(),
+            baseQuery.clone().andWhere('order.status = :status', { status: OrderStatus.SHIPPING }).getCount(),
+            baseQuery.clone().andWhere('order.status = :status', { status: OrderStatus.DELIVERED }).getCount(),
+            baseQuery.clone().andWhere('order.status = :status', { status: OrderStatus.CANCELLED }).getCount()
+        ]);
 
-        const statistics = {
-            total: orders.length,
-            pending: 0,
-            processing: 0,
-            shipping: 0,
-            delivered: 0,
-            cancelled: 0
+        return {
+            total,
+            pending,
+            processing,
+            shipping,
+            delivered,
+            cancelled
         };
-
-        orders.forEach(order => {
-            switch (order.status) {
-                case OrderStatus.PENDING:
-                    statistics.pending++;
-                    break;
-                case OrderStatus.PROCESSING:
-                    statistics.processing++;
-                    break;
-                case OrderStatus.SHIPPING:
-                    statistics.shipping++;
-                    break;
-                case OrderStatus.DELIVERED:
-                    statistics.delivered++;
-                    break;
-                case OrderStatus.CANCELLED:
-                    statistics.cancelled++;
-                    break;
-            }
-        });
-
-        return statistics;
     }
 
     async getOrdersByShipperId(
         shipperId: string,
         options: { status?: string; search?: string; sort?: string; page?: number; limit?: number }
     ): Promise<{ orders: Order[]; total: number }> {
-        const { status, search, sort, page = 1, limit = 10 } = options;
-        const skip = (page - 1) * limit;
+        const { status, search, sort = 'orderDate', page = 1, limit = 10 } = options;
+        const offset = (page - 1) * limit;
 
-        // Xây dựng query
-        let query = Order.createQueryBuilder("order")
-            .leftJoinAndSelect("order.customer", "customer")
-            .leftJoinAndSelect("order.shipper", "shipper")
-            .leftJoinAndSelect("order.orderDetails", "orderDetails")
-            .leftJoinAndSelect("orderDetails.product", "product")
-            .where("order.shipper.id = :shipperId", { shipperId });
+        let queryBuilder = Order.createQueryBuilder('order')
+            .leftJoinAndSelect('order.customer', 'customer')
+            .leftJoinAndSelect('customer.role', 'customerRole')
+            .leftJoinAndSelect('order.orderDetails', 'orderDetails')
+            .leftJoinAndSelect('orderDetails.product', 'product')
+            .leftJoinAndSelect('product.category', 'category')
+            .leftJoinAndSelect('order.shipper', 'shipper')
+            .where('shipper.id = :shipperId', { shipperId });
 
-        // Filter theo status
-        if (status && status.trim()) {
-            query = query.andWhere("order.status = :status", { status: status.trim() });
+        if (status) {
+            queryBuilder = queryBuilder.andWhere('order.status = :status', { status });
         }
 
-        // Search theo order ID hoặc customer name
-        if (search && search.trim()) {
-            query = query.andWhere(
-                "(CAST(order.id AS TEXT) LIKE :search OR COALESCE(customer.name, '') LIKE :search OR customer.username LIKE :search)",
-                { search: `%${search.trim()}%` }
+        if (search) {
+            queryBuilder = queryBuilder.andWhere(
+                '(customer.username ILIKE :search OR order.id::text ILIKE :search OR order.shippingAddress ILIKE :search)',
+                { search: `%${search}%` }
             );
         }
 
-        // Sắp xếp
-        if (sort === "amount") {
-            query = query.orderBy("order.totalAmount", "DESC");
-        } else if (sort === "customer") {
-            query = query.orderBy("COALESCE(customer.name, customer.username)", "ASC");
-        } else {
-            query = query.orderBy("order.orderDate", "DESC");
+        if (sort === 'orderDate') {
+            queryBuilder = queryBuilder.orderBy('order.orderDate', 'DESC');
+        } else if (sort === 'totalAmount') {
+            queryBuilder = queryBuilder.orderBy('order.totalAmount', 'DESC');
         }
 
-        const [orders, total] = await query.skip(skip).take(limit).getManyAndCount();
+        const [orders, total] = await queryBuilder
+            .skip(offset)
+            .take(limit)
+            .getManyAndCount();
+
         return { orders, total };
     }
 
@@ -445,114 +367,88 @@ export class OrderService {
         shipperId: string,
         updateData: { status: string; reason?: string }
     ): Promise<Order> {
-        return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
-            // Lấy order với đầy đủ thông tin
-            const order = await transactionalEntityManager.findOne(Order, {
-                where: { id: orderId },
-                relations: ['customer', 'shipper', 'orderDetails', 'orderDetails.product']
-            });
-
-            if (!order) {
-                throw new EntityNotFoundException('Order');
-            }
-
-            // Kiểm tra quyền: chỉ shipper được assign mới có thể cập nhật
-            if (!order.shipper || order.shipper.id !== shipperId) {
-                throw new Error('Không có quyền cập nhật đơn hàng này');
-            }
-
-            // Validate status transition cho shipper (sử dụng Vietnamese enum values)
-            const validShipperTransitions: Record<string, string[]> = {
-                'Đang xử lý': ['Đang giao', 'Đã hủy'],
-                'Đang giao': ['Đã giao', 'Đã hủy']
-            };
-
-            const currentStatus = order.status;
-            const newStatus = updateData.status;
-
-            if (!validShipperTransitions[currentStatus]?.includes(newStatus)) {
-                throw new Error(`Shipper không thể chuyển trạng thái từ ${currentStatus} sang ${newStatus}`);
-            }
-
-            // Cập nhật trạng thái
-            order.status = newStatus as OrderStatus;
-
-            // Xử lý trường hợp hủy đơn
-            if (newStatus === 'Đã hủy') {
-                if (!updateData.reason?.trim()) {
-                    throw new Error('Vui lòng cung cấp lý do hủy đơn hàng');
-                }
-                order.cancelReason = updateData.reason.trim();
-
-                // Hoàn trả số lượng vào kho
-                for (const detail of order.orderDetails) {
-                    const product = await transactionalEntityManager.findOne(Product, {
-                        where: { id: detail.product.id }
-                    });
-                    if (product) {
-                        product.stock += detail.quantity;
-                        await transactionalEntityManager.save(product);
-                    }
-                }
-            }
-
-            await transactionalEntityManager.save(order);
-
-            // Lấy order đã cập nhật với đầy đủ thông tin
-            const updatedOrder = await transactionalEntityManager.findOne(Order, {
-                where: { id: orderId },
-                relations: ['customer', 'shipper', 'orderDetails', 'orderDetails.product']
-            });
-
-            if (!updatedOrder) {
-                throw new Error('Lỗi khi lấy thông tin đơn hàng đã cập nhật');
-            }
-
-            return updatedOrder;
+        const order = await Order.findOne({
+            where: { id: orderId },
+            relations: ['customer', 'shipper']
         });
+
+        if (!order) {
+            throw new EntityNotFoundException('Order');
+        }
+
+        // Check if shipper is assigned to this order
+        if (!order.shipper || order.shipper.id !== shipperId) {
+            throw new Error('Access denied - shipper not assigned to this order');
+        }
+
+        // Validate status transition for shipper
+        const currentStatus = order.status as OrderStatus;
+        const newStatus = updateData.status as OrderStatus;
+        
+        if (!this.validateOrderStatusTransition(currentStatus, newStatus)) {
+            throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus}`);
+        }
+
+        // Update order
+        order.status = newStatus;
+        if (updateData.reason && newStatus === OrderStatus.CANCELLED) {
+            order.cancelReason = updateData.reason;
+        }
+
+        await order.save();
+
+        // Return updated order with relations
+        return await this.getOrderById(orderId);
     }
 
-    /**
-     * Lấy tất cả đơn hàng với filter, search, sort, paging (cho admin/staff/shipper)
-     */
     async getAllOrdersWithFilter(options: { status?: string; search?: string; sort?: string; page?: number; limit?: number }): Promise<{ orders: Order[]; total: number }> {
-        const { status, search, sort, page = 1, limit = 10 } = options;
-        const skip = (page - 1) * limit;
+        const { status, search, sort = 'orderDate', page = 1, limit = 10 } = options;
+        const offset = (page - 1) * limit;
 
-        let query = Order.createQueryBuilder("order")
-            .leftJoinAndSelect("order.customer", "customer")
-            .leftJoinAndSelect("order.shipper", "shipper")
-            .leftJoinAndSelect("order.orderDetails", "orderDetails")
-            .leftJoinAndSelect("orderDetails.product", "product");
+        let queryBuilder = Order.createQueryBuilder('order')
+            .leftJoinAndSelect('order.customer', 'customer')
+            .leftJoinAndSelect('customer.role', 'customerRole')
+            .leftJoinAndSelect('order.orderDetails', 'orderDetails')
+            .leftJoinAndSelect('orderDetails.product', 'product')
+            .leftJoinAndSelect('product.category', 'category')
+            .leftJoinAndSelect('order.shipper', 'shipper');
 
-        if (status && status.trim()) {
-            query = query.andWhere("order.status = :status", { status: status.trim() });
+        if (status) {
+            queryBuilder = queryBuilder.where('order.status = :status', { status });
         }
-        if (search && search.trim()) {
-            query = query.andWhere(
-                "(CAST(order.id AS TEXT) LIKE :search OR COALESCE(customer.name, '') LIKE :search OR customer.username LIKE :search)",
-                { search: `%${search.trim()}%` }
+
+        if (search) {
+            const whereClause = status ? 'andWhere' : 'where';
+            queryBuilder = queryBuilder[whereClause](
+                '(customer.username ILIKE :search OR order.id::text ILIKE :search OR order.shippingAddress ILIKE :search)',
+                { search: `%${search}%` }
             );
         }
-        if (sort === "amount") {
-            query = query.orderBy("order.totalAmount", "DESC");
-        } else if (sort === "customer") {
-            query = query.orderBy("COALESCE(customer.name, customer.username)", "ASC");
-        } else {
-            query = query.orderBy("order.orderDate", "DESC");
+
+        if (sort === 'orderDate') {
+            queryBuilder = queryBuilder.orderBy('order.orderDate', 'DESC');
+        } else if (sort === 'totalAmount') {
+            queryBuilder = queryBuilder.orderBy('order.totalAmount', 'DESC');
         }
-        const [orders, total] = await query.skip(skip).take(limit).getManyAndCount();
+
+        const [orders, total] = await queryBuilder
+            .skip(offset)
+            .take(limit)
+            .getManyAndCount();
+
         return { orders, total };
     }
 
-    /**
-     * Xóa đơn hàng theo id (chỉ admin/staff)
-     */
     async deleteOrderById(orderId: string): Promise<void> {
-        const order = await Order.findOne({ where: { id: orderId } });
+        const order = await Order.findOne({
+            where: { id: orderId },
+            relations: ['orderDetails']
+        });
+
         if (!order) {
-            throw new Error('Không tìm thấy đơn hàng');
+            throw new EntityNotFoundException('Order');
         }
-        await Order.remove(order);
+
+        await order.remove();
     }
 } 

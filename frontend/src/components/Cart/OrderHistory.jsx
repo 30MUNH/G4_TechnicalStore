@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styles from './CartView.module.css'; // Use the same CSS module as CartView
+import { formatDateTime } from '../../utils/dateFormatter';
 
 export const OrderHistory = ({ orders, onBackToCart }) => {
     const [expandedOrders, setExpandedOrders] = useState(new Set());
@@ -28,12 +29,22 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
 
     const getStatusColor = (status) => {
         console.log('🎨 OrderHistory Debug - Getting status color for:', status);
-        switch (status?.toLowerCase()) {
+        switch (status) {
+            case 'Đang xử lý':
+                return '#f59e0b'; // Amber - Processing
+            case 'Đang giao':
+                return '#3b82f6'; // Blue - Shipping
+            case 'Đã giao':
+                return '#059669'; // Green - Delivered
+            case 'Đã hủy':
+                return '#ef4444'; // Red - Cancelled
+            // Fallback for English values (backward compatibility)
             case 'pending':
                 return '#f59e0b'; // Amber
             case 'processing':
                 return '#3b82f6'; // Blue
             case 'shipped':
+            case 'shipping':
                 return '#10b981'; // Emerald
             case 'delivered':
                 return '#059669'; // Green
