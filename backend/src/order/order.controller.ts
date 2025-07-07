@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseBefore, QueryParam } from "routing-controllers";
+import { Body, Controller, Get, Param, Patch, Post, Req, UseBefore, QueryParam, Delete } from "routing-controllers";
 import { Service } from "typedi";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dtos/create-order.dto";
@@ -149,8 +149,87 @@ export class OrderController {
         }
     }
 
+    /**
+     * Lấy danh sách đơn hàng cho admin/staff/shipper với filter, search, sort, paging
+     * GET /orders/admin?status=...&search=...&sort=...&page=...&limit=...
+     */
+    @Get("/admin")
+    @UseBefore(Auth)
+    async getAllOrdersForAdmin(
+        @Req() req: any,
+        @QueryParam("status") status: string,
+        @QueryParam("search") search: string,
+        @QueryParam("sort") sort: string,
+        @QueryParam("page") page: number = 1,
+        @QueryParam("limit") limit: number = 10
+    ) {
+        const user = req.user as AccountDetailsDto;
+        // Chỉ cho phép admin, staff, shipper
+        if (!this.isAdmin(user) && !this.isStaff(user) && !this.isShipper(user)) {
+            return {
+                message: "Không có quyền truy cập danh sách đơn hàng",
+                error: "Unauthorized"
+            };
+        }
+        try {
+            const result = await this.orderService.getAllOrdersWithFilter({ status, search, sort, page, limit });
+            return {
+                message: "Lấy danh sách đơn hàng thành công",
+                data: result.orders,
+                pagination: {
+                    page,
+                    limit,
+                    total: result.total,
+                    totalPages: Math.ceil(result.total / limit)
+                }
+            };
+        } catch (error: any) {
+            return {
+                message: "Lấy danh sách đơn hàng thất bại",
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Xóa đơn hàng (chỉ admin hoặc staff)
+     * DELETE /orders/:id
+     */
+    @Delete(":id")
+    @UseBefore(Auth)
+    async deleteOrder(@Param("id") id: string, @Req() req: any) {
+        const user = req.user as AccountDetailsDto;
+        if (!this.isAdmin(user) && !this.isStaff(user)) {
+            return {
+                message: "Không có quyền xóa đơn hàng",
+                error: "Unauthorized"
+            };
+        }
+        try {
+            await this.orderService.deleteOrderById(id);
+            return {
+                message: "Xóa đơn hàng thành công"
+            };
+        } catch (error: any) {
+            return {
+                message: "Xóa đơn hàng thất bại",
+                error: error.message
+            };
+        }
+    }
+
     // Helper method để kiểm tra quyền admin
     private isAdmin(user: AccountDetailsDto): boolean {
         return user.role?.name?.toLowerCase().includes('admin') || false;
+    }
+
+    // Helper method để kiểm tra quyền staff
+    private isStaff(user: AccountDetailsDto): boolean {
+        return user.role?.name?.toLowerCase().includes('staff') || false;
+    }
+
+    // Helper method để kiểm tra quyền shipper
+    private isShipper(user: AccountDetailsDto): boolean {
+        return user.role?.name?.toLowerCase().includes('shipper') || false;
     }
 } 
