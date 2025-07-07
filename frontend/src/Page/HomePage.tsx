@@ -111,6 +111,13 @@ const HomePage: React.FC = () => {
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
   const getProductImage = (product: Product): string => {
+    // Ưu tiên sử dụng ảnh từ database
+    if (product.images && product.images.length > 0) {
+      // Lấy ảnh đầu tiên từ danh sách ảnh
+      return product.images[0].url;
+    }
+    
+    // Fallback: sử dụng ảnh fix cứng dựa trên category nếu không có ảnh từ database
     const categoryName = product.category?.name?.toLowerCase() || '';
     if (categoryName.includes('laptop')) return '/img/product01.png';
     if (categoryName.includes('pc')) return '/img/product02.png';
@@ -194,7 +201,7 @@ const HomePage: React.FC = () => {
     >
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div className="product-img">
-          <img src={getProductImage(product)} alt={product.name} />
+          <img src={getProductImage(product)} alt={product.name} style={{ width: '100%', height: 180, objectFit: 'contain', background: '#fff', borderRadius: 12, display: 'block', margin: '0 auto' }} />
           <div className="product-label">
             <span className="new">NEW</span>
           </div>
@@ -267,8 +274,8 @@ const HomePage: React.FC = () => {
   // Thêm hàm mới để render sản phẩm Top Selling
   const renderTopSellingProduct = (product: Product) => (
     <div key={product.id} className="product-widget" style={{ display: 'flex', alignItems: 'center', marginBottom: 32, border: 'none', boxShadow: 'none' }}>
-      <div className="product-img" style={{ minWidth: 80, maxWidth: 80, marginRight: 24 }}>
-        <img src={getProductImage(product)} alt={product.name} style={{ width: 80, height: 60, objectFit: 'contain' }} />
+      <div className="product-img" style={{ minWidth: 60, maxWidth: 60, marginRight: 32 }}>
+        <img src={getProductImage(product)} alt={product.name} style={{ width: '100%', height: 80, objectFit: 'contain', background: '#fff', borderRadius: 12, display: 'block', margin: '0 auto' }} />
       </div>
       <div className="product-body" style={{ flex: 1, textAlign: 'left' }}>
         <p className="product-category">{product.category?.name || 'Category'}</p>

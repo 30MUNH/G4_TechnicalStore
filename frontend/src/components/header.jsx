@@ -144,7 +144,10 @@ const Header = () => {
                         {items.slice(0, 3).map(item => (
                           <div key={item.id} className="product-widget">
                             <div className="product-img">
-                              <img src="/img/product01.png" alt={item.product.name} />
+                              <img 
+                                src={item.product.images && item.product.images.length > 0 ? item.product.images[0].url : "/img/product01.png"} 
+                                alt={item.product.name} 
+                              />
                             </div>
                             <div className="product-body">
                               <h3 className="product-name">

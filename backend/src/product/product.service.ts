@@ -68,7 +68,7 @@ export class ProductService {
         stock: MoreThan(0),
         categoryId: laptopCategory.id,
       },
-      relations: ["category"],
+      relations: ["category", "images"],
       order: { createdAt: "DESC" },
       take: limit,
     });
@@ -84,7 +84,7 @@ export class ProductService {
         stock: MoreThan(0),
         categoryId: pcCategory.id,
       },
-      relations: ["category"],
+      relations: ["category", "images"],
       order: { createdAt: "DESC" },
       take: limit,
     });
@@ -97,6 +97,7 @@ export class ProductService {
     return await Product
       .createQueryBuilder("product")
       .leftJoinAndSelect("product.category", "category")
+      .leftJoinAndSelect("product.images", "images")
       .where("product.isActive = :isActive", { isActive: true })
       .andWhere("product.stock > :stock", { stock: 0 })
       .andWhere("product.categoryId NOT IN (:...ids)", {
@@ -124,7 +125,7 @@ export class ProductService {
         isActive: true,
         stock: MoreThan(0)
       },
-      relations: ["category"],
+      relations: ["category", "images"],
       order: { stock: "DESC" },
       take: limit,
     });
