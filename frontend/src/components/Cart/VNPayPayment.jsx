@@ -250,7 +250,7 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
                     <div className={styles.transactionDetails}>
                         <p><strong>Mã giao dịch:</strong> VNP{Date.now()}</p>
                         <p><strong>Số tiền:</strong> {formatCurrency(totalAmount)}</p>
-                        <p><strong>Thời gian:</strong> {new Date().toLocaleString('vi-VN')}</p>
+                        <p><strong>Thời gian:</strong> {formatDateTime(new Date())}</p>
                     </div>
                 </div>
             </div>

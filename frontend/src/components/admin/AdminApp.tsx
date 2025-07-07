@@ -6,6 +6,7 @@ import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
 import AdminDashboard from './AdminDashboard';
 import CustomerManagement from '../CustomerManager/CustomerManagement.jsx';
+import AccountManagement from '../AccountManager/AccountManagement.jsx';
 import ProductManagement from './ProductManagement';
 import ShipperManagement from '../ShipperManager/ShipperManagement.jsx';
 import OrderManagement from '../OrderManager/OrderManagement.jsx';
@@ -73,6 +74,8 @@ function AdminApp() {
         return <AdminDashboard />;
       case 'customers':
         return <CustomerManagement />;
+      case 'accounts':
+        return <AccountManagement />;
       case 'products':
         return <ProductManagement />;
       case 'shippers':

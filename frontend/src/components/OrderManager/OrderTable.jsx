@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './OrderManagement.module.css';
 import { Eye, Trash2 } from 'lucide-react';
+import { formatDateTime } from '../../utils/dateFormatter';
 
 const getStatusBadgeClass = (status) => {
   switch (status) {
@@ -57,7 +58,7 @@ const OrderTable = ({
               <tr key={order.id} className={styles.tableRow}>
                 <td className={styles.tableCell}>{order.id}</td>
                 <td className={styles.tableCell}>{order.customer?.name || order.customer?.username}</td>
-                <td className={styles.tableCell}>{new Date(order.orderDate).toLocaleString('vi-VN')}</td>
+                <td className={styles.tableCell}>{formatDateTime(order.orderDate)}</td>
                 <td className={styles.tableCell}>{order.totalAmount?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</td>
                 <td className={styles.tableCell}>
                   <span className={styles.badge + ' ' + getStatusBadgeClass(order.status)}>

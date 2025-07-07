@@ -45,11 +45,7 @@ const closeBtnStyle: React.CSSProperties = {
   color: '#888',
 };
 
-const formatDate = (dateStr?: string | null) => {
-  if (!dateStr) return '-';
-  const d = new Date(dateStr);
-  return d.toLocaleString('vi-VN');
-};
+import { formatDate } from '../../utils/dateFormatter';
 
 const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpen, onClose, product, onEdit }) => {
   useEffect(() => {

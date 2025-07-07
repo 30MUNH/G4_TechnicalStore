@@ -1,4 +1,4 @@
-import { IsObject, IsString } from "class-validator";
+import { IsObject, IsOptional, IsString } from "class-validator";
 import { Role } from "../role/role.entity";
 
 export class CredentialsDto {
@@ -50,3 +50,18 @@ export class VerifyRegisterDto {
     @IsString()
     otp: string;
 }
+
+export class UpdateAccountDto {
+    @IsString()
+    @IsOptional()
+    username?: string;
+
+    @IsString()
+    @IsOptional()
+    phone?: string;
+
+    @IsString()
+    @IsOptional()
+    roleSlug?: string;
+}
+
