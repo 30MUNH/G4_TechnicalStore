@@ -262,7 +262,11 @@ const AllProductsPage: React.FC = () => {
                     onClick={async () => await handleOpenQuickView(product)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <img src={product.url} alt={product.name} />
+                    <img 
+                      src={product.images && product.images.length > 0 ? product.images[0].url : (product.url || '/img/product-default.png')} 
+                      alt={product.name} 
+                      style={{ width: '100%', height: 140, objectFit: 'contain', background: '#f5f5f5', borderRadius: 12, marginBottom: 8 }}
+                    />
                     <h4>{product.name}</h4>
                     <div className="product-price">
                       {product.price.toLocaleString('vi-VN', {
