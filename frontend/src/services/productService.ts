@@ -193,6 +193,30 @@ class ProductService {
       return [];
     }
   }
+
+  async updateProduct(id: string, data: Partial<Product>): Promise<Product | null> {
+    try {
+      const response = await api.put<ApiResponse<Product>>(`/products/${id}`, data);
+      if (response.data && response.data.data && response.data.data.product) {
+        return response.data.data.product;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error updating product:', error);
+      return null;
+    }
+  }
+
+  async deleteProduct(id: string): Promise<boolean> {
+    try {
+      const response = await api.delete<ApiResponse<any>>(`/products/${id}`);
+      // Có thể kiểm tra response.data.success hoặc response.status === 200 tuỳ backend
+      return response.status === 200;
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      return false;
+    }
+  }
 }
 
 export const productService = new ProductService(); 

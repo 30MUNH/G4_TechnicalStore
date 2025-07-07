@@ -503,7 +503,7 @@ export class ProductService {
   // Thêm method để lấy tất cả sản phẩm (bao gồm cả hết hàng) - cho admin
   async getAllProductsIncludingOutOfStock(): Promise<Product[]> {
     return await Product.find({
-      relations: ["category"],
+      relations: ["category", "images"],
       order: { createdAt: "DESC" },
     });
   }

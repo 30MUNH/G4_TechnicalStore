@@ -14,6 +14,7 @@ import {
 import { productService } from '../../services/productService';
 import type { Product } from '../../types/product';
 import ProductDetailAdminModal from './ProductDetailAdminModal';
+import ProductEditAdminModal from './ProductEditAdminModal';
 
 const ProductManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,6 +29,8 @@ const ProductManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // Danh sách category filter cố định
   const CATEGORY_FILTERS = [
@@ -180,13 +183,6 @@ const ProductManagement: React.FC = () => {
     }).format(price);
   };
 
-  const getProductImage = (product: Product) => {
-    if (product.images && product.images.length > 0) {
-      return product.images[0].url;
-    }
-    return undefined;
-  };
-
   const handleViewProduct = async (product: Product) => {
     try {
       // Gọi API lấy chi tiết sản phẩm
@@ -207,9 +203,77 @@ const ProductManagement: React.FC = () => {
   };
 
   const handleEditProduct = (product: Product) => {
-    // TODO: chuyển sang trang edit hoặc mở modal edit
-    console.log('Edit product:', product);
-    setShowModal(false);
+    setEditingProduct(product);
+    setShowEditModal(true);
+  };
+
+  const handleSubmitEdit = async (updatedProduct: Product) => {
+    if (!updatedProduct.id) return;
+    let updateData: any = {};
+    const category = updatedProduct.category?.name;
+    if (category === 'Laptop') {
+      updateData = {
+        name: updatedProduct.name,
+        brand: updatedProduct.brand,
+        model: updatedProduct.model,
+        screenSize: updatedProduct.screenSize,
+        screenType: updatedProduct.screenType,
+        resolution: updatedProduct.resolution,
+        batteryLifeHours: updatedProduct.batteryLifeHours,
+        weightKg: updatedProduct.weightKg,
+        os: updatedProduct.os,
+        ramCount: updatedProduct.ramCount,
+        stock: updatedProduct.stock,
+        price: updatedProduct.price,
+        description: updatedProduct.description,
+        categoryId: updatedProduct.categoryId
+      };
+    } else if (category === 'RAM') {
+      updateData = {
+        name: updatedProduct.name,
+        brand: updatedProduct.brand,
+        model: updatedProduct.model,
+        capacityGb: updatedProduct.capacityGb,
+        speedMhz: updatedProduct.speedMhz,
+        type: updatedProduct.type,
+        stock: updatedProduct.stock,
+        price: updatedProduct.price,
+        description: updatedProduct.description,
+        categoryId: updatedProduct.categoryId
+      };
+    } else {
+      updateData = {
+        name: updatedProduct.name,
+        description: updatedProduct.description,
+        price: updatedProduct.price,
+        stock: updatedProduct.stock,
+        categoryId: updatedProduct.categoryId
+      };
+    }
+    try {
+      const result = await productService.updateProduct(updatedProduct.id, updateData);
+      if (result) {
+        const productsData = await productService.getAllProductsIncludingOutOfStock();
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        setShowEditModal(false);
+        setEditingProduct(null);
+        alert('Cập nhật sản phẩm thành công!');
+      } else {
+        alert('Cập nhật sản phẩm thất bại. Vui lòng thử lại!');
+      }
+    } catch (err) {
+      alert('Có lỗi xảy ra khi cập nhật sản phẩm.');
+    }
+  };
+
+  const handleDeleteProduct = async (product: Product) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xoá sản phẩm "${product.name}"?`)) return;
+    const result = await productService.deleteProduct(product.id);
+    if (result) {
+      // Cập nhật lại danh sách sản phẩm
+      const productsData = await productService.getAllProductsIncludingOutOfStock();
+      setProducts(Array.isArray(productsData) ? productsData : []);
+    }
   };
 
   if (loading) {
@@ -317,9 +381,9 @@ const ProductManagement: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
         {paginatedProducts.map((product) => (
           <div key={product.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow flex flex-col h-full">
-            {getProductImage(product) ? (
+            {(product.images && product.images.length > 0 && product.images[0].url) ? (
               <img 
-                src={getProductImage(product)} 
+                src={product.images[0].url} 
                 alt={product.name}
                 className="w-full h-48 object-cover"
               />
@@ -344,11 +408,11 @@ const ProductManagement: React.FC = () => {
                     <Eye size={16} className="mr-1" />
                     View
                   </button>
-                  <button className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-3 rounded-md transition-colors flex items-center justify-center">
+                  <button className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-3 rounded-md transition-colors flex items-center justify-center" onClick={() => handleEditProduct(product)}>
                     <Edit size={16} className="mr-1" />
                     Edit
                   </button>
-                  <button className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors flex items-center justify-center">
+                  <button className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors flex items-center justify-center" onClick={() => handleDeleteProduct(product)}>
                     <Trash2 size={16} className="mr-1" />
                     Delete
                   </button>
@@ -406,8 +470,16 @@ const ProductManagement: React.FC = () => {
         isOpen={showModal}
         onClose={handleCloseModal}
         product={selectedProduct}
-        onEdit={handleEditProduct}
       />
+
+      {showEditModal && editingProduct && (
+        <ProductEditAdminModal
+          isOpen={showEditModal}
+          onClose={() => { setShowEditModal(false); setEditingProduct(null); }}
+          product={editingProduct}
+          onSubmit={handleSubmitEdit}
+        />
+      )}
     </div>
   );
 };
