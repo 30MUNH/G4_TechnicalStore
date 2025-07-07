@@ -1,19 +1,33 @@
-import React, { useState } from 'react';
-import type { Product } from '../../types/product';
+import React, { useState, useEffect } from 'react';
+import type { Product, Category } from '../../types/product';
 
-interface ProductEditAdminModalProps {
+interface ProductAddAdminModalProps {
   isOpen: boolean;
   onClose: () => void;
-  product: Product;
-  onSubmit: (product: Product) => void;
+  onSubmit: (product: Partial<Product>) => void;
+  categories: Category[];
 }
 
-const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, onClose, product, onSubmit }) => {
-  const [form, setForm] = useState<Product>({ ...product });
+const ProductAddAdminModal: React.FC<ProductAddAdminModalProps> = ({ isOpen, onClose, onSubmit, categories }) => {
+  const [step, setStep] = useState(1);
+  const [categoryId, setCategoryId] = useState<string>('');
+  const [form, setForm] = useState<Partial<Product>>({});
+
+  useEffect(() => {
+    if (!isOpen) {
+      setStep(1);
+      setCategoryId('');
+      setForm({});
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const categoryName = product.category?.name;
+  const handleCategorySelect = (catId: string) => {
+    setCategoryId(catId);
+    setForm({});
+    setStep(2);
+  };
 
   const handleChange = (field: string, value: unknown) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -21,18 +35,32 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    // Ép kiểu price, stock, capacityGb, speedMhz về number nếu có
+    const payload = {
+      ...form,
+      name: form.name || '',
+      price: Number(form.price),
+      stock: Number(form.stock),
+      categoryId,
+      capacityGb: form.capacityGb !== undefined ? Number(form.capacityGb) : undefined,
+      speedMhz: form.speedMhz !== undefined ? Number(form.speedMhz) : undefined,
+    };
+    console.log('Payload gửi lên backend:', payload);
+    onSubmit(payload);
   };
 
-  // Render các trường tuỳ loại sản phẩm
+  const inputStyle = { width: '100%', padding: '8px 12px', border: '1px solid #ccc', borderRadius: 6, fontWeight: 400, fontSize: 16, marginTop: 4 };
+  const labelStyle = { textAlign: 'left' as const, fontWeight: 500, marginBottom: 4, display: 'block' };
+
   const renderFields = () => {
-    const inputStyle = { width: '100%', padding: '8px 12px', border: '1px solid #ccc', borderRadius: 6, fontWeight: 400, fontSize: 16, marginTop: 4 };
-    const labelStyle = { textAlign: 'left' as const, fontWeight: 500, marginBottom: 4, display: 'block' };
-    const nameInput = <label style={labelStyle}>Name:<input style={inputStyle} value={form.name || ''} onChange={e => handleChange('name', e.target.value)} /></label>;
-    const priceInput = <label style={labelStyle}>Price:<input style={inputStyle} type="number" value={form.price || ''} onChange={e => handleChange('price', e.target.value)} /></label>;
-    const stockInput = <label style={labelStyle}>Stock:<input style={inputStyle} value={form.stock || ''} onChange={e => handleChange('stock', e.target.value)} /></label>;
+    if (!categoryId) return null;
+    const catObj = categories.find(c => c.id === categoryId);
+    const cat = catObj ? catObj.name.trim().toLowerCase() : '';
+    const nameInput = <label style={labelStyle}>Product Name:<input style={inputStyle} value={form.name || ''} onChange={e => handleChange('name', e.target.value)} required /></label>;
+    const priceInput = <label style={labelStyle}>Price:<input style={inputStyle} type="number" value={form.price || ''} onChange={e => handleChange('price', e.target.value)} required min={0} /></label>;
     const descInput = <label style={labelStyle}>Description:<textarea style={{...inputStyle, minHeight: 80, resize: 'vertical'}} value={form.description || ''} onChange={e => handleChange('description', e.target.value)} /></label>;
-    if (categoryName === 'Laptop') {
+    const stockInput = <label style={labelStyle}>Stock:<input style={inputStyle} type="number" value={form.stock || ''} onChange={e => handleChange('stock', e.target.value)} required min={0} /></label>;
+    if (cat === 'laptop') {
       return <>
         {nameInput}
         {descInput}
@@ -49,7 +77,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'RAM') {
+    if (cat === 'ram') {
       return <>
         {nameInput}
         {descInput}
@@ -62,7 +90,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'CPU') {
+    if (cat === 'cpu') {
       return <>
         {nameInput}
         {descInput}
@@ -78,7 +106,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'GPU') {
+    if (cat === 'gpu') {
       return <>
         {nameInput}
         {descInput}
@@ -92,7 +120,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'Monitor') {
+    if (cat === 'monitor') {
       return <>
         {nameInput}
         {descInput}
@@ -106,7 +134,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'Motherboard') {
+    if (cat === 'motherboard') {
       return <>
         {nameInput}
         {descInput}
@@ -121,7 +149,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'Headset') {
+    if (cat === 'headset') {
       return <>
         {nameInput}
         {descInput}
@@ -132,7 +160,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'Keyboard') {
+    if (cat === 'keyboard') {
       return <>
         {nameInput}
         {descInput}
@@ -145,7 +173,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'Network Card') {
+    if (cat === 'network card') {
       return <>
         {nameInput}
         {descInput}
@@ -156,7 +184,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'Case') {
+    if (cat === 'case') {
       return <>
         {nameInput}
         {descInput}
@@ -169,7 +197,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'PSU') {
+    if (cat === 'psu') {
       return <>
         {nameInput}
         {descInput}
@@ -182,7 +210,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'PC') {
+    if (cat === 'pc') {
       return <>
         {nameInput}
         {descInput}
@@ -200,7 +228,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'Cooler') {
+    if (cat === 'cooler') {
       return <>
         {nameInput}
         {descInput}
@@ -213,7 +241,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'Drive') {
+    if (cat === 'drive') {
       return <>
         {nameInput}
         {descInput}
@@ -226,7 +254,7 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    if (categoryName === 'Mouse') {
+    if (cat === 'mouse') {
       return <>
         {nameInput}
         {descInput}
@@ -238,7 +266,6 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         {stockInput}
       </>;
     }
-    // ... Thêm các loại sản phẩm khác tương tự như logic view detail ...
     // Mặc định
     return <>
       {nameInput}
@@ -254,16 +281,31 @@ const ProductEditAdminModal: React.FC<ProductEditAdminModalProps> = ({ isOpen, o
         <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 2 }}>
           <button type="button" style={{ fontSize: 28, background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: 0, lineHeight: 1 }} onClick={onClose}>×</button>
         </div>
-        <h2 style={{ textAlign: 'left', fontWeight: 700, fontSize: 28, marginBottom: 24, marginTop: 0 }}>Edit Product</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {renderFields()}
-        </div>
-        <div style={{ marginTop: 32, textAlign: 'right' }}>
-          <button type="submit" style={{ background: '#ffb300', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 32px', fontWeight: 700, fontSize: 18, cursor: 'pointer', letterSpacing: 1 }}>SAVE</button>
-        </div>
+        <h2 style={{ textAlign: 'left', fontWeight: 700, fontSize: 28, marginBottom: 24, marginTop: 0 }}>Add Product</h2>
+        {step === 1 && (
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Select product category:</label>
+              <select style={inputStyle} value={categoryId} onChange={e => handleCategorySelect(e.target.value)}>
+                <option value="">-- Select --</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
+        {step === 2 && (
+          <>
+            {renderFields()}
+            <div style={{ marginTop: 32, textAlign: 'right' }}>
+              <button type="submit" style={{ background: '#ffb300', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 32px', fontWeight: 700, fontSize: 18, cursor: 'pointer', letterSpacing: 1 }}>ADD</button>
+            </div>
+          </>
+        )}
       </form>
     </div>
   );
 };
 
-export default ProductEditAdminModal; 
+export default ProductAddAdminModal; 

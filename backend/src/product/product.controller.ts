@@ -207,8 +207,6 @@ export class ProductController {
     }
 
     @Post("/")
-    @UseBefore(Auth)
-    @UseBefore(authorizedRoles("manager", "admin"))
     async createProduct(@Body() createProductDto: CreateProductDto) {
         try {
             const product = await this.productService.createProduct(createProductDto);
@@ -225,8 +223,6 @@ export class ProductController {
     }
 
     @Put("/:id")
-    @UseBefore(Auth)
-    @UseBefore(authorizedRoles("manager", "admin"))
     async updateProduct(
         @Param("id") id: string,
         @Body() updateProductDto: UpdateProductDto
@@ -251,8 +247,6 @@ export class ProductController {
     }
 
     @Delete("/:id")
-    @UseBefore(Auth)
-    @UseBefore(authorizedRoles("manager", "admin"))
     async deleteProduct(@Param("id") id: string) {
         try {
             const result = await this.productService.deleteProduct(id);

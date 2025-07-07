@@ -12,9 +12,10 @@ import {
   Loader2
 } from 'lucide-react';
 import { productService } from '../../services/productService';
-import type { Product } from '../../types/product';
+import type { Product, Category } from '../../types/product';
 import ProductDetailAdminModal from './ProductDetailAdminModal';
 import ProductEditAdminModal from './ProductEditAdminModal';
+import ProductAddAdminModal from './ProductAddAdminModal';
 
 const ProductManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,6 +23,7 @@ const ProductManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [priceSort, setPriceSort] = useState('none');
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +33,7 @@ const ProductManagement: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Danh sách category filter cố định
   const CATEGORY_FILTERS = [
@@ -49,6 +52,10 @@ const ProductManagement: React.FC = () => {
         console.log('Fetched products:', productsData);
         setProducts(Array.isArray(productsData) ? productsData : []);
         
+        // Lấy danh sách category
+        const categoriesData = await productService.getCategories();
+        console.log('Fetched categories:', categoriesData);
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
 
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -202,54 +209,106 @@ const ProductManagement: React.FC = () => {
     setSelectedProduct(null);
   };
 
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
-    setShowEditModal(true);
+  const handleEditProduct = async (product: Product) => {
+    // Gọi API lấy chi tiết sản phẩm để lấy đủ các trường đặc thù
+    try {
+      const detail = await productService.getProductById(product.id);
+      setEditingProduct(detail || product);
+      setShowEditModal(true);
+    } catch (error) {
+      setEditingProduct(product);
+      setShowEditModal(true);
+    }
   };
 
   const handleSubmitEdit = async (updatedProduct: Product) => {
     if (!updatedProduct.id) return;
-    let updateData: any = {};
+
+    // Chuẩn bị dữ liệu update với các field cơ bản của Product
+    let updateData: Record<string, unknown> = {
+      name: updatedProduct.name,
+      description: updatedProduct.description,
+      price: Number(updatedProduct.price),
+      stock: Number(updatedProduct.stock),
+      categoryId: updatedProduct.categoryId,
+      isActive: updatedProduct.isActive
+    };
+
+    // Thêm các field đặc thù theo loại sản phẩm
     const category = updatedProduct.category?.name;
     if (category === 'Laptop') {
       updateData = {
-        name: updatedProduct.name,
+        ...updateData,
         brand: updatedProduct.brand,
         model: updatedProduct.model,
-        screenSize: updatedProduct.screenSize,
+        screenSize: updatedProduct.screenSize ? Number(updatedProduct.screenSize) : undefined,
         screenType: updatedProduct.screenType,
         resolution: updatedProduct.resolution,
-        batteryLifeHours: updatedProduct.batteryLifeHours,
-        weightKg: updatedProduct.weightKg,
+        batteryLifeHours: updatedProduct.batteryLifeHours ? Number(updatedProduct.batteryLifeHours) : undefined,
+        weightKg: updatedProduct.weightKg ? Number(updatedProduct.weightKg) : undefined,
         os: updatedProduct.os,
-        ramCount: updatedProduct.ramCount,
-        stock: updatedProduct.stock,
-        price: updatedProduct.price,
-        description: updatedProduct.description,
-        categoryId: updatedProduct.categoryId
+        ramCount: updatedProduct.ramCount ? Number(updatedProduct.ramCount) : undefined
       };
     } else if (category === 'RAM') {
       updateData = {
-        name: updatedProduct.name,
+        ...updateData,
         brand: updatedProduct.brand,
         model: updatedProduct.model,
-        capacityGb: updatedProduct.capacityGb,
-        speedMhz: updatedProduct.speedMhz,
-        type: updatedProduct.type,
-        stock: updatedProduct.stock,
-        price: updatedProduct.price,
-        description: updatedProduct.description,
-        categoryId: updatedProduct.categoryId
+        capacityGb: updatedProduct.capacityGb ? Number(updatedProduct.capacityGb) : undefined,
+        speedMhz: updatedProduct.speedMhz ? Number(updatedProduct.speedMhz) : undefined,
+        type: updatedProduct.type
       };
-    } else {
+    } else if (category === 'CPU') {
       updateData = {
-        name: updatedProduct.name,
-        description: updatedProduct.description,
-        price: updatedProduct.price,
-        stock: updatedProduct.stock,
-        categoryId: updatedProduct.categoryId
+        ...updateData,
+        cores: updatedProduct.cores ? Number(updatedProduct.cores) : undefined,
+        threads: updatedProduct.threads ? Number(updatedProduct.threads) : undefined,
+        baseClock: updatedProduct.baseClock,
+        boostClock: updatedProduct.boostClock,
+        socket: updatedProduct.socket,
+        architecture: updatedProduct.architecture,
+        tdp: updatedProduct.tdp ? Number(updatedProduct.tdp) : undefined,
+        integratedGraphics: updatedProduct.integratedGraphics
+      };
+    } else if (category === 'GPU') {
+      updateData = {
+        ...updateData,
+        brand: updatedProduct.brand,
+        model: updatedProduct.model,
+        vram: updatedProduct.vram ? Number(updatedProduct.vram) : undefined,
+        chipset: updatedProduct.chipset,
+        memoryType: updatedProduct.memoryType,
+        lengthMm: updatedProduct.lengthMm ? Number(updatedProduct.lengthMm) : undefined
+      };
+    } else if (category === 'Monitor') {
+      updateData = {
+        ...updateData,
+        brand: updatedProduct.brand,
+        model: updatedProduct.model,
+        sizeInch: updatedProduct.sizeInch ? Number(updatedProduct.sizeInch) : undefined,
+        resolution: updatedProduct.resolution,
+        panelType: updatedProduct.panelType,
+        refreshRate: updatedProduct.refreshRate ? Number(updatedProduct.refreshRate) : undefined
+      };
+    } else if (category === 'Motherboard') {
+      updateData = {
+        ...updateData,
+        brand: updatedProduct.brand,
+        model: updatedProduct.model,
+        socket: updatedProduct.socket,
+        chipset: updatedProduct.chipset,
+        formFactor: updatedProduct.formFactor,
+        ramSlots: updatedProduct.ramSlots ? Number(updatedProduct.ramSlots) : undefined,
+        maxRam: updatedProduct.maxRam ? Number(updatedProduct.maxRam) : undefined
       };
     }
+
+    // Loại bỏ các field undefined
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
     try {
       const result = await productService.updateProduct(updatedProduct.id, updateData);
       if (result) {
@@ -257,22 +316,43 @@ const ProductManagement: React.FC = () => {
         setProducts(Array.isArray(productsData) ? productsData : []);
         setShowEditModal(false);
         setEditingProduct(null);
-        alert('Cập nhật sản phẩm thành công!');
+        alert('Product updated successfully!');
       } else {
-        alert('Cập nhật sản phẩm thất bại. Vui lòng thử lại!');
+        alert('Failed to update product. Please try again!');
       }
     } catch (err) {
-      alert('Có lỗi xảy ra khi cập nhật sản phẩm.');
+      alert('An error occurred while updating the product.');
     }
   };
 
   const handleDeleteProduct = async (product: Product) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xoá sản phẩm "${product.name}"?`)) return;
+    if (!window.confirm(`Are you sure you want to delete the product "${product.name}"?`)) return;
     const result = await productService.deleteProduct(product.id);
     if (result) {
-      // Cập nhật lại danh sách sản phẩm
+      // Update product list
       const productsData = await productService.getAllProductsIncludingOutOfStock();
       setProducts(Array.isArray(productsData) ? productsData : []);
+      alert('Product deleted successfully!');
+    }
+  };
+
+  const handleAddProduct = () => {
+    setShowAddModal(true);
+  };
+
+  const handleSubmitAdd = async (newProduct: Partial<Product>) => {
+    try {
+      const result = await productService.createProduct(newProduct);
+      if (result) {
+        const productsData = await productService.getAllProductsIncludingOutOfStock();
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        setShowAddModal(false);
+        alert('Product added successfully!');
+      } else {
+        alert('Failed to add product. Please try again!');
+      }
+    } catch (err) {
+      alert('An error occurred while adding the product.');
     }
   };
 
@@ -322,7 +402,7 @@ const ProductManagement: React.FC = () => {
               <Upload size={18} className="text-white" />
               <span className="text-white font-medium">Export Data</span>
             </button>
-            <button className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-all duration-200">
+            <button className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-all duration-200" onClick={handleAddProduct}>
               <Plus size={18} className="text-white" />
               <span className="text-white font-medium">Add Product</span>
             </button>
@@ -470,6 +550,7 @@ const ProductManagement: React.FC = () => {
         isOpen={showModal}
         onClose={handleCloseModal}
         product={selectedProduct}
+        onEdit={handleEditProduct}
       />
 
       {showEditModal && editingProduct && (
@@ -480,6 +561,13 @@ const ProductManagement: React.FC = () => {
           onSubmit={handleSubmitEdit}
         />
       )}
+
+      <ProductAddAdminModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={handleSubmitAdd}
+        categories={categories}
+      />
     </div>
   );
 };

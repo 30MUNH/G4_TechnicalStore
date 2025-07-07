@@ -71,7 +71,8 @@ const authRoutes = [
     '/account/verify-registration',
     '/account/resend-otp',
     '/account/forgot-password',
-    '/account/verify-change-password'
+    '/account/verify-change-password',
+    '/products/categories/all'
 ];
 
 api.interceptors.request.use(
