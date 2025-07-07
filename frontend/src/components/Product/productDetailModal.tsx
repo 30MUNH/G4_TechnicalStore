@@ -597,23 +597,13 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           )}
           <div style={{ flex: 1, textAlign: "left" }}>
             <h3 style={{ margin: 0 }}>{product.name}</h3>
-            <div
-              style={{
-                color: "#ff2d55",
-                fontWeight: 700,
-                fontSize: 20,
-                margin: "8px 0",
-              }}
-            >
-              {product.price
-                ? product.price.toLocaleString("vi-VN", {
-                    style: "currency",
-                    currency: "VND",
-                  })
-                : "Giá không có sẵn"}
-            </div>
-            <div style={{ marginBottom: 8 }}>
-              <b>Danh mục:</b> {product.category?.name || "Không có danh mục"}
+            {product.description && (
+              <div style={{ margin: '8px 0', color: '#555', fontStyle: 'italic' }}>
+                {product.description}
+              </div>
+            )}
+            <div style={{ color: '#ff2d55', fontWeight: 700, fontSize: 20, margin: '8px 0' }}>
+              {product.price ? product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : 'Giá không có sẵn'}
             </div>
             {renderDetail()}
           </div>

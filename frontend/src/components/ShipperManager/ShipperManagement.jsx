@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { Download, Upload, Plus, X, Save } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { 
+  Upload, 
+  Plus, 
+  X,
+  Save
+} from 'lucide-react';
 
 import ShipperCard from "./ShipperCard";
 import FilterBar from "./FilterBar";
@@ -305,28 +310,31 @@ const ShipperManagement = () => {
     }
   };
 
-  // Import/Export operations (placeholder implementations)
-  const handleImportData = async (event) => {
-    try {
-      const file = event.target.files?.[0];
-      if (!file) return;
-
-      // TODO: Implement actual import logic
-      showNotification("Import feature coming soon", "info");
-    } catch (error) {
-      showNotification("Failed to import data", "error");
-    }
-
-    // Reset file input
-    event.target.value = "";
-  };
-
+  // Export operation
   const handleExportData = async () => {
     try {
-      // TODO: Implement actual export logic
-      showNotification("Export feature coming soon", "info");
+      const response = await shipperService.exportShippers();
+      
+      if (response.success && response.data) {
+        // Create download link
+        const url = window.URL.createObjectURL(new Blob([response.data], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `shippers_${new Date().toISOString().split('T')[0]}.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        
+        showNotification('Data exported successfully', 'success');
+      } else {
+        throw new Error('Failed to export data');
+      }
     } catch (error) {
-      showNotification("Failed to export data", "error");
+      console.error('Export error:', error);
+      showNotification('Failed to export data', 'error');
     }
   };
 
@@ -369,21 +377,7 @@ const ShipperManagement = () => {
           </div>
 
           <div className={styles.headerActions}>
-            <input
-              type="file"
-              id="importFile"
-              accept=".xlsx,.xls"
-              className={styles.hiddenInput}
-              onChange={handleImportData}
-            />
-            <button
-              className={`${styles.actionButton} ${styles.importButton}`}
-              onClick={() => document.getElementById("importFile")?.click()}
-            >
-              <Download size={18} />
-              <span>Import Data</span>
-            </button>
-            <button
+            <button 
               className={`${styles.actionButton} ${styles.exportButton}`}
               onClick={handleExportData}
             >

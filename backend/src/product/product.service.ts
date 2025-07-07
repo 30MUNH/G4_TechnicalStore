@@ -53,7 +53,7 @@ export class ProductService {
         isActive: true,
         stock: MoreThan(0)
       },
-      relations: ["category"],
+      relations: ["category", "images"],
       order: { createdAt: "DESC" },
     });
   }
@@ -295,16 +295,19 @@ export class ProductService {
       console.log('Saving product:', product);
       const savedProduct = await transactionalEntityManager.save(product);
       console.log('Product saved successfully:', savedProduct);
-      
+      // Load lại product kèm category
+      const savedProductWithCategory = await transactionalEntityManager.findOne(Product, { where: { id: savedProduct.id }, relations: ['category'] });
+      if (!savedProductWithCategory) {
+        throw new Error('Cannot load product with category after save');
+      }
       // Lưu vào bảng component đặc thù nếu có
       try {
-        await this.updateComponentDetails(transactionalEntityManager, savedProduct, createProductDto);
+        await this.updateComponentDetails(transactionalEntityManager, savedProductWithCategory, createProductDto);
       } catch (componentError) {
         console.error('Lỗi khi lưu vào bảng component đặc thù:', componentError);
         throw new BadRequestException('Lỗi khi lưu vào bảng component đặc thù: ' + String(componentError));
       }
-      
-      return savedProduct;
+      return savedProductWithCategory;
     });
   }
 
@@ -418,7 +421,33 @@ export class ProductService {
       case 'motherboard':
         await this.updateMotherboardDetails(transactionalEntityManager, product, updateData);
         break;
-      // Có thể bổ sung các loại khác nếu cần
+      case 'psu':
+        await this.updatePSUDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'drive':
+        await this.updateDriveDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'cooler':
+        await this.updateCoolerDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'pc':
+        await this.updatePCDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'network card':
+        await this.updateNetworkCardDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'case':
+        await this.updateCaseDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'mouse':
+        await this.updateMouseDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'keyboard':
+        await this.updateKeyboardDetails(transactionalEntityManager, product, updateData);
+        break;
+      case 'headset':
+        await this.updateHeadsetDetails(transactionalEntityManager, product, updateData);
+        break;
       default:
         // For other categories, no component-specific update needed
         break;
@@ -608,6 +637,177 @@ export class ProductService {
       console.error('[Motherboard] Error saving Motherboard entity:', err);
       throw new Error('Không thể lưu thông tin Motherboard cho sản phẩm');
     }
+  }
+
+  private async updatePSUDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { PSU } = await import("./components/psu.entity");
+    let psu = await PSU.findOne({ where: { product: { id: product.id } } });
+    if (!psu) {
+      psu = new PSU();
+      psu.product = product;
+    }
+    if (updateData.brand !== undefined) psu.brand = updateData.brand;
+    if (updateData.model !== undefined) psu.model = updateData.model;
+    if (updateData.wattage !== undefined) psu.wattage = updateData.wattage;
+    if (updateData.efficiencyRating !== undefined) psu.efficiencyRating = updateData.efficiencyRating;
+    if (updateData.modular !== undefined) psu.modular = updateData.modular;
+    await transactionalEntityManager.save(psu);
+  }
+
+  private async updateDriveDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { Drive } = await import("./components/drive.entity");
+    let drive = await Drive.findOne({ where: { product: { id: product.id } } });
+    if (!drive) {
+      drive = new Drive();
+      drive.product = product;
+    }
+    if (updateData.brand !== undefined) drive.brand = updateData.brand;
+    if (updateData.model !== undefined) drive.model = updateData.model;
+    if (updateData.type !== undefined) drive.type = updateData.type;
+    if (updateData.capacityGb !== undefined) drive.capacityGb = updateData.capacityGb;
+    if (updateData.interface !== undefined) drive.interface = updateData.interface;
+    await transactionalEntityManager.save(drive);
+  }
+
+  private async updateCoolerDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { Cooler } = await import("./components/cooler.entity");
+    let cooler = await Cooler.findOne({ where: { product: { id: product.id } } });
+    if (!cooler) {
+      cooler = new Cooler();
+      cooler.product = product;
+    }
+    if (updateData.brand !== undefined) cooler.brand = updateData.brand;
+    if (updateData.model !== undefined) cooler.model = updateData.model;
+    if (updateData.type !== undefined) cooler.type = updateData.type;
+    if (updateData.supportedSockets !== undefined) cooler.supportedSockets = updateData.supportedSockets;
+    if (updateData.fanSizeMm !== undefined) cooler.fanSizeMm = updateData.fanSizeMm;
+    await transactionalEntityManager.save(cooler);
+  }
+
+  private async updatePCDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { PC } = await import("./components/pc.entity");
+    let pc = await PC.findOne({ where: { product: { id: product.id } } });
+    if (!pc) {
+      pc = new PC();
+      pc.product = product;
+    }
+    if (updateData.brand !== undefined) pc.brand = updateData.brand;
+    if (updateData.model !== undefined) pc.model = updateData.model;
+    if (updateData.processor !== undefined) pc.processor = updateData.processor;
+    if (updateData.ramGb !== undefined) pc.ramGb = updateData.ramGb;
+    if (updateData.storageGb !== undefined) pc.storageGb = updateData.storageGb;
+    if (updateData.storageType !== undefined) pc.storageType = updateData.storageType;
+    if (updateData.graphics !== undefined) pc.graphics = updateData.graphics;
+    if (updateData.formFactor !== undefined) pc.formFactor = updateData.formFactor;
+    if (updateData.powerSupplyWattage !== undefined) pc.powerSupplyWattage = updateData.powerSupplyWattage;
+    if (updateData.operatingSystem !== undefined) pc.operatingSystem = updateData.operatingSystem;
+    await transactionalEntityManager.save(pc);
+  }
+
+  private async updateNetworkCardDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { NetworkCard } = await import("./components/networkCard.entity");
+    let nc = await NetworkCard.findOne({ where: { product: { id: product.id } } });
+    if (!nc) {
+      nc = new NetworkCard();
+      nc.product = product;
+    }
+    if (updateData.type !== undefined) nc.type = updateData.type;
+    if (updateData.interface !== undefined) nc.interface = updateData.interface;
+    if (updateData.speedMbps !== undefined) nc.speedMbps = updateData.speedMbps;
+    await transactionalEntityManager.save(nc);
+  }
+
+  private async updateCaseDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { Case } = await import("./components/case.entity");
+    let c = await Case.findOne({ where: { product: { id: product.id } } });
+    if (!c) {
+      c = new Case();
+      c.product = product;
+    }
+    if (updateData.brand !== undefined) c.brand = updateData.brand;
+    if (updateData.model !== undefined) c.model = updateData.model;
+    if (updateData.formFactorSupport !== undefined) c.formFactorSupport = updateData.formFactorSupport;
+    if (updateData.hasRgb !== undefined) c.hasRgb = updateData.hasRgb;
+    if (updateData.sidePanelType !== undefined) c.sidePanelType = updateData.sidePanelType;
+    await transactionalEntityManager.save(c);
+  }
+
+  private async updateMouseDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { Mouse } = await import("./components/mouse.entity");
+    let m = await Mouse.findOne({ where: { product: { id: product.id } } });
+    if (!m) {
+      m = new Mouse();
+      m.product = product;
+    }
+    if (updateData.type !== undefined) m.type = updateData.type;
+    if (updateData.dpi !== undefined) m.dpi = updateData.dpi;
+    if (updateData.connectivity !== undefined) m.connectivity = updateData.connectivity;
+    if (updateData.hasRgb !== undefined) m.hasRgb = updateData.hasRgb;
+    await transactionalEntityManager.save(m);
+  }
+
+  private async updateKeyboardDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { Keyboard } = await import("./components/keyboard.entity");
+    let k = await Keyboard.findOne({ where: { product: { id: product.id } } });
+    if (!k) {
+      k = new Keyboard();
+      k.product = product;
+    }
+    if (updateData.type !== undefined) k.type = updateData.type;
+    if (updateData.switchType !== undefined) k.switchType = updateData.switchType;
+    if (updateData.connectivity !== undefined) k.connectivity = updateData.connectivity;
+    if (updateData.layout !== undefined) k.layout = updateData.layout;
+    if (updateData.hasRgb !== undefined) k.hasRgb = updateData.hasRgb;
+    await transactionalEntityManager.save(k);
+  }
+
+  private async updateHeadsetDetails(
+    transactionalEntityManager: any,
+    product: Product,
+    updateData: any
+  ): Promise<void> {
+    const { Headset } = await import("./components/headset.entity");
+    let h = await Headset.findOne({ where: { product: { id: product.id } } });
+    if (!h) {
+      h = new Headset();
+      h.product = product;
+    }
+    if (updateData.hasMicrophone !== undefined) h.hasMicrophone = updateData.hasMicrophone;
+    if (updateData.connectivity !== undefined) h.connectivity = updateData.connectivity;
+    if (updateData.surroundSound !== undefined) h.surroundSound = updateData.surroundSound;
+    await transactionalEntityManager.save(h);
   }
 
   async deleteProduct(id: string): Promise<boolean> {
