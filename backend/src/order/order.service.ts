@@ -398,4 +398,117 @@ export class OrderService {
 
         return statistics;
     }
+
+    async getOrdersByShipperId(
+        shipperId: string,
+        options: { status?: string; search?: string; sort?: string; page?: number; limit?: number }
+    ): Promise<{ orders: Order[]; total: number }> {
+        const { status, search, sort, page = 1, limit = 10 } = options;
+        const skip = (page - 1) * limit;
+
+        // Xây dựng query
+        let query = Order.createQueryBuilder("order")
+            .leftJoinAndSelect("order.customer", "customer")
+            .leftJoinAndSelect("order.shipper", "shipper")
+            .leftJoinAndSelect("order.orderDetails", "orderDetails")
+            .leftJoinAndSelect("orderDetails.product", "product")
+            .where("order.shipper.id = :shipperId", { shipperId });
+
+        // Filter theo status
+        if (status && status.trim()) {
+            query = query.andWhere("order.status = :status", { status: status.trim() });
+        }
+
+        // Search theo order ID hoặc customer name
+        if (search && search.trim()) {
+            query = query.andWhere(
+                "(CAST(order.id AS TEXT) LIKE :search OR COALESCE(customer.name, '') LIKE :search OR customer.username LIKE :search)",
+                { search: `%${search.trim()}%` }
+            );
+        }
+
+        // Sắp xếp
+        if (sort === "amount") {
+            query = query.orderBy("order.totalAmount", "DESC");
+        } else if (sort === "customer") {
+            query = query.orderBy("COALESCE(customer.name, customer.username)", "ASC");
+        } else {
+            query = query.orderBy("order.orderDate", "DESC");
+        }
+
+        const [orders, total] = await query.skip(skip).take(limit).getManyAndCount();
+        return { orders, total };
+    }
+
+    async updateOrderStatusByShipper(
+        orderId: string,
+        shipperId: string,
+        updateData: { status: string; reason?: string }
+    ): Promise<Order> {
+        return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
+            // Lấy order với đầy đủ thông tin
+            const order = await transactionalEntityManager.findOne(Order, {
+                where: { id: orderId },
+                relations: ['customer', 'shipper', 'orderDetails', 'orderDetails.product']
+            });
+
+            if (!order) {
+                throw new EntityNotFoundException('Order');
+            }
+
+            // Kiểm tra quyền: chỉ shipper được assign mới có thể cập nhật
+            if (!order.shipper || order.shipper.id !== shipperId) {
+                throw new Error('Không có quyền cập nhật đơn hàng này');
+            }
+
+            // Validate status transition cho shipper (sử dụng Vietnamese enum values)
+            const validShipperTransitions: Record<string, string[]> = {
+                'Đang xử lý': ['Đang giao', 'Đã hủy'],
+                'Đang giao': ['Đã giao', 'Đã hủy']
+            };
+
+            const currentStatus = order.status;
+            const newStatus = updateData.status;
+
+            if (!validShipperTransitions[currentStatus]?.includes(newStatus)) {
+                throw new Error(`Shipper không thể chuyển trạng thái từ ${currentStatus} sang ${newStatus}`);
+            }
+
+            // Cập nhật trạng thái
+            order.status = newStatus as OrderStatus;
+
+            // Xử lý trường hợp hủy đơn
+            if (newStatus === 'Đã hủy') {
+                if (!updateData.reason?.trim()) {
+                    throw new Error('Vui lòng cung cấp lý do hủy đơn hàng');
+                }
+                order.cancelReason = updateData.reason.trim();
+
+                // Hoàn trả số lượng vào kho
+                for (const detail of order.orderDetails) {
+                    const product = await transactionalEntityManager.findOne(Product, {
+                        where: { id: detail.product.id }
+                    });
+                    if (product) {
+                        product.stock += detail.quantity;
+                        await transactionalEntityManager.save(product);
+                    }
+                }
+            }
+
+            await transactionalEntityManager.save(order);
+
+            // Lấy order đã cập nhật với đầy đủ thông tin
+            const updatedOrder = await transactionalEntityManager.findOne(Order, {
+                where: { id: orderId },
+                relations: ['customer', 'shipper', 'orderDetails', 'orderDetails.product']
+            });
+
+            if (!updatedOrder) {
+                throw new Error('Lỗi khi lấy thông tin đơn hàng đã cập nhật');
+            }
+
+            return updatedOrder;
+        });
+    }
 } 

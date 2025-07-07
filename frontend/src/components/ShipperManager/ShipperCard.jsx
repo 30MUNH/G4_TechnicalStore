@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Edit, Trash2, Phone, MapPin, Truck, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { Eye, Edit, Trash2, Phone, MapPin, Truck, ChevronLeft, ChevronRight, User, List } from 'lucide-react';
 import styles from './ShipperCard.module.css';
 
 const ShipperCard = ({
@@ -11,6 +11,7 @@ const ShipperCard = ({
   onView,
   onEdit,
   onDelete,
+  onViewOrders,
   onPageChange
 }) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -123,6 +124,14 @@ const ShipperCard = ({
               >
                 <Eye className={styles.actionIcon} />
                 View
+              </button>
+              <button
+                className={`${styles.actionButton} ${styles.ordersButton}`}
+                onClick={() => onViewOrders(shipper)}
+                title="View Orders"
+              >
+                <List className={styles.actionIcon} />
+                Orders
               </button>
               <button
                 className={`${styles.actionButton} ${styles.editButton}`}
