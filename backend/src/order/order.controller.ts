@@ -22,22 +22,18 @@ export class OrderController {
     ) {
         const user = req.user as AccountDetailsDto;
 
-        
         try {
             const order = await this.orderService.createOrder(user.username, createOrderDto);
 
-            
             return {
                 success: true,
-                message: "Thanh toán thành công",
+                message: "Payment successful",
                 data: order
             };
         } catch (error: any) {
-
-            
             return {
                 success: false,
-                message: "Đặt hàng thất bại",
+                message: "Order creation failed",
                 error: error.message
             };
         }
@@ -62,7 +58,7 @@ export class OrderController {
                 limit
             );
             return {
-                message: "Lấy danh sách đơn hàng thành công",
+                message: "Orders retrieved successfully",
                 data: orders.orders,
                 pagination: {
                     page,
@@ -73,7 +69,7 @@ export class OrderController {
             };
         } catch (error: any) {
             return {
-                message: "Lấy danh sách đơn hàng thất bại",
+                message: "Failed to retrieve orders",
                 error: error.message
             };
         }
@@ -86,19 +82,19 @@ export class OrderController {
         try {
             const statistics = await this.orderService.getOrderStatistics(user.username);
             return {
-                message: "Lấy thống kê đơn hàng thành công",
+                message: "Order statistics retrieved successfully",
                 statistics
             };
         } catch (error: any) {
             return {
-                message: "Lấy thống kê đơn hàng thất bại",
+                message: "Failed to retrieve order statistics",
                 error: error.message
             };
         }
     }
 
     /**
-     * Lấy danh sách đơn hàng cho admin/staff/shipper với filter, search, sort, paging
+     * Get orders list for admin/staff/shipper with filter, search, sort, paging
      * GET /orders/admin?status=...&search=...&sort=...&page=...&limit=...
      */
     @Get("/admin")
@@ -113,30 +109,15 @@ export class OrderController {
     ) {
         const user = req.user as AccountDetailsDto;
         
-        // Debug logging
-        console.log('🔍 [getAllOrdersForAdmin] User data:', {
-            username: user?.username,
-            phone: user?.phone,
-            role: user?.role,
-            roleName: user?.role?.name,
-            isAdmin: this.isAdmin(user),
-            isStaff: this.isStaff(user),
-            isShipper: this.isShipper(user)
-        });
-        
-        // Chỉ cho phép admin, staff, shipper
+        // Only allow admin, staff, shipper
         if (!this.isAdmin(user) && !this.isStaff(user) && !this.isShipper(user)) {
-            console.log('❌ [getAllOrdersForAdmin] Authorization failed for user:', user?.username);
-            throw new HttpException(401, "Không có quyền truy cập danh sách đơn hàng");
+            throw new HttpException(401, "Access denied to orders list");
         }
-        
-        console.log('✅ [getAllOrdersForAdmin] Authorization passed for user:', user?.username);
         
         try {
             const result = await this.orderService.getAllOrdersWithFilter({ status, search, sort, page, limit });
-            console.log('📊 [getAllOrdersForAdmin] Orders found:', result.orders.length);
             return {
-                message: "Lấy danh sách đơn hàng thành công",
+                message: "Orders retrieved successfully",
                 data: result.orders,
                 pagination: {
                     page,
@@ -146,9 +127,8 @@ export class OrderController {
                 }
             };
         } catch (error: any) {
-            console.error('💥 [getAllOrdersForAdmin] Error:', error);
             return {
-                message: "Lấy danh sách đơn hàng thất bại",
+                message: "Failed to retrieve orders",
                 error: error.message
             };
         }
@@ -161,18 +141,18 @@ export class OrderController {
         try {
             const order = await this.orderService.getOrderById(id);
             
-            // Kiểm tra quyền xem order
+            // Check permission to view order
             if (order.customer.username !== user.username && !this.isAdmin(user)) {
-                throw new HttpException(401, "Không có quyền xem đơn hàng này");
+                throw new HttpException(401, "Access denied to view this order");
             }
             
             return {
-                message: "Lấy thông tin đơn hàng thành công",
+                message: "Order retrieved successfully",
                 order
             };
         } catch (error: any) {
             return {
-                message: "Lấy thông tin đơn hàng thất bại",
+                message: "Failed to retrieve order",
                 error: error.message
             };
         }
@@ -193,19 +173,19 @@ export class OrderController {
                 updateOrderDto
             );
             return {
-                message: "Cập nhật trạng thái đơn hàng thành công",
+                message: "Order status updated successfully",
                 order
             };
         } catch (error: any) {
             return {
-                message: "Cập nhật trạng thái đơn hàng thất bại",
+                message: "Failed to update order status",
                 error: error.message
             };
         }
     }
 
     /**
-     * Xóa đơn hàng (chỉ admin hoặc staff)
+     * Delete order (admin or staff only)
      * DELETE /orders/:id
      */
     @Delete(":id")
@@ -213,32 +193,32 @@ export class OrderController {
     async deleteOrder(@Param("id") id: string, @Req() req: any) {
         const user = req.user as AccountDetailsDto;
         if (!this.isAdmin(user) && !this.isStaff(user)) {
-            throw new HttpException(401, "Không có quyền xóa đơn hàng");
+            throw new HttpException(401, "Access denied to delete order");
         }
         try {
             await this.orderService.deleteOrderById(id);
             return {
-                message: "Xóa đơn hàng thành công"
+                message: "Order deleted successfully"
             };
         } catch (error: any) {
             return {
-                message: "Xóa đơn hàng thất bại",
+                message: "Failed to delete order",
                 error: error.message
             };
         }
     }
 
-    // Helper method để kiểm tra quyền admin
+    // Helper method to check admin role
     private isAdmin(user: AccountDetailsDto): boolean {
         return user.role?.name?.toLowerCase().includes('admin') || false;
     }
 
-    // Helper method để kiểm tra quyền staff
+    // Helper method to check staff role
     private isStaff(user: AccountDetailsDto): boolean {
         return user.role?.name?.toLowerCase().includes('staff') || false;
     }
 
-    // Helper method để kiểm tra quyền shipper
+    // Helper method to check shipper role
     private isShipper(user: AccountDetailsDto): boolean {
         return user.role?.name?.toLowerCase().includes('shipper') || false;
     }

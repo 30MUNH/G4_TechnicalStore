@@ -6,29 +6,51 @@ import { orderService } from '../services/orderService';
 export const OrderHistoryPage = () => {
     const navigate = useNavigate();
     const [statistics, setStatistics] = useState(null);
+    const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchStatistics = async () => {
+        const fetchData = async () => {
             try {
-                const response = await orderService.getOrderStatistics();
-                if (response.message === "Order statistics retrieved successfully") {
-                    setStatistics(response.statistics);
-                } else {
-                    throw new Error(response.error || 'Không thể lấy thống kê đơn hàng');
+                // Fetch both statistics and orders in parallel
+                const [statsResponse, ordersResponse] = await Promise.all([
+                    orderService.getOrderStatistics(),
+                    orderService.getOrders()
+                ]);
+
+                // Handle statistics
+                if (statsResponse.message === "Order statistics retrieved successfully") {
+                    setStatistics(statsResponse.statistics);
                 }
+
+                // Handle orders
+                if (ordersResponse.success && ordersResponse.data) {
+                    setOrders(ordersResponse.data);
+                } else if (Array.isArray(ordersResponse)) {
+                    // Fallback for direct array response
+                    setOrders(ordersResponse);
+                } else {
+                    console.warn('⚠️ Unexpected orders response format:', ordersResponse);
+                    setOrders([]);
+                }
+
             } catch (err) {
-                setError(err.message || 'An error occurred while fetching order statistics');
+                console.error('❌ OrderHistoryPage Error:', err);
+                setError(err.message || 'Không thể tải dữ liệu đơn hàng');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchStatistics();
+        fetchData();
         document.body.classList.add('order-history-page-active');
         return () => document.body.classList.remove('order-history-page-active');
     }, []);
+
+    const handleBackToCart = () => {
+        navigate('/cart');
+    };
 
     return (
         <div style={{ margin: 0, padding: 0 }}>
@@ -79,7 +101,22 @@ export const OrderHistoryPage = () => {
                         {error}
                     </div>
                 )}
-                <OrderHistory />
+                
+                {loading ? (
+                    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+                        <div className="text-center">
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                            </div>
+                            <p className="mt-2">Đang tải lịch sử đơn hàng...</p>
+                        </div>
+                    </div>
+                ) : (
+                    <OrderHistory 
+                        orders={orders} 
+                        onBackToCart={handleBackToCart}
+                    />
+                )}
 
                 {/* Nút quay lại */}
                 <div className="d-flex justify-content-center mt-4 mb-3">
