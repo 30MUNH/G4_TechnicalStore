@@ -76,12 +76,13 @@
   transform: translateY(-4px) scale(1.03);
 }
 .product-card img {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  background: #f3f3f3;
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 12px;
+  display: block;
+  margin: 0 auto;
 }
 .product-card h4 {
   font-size: 1.08rem;

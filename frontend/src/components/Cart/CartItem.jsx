@@ -66,9 +66,9 @@ const CartItem = ({ item }) => {
     return (
         <div className={styles.cartItem}>
             <div className={styles.productImage}>
-                {item.product.url ? (
+                {item.product.images && item.product.images.length > 0 ? (
                     <img 
-                        src={item.product.url} 
+                        src={item.product.images[0].url} 
                         alt={item.product.name}
                         onError={(e) => {
                             e.target.src = '/img/product-placeholder.png';
