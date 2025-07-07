@@ -908,6 +908,7 @@ export class ProductService {
 
     return await Product.createQueryBuilder("product")
       .leftJoinAndSelect("product.category", "category")
+      .leftJoinAndSelect("product.images", "images")
       .andWhere("product.stock > :stock", { stock: 0 })
       .andWhere(
         "(LOWER(product.name) LIKE :keyword OR LOWER(product.description) LIKE :keyword OR LOWER(category.name) LIKE :keyword)",

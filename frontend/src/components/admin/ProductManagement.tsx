@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Download, 
-  Upload, 
-  Plus, 
-  Search,
+import {
+  Upload,
+  Plus,
+  Eye,
   Edit,
   Trash2,
-  Eye,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Search
 } from 'lucide-react';
 import { productService } from '../../services/productService';
 import type { Product, Category } from '../../types/product';
@@ -360,7 +358,6 @@ const ProductManagement: React.FC = () => {
     return (
       <div className="p-6 bg-gray-50 min-h-full flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="animate-spin h-8 w-8 text-red-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading products...</p>
         </div>
       </div>
@@ -394,10 +391,10 @@ const ProductManagement: React.FC = () => {
           </div>
           
           <div className="flex items-center space-x-3">
-            <button className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all duration-200">
+            {/* <button className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all duration-200">
               <Download size={18} className="text-white" />
               <span className="text-white font-medium">Import Data</span>
-            </button>
+            </button> */}
             <button className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all duration-200">
               <Upload size={18} className="text-white" />
               <span className="text-white font-medium">Export Data</span>
