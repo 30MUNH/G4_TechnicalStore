@@ -9,6 +9,7 @@ import {
 
 import ShipperCard from './ShipperCard';
 import FilterBar from './FilterBar';
+import ShipperOrderList from './ShipperOrderList';
 import styles from './ShipperManagement.module.css';
 import { shipperService } from '../../services/shipperService';
 
@@ -30,6 +31,10 @@ const ShipperManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('view'); // 'view', 'edit', 'add'
   const [selectedShipper, setSelectedShipper] = useState(null);
+  
+  // Order list states
+  const [showOrderList, setShowOrderList] = useState(false);
+  const [selectedShipperForOrders, setSelectedShipperForOrders] = useState(null);
 
   const itemsPerPage = 5;
 
@@ -199,6 +204,17 @@ const ShipperManagement = () => {
   const closeModal = () => {
     setShowModal(false);
     setSelectedShipper(null);
+  };
+
+  // Order list operations
+  const openOrderList = (shipper) => {
+    setSelectedShipperForOrders(shipper);
+    setShowOrderList(true);
+  };
+
+  const closeOrderList = () => {
+    setShowOrderList(false);
+    setSelectedShipperForOrders(null);
   };
 
   // CRUD operations
@@ -377,6 +393,7 @@ const ShipperManagement = () => {
         itemsPerPage={itemsPerPage}
         onView={(shipper) => openModal('view', shipper)}
         onEdit={(shipper) => openModal('edit', shipper)}
+        onViewOrders={openOrderList}
         onDelete={handleDelete}
         onPageChange={setCurrentPage}
       />
@@ -395,6 +412,19 @@ const ShipperManagement = () => {
             onCancel={closeModal}
           />
         </Modal>
+      )}
+
+      {/* Order List Modal */}
+      {showOrderList && selectedShipperForOrders && (
+        <div className={styles.orderListModalOverlay}>
+          <div className={styles.orderListModal}>
+            <ShipperOrderList
+              shipperId={selectedShipperForOrders.id}
+              shipperName={selectedShipperForOrders.name}
+              onClose={closeOrderList}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

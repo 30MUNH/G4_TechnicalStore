@@ -403,3 +403,38 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Order List Modal */
+.orderListModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001; /* Higher than regular modal */
+  padding: 20px;
+}
+
+.orderListModal {
+  width: 95%;
+  max-width: 1200px;
+  max-height: 90vh;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+/* Responsive for Order List Modal */
+@media (max-width: 768px) {
+  .orderListModal {
+    width: 100%;
+    max-width: none;
+    margin: 10px;
+    max-height: 95vh;
+  }
+}

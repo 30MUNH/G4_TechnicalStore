@@ -200,6 +200,15 @@
   background: #2563eb;
 }
 
+.ordersButton {
+  background: #17a2b8;
+  color: white;
+}
+
+.ordersButton:hover {
+  background: #138496;
+}
+
 .editButton {
   background: #f59e0b;
   color: white;

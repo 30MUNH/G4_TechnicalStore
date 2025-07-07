@@ -11,6 +11,19 @@ export interface UpdateOrderDto {
     cancelReason?: string;
 }
 
+export interface GetOrdersByShipperParams {
+    status?: string;
+    search?: string;
+    sort?: string;
+    page?: number;
+    limit?: number;
+}
+
+export interface UpdateOrderByShipperDto {
+    status: string;
+    reason?: string;
+}
+
 export const orderService = {
     async createOrder(createOrderDto: CreateOrderDto) {
         try {
@@ -70,6 +83,53 @@ export const orderService = {
                 ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
                 : 'Không thể lấy thống kê đơn hàng';
             throw new Error(errorMsg || 'Không thể lấy thống kê đơn hàng');
+        }
+    },
+
+    // =============== SHIPPER-SPECIFIC METHODS ===============
+    
+    async getOrdersByShipper(shipperId: string, params: GetOrdersByShipperParams = {}) {
+        try {
+            const queryParams = new URLSearchParams();
+            
+            if (params.status) queryParams.append('status', params.status);
+            if (params.search) queryParams.append('search', params.search);
+            if (params.sort) queryParams.append('sort', params.sort);
+            if (params.page) queryParams.append('page', params.page.toString());
+            if (params.limit) queryParams.append('limit', params.limit.toString());
+
+            const queryString = queryParams.toString();
+            const url = `/shippers/${shipperId}/orders${queryString ? '?' + queryString : ''}`;
+            
+            console.log('🚀 [ORDER_SERVICE] Fetching orders by shipper:', { shipperId, url, params });
+            
+            const response = await api.get(url);
+            return response.data;
+        } catch (error) {
+            console.error('❌ [ORDER_SERVICE] Get orders by shipper failed:', error);
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Không thể lấy danh sách đơn hàng của shipper';
+            throw new Error(errorMsg || 'Không thể lấy danh sách đơn hàng của shipper');
+        }
+    },
+
+    async updateOrderStatusByShipper(shipperId: string, orderId: string, updateData: UpdateOrderByShipperDto) {
+        try {
+            console.log('🚀 [ORDER_SERVICE] Updating order status by shipper:', { 
+                shipperId, 
+                orderId, 
+                updateData 
+            });
+            
+            const response = await api.put(`/shippers/${shipperId}/orders/${orderId}/status`, updateData);
+            return response.data;
+        } catch (error) {
+            console.error('❌ [ORDER_SERVICE] Update order status by shipper failed:', error);
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Cập nhật trạng thái đơn hàng thất bại';
+            throw new Error(errorMsg || 'Cập nhật trạng thái đơn hàng thất bại');
         }
     }
 }; 
