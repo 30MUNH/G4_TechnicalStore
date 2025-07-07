@@ -1,105 +1,302 @@
-.orderTableContainer {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  padding: 24px;
-  margin-top: 24px;
+.tableContainer {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
-.orderTableFilters {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 18px;
-  align-items: center;
-}
-.orderTableFilters input,
-.orderTableFilters select {
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-  font-size: 15px;
+.tableWrapper {
+  overflow-x: auto;
 }
 
-.orderTable {
+.table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 16px;
-}
-.orderTable th,
-.orderTable td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #f0f0f0;
-  text-align: left;
-}
-.orderTable th {
-  background: #f8fafc;
-  font-weight: 600;
-  color: #333;
-}
-.orderTable tr:hover {
-  background: #f6f6f6;
 }
 
-.orderTablePagination {
+.tableHeader {
+  background: #374151;
+  color: white;
+}
+
+.headerCell {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.025em;
+}
+
+.tableBody {
+  background: white;
+}
+
+.tableRow {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+}
+
+.tableRow:hover {
+  background-color: #f9fafb;
+}
+
+.tableCell {
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  color: #374151;
+}
+
+.customerInfo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  justify-content: flex-end;
+  gap: 0.75rem;
 }
-.orderTablePagination button {
-  background: #e11d48;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 16px;
-  font-size: 15px;
-  cursor: pointer;
-  transition: background 0.2s;
+
+.avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  background: #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 0.875rem;
 }
-.orderTablePagination button:disabled {
-  background: #f3f4f6;
-  color: #aaa;
-  cursor: not-allowed;
+
+.customerName {
+  font-weight: 500;
+  color: #111827;
+}
+
+.orderId {
+  font-weight: 500;
+  color: #111827;
+}
+
+.orderDate {
+  color: #6b7280;
+}
+
+.totalAmount {
+  font-weight: 500;
+  color: #111827;
 }
 
 .status {
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
   font-weight: 500;
   display: inline-block;
 }
-.status-Đang\ xử\ lý {
-  background: #fbbf24;
-  color: #fff;
-}
-.status-Đang\ giao {
-  background: #3b82f6;
-  color: #fff;
-}
-.status-Đã\ giao {
-  background: #22c55e;
-  color: #fff;
-}
-.status-Đã\ hủy {
-  background: #ef4444;
-  color: #fff;
+
+.statusSelect {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  min-width: 110px;
 }
 
-.actionBtn {
-  background: #e11d48;
-  color: #fff;
+.statusProcessing {
+  background-color: #fef3c7;
+  color: #f59e0b;
+}
+
+.statusShipping {
+  background-color: #dbeafe;
+  color: #3b82f6;
+}
+
+.statusDelivered {
+  background-color: #d1fae5;
+  color: #10b981;
+}
+
+.statusCancelled {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.statusDefault {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.shippingAddress {
+  max-width: 200px;
+}
+
+.addressText {
+  color: #6b7280;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.actionButton {
+  padding: 0.5rem;
   border: none;
-  border-radius: 6px;
-  padding: 6px 14px;
-  margin-right: 6px;
-  font-size: 14px;
+  background: none;
   cursor: pointer;
-  transition: background 0.2s;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.actionBtn:last-child {
-  margin-right: 0;
+
+.viewButton {
+  color: #2563eb;
 }
-.actionBtn:hover {
-  background: #be123c;
+
+.viewButton:hover {
+  color: #1d4ed8;
+  background-color: #eff6ff;
+}
+
+.editButton {
+  color: #d97706;
+}
+
+.editButton:hover {
+  color: #b45309;
+  background-color: #fffbeb;
+}
+
+.deleteButton {
+  color: #dc2626;
+}
+
+.deleteButton:hover {
+  color: #b91c1c;
+  background-color: #fef2f2;
+}
+
+.emptyState {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.emptyStateCell {
+  padding: 0 !important;
+  text-align: center;
+  border: none;
+}
+
+.emptyIcon {
+  margin: 0 auto 1rem;
+  width: 3rem;
+  height: 3rem;
+  color: #9ca3af;
+}
+
+.emptyTitle {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.emptyDescription {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.pagination {
+  background: #f9fafb;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #e5e7eb;
+}
+
+.paginationInfo {
+  font-size: 1rem;
+  color: #374151;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.paginationButton {
+  padding: 0.5rem;
+  color: #9ca3af;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.paginationButton:hover:not(:disabled) {
+  color: #6b7280;
+}
+
+.paginationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.currentPage {
+  padding: 0.25rem 0.75rem;
+  background: #dc2626;
+  color: white;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .headerCell,
+  .tableCell {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .avatar {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.75rem;
+  }
+
+  .customerInfo {
+    gap: 0.5rem;
+  }
+
+  .actions {
+    gap: 0.25rem;
+  }
+
+  .actionButton {
+    padding: 0.375rem;
+  }
+
+  .shippingAddress {
+    max-width: 150px;
+  }
+
+  .status,
+  .statusSelect {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    min-width: 90px;
+  }
 }

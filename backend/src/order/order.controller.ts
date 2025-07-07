@@ -5,6 +5,7 @@ import { CreateOrderDto } from "./dtos/create-order.dto";
 import { UpdateOrderDto } from "./dtos/update-order.dto";
 import { Auth } from "@/middlewares/auth.middleware";
 import { AccountDetailsDto } from "@/auth/dtos/account.dto";
+import { HttpException } from "@/exceptions/http-exceptions";
 
 @Service()
 @Controller("/orders")
@@ -96,6 +97,63 @@ export class OrderController {
         }
     }
 
+    /**
+     * Lấy danh sách đơn hàng cho admin/staff/shipper với filter, search, sort, paging
+     * GET /orders/admin?status=...&search=...&sort=...&page=...&limit=...
+     */
+    @Get("/admin")
+    @UseBefore(Auth)
+    async getAllOrdersForAdmin(
+        @Req() req: any,
+        @QueryParam("status") status: string,
+        @QueryParam("search") search: string,
+        @QueryParam("sort") sort: string,
+        @QueryParam("page") page: number = 1,
+        @QueryParam("limit") limit: number = 10
+    ) {
+        const user = req.user as AccountDetailsDto;
+        
+        // Debug logging
+        console.log('🔍 [getAllOrdersForAdmin] User data:', {
+            username: user?.username,
+            phone: user?.phone,
+            role: user?.role,
+            roleName: user?.role?.name,
+            isAdmin: this.isAdmin(user),
+            isStaff: this.isStaff(user),
+            isShipper: this.isShipper(user)
+        });
+        
+        // Chỉ cho phép admin, staff, shipper
+        if (!this.isAdmin(user) && !this.isStaff(user) && !this.isShipper(user)) {
+            console.log('❌ [getAllOrdersForAdmin] Authorization failed for user:', user?.username);
+            throw new HttpException(401, "Không có quyền truy cập danh sách đơn hàng");
+        }
+        
+        console.log('✅ [getAllOrdersForAdmin] Authorization passed for user:', user?.username);
+        
+        try {
+            const result = await this.orderService.getAllOrdersWithFilter({ status, search, sort, page, limit });
+            console.log('📊 [getAllOrdersForAdmin] Orders found:', result.orders.length);
+            return {
+                message: "Lấy danh sách đơn hàng thành công",
+                data: result.orders,
+                pagination: {
+                    page,
+                    limit,
+                    total: result.total,
+                    totalPages: Math.ceil(result.total / limit)
+                }
+            };
+        } catch (error: any) {
+            console.error('💥 [getAllOrdersForAdmin] Error:', error);
+            return {
+                message: "Lấy danh sách đơn hàng thất bại",
+                error: error.message
+            };
+        }
+    }
+
     @Get("/:id")
     @UseBefore(Auth)
     async getOrder(@Param("id") id: string, @Req() req: any) {
@@ -105,10 +163,7 @@ export class OrderController {
             
             // Kiểm tra quyền xem order
             if (order.customer.username !== user.username && !this.isAdmin(user)) {
-                return {
-                    message: "Không có quyền xem đơn hàng này",
-                    error: "Unauthorized"
-                };
+                throw new HttpException(401, "Không có quyền xem đơn hàng này");
             }
             
             return {
@@ -150,48 +205,6 @@ export class OrderController {
     }
 
     /**
-     * Lấy danh sách đơn hàng cho admin/staff/shipper với filter, search, sort, paging
-     * GET /orders/admin?status=...&search=...&sort=...&page=...&limit=...
-     */
-    @Get("/admin")
-    @UseBefore(Auth)
-    async getAllOrdersForAdmin(
-        @Req() req: any,
-        @QueryParam("status") status: string,
-        @QueryParam("search") search: string,
-        @QueryParam("sort") sort: string,
-        @QueryParam("page") page: number = 1,
-        @QueryParam("limit") limit: number = 10
-    ) {
-        const user = req.user as AccountDetailsDto;
-        // Chỉ cho phép admin, staff, shipper
-        if (!this.isAdmin(user) && !this.isStaff(user) && !this.isShipper(user)) {
-            return {
-                message: "Không có quyền truy cập danh sách đơn hàng",
-                error: "Unauthorized"
-            };
-        }
-        try {
-            const result = await this.orderService.getAllOrdersWithFilter({ status, search, sort, page, limit });
-            return {
-                message: "Lấy danh sách đơn hàng thành công",
-                data: result.orders,
-                pagination: {
-                    page,
-                    limit,
-                    total: result.total,
-                    totalPages: Math.ceil(result.total / limit)
-                }
-            };
-        } catch (error: any) {
-            return {
-                message: "Lấy danh sách đơn hàng thất bại",
-                error: error.message
-            };
-        }
-    }
-
-    /**
      * Xóa đơn hàng (chỉ admin hoặc staff)
      * DELETE /orders/:id
      */
@@ -200,10 +213,7 @@ export class OrderController {
     async deleteOrder(@Param("id") id: string, @Req() req: any) {
         const user = req.user as AccountDetailsDto;
         if (!this.isAdmin(user) && !this.isStaff(user)) {
-            return {
-                message: "Không có quyền xóa đơn hàng",
-                error: "Unauthorized"
-            };
+            throw new HttpException(401, "Không có quyền xóa đơn hàng");
         }
         try {
             await this.orderService.deleteOrderById(id);
