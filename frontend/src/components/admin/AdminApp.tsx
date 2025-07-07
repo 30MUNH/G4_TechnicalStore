@@ -8,6 +8,7 @@ import AdminDashboard from './AdminDashboard';
 import CustomerManagement from '../CustomerManager/CustomerManagement.jsx';
 import ProductManagement from './ProductManagement';
 import ShipperManagement from '../ShipperManager/ShipperManagement.jsx';
+import OrderManagement from '../OrderManager/OrderManagement.jsx';
 
 function AdminApp() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -65,6 +66,7 @@ function AdminApp() {
     checkAdminAccess();
   }, [isAuthenticated, navigate, user]);
 
+  const role = typeof user?.role === 'object' && user?.role?.name ? user.role.name : (typeof user?.role === 'string' ? user.role : 'admin');
   const renderContent = () => {
     switch (activeSection) {
       case 'dashboard':
@@ -75,6 +77,8 @@ function AdminApp() {
         return <ProductManagement />;
       case 'shippers':
         return <ShipperManagement />;
+      case 'orders':
+        return <OrderManagement role={role} />;
       default:
         return <AdminDashboard />;
     }

@@ -511,4 +511,48 @@ export class OrderService {
             return updatedOrder;
         });
     }
+
+    /**
+     * Lấy tất cả đơn hàng với filter, search, sort, paging (cho admin/staff/shipper)
+     */
+    async getAllOrdersWithFilter(options: { status?: string; search?: string; sort?: string; page?: number; limit?: number }): Promise<{ orders: Order[]; total: number }> {
+        const { status, search, sort, page = 1, limit = 10 } = options;
+        const skip = (page - 1) * limit;
+
+        let query = Order.createQueryBuilder("order")
+            .leftJoinAndSelect("order.customer", "customer")
+            .leftJoinAndSelect("order.shipper", "shipper")
+            .leftJoinAndSelect("order.orderDetails", "orderDetails")
+            .leftJoinAndSelect("orderDetails.product", "product");
+
+        if (status && status.trim()) {
+            query = query.andWhere("order.status = :status", { status: status.trim() });
+        }
+        if (search && search.trim()) {
+            query = query.andWhere(
+                "(CAST(order.id AS TEXT) LIKE :search OR COALESCE(customer.name, '') LIKE :search OR customer.username LIKE :search)",
+                { search: `%${search.trim()}%` }
+            );
+        }
+        if (sort === "amount") {
+            query = query.orderBy("order.totalAmount", "DESC");
+        } else if (sort === "customer") {
+            query = query.orderBy("COALESCE(customer.name, customer.username)", "ASC");
+        } else {
+            query = query.orderBy("order.orderDate", "DESC");
+        }
+        const [orders, total] = await query.skip(skip).take(limit).getManyAndCount();
+        return { orders, total };
+    }
+
+    /**
+     * Xóa đơn hàng theo id (chỉ admin/staff)
+     */
+    async deleteOrderById(orderId: string): Promise<void> {
+        const order = await Order.findOne({ where: { id: orderId } });
+        if (!order) {
+            throw new Error('Không tìm thấy đơn hàng');
+        }
+        await Order.remove(order);
+    }
 } 

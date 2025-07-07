@@ -1,0 +1,52 @@
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+.modal {
+  background: #fff;
+  max-width: 600px;
+  margin: 60px auto;
+  border-radius: 12px;
+  padding: 32px 28px 24px 28px;
+  position: relative;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.13);
+}
+.closeBtn {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  font-size: 22px;
+  background: none;
+  border: none;
+  color: #e11d48;
+  cursor: pointer;
+}
+.title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 18px;
+}
+.info {
+  margin-bottom: 18px;
+  font-size: 1rem;
+  color: #374151;
+}
+.products {
+  margin-bottom: 18px;
+}
+.products ul {
+  padding-left: 18px;
+}
+.statusSelect {
+  margin-top: 16px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 15px;
+}

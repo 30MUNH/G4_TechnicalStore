@@ -4,6 +4,7 @@ import {
   Package, 
   Users, 
   Truck,
+  ShoppingCart,
   ChevronRight
 } from 'lucide-react';
 
@@ -17,6 +18,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSec
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'products', label: 'Products', icon: Package },
     { id: 'customers', label: 'Customers', icon: Users },
+    { id: 'orders', label: 'Orders', icon: ShoppingCart },
     { id: 'shippers', label: 'Shippers', icon: Truck },
   ];
 
