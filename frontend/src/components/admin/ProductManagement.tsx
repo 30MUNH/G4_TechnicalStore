@@ -465,10 +465,11 @@ const ProductManagement: React.FC = () => {
               <img 
                 src={product.images[0].url} 
                 alt={product.name}
-                className="w-full h-48 object-cover"
+                className="w-full h-60 object-contain"
+                style={{ background: '#f8f8f8', objectFit: 'contain', maxHeight: 240 }}
               />
             ) : (
-              <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+              <div className="w-full h-60 bg-gray-200 flex items-center justify-center">
                 <span className="text-gray-500 text-sm">No Image</span>
               </div>
             )}
