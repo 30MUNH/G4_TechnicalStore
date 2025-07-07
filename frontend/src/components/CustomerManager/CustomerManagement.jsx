@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Download, 
   Upload, 
   Plus, 
   X,
@@ -251,39 +250,16 @@ const CustomerManagement = () => {
     }
   };
 
-  // Import/Export operations
-  const handleImportData = async (event) => {
-    try {
-      const file = event.target.files?.[0];
-      if (!file) return;
-
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await customerService.importCustomers(formData);
-      
-      if (response.success) {
-        showNotification('Data imported successfully', 'success');
-        await fetchCustomers(); // Refresh the list
-      } else {
-        throw new Error(response.message || 'Failed to import data');
-      }
-    } catch (error) {
-      console.error('Import error:', error);
-      showNotification(error.message || 'Failed to import data', 'error');
-    }
-    
-    // Reset file input
-    event.target.value = '';
-  };
-
+  // Export operation
   const handleExportData = async () => {
     try {
       const response = await customerService.exportCustomers();
       
       if (response.success && response.data) {
-        // Create download link
-        const url = window.URL.createObjectURL(new Blob([response.data]));
+        // Create download link with proper Excel MIME type
+        const url = window.URL.createObjectURL(new Blob([response.data], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        }));
         const link = document.createElement('a');
         link.href = url;
         link.setAttribute('download', `customers_${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -339,20 +315,6 @@ const CustomerManagement = () => {
           </div>
           
           <div className={styles.headerActions}>
-            <input
-              type="file"
-              id="importFile"
-              accept=".xlsx,.xls"
-              className={styles.hiddenInput}
-              onChange={handleImportData}
-            />
-            <button 
-              className={`${styles.actionButton} ${styles.importButton}`}
-              onClick={() => document.getElementById('importFile')?.click()}
-            >
-              <Download size={18} />
-              <span>Import Data</span>
-            </button>
             <button 
               className={`${styles.actionButton} ${styles.exportButton}`}
               onClick={handleExportData}

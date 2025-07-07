@@ -78,5 +78,22 @@ export const shipperService = {
       console.error('Delete shipper error:', apiError.response?.data?.message || apiError.message);
       throw error;
     }
+  },
+
+  async exportShippers(): Promise<ApiResponse<Blob>> {
+    try {
+      const response = await api.get('/shippers/export', {
+        responseType: 'blob',
+      });
+      return {
+        success: true,
+        data: response.data,
+        message: 'Export successful',
+      };
+    } catch (error) {
+      const apiError = error as ApiError;
+      console.error('Export shippers error:', apiError.response?.data?.message || apiError.message);
+      throw error;
+    }
   }
 }; 

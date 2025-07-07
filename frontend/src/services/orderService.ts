@@ -131,5 +131,69 @@ export const orderService = {
                 : 'Cập nhật trạng thái đơn hàng thất bại';
             throw new Error(errorMsg || 'Cập nhật trạng thái đơn hàng thất bại');
         }
+    },
+
+    // =============== ADMIN/STAFF METHODS ===============
+    
+    async getAllOrdersForAdmin(params = {}) {
+        try {
+            console.log('🚀 [ORDER_SERVICE] Fetching all orders for admin:', params);
+            
+            const queryParams = new URLSearchParams();
+            Object.entries(params).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '') {
+                    queryParams.append(key, value.toString());
+                }
+            });
+
+            const queryString = queryParams.toString();
+            const url = `/orders/admin${queryString ? '?' + queryString : ''}`;
+            
+            const response = await api.get(url);
+            return response.data;
+        } catch (error) {
+            console.error('❌ [ORDER_SERVICE] Get all orders for admin failed:', error);
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Không thể lấy danh sách đơn hàng';
+            throw new Error(errorMsg || 'Không thể lấy danh sách đơn hàng');
+        }
+    },
+
+    async deleteOrder(id: string) {
+        try {
+            console.log('🚀 [ORDER_SERVICE] Deleting order:', id);
+            
+            const response = await api.delete(`/orders/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error('❌ [ORDER_SERVICE] Delete order failed:', error);
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Xóa đơn hàng thất bại';
+            throw new Error(errorMsg || 'Xóa đơn hàng thất bại');
+        }
+    },
+
+    async exportOrders() {
+        try {
+            console.log('🚀 [ORDER_SERVICE] Exporting orders...');
+            
+            const response = await api.get('/orders/export', {
+                responseType: 'blob',
+            });
+            
+            return {
+                success: true,
+                data: response.data,
+                message: 'Export successful',
+            };
+        } catch (error) {
+            console.error('❌ [ORDER_SERVICE] Export orders failed:', error);
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Xuất dữ liệu thất bại';
+            throw new Error(errorMsg || 'Xuất dữ liệu thất bại');
+        }
     }
 }; 
