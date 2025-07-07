@@ -11,7 +11,6 @@ import swaggerUi from "swagger-ui-express";
 import { DbConnection } from "@/database/dbConnection";
 import { ResponseInterceptor } from "./utils/interceptor/interceptor";
 import cors from "cors";
-import multer from "multer";
 
 export default class App {
   public app: express.Application;
@@ -54,15 +53,6 @@ export default class App {
       }
     );
     this.app.use(cors());
-    
-    // Configure multer for file uploads
-    const upload = multer({ 
-      dest: 'uploads/',
-      limits: {
-        fileSize: 10 * 1024 * 1024 // 10MB limit
-      }
-    });
-    this.app.use(upload.any());
     
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(express.static("public"));

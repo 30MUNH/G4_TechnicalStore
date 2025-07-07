@@ -5,7 +5,7 @@ import { HttpMessages } from "@/exceptions/http-messages.constant";
 
 
 const bucket = process.env.MINIO_BUCKET || "";
-const url = `https://${process.env.MINIO_ENDPOINT}/${process.env.MINIO_BUCKET}/` || "";
+const url = `${process.env.MINIO_ENDPOINT}/${process.env.MINIO_BUCKET}/` || "";
 
 export class MinioClient {
   private minioClient: Client | null = null;
@@ -29,7 +29,6 @@ export class MinioClient {
       const fileName = convertToURL(
         new Date().getTime() + "-" + item.originalname
       );
-      console.log("fileName: " + fileName);
       await this.minioClient.putObject(
         bucket,
         fileName,
