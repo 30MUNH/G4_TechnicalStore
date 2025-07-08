@@ -1,176 +1,132 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import ProductFilters from '../components/Product/ProductFilters';
+import ProductCard from '../components/Product/ProductCard';
+import Pagination from '../components/Product/Pagination';
 import { productService } from '../services/productService';
-import type { Product } from '../types/product';
-import './AllProductsPage.css';
-import { useLocation, useNavigate } from 'react-router-dom';
+import type { Product, FilterState, ProductCategory } from '../types/product';
+import { useLocation } from 'react-router-dom';
 import ProductDetailModal from '../components/Product/productDetailModal';
-
-const CATEGORY_FILTERS = [
-  { key: 'laptop', label: 'Laptop' },
-  { key: 'pc', label: 'PC' },
-  { key: 'drive', label: 'Drive' },
-  { key: 'monitor', label: 'Monitor' },
-  { key: 'cpu', label: 'CPU' },
-  { key: 'cooler', label: 'Cooler' },
-  { key: 'ram', label: 'RAM' },
-  { key: 'psu', label: 'PSU' },
-  { key: 'case', label: 'Case' },
-  { key: 'headset', label: 'Headset' },
-  { key: 'motherboard', label: 'Motherboard' },
-  { key: 'keyboard', label: 'Keyboard' },
-  { key: 'gpu', label: 'GPU' },
-  { key: 'mouse', label: 'Mouse' },
-  { key: 'network-card', label: 'Network Card' },
-];
-
-const SORT_OPTIONS = [
-  { value: 'asc', label: 'Price: Low to High' },
-  { value: 'desc', label: 'Price: High to Low' },
-];
+import Footer from '../components/footer';
 
 const PRODUCTS_PER_PAGE = 16;
 
+const defaultFilters: FilterState = {
+  categories: [],
+  searchQuery: '',
+  sortOrder: 'none',
+};
+
 const AllProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [sortOrder, setSortOrder] = useState<string>('asc');
   const [loading, setLoading] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const location = useLocation();
-  const navigate = useNavigate();
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
-  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const location = useLocation();
 
-  // Set filter theo state khi chuyển trang từ HomePage
-  useEffect(() => {
-    if (location.state && location.state.filter) {
-      if (location.state.filter === 'accessories') {
-        // Khi chọn accessories, tự động chọn tất cả category trừ laptop và pc
-        const accessoryCategories = CATEGORY_FILTERS
-          .filter(cat => cat.key !== 'laptop' && cat.key !== 'pc')
-          .map(cat => cat.key);
-        setSelectedCategories(accessoryCategories);
-      } else {
-        setSelectedCategories([location.state.filter]);
-      }
-    } else if (location.state && location.state.clearFilter) {
-      // Khi click vào ALL PRODUCTS, clear tất cả filter
-      setSelectedCategories([]);
-    }
-  }, [location.state]);
-
+  // Fetch all products on mount or when location changes (search, filter from homepage)
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
         if (location.state && location.state.searchResults) {
-          // Nếu có kết quả search từ header
           setProducts(location.state.searchResults);
-          setSearchKeyword(location.state.searchKeyword || '');
+          setFilters((prev) => ({ ...prev, searchQuery: location.state.searchKeyword || '' }));
         } else if (location.state && location.state.searchKeyword) {
-          // Nếu chỉ có keyword (fallback case)
           const searchResults = await productService.searchProducts(location.state.searchKeyword);
           setProducts(searchResults);
-          setSearchKeyword(location.state.searchKeyword);
+          setFilters((prev) => ({ ...prev, searchQuery: location.state.searchKeyword }));
         } else {
-          // Load tất cả sản phẩm
           const res = await productService.getAllProducts();
           setProducts(res);
-          setSearchKeyword('');
+          // Ưu tiên filter từ navigation, chỉ reset filter nếu không có filter và không có search
+          if (!location.state || (!location.state.filter && !location.state.searchKeyword)) {
+            setFilters(defaultFilters);
+          }
         }
       } catch (error) {
-        console.error('Error fetching products:', error);
-        // Fallback: load tất cả sản phẩm
-        const res = await productService.getAllProducts();
-        setProducts(res);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, [location.state]);
 
+  // Áp dụng filter từ navigation
+  useEffect(() => {
+    if (location.state && location.state.filter) {
+      let categories: string[] = [];
+      if (location.state.filter === 'laptop') categories = ['laptop'];
+      else if (location.state.filter === 'pc') categories = ['pc'];
+      else if (location.state.filter === 'accessories') categories = [
+        'cpu', 'ram', 'drive', 'monitor', 'cooler', 'psu', 'case', 'headset', 'network-card', 'motherboard', 'keyboard', 'gpu', 'mouse'
+      ];
+      setFilters((prev) => ({ ...prev, categories: categories as ProductCategory[], searchQuery: '' }));
+    } else if (location.state && location.state.clearFilter) {
+      setFilters(defaultFilters);
+    }
+  }, [location.state]);
+
+  // Filter, search, sort logic
   useEffect(() => {
     let filtered = [...products];
-    if (selectedCategories.length > 0) {
+    // Filter by category
+    if (filters.categories.length > 0) {
       filtered = filtered.filter((p) => {
         const categorySlug = p.category?.slug?.toLowerCase();
-        return selectedCategories.some(selectedCat => 
-          categorySlug === selectedCat.toLowerCase()
-        );
+        return filters.categories.some((cat) => categorySlug === cat.toLowerCase());
       });
     }
-    filtered = filtered.sort((a, b) =>
-      sortOrder === 'asc' ? a.price - b.price : b.price - a.price
-    );
+    // Search
+    if (filters.searchQuery && filters.searchQuery.trim() !== '') {
+      const keyword = filters.searchQuery.trim().toLowerCase();
+      filtered = filtered.filter((p) =>
+        p.name.toLowerCase().includes(keyword) ||
+        (p.category?.name?.toLowerCase() || '').includes(keyword)
+      );
+    }
+    // Sort
+    if (filters.sortOrder === 'asc') {
+      filtered = filtered.sort((a, b) => a.price - b.price);
+    } else if (filters.sortOrder === 'desc') {
+      filtered = filtered.sort((a, b) => b.price - a.price);
+    }
     setFilteredProducts(filtered);
-    setCurrentPage(1); // Reset về trang 1 khi filter/sort
-  }, [products, selectedCategories, sortOrder]);
+    setCurrentPage(1);
+  }, [products, filters]);
 
-  const handleCategoryToggle = (categoryKey: string) => {
-    setSelectedCategories(prev => {
-      if (prev.includes(categoryKey)) {
-        return prev.filter(cat => cat !== categoryKey);
-      } else {
-        return [...prev, categoryKey];
-      }
+  // Tính số lượng sản phẩm theo category cho badge
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    products.forEach((p) => {
+      const slug = p.category?.slug;
+      if (slug) counts[slug] = (counts[slug] || 0) + 1;
     });
-  };
+    return counts;
+  }, [products]);
 
-  const handleSelectAll = () => {
-    setSelectedCategories([]);
-  };
-
-  // Pagination logic
+  // Pagination
   const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
-  const startIdx = (currentPage - 1) * PRODUCTS_PER_PAGE;
-  const endIdx = startIdx + PRODUCTS_PER_PAGE;
-  const paginatedProducts = filteredProducts.slice(startIdx, endIdx);
+  const paginatedProducts = useMemo(() => {
+    const startIdx = (currentPage - 1) * PRODUCTS_PER_PAGE;
+    return filteredProducts.slice(startIdx, startIdx + PRODUCTS_PER_PAGE);
+  }, [filteredProducts, currentPage]);
 
-  // Tạo mảng số trang hiển thị dạng rút gọn (2 số đầu, 2 số cuối, trang hiện tại, 1 số trước/sau, ...)
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      // Luôn hiển thị 1, 2
-      pages.push(1, 2);
-      // ... nếu cần
-      if (currentPage > 4) pages.push('...');
-      // Các trang gần currentPage
-      for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-        if (i > 2 && i < totalPages - 1) pages.push(i);
-      }
-      // ... nếu cần
-      if (currentPage < totalPages - 4) pages.push('...');
-      // Luôn hiển thị cuối-1, cuối
-      pages.push(totalPages - 1, totalPages);
-    }
-    // Loại bỏ số trùng và loại bỏ ... cạnh nhau hoặc cạnh số liên tiếp
-    const result: (number | string)[] = [];
-    let prev: number | string | null = null;
-    for (const p of pages) {
-      if (typeof p === 'string' && (prev === '...' || typeof prev === 'number' && Math.abs((prev as number) - (pages[pages.indexOf(p) + 1] as number)) === 1)) {
-        continue;
-      }
-      if (result.length && result[result.length - 1] === p) continue;
-      result.push(p);
-      prev = p;
-    }
-    return result.filter((p, i, arr) => !(p === '...' && (i === 0 || i === arr.length - 1)));
+  // Handlers
+  const handleFiltersChange = (newFilters: FilterState) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }));
   };
-
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+    setCurrentPage(page);
   };
-
-  const handleOpenQuickView = async (product: Product) => {
-    // Gọi API lấy chi tiết sản phẩm
+  const handleAddToCart = (product: Product) => {
+    // TODO: Thêm logic add to cart
+    alert(`Đã thêm ${product.name} vào giỏ hàng!`);
+  };
+  const handleQuickView = async (product: Product) => {
     const detail = await productService.getProductById(product.id);
     setQuickViewProduct(detail || product);
     setIsQuickViewOpen(true);
@@ -179,141 +135,92 @@ const AllProductsPage: React.FC = () => {
     setIsQuickViewOpen(false);
     setQuickViewProduct(null);
   };
+  // Xử lý search input (nếu có search bar riêng)
+  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilters((prev) => ({ ...prev, searchQuery: e.target.value }));
+  };
 
   return (
-    <div className="all-products-page">
-      <aside className="sidebar">
-        <h3>Filter by type</h3>
-        <ul>
-          {CATEGORY_FILTERS.map((cat) => (
-            <li
-              key={cat.key}
-              className={selectedCategories.includes(cat.key) ? 'active' : ''}
-              onClick={() => handleCategoryToggle(cat.key)}
-            >
-              {cat.label}
-            </li>
-          ))}
-          <li
-            className={selectedCategories.length === 0 ? 'active' : ''}
-            onClick={handleSelectAll}
-          >
-            All
-          </li>
-        </ul>
-      </aside>
-      <main className="products-main">
-        {searchKeyword && (
-          <div className="search-result-info" style={{ 
-            marginBottom: '20px', 
-            padding: '10px 15px', 
-            backgroundColor: '#f8f9fa', 
-            borderRadius: '5px',
-            border: '1px solid #e9ecef'
-          }}>
-            <strong>Search results for: "{searchKeyword}"</strong>
-            <span style={{ marginLeft: '10px', color: '#6c757d' }}>
-              ({filteredProducts.length} products)
-            </span>
-            <button 
-              onClick={() => {
-                setSearchKeyword('');
-                navigate('/all-products', { replace: true });
-              }}
-              style={{
-                marginLeft: '15px',
-                padding: '5px 10px',
-                backgroundColor: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer'
-              }}
-            >
-              Clear search
-            </button>
+    <>
+      <div className="w-full bg-[#f7f8fa] min-h-screen py-8 px-2 sm:px-6 lg:px-12 pr-4 sm:pr-8 lg:pr-24">
+        <div className="w-full flex flex-col md:flex-row gap-8 max-w-[1800px] mx-auto pr-4 sm:pr-8 lg:pr-24">
+          {/* Sidebar filter */}
+          <div className="w-full md:w-[360px] mb-8 md:mb-0 pl-8 sm:pl-16 lg:pl-24">
+            <ProductFilters
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              categoryCounts={categoryCounts}
+            />
           </div>
-        )}
-        <div className="sort-bar">
-          <span>Sort by price:</span>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        {/* Tổng số sản phẩm */}
-        <div style={{ textAlign: 'center', margin: '16px 0', color: '#555', fontSize: 16 }}>
-          Total products: {filteredProducts.length}
-        </div>
-        {loading ? (
-          <div>Loading products...</div>
-        ) : (
-          <>
-            <div className="products-grid">
-              {paginatedProducts.length === 0 ? (
-                <div>No products found.</div>
-              ) : (
-                paginatedProducts.map((product) => (
-                  <div
-                    className="product-card"
-                    key={product.id}
-                    onClick={async () => await handleOpenQuickView(product)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <img 
-                      src={product.images && product.images.length > 0 ? product.images[0].url : (product.url || '/img/product-default.png')} 
-                      alt={product.name} 
-                      style={{ width: '100%', height: 140, objectFit: 'contain', background: '#f5f5f5', borderRadius: 12, marginBottom: 8 }}
-                    />
-                    <h4>{product.name}</h4>
-                    <div className="product-price">
-                      {product.price.toLocaleString('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND',
-                      })}
-                    </div>
-                    <div className="product-category">
-                      {product.category?.name}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="pagination-bar">
-                <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
-                  Previous
-                </button>
-                {getPageNumbers().map((page, idx) =>
-                  typeof page === 'number' ? (
-                    <button
-                      key={page}
-                      className={page === currentPage ? 'active' : ''}
-                      onClick={() => handlePageChange(page)}
-                    >
-                      {page}
-                    </button>
-                  ) : (
-                    <span key={"ellipsis-" + idx} style={{ padding: '0 8px', color: '#888', fontWeight: 700 }}>...</span>
-                  )
-                )}
-                <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>
-                  Next
-                </button>
+          {/* Main content */}
+          <div className="flex-1 max-w-full md:max-w-[calc(100%-384px)]">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+              <div>
+                <h1 className="text-3xl font-bold mb-1">All Products</h1>
+                <div className="text-gray-600 text-lg">
+                  Total products: <span className="font-semibold">{filteredProducts.length}</span>
+                </div>
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-600">Sort by price:</span>
+                <select
+                  value={filters.sortOrder}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, sortOrder: e.target.value as 'asc' | 'desc' | 'none' }))}
+                  className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-red-200"
+                >
+                  <option value="none">Sort by price</option>
+                  <option value="asc">Price: Low to High</option>
+                  <option value="desc">Price: High to Low</option>
+                </select>
+              </div>
+            </div>
+            {/* Search bar */}
+            <div className="mb-6">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={filters.searchQuery}
+                onChange={handleSearchInput}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-red-200 bg-white"
+              />
+            </div>
+            {/* Product grid */}
+            {loading ? (
+              <div className="text-center py-10 text-gray-400">Loading products...</div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {paginatedProducts.length === 0 ? (
+                    <div className="col-span-full text-center text-gray-500">No products found.</div>
+                  ) : (
+                    paginatedProducts.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onAddToCart={handleAddToCart}
+                        onQuickView={handleQuickView}
+                      />
+                    ))
+                  )}
+                </div>
+                {/* Pagination */}
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                  itemsPerPage={PRODUCTS_PER_PAGE}
+                  totalItems={filteredProducts.length}
+                  className=""
+                />
+                {/* Quick view modal */}
+                <ProductDetailModal isOpen={isQuickViewOpen} onClose={handleCloseQuickView} product={quickViewProduct} />
+              </>
             )}
-            <ProductDetailModal isOpen={isQuickViewOpen} onClose={handleCloseQuickView} product={quickViewProduct} />
-          </>
-        )}
-      </main>
-    </div>
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </>
   );
 };
 

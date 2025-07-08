@@ -49,4 +49,26 @@ export interface LegacyApiResponse<T> {
   data: T;
   message: string;
   error?: string;
+}
+
+export type ProductCategory = 
+  | 'laptop' 
+  | 'pc' 
+  | 'cpu' 
+  | 'ram' 
+  | 'drive' 
+  | 'monitor' 
+  | 'cooler' 
+  | 'psu' 
+  | 'case' 
+  | 'headset' 
+  | 'network-card';
+
+export interface FilterState {
+  categories: ProductCategory[];
+  priceRange?: [number, number];
+  brands?: string[];
+  inStockOnly?: boolean;
+  searchQuery?: string;
+  sortOrder?: 'asc' | 'desc' | 'none';
 } 
