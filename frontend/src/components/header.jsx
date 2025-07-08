@@ -39,7 +39,11 @@ const Header = () => {
   const handleSearch = async (e) => {
     e.preventDefault();
     console.log("SEARCH SUBMIT:", searchValue);
-    if (!searchValue.trim()) return;
+    if (!searchValue.trim()) {
+      navigate('/all-products', { state: { clearFilter: true } });
+      setSearchValue("");
+      return;
+    }
     setIsSearching(true);
     try {
       const results = await productService.searchProducts(searchValue.trim());
@@ -50,6 +54,7 @@ const Header = () => {
           searchKeyword: searchValue.trim() 
         } 
       });
+      setSearchValue("");
     } catch (error) {
       console.error('Search error:', error);
       navigate('/all-products', { 
@@ -57,6 +62,7 @@ const Header = () => {
           searchKeyword: searchValue.trim() 
         } 
       });
+      setSearchValue("");
     } finally {
       setIsSearching(false);
     }
