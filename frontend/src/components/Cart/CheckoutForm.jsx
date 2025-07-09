@@ -26,6 +26,42 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
     const navigate = useNavigate();
     const { provinces, loading: provincesLoading, error: provincesError } = useVietnamProvinces();
     
+    // Debug log component props
+    console.log('🛒 CheckoutForm Debug:', {
+        cartItemsLength: cartItems?.length || 0,
+        subtotal,
+        shippingFee,
+        totalAmount,
+        hasOnPlaceOrder: typeof onPlaceOrder === 'function',
+        hasOnBackToCart: typeof onBackToCart === 'function',
+        isProcessing,
+        error
+    });
+    
+    // Early return for invalid props
+    if (!cartItems || !Array.isArray(cartItems)) {
+        console.error('❌ CheckoutForm: Invalid cartItems prop:', cartItems);
+        return (
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+                <h3>⚠️ Lỗi dữ liệu giỏ hàng</h3>
+                <p>Dữ liệu giỏ hàng không hợp lệ. Vui lòng thử lại.</p>
+                <button 
+                    onClick={() => onBackToCart && onBackToCart()}
+                    style={{ 
+                        padding: '10px 20px', 
+                        backgroundColor: '#007bff', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    ← Quay lại giỏ hàng
+                </button>
+            </div>
+        );
+    }
+    
     // Debug provinces data
     React.useEffect(() => {
         console.log('🌍 Provinces loading:', provincesLoading);
@@ -150,12 +186,18 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
     };
 
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
-            .format(amount)
-            .replace('₫', 'đ');
+        try {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
+                .format(amount)
+                .replace('₫', 'đ');
+        } catch (error) {
+            console.error('❌ Currency formatting error:', error);
+            return `${amount || 0} VND`;
+        }
     };
 
-    return (
+    try {
+        return (
         <div className={styles.checkoutContainer}>
             <div className={styles.checkoutHeader}>
                 <h1>
@@ -172,22 +214,63 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                 <div className={styles.orderDetails}>
                     <div className={styles.orderItems}>
                         <h2>Đơn hàng của bạn</h2>
-                        {cartItems.map(item => (
-                            <div key={item.id} className={styles.orderItem}>
-                                <img src={item.image} alt={item.name} className={styles.itemImage} />
-                                <div className={styles.itemInfo}>
-                                    <h3>{item.name}</h3>
-                                    <p className={styles.itemCategory}>{item.category}</p>
-                                    <div className={styles.itemPriceQuantity}>
-                                        <span>Số lượng: {item.quantity}</span>
-                                        <span>{formatCurrency(item.price)}</span>
+                        {cartItems.map((item, index) => {
+                            // Debug log for checkout items
+                            console.log('🛒 CheckoutForm Item Debug:', {
+                                index,
+                                itemId: item.id,
+                                hasProduct: !!item.product,
+                                hasImages: !!(item.product?.images),
+                                itemName: item.product?.name || item.name,
+                                itemPrice: item.product?.price || item.price,
+                                quantity: item.quantity
+                            });
+
+                            // Safe data extraction with fallbacks
+                            const itemName = item.product?.name || item.name || `Sản phẩm ${index + 1}`;
+                            const itemPrice = item.product?.price || item.price || 0;
+                            const itemCategory = item.product?.category?.name || item.product?.category || item.category || 'Sản phẩm';
+                            const itemQuantity = item.quantity || 1;
+                            
+                            // Try multiple image sources
+                            const imageUrl = 
+                                (item.product?.images && item.product.images.length > 0 && item.product.images[0]?.url) ||
+                                item.product?.image ||
+                                item.product?.imageUrl ||
+                                item.image ||
+                                item.imageUrl;
+
+                            return (
+                                <div key={item.id || `item-${index}`} className={styles.orderItem}>
+                                    {imageUrl ? (
+                                        <img 
+                                            src={imageUrl} 
+                                            alt={itemName}
+                                            className={styles.itemImage}
+                                            onError={(e) => {
+                                                console.log('🖼️ CheckoutForm image load failed');
+                                                e.target.src = '/img/pc.png';
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className={`${styles.itemImage} ${styles.imagePlaceholder}`}>
+                                            <span>📦</span>
+                                        </div>
+                                    )}
+                                    <div className={styles.itemInfo}>
+                                        <h3>{itemName}</h3>
+                                        <p className={styles.itemCategory}>{itemCategory}</p>
+                                        <div className={styles.itemPriceQuantity}>
+                                            <span>Số lượng: {itemQuantity}</span>
+                                            <span>{formatCurrency(itemPrice)}</span>
+                                        </div>
+                                    </div>
+                                    <div className={styles.itemTotal}>
+                                        {formatCurrency(itemPrice * itemQuantity)}
                                     </div>
                                 </div>
-                                <div className={styles.itemTotal}>
-                                    {formatCurrency(item.price * item.quantity)}
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     <form onSubmit={handleSubmit} className={styles.shippingForm}>
@@ -401,7 +484,47 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                 </div>
             </div>
         </div>
-    );
+        );
+    } catch (error) {
+        console.error('❌ CheckoutForm render error:', error);
+        return (
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+                <h3>⚠️ Lỗi hiển thị trang thanh toán</h3>
+                <p>Đã xảy ra lỗi khi hiển thị trang thanh toán. Vui lòng thử lại.</p>
+                <p style={{ color: 'red', fontSize: '14px' }}>{error.message}</p>
+                <button 
+                    onClick={() => {
+                        console.log('🔄 Reloading page...');
+                        window.location.reload();
+                    }}
+                    style={{ 
+                        padding: '10px 20px', 
+                        backgroundColor: '#dc3545', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        marginRight: '10px'
+                    }}
+                >
+                    🔄 Tải lại trang
+                </button>
+                <button 
+                    onClick={() => onBackToCart && onBackToCart()}
+                    style={{ 
+                        padding: '10px 20px', 
+                        backgroundColor: '#007bff', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    ← Quay lại giỏ hàng
+                </button>
+            </div>
+        );
+    }
 };
 
 export default CheckoutForm;

@@ -249,6 +249,20 @@
   flex-shrink: 0;
 }
 
+.imagePlaceholder {
+  width: 120px;
+  height: 120px;
+  background-color: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 12px;
+  border: 2px dashed #d1d5db;
+  flex-shrink: 0;
+}
+
 .itemContent {
   grid-column: 2;
   grid-row: 1;

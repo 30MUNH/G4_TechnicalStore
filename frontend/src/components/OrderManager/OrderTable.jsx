@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Edit, Trash2, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Edit, XCircle, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './OrderTable.module.css';
 
 const OrderTable = ({
@@ -11,7 +11,7 @@ const OrderTable = ({
   role = 'admin',
   onView,
   onStatusUpdate,
-  onDelete,
+  onReject,
   onPageChange
 }) => {
   const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
@@ -134,13 +134,13 @@ const OrderTable = ({
                         >
                           <Eye size={18} />
                         </button>
-                        {(role === 'admin' || role === 'staff') && onDelete && (
+                        {(role === 'admin' || role === 'staff') && onReject && order.status !== 'Đã hủy' && (
                           <button
-                            className={`${styles.actionButton} ${styles.deleteButton}`}
-                            onClick={() => onDelete(order.id)}
-                            title="Delete"
+                            className={`${styles.actionButton} ${styles.rejectButton}`}
+                            onClick={() => onReject(order.id)}
+                            title="Reject Order"
                           >
-                            <Trash2 size={18} />
+                            <XCircle size={18} />
                           </button>
                         )}
                       </div>

@@ -119,26 +119,7 @@ export const OrderHistory = ({
 
 
 
-            {/* Notice for empty order details */}
-            {orders.length > 0 && orders.every(order => !order.orderDetails || order.orderDetails.length === 0) && (
-                <div style={{
-                    backgroundColor: '#fff3cd',
-                    border: '1px solid #ffeaa7',
-                    borderRadius: '8px',
-                    padding: '1rem',
-                    margin: '1rem 0',
-                    color: '#856404'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '1.2rem' }}>💡</span>
-                        <strong>Thông báo:</strong>
-                    </div>
-                    <p style={{ margin: 0, lineHeight: '1.5' }}>
-                        Các đơn hàng hiện tại không có chi tiết sản phẩm (có thể là dữ liệu test). 
-                        Để tạo đơn hàng mới với sản phẩm, hãy thêm sản phẩm vào giỏ hàng và đặt hàng.
-                    </p>
-                </div>
-            )}
+
 
             {orders.length === 0 ? (
                 <div className={styles.emptyCart}>
@@ -301,17 +282,38 @@ export const OrderHistory = ({
                                                             borderRadius: '0.5rem',
                                                             marginBottom: '0.5rem'
                                                         }}>
-                                                            <img
-                                                                src={item.product?.image || '/img/product01.png'}
-                                                                alt={item.product?.name}
-                                                                style={{
+                                                            {item.product?.images && item.product.images.length > 0 ? (
+                                                                <img
+                                                                    src={item.product.images[0].url}
+                                                                    alt={item.product?.name || 'Sản phẩm'}
+                                                                    style={{
+                                                                        width: '80px',
+                                                                        height: '80px',
+                                                                        objectFit: 'cover',
+                                                                        borderRadius: '8px',
+                                                                        marginRight: '1.5rem'
+                                                                    }}
+                                                                    onError={(e) => {
+                                                                        e.target.src = '/img/pc.png';
+                                                                    }}
+                                                                />
+                                                            ) : (
+                                                                <div style={{
                                                                     width: '80px',
                                                                     height: '80px',
-                                                                    objectFit: 'cover',
+                                                                    backgroundColor: '#f3f4f6',
                                                                     borderRadius: '8px',
-                                                                    marginRight: '1.5rem'
-                                                                }}
-                                                            />
+                                                                    marginRight: '1.5rem',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    color: '#6b7280',
+                                                                    fontSize: '12px',
+                                                                    border: '2px dashed #d1d5db'
+                                                                }}>
+                                                                    📦
+                                                                </div>
+                                                            )}
                                                             <div style={{ flex: 1 }}>
                                                                 <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.2rem', fontWeight: '600', textAlign: 'left' }}>
                                                                     {item.product?.name}
@@ -358,13 +360,6 @@ export const OrderHistory = ({
                                                         }}>
                                                             Không có chi tiết sản phẩm
                                                         </h4>
-                                                        <p style={{ 
-                                                            color: '#9ca3af', 
-                                                            margin: 0,
-                                                            fontSize: '1rem'
-                                                        }}>
-                                                            Đơn hàng này có thể là đơn hàng test hoặc dữ liệu chưa đầy đủ
-                                                        </p>
                                                     </div>
                                                 )}
                                             </div>
@@ -420,19 +415,7 @@ export const OrderHistory = ({
                                                                     <span>Tổng cộng:</span>
                                                                     <span style={{ color: '#dc2626' }}>{formatCurrency(total)}</span>
                                                                 </div>
-                                                                {!hasOrderDetails && (
-                                                                    <div style={{
-                                                                        padding: '0.75rem',
-                                                                        backgroundColor: '#fef3c7',
-                                                                        borderRadius: '0.5rem',
-                                                                        fontSize: '0.9rem',
-                                                                        color: '#92400e',
-                                                                        textAlign: 'center',
-                                                                        marginTop: '0.5rem'
-                                                                    }}>
-                                                                        ⚠️ Tổng tiền được lấy từ thông tin đơn hàng
-                                                                    </div>
-                                                                )}
+
                                                             </>
                                                         );
                                                     })()}
