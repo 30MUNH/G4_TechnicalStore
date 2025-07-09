@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
 import styles from './CartView.module.css'; // Use the same CSS module as CartView
 import { formatDateTime } from '../../utils/dateFormatter';
+import { useInvoiceExport } from '../../Hook/useInvoiceExport';
+import { useOrders } from '../../Hook/useOrders';
 
 export const OrderHistory = ({ 
     orders, 
-    onBackToCart
+    onBackToCart,
+    onOrderUpdate // New prop to update orders state
 }) => {
     const [expandedOrders, setExpandedOrders] = useState(new Set());
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
     const [cancelReason, setCancelReason] = useState('');
+    const { exportToPDF } = useInvoiceExport();
+    const { cancelOrder } = useOrders();
 
     // Validate props
     if (!Array.isArray(orders)) {
@@ -117,29 +122,20 @@ export const OrderHistory = ({
         }
 
         try {
-            // TODO: Implement API call to cancel order with logic:
-            // 1. Update order status to "Đã hủy" 
-            // 2. Add cancel reason to order
-            // 3. Check consecutive cancellations count for user
-            // 4. If >= 5 consecutive cancellations, lock account
-            // 5. Send notification to user about cancellation
+            // Call API to cancel order
+            await cancelOrder(selectedOrderId, cancelReason);
             
-
+            // Update local state immediately
+            if (onOrderUpdate) {
+                onOrderUpdate((prevOrders) => 
+                    prevOrders.map(order => 
+                        order.id === selectedOrderId 
+                            ? { ...order, status: 'Đã hủy', cancelReason: cancelReason }
+                            : order
+                    )
+                );
+            }
             
-            // Placeholder for cancel order API call:
-            // const response = await orderService.cancelOrder(selectedOrderId, {
-            //     reason: cancelReason,
-            //     cancelledBy: 'customer'
-            // });
-            
-            // Placeholder for account lock check:
-            // if (response.data.consecutiveCancellations >= 5) {
-            //     alert('⚠️ Cảnh báo: Tài khoản của bạn đã bị khóa do hủy quá nhiều đơn hàng liên tiếp. Vui lòng liên hệ hỗ trợ.');
-            //     // Redirect to login or show locked account message
-            //     return;
-            // }
-            
-            // For now, just show success message
             alert('Đã hủy đơn hàng thành công!');
             
             // Close modal and reset states
@@ -147,10 +143,8 @@ export const OrderHistory = ({
             setSelectedOrderId(null);
             setCancelReason('');
             
-            // TODO: Refresh orders list or update order status locally
-            // await fetchOrders(); // or update order in state directly
-            
         } catch (error) {
+            console.error('Cancel order error:', error);
             
             // Handle specific error cases
             if (error.message?.includes('account_locked')) {
@@ -167,6 +161,11 @@ export const OrderHistory = ({
         setShowCancelModal(false);
         setSelectedOrderId(null);
         setCancelReason('');
+    };
+
+    // Check if order can be cancelled (only pending and processing orders)
+    const canCancelOrder = (status) => {
+        return status === 'Đang chờ' || status === 'Đang xử lý' || status === 'pending' || status === 'processing';
     };
 
     return (
@@ -262,8 +261,8 @@ export const OrderHistory = ({
                                                 </span>
                                             </div>
                                             
-                                            {/* Cancel Order Button - show for "Đang chờ" and "Đang xử lý" status */}
-                                            {(order.status === 'Đang chờ' || order.status === 'Đang xử lý') && (
+                                                                        {/* Cancel Order Button - show for cancellable orders only */}
+                            {canCancelOrder(order.status) && (
                                                 <button
                                                     onClick={() => handleCancelOrder(order.id)}
                                                     style={{
@@ -531,10 +530,7 @@ export const OrderHistory = ({
                                                         justifyContent: 'flex-end'
                                                     }}>
                                                         <button
-                                                                                                                    onClick={() => {
-                                                            // TODO: Implement invoice export
-                                                            alert('Chức năng xuất hóa đơn đang được phát triển!');
-                                                        }}
+                                                            onClick={() => exportToPDF(order)}
                                                             style={{
                                                                 backgroundColor: '#059669',
                                                                 color: 'white',

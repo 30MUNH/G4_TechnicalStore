@@ -1,9 +1,12 @@
 import React from 'react';
-import { X, Calendar, MapPin, CreditCard, Package, Truck } from 'lucide-react';
+import { X, Calendar, MapPin, CreditCard, Package, Truck, Download } from 'lucide-react';
 import styles from './OrderDetailModal.module.css';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { useInvoiceExport } from '../../Hook/useInvoiceExport';
 
 const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin' }) => {
+  const { exportToPDF } = useInvoiceExport();
+  
   if (!open || !order) return null;
 
   // Các trạng thái cho phép chuyển
@@ -57,9 +60,37 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
               <p className={styles.orderId}>#{order.id}</p>
             </div>
           </div>
-          <button onClick={onClose} className={styles.closeBtn}>
-            <X size={24} />
-          </button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button 
+              onClick={() => exportToPDF(order)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backgroundColor: '#059669',
+                color: 'white',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#047857';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#059669';
+              }}
+            >
+              <Download size={16} />
+              Xuất hóa đơn
+            </button>
+            <button onClick={onClose} className={styles.closeBtn}>
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
         <div className={styles.content}>

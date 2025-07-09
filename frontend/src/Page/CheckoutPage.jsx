@@ -140,7 +140,8 @@ const CheckoutPage = () => {
                     `Email: ${formData.email.trim()}`,
                     `Số lượng sản phẩm: ${currentCart.cartItems.length}`,
                     `Tổng tiền: ${formatCurrency(currentCart.totalAmount)}`
-                ].join(' | ')
+                ].join(' | '),
+                paymentMethod: formData.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán trực tuyến'
             };
             
             console.log('📤 Submitting order:', {

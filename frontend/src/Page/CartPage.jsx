@@ -227,10 +227,11 @@ const CartPage = () => {
                             {orderError}
                         </div>
                     )}
-                    <OrderHistory 
-                        orders={orders} 
-                        onBackToCart={handleBackToCart}
-                    />
+                                    <OrderHistory 
+                    orders={orders} 
+                    onBackToCart={handleBackToCart}
+                    onOrderUpdate={setOrders}
+                />
                 </div>
             </div>
         );
