@@ -181,6 +181,15 @@
   background-color: #fef2f2;
 }
 
+.rejectButton {
+  color: #dc2626;
+}
+
+.rejectButton:hover {
+  color: #b91c1c;
+  background-color: #fef2f2;
+}
+
 .emptyState {
   padding: 3rem 1.5rem;
   text-align: center;

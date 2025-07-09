@@ -180,7 +180,8 @@ export class OrderService {
                     'customer.role',
                     'orderDetails', 
                     'orderDetails.product',
-                    'orderDetails.product.category'
+                    'orderDetails.product.category',
+                    'orderDetails.product.images'
                 ]
             });
 
@@ -200,7 +201,8 @@ export class OrderService {
                 'customer.role',
                 'orderDetails',
                 'orderDetails.product',
-                'orderDetails.product.category'
+                'orderDetails.product.category',
+                'orderDetails.product.images'
             ]
         });
 
@@ -225,7 +227,8 @@ export class OrderService {
                 'customer.role',
                 'orderDetails',
                 'orderDetails.product',
-                'orderDetails.product.category'
+                'orderDetails.product.category',
+                'orderDetails.product.images'
             ],
             order: { orderDate: 'DESC' },
             skip: offset,
@@ -334,6 +337,7 @@ export class OrderService {
             .leftJoinAndSelect('order.orderDetails', 'orderDetails')
             .leftJoinAndSelect('orderDetails.product', 'product')
             .leftJoinAndSelect('product.category', 'category')
+            .leftJoinAndSelect('product.images', 'images')
             .leftJoinAndSelect('order.shipper', 'shipper')
             .where('shipper.id = :shipperId', { shipperId });
 
@@ -411,6 +415,7 @@ export class OrderService {
             .leftJoinAndSelect('order.orderDetails', 'orderDetails')
             .leftJoinAndSelect('orderDetails.product', 'product')
             .leftJoinAndSelect('product.category', 'category')
+            .leftJoinAndSelect('product.images', 'images')
             .leftJoinAndSelect('order.shipper', 'shipper');
 
         if (status) {

@@ -8,12 +8,14 @@ import {
   Phone,
   Calendar,
   Trash2,
+  XCircle,
   Eye,
   Edit
 } from 'lucide-react';
 
 import OrderTable from './OrderTable';
 import FilterBar from './FilterBar';
+import OrderDetailModal from './OrderDetailModal';
 import styles from './OrderManagement.module.css';
 import { orderService } from '../../services/orderService';
 
@@ -37,7 +39,7 @@ const OrderManagement = ({ role = 'admin' }) => {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('view'); // 'view', 'edit'
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
 
   const itemsPerPage = 10;
 
@@ -215,26 +217,30 @@ const OrderManagement = ({ role = 'admin' }) => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleReject = async (id) => {
     const order = orders.find(o => o.id === id);
     setSelectedOrder(order);
-    setShowDeleteModal(true);
+    setShowRejectModal(true);
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleRejectConfirm = async () => {
     if (!selectedOrder) return;
     
     try {
-      const response = await orderService.deleteOrder(selectedOrder.id);
+      // Reject order by changing status to "Đã hủy"
+      const response = await orderService.updateOrderStatus(selectedOrder.id, { 
+        status: 'Đã hủy',
+        cancelReason: 'Đã bị từ chối bởi admin'
+      });
       
       if (response.success) {
-        showNotification('Xoá đơn hàng thành công', 'success');
+        showNotification('Từ chối đơn hàng thành công', 'success');
         await fetchOrders(); // Refresh the list
       } else {
-        throw new Error(response.message || 'Không thể xoá đơn hàng');
+        throw new Error(response.message || 'Không thể từ chối đơn hàng');
       }
       
-      setShowDeleteModal(false);
+      setShowRejectModal(false);
       setSelectedOrder(null);
     } catch (error) {
       showNotification(error.message || 'Đã xảy ra lỗi', 'error');
@@ -351,29 +357,27 @@ const OrderManagement = ({ role = 'admin' }) => {
         role={role}
         onView={(order) => openModal('view', order)}
         onStatusUpdate={handleStatusUpdate}
-        onDelete={role !== 'shipper' ? handleDelete : undefined}
+        onReject={role !== 'shipper' ? handleReject : undefined}
         onPageChange={setCurrentPage}
       />
 
       {/* Modals */}
-      {showModal && (
-        <Modal
-          isOpen={showModal}
-          title={getModalTitle()}
+      {showModal && modalMode === 'view' && selectedOrder && (
+        <OrderDetailModal
+          order={selectedOrder}
+          open={showModal}
           onClose={closeModal}
-        >
-          {modalMode === 'view' && selectedOrder && (
-            <OrderDetail order={selectedOrder} />
-          )}
-        </Modal>
+          onStatusChange={handleStatusUpdate}
+          role={role}
+        />
       )}
 
-      {showDeleteModal && selectedOrder && (
-        <DeleteConfirmation
+      {showRejectModal && selectedOrder && (
+        <RejectConfirmation
           order={selectedOrder}
-          onConfirm={handleDeleteConfirm}
+          onConfirm={handleRejectConfirm}
           onClose={() => {
-            setShowDeleteModal(false);
+            setShowRejectModal(false);
             setSelectedOrder(null);
           }}
         />
@@ -503,24 +507,24 @@ const getStatusClass = (status) => {
   }
 };
 
-// Delete Confirmation Component
-const DeleteConfirmation = ({ order, onConfirm, onClose }) => (
+// Reject Confirmation Component
+const RejectConfirmation = ({ order, onConfirm, onClose }) => (
   <div className={styles.deleteModalOverlay}>
     <div className={styles.deleteModalContent}>
       <div className={styles.deleteModalBody}>
         <div className={styles.deleteIcon}>
-          <Trash2 size={24} color="#dc2626" />
+          <XCircle size={24} color="#dc2626" />
         </div>
-        <h3 className={styles.deleteTitle}>Xác nhận xóa</h3>
+        <h3 className={styles.deleteTitle}>Xác nhận từ chối đơn hàng</h3>
         <p className={styles.deleteMessage}>
-          Bạn có chắc chắn muốn xóa đơn hàng "#{order.id}"? Hành động này không thể hoàn tác.
+          Bạn có chắc chắn muốn từ chối đơn hàng "#{order.id}"? Đơn hàng sẽ được chuyển sang trạng thái "Đã hủy".
         </p>
         <div className={styles.deleteActions}>
           <button onClick={onClose} className={styles.cancelButton}>
-            Hủy
+            Hủy bỏ
           </button>
           <button onClick={onConfirm} className={styles.confirmDeleteButton}>
-            Xóa
+            Từ chối
           </button>
         </div>
       </div>

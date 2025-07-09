@@ -271,7 +271,11 @@ const CheckoutPage = () => {
                 price: item.product?.price || item.price || 0,
                 quantity: item.quantity || 1,
                 category: item.product?.category?.name || item.product?.category || 'Sản phẩm',
-                image: item.product?.url || item.product?.image || '/img/product01.png'
+                image: item.product?.images && item.product.images.length > 0 
+                    ? item.product.images[0].url 
+                    : '/img/pc.png',
+                // Pass through the full product data
+                product: item.product
             };
         } catch (error) {
             return {

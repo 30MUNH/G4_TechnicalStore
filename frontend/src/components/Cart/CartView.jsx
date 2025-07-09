@@ -79,7 +79,39 @@ const CartView = ({
                                     </svg>
                                 </button>
                                 <div className={styles.leftSection}>
-                                    <img src={item.image} alt={item.name} className={styles.itemImage} />
+                                    {(() => {
+                                        // Debug log for cart item image
+                                        console.log('🛒 CartView Image Debug:', {
+                                            itemId: item.id,
+                                            hasProduct: !!item.product,
+                                            hasImages: !!(item.product?.images),
+                                            hasImageFallback: !!(item.image),
+                                            itemName: item.name
+                                        });
+
+                                        // Try multiple image sources
+                                        const imageUrl = 
+                                            (item.product?.images && item.product.images.length > 0 && item.product.images[0]?.url) ||
+                                            item.product?.image ||
+                                            item.image ||
+                                            item.imageUrl;
+
+                                        return imageUrl ? (
+                                            <img 
+                                                src={imageUrl} 
+                                                alt={item.name}
+                                                className={styles.itemImage}
+                                                onError={(e) => {
+                                                    console.log('🖼️ CartView image load failed');
+                                                    e.target.src = '/img/pc.png';
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className={`${styles.itemImage} ${styles.imagePlaceholder}`}>
+                                                <span>📦</span>
+                                            </div>
+                                        );
+                                    })()}
                                     <div className={styles.quantityControls}>
                                         <span className={styles.quantityLabel}>Số lượng:</span>
                                         <div className={styles.quantityInputGroup}>
