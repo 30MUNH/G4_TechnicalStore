@@ -7,7 +7,7 @@ import { useOrders } from '../../Hook/useOrders';
 export const OrderHistory = ({ 
     orders, 
     onBackToCart,
-    onOrderUpdate // New prop to update orders state
+    onOrderUpdate 
 }) => {
     const [expandedOrders, setExpandedOrders] = useState(new Set());
     const [showCancelModal, setShowCancelModal] = useState(false);
@@ -15,6 +15,88 @@ export const OrderHistory = ({
     const [cancelReason, setCancelReason] = useState('');
     const { exportToPDF } = useInvoiceExport();
     const { cancelOrder } = useOrders();
+
+    // Notification function
+    const showNotification = (message, type = "info") => {
+        const notification = document.createElement("div");
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        
+        // Add notification styles
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            max-width: 400px;
+            word-wrap: break-word;
+            animation: slideInRight 0.3s ease-out;
+        `;
+
+        // Set background color based on type
+        switch (type) {
+            case 'success':
+                notification.style.backgroundColor = '#22c55e';
+                break;
+            case 'error':
+                notification.style.backgroundColor = '#ef4444';
+                break;
+            case 'warning':
+                notification.style.backgroundColor = '#f59e0b';
+                break;
+            default:
+                notification.style.backgroundColor = '#3b82f6';
+        }
+
+        // Add animation keyframes if not already added
+        if (!document.querySelector('#notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                
+                @keyframes slideOutRight {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }
+        }, 4700);
+    };
 
     // Validate props
     if (!Array.isArray(orders)) {
@@ -117,7 +199,7 @@ export const OrderHistory = ({
 
     const handleCancelConfirm = async () => {
         if (!selectedOrderId || !cancelReason.trim()) {
-            alert('Vui lòng nhập lý do hủy đơn hàng');
+            showNotification('⚠️ Vui lòng nhập lý do hủy đơn hàng', 'warning');
             return;
         }
 
@@ -136,7 +218,7 @@ export const OrderHistory = ({
                 );
             }
             
-            alert('Đã hủy đơn hàng thành công!');
+            showNotification('✅ Đã hủy đơn hàng thành công!', 'success');
             
             // Close modal and reset states
             setShowCancelModal(false);
@@ -148,11 +230,11 @@ export const OrderHistory = ({
             
             // Handle specific error cases
             if (error.message?.includes('account_locked')) {
-                alert('⚠️ Tài khoản của bạn đã bị khóa do hủy quá nhiều đơn hàng. Vui lòng liên hệ hỗ trợ.');
+                showNotification('⚠️ Tài khoản của bạn đã bị khóa do hủy quá nhiều đơn hàng. Vui lòng liên hệ hỗ trợ.', 'error');
             } else if (error.message?.includes('order_cannot_cancel')) {
-                alert('❌ Không thể hủy đơn hàng này do đã qua thời gian cho phép.');
+                showNotification('❌ Không thể hủy đơn hàng này do đã qua thời gian cho phép.', 'error');
             } else {
-                alert('Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.');
+                showNotification('❌ Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.', 'error');
             }
         }
     };
@@ -165,7 +247,7 @@ export const OrderHistory = ({
 
     // Check if order can be cancelled (only pending and processing orders)
     const canCancelOrder = (status) => {
-        return status === 'Đang chờ' || status === 'Đang xử lý' || status === 'pending' || status === 'processing';
+        return status === 'Đang chờ' || status === 'Đang xử lý' ;
     };
 
     return (

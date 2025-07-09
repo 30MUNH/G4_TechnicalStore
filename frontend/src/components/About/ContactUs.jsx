@@ -19,12 +19,94 @@ const ContactUs = () => {
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
 
+    // Notification function
+    const showNotification = (message, type = "info") => {
+        const notification = document.createElement("div");
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        
+        // Add notification styles
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            max-width: 400px;
+            word-wrap: break-word;
+            animation: slideInRight 0.3s ease-out;
+        `;
+
+        // Set background color based on type
+        switch (type) {
+            case 'success':
+                notification.style.backgroundColor = '#22c55e';
+                break;
+            case 'error':
+                notification.style.backgroundColor = '#ef4444';
+                break;
+            case 'warning':
+                notification.style.backgroundColor = '#f59e0b';
+                break;
+            default:
+                notification.style.backgroundColor = '#3b82f6';
+        }
+
+        // Add animation keyframes if not already added
+        if (!document.querySelector('#notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                
+                @keyframes slideOutRight {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }
+        }, 4700);
+    };
+
     const sendEmail = (e) => {
         e.preventDefault();
         
         // Check if user is authenticated
         if (!isAuthenticated()) {
-            alert('Vui lòng đăng nhập để gửi yêu cầu tư vấn!');
+            showNotification('⚠️ Vui lòng đăng nhập để gửi yêu cầu tư vấn!', 'warning');
             navigate('/login');
             return;
         }
@@ -37,11 +119,11 @@ const ContactUs = () => {
             'N_MB7gWT5V-WSfWBY'
         )
             .then(() => {
-                alert('Cảm ơn bạn đã liên hệ!');
+                showNotification('✅ Cảm ơn bạn đã liên hệ!', 'success');
                 form.current.reset();
             })
             .catch(() => {
-                alert('Có lỗi xảy ra, vui lòng thử lại.');
+                showNotification('❌ Có lỗi xảy ra, vui lòng thử lại.', 'error');
             })
             .finally(() => setIsSubmitting(false));
     };

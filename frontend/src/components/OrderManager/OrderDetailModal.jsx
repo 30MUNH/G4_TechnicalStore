@@ -87,9 +87,9 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
               <Download size={16} />
               Xuất hóa đơn
             </button>
-            <button onClick={onClose} className={styles.closeBtn}>
-              <X size={24} />
-            </button>
+          <button onClick={onClose} className={styles.closeBtn}>
+            <X size={24} />
+          </button>
           </div>
         </div>
 

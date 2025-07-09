@@ -26,21 +26,10 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
     const navigate = useNavigate();
     const { provinces, loading: provincesLoading, error: provincesError } = useVietnamProvinces();
     
-    // Debug log component props
-    console.log('🛒 CheckoutForm Debug:', {
-        cartItemsLength: cartItems?.length || 0,
-        subtotal,
-        shippingFee,
-        totalAmount,
-        hasOnPlaceOrder: typeof onPlaceOrder === 'function',
-        hasOnBackToCart: typeof onBackToCart === 'function',
-        isProcessing,
-        error
-    });
+
     
     // Early return for invalid props
     if (!cartItems || !Array.isArray(cartItems)) {
-        console.error('❌ CheckoutForm: Invalid cartItems prop:', cartItems);
         return (
             <div style={{ padding: '2rem', textAlign: 'center' }}>
                 <h3>⚠️ Lỗi dữ liệu giỏ hàng</h3>
@@ -62,15 +51,7 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
         );
     }
     
-    // Debug provinces data
-    React.useEffect(() => {
-        console.log('🌍 Provinces loading:', provincesLoading);
-        console.log('🌍 Provinces error:', provincesError);
-        console.log('🌍 Provinces data:', Object.keys(provinces).length, 'provinces loaded');
-        if (Object.keys(provinces).length > 0) {
-            console.log('🌍 Sample province:', Object.keys(provinces)[0], provinces[Object.keys(provinces)[0]]);
-        }
-    }, [provinces, provincesLoading, provincesError]);
+
     
     const [formData, setFormData] = useState({
         fullName: '',
@@ -87,6 +68,88 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
     const [availableDistricts, setAvailableDistricts] = useState([]);
     const [availableWards, setAvailableWards] = useState([]);
     const [paymentMethod, setPaymentMethod] = useState('cod'); // Default to Cash on Delivery
+
+    // Notification function
+    const showNotification = (message, type = "info") => {
+        const notification = document.createElement("div");
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        
+        // Add notification styles
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            max-width: 400px;
+            word-wrap: break-word;
+            animation: slideInRight 0.3s ease-out;
+        `;
+
+        // Set background color based on type
+        switch (type) {
+            case 'success':
+                notification.style.backgroundColor = '#22c55e';
+                break;
+            case 'error':
+                notification.style.backgroundColor = '#ef4444';
+                break;
+            case 'warning':
+                notification.style.backgroundColor = '#f59e0b';
+                break;
+            default:
+                notification.style.backgroundColor = '#3b82f6';
+        }
+
+        // Add animation keyframes if not already added
+        if (!document.querySelector('#notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                
+                @keyframes slideOutRight {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }
+        }, 4700);
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -135,36 +198,25 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        console.log('🚀 CheckoutForm handleSubmit called');
-        console.log('💳 Payment method:', paymentMethod);
-        console.log('📋 Form data:', formData);
-        
         // Validate required fields
         if (!formData.fullName || !formData.phone || !formData.email || 
             !formData.address || !formData.city || !formData.ward || !formData.commune) {
-            alert('Vui lòng điền đầy đủ thông tin giao hàng');
+            showNotification('⚠️ Vui lòng điền đầy đủ thông tin giao hàng', 'warning');
             return;
         }
         
         if (!paymentMethod) {
-            alert('Vui lòng chọn phương thức thanh toán (COD hoặc VNPay)');
+            showNotification('⚠️ Vui lòng chọn phương thức thanh toán (COD hoặc VNPay)', 'warning');
             return;
         }
         
         if (paymentMethod === 'vnpay') {
-            console.log('🏦 VNPay payment selected - navigating to VNPay page');
             // VNPay payment flow - chuyển hướng đến trang VNPay
             const orderData = {
                 ...formData,
                 paymentMethod: paymentMethod,
                 paymentProvider: 'vnpay'
             };
-            
-            console.log('📤 Navigating to VNPay with data:', {
-                orderData: orderData,
-                totalAmount: totalAmount,
-                cartItemsCount: cartItems.length
-            });
             
             // Chuyển hướng đến trang VNPay payment với order data
             navigate('/vnpay-payment', {
@@ -175,7 +227,6 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                 }
             });
         } else {
-            console.log('💰 COD payment selected - processing order');
             // COD payment flow
             const orderData = {
                 ...formData,
@@ -191,7 +242,6 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                 .format(amount)
                 .replace('₫', 'đ');
         } catch (error) {
-            console.error('❌ Currency formatting error:', error);
             return `${amount || 0} VND`;
         }
     };
@@ -215,20 +265,9 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                     <div className={styles.orderItems}>
                         <h2>Đơn hàng của bạn</h2>
                         {cartItems.map((item, index) => {
-                            // Debug log for checkout items
-                            console.log('🛒 CheckoutForm Item Debug:', {
-                                index,
-                                itemId: item.id,
-                                hasProduct: !!item.product,
-                                hasImages: !!(item.product?.images),
-                                itemName: item.product?.name || item.name,
-                                itemPrice: item.product?.price || item.price,
-                                quantity: item.quantity
-                            });
-
                             // Safe data extraction with fallbacks
                             const itemName = item.product?.name || item.name || `Sản phẩm ${index + 1}`;
-                            const itemPrice = item.product?.price || item.price || 0;
+                            const itemPrice = item.product?.price ;
                             const itemCategory = item.product?.category?.name || item.product?.category || item.category || 'Sản phẩm';
                             const itemQuantity = item.quantity || 1;
                             
@@ -242,28 +281,28 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
 
                             return (
                                 <div key={item.id || `item-${index}`} className={styles.orderItem}>
-                                    {imageUrl ? (
-                                        <img 
-                                            src={imageUrl} 
-                                            alt={itemName}
-                                            className={styles.itemImage}
-                                            onError={(e) => {
-                                                console.log('🖼️ CheckoutForm image load failed');
-                                                e.target.src = '/img/pc.png';
-                                            }}
-                                        />
-                                    ) : (
-                                        <div className={`${styles.itemImage} ${styles.imagePlaceholder}`}>
-                                            <span>📦</span>
+                                    <div className={styles.leftSection}>
+                                        {imageUrl ? (
+                                            <img 
+                                                src={imageUrl} 
+                                                alt={itemName}
+                                                className={styles.itemImage}
+                                                onError={(e) => {
+                                                    e.target.src = '/img/pc.png';
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className={`${styles.itemImage} ${styles.imagePlaceholder}`}>
+                                                <span>📦</span>
+                                            </div>
+                                        )}
+                                        <div className={styles.itemQuantity}>
+                                            <span>Số lượng: {itemQuantity}</span>
                                         </div>
-                                    )}
+                                    </div>
                                     <div className={styles.itemInfo}>
                                         <h3>{itemName}</h3>
                                         <p className={styles.itemCategory}>{itemCategory}</p>
-                                        <div className={styles.itemPriceQuantity}>
-                                            <span>Số lượng: {itemQuantity}</span>
-                                            <span>{formatCurrency(itemPrice)}</span>
-                                        </div>
                                     </div>
                                     <div className={styles.itemTotal}>
                                         {formatCurrency(itemPrice * itemQuantity)}
@@ -451,11 +490,7 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                             </div>
                         </div>
                         
-                        {paymentMethod === 'vnpay' && (
-                            <div className={styles.paymentNoteCompact}>
-                                <p>Bạn sẽ được chuyển hướng đến cổng thanh toán VNPay sau khi đặt hàng.</p>
-                            </div>
-                        )}
+
                     </div>
 
                     {error && (
@@ -486,7 +521,6 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
         </div>
         );
     } catch (error) {
-        console.error('❌ CheckoutForm render error:', error);
         return (
             <div style={{ padding: '2rem', textAlign: 'center' }}>
                 <h3>⚠️ Lỗi hiển thị trang thanh toán</h3>
@@ -494,7 +528,6 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                 <p style={{ color: 'red', fontSize: '14px' }}>{error.message}</p>
                 <button 
                     onClick={() => {
-                        console.log('🔄 Reloading page...');
                         window.location.reload();
                     }}
                     style={{ 
