@@ -141,6 +141,7 @@ export class OrderService {
             order.totalAmount = cart.totalAmount;
             order.shippingAddress = createOrderDto.shippingAddress || '';
             order.note = createOrderDto.note || '';
+            order.paymentMethod = createOrderDto.paymentMethod || 'Chưa chọn';
             
             await transactionalEntityManager.save(order);
 

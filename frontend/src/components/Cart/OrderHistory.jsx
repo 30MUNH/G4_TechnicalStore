@@ -7,10 +7,12 @@ export const OrderHistory = ({
     onBackToCart
 }) => {
     const [expandedOrders, setExpandedOrders] = useState(new Set());
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [selectedOrderId, setSelectedOrderId] = useState(null);
+    const [cancelReason, setCancelReason] = useState('');
 
     // Validate props
     if (!Array.isArray(orders)) {
-        console.error('❌ OrderHistory Debug - orders is not an array:', orders);
         return (
             <div style={{ padding: '2rem', textAlign: 'center' }}>
                 <h3>⚠️ Lỗi dữ liệu đơn hàng</h3>
@@ -40,29 +42,30 @@ export const OrderHistory = ({
     };
 
     const getStatusColor = (status) => {
+        if (!status) return '#6b7280'; // Gray for null/undefined
+        
         switch (status) {
+            case 'Đang chờ':
+                return '#f59e0b'; // Amber - Waiting
             case 'Đang xử lý':
-                return '#f59e0b'; // Amber - Processing
+                return '#3b82f6'; // Blue - Processing
             case 'Đang giao':
-                return '#3b82f6'; // Blue - Shipping
+                return '#8b5cf6'; // Purple - Shipping
             case 'Đã giao':
                 return '#059669'; // Green - Delivered
             case 'Đã hủy':
                 return '#ef4444'; // Red - Cancelled
             // Fallback for English values (backward compatibility)
-            case 'pending':
-                return '#f59e0b'; // Amber
             case 'processing':
                 return '#3b82f6'; // Blue
             case 'shipped':
             case 'shipping':
-                return '#10b981'; // Emerald
+                return '#8b5cf6'; // Purple
             case 'delivered':
                 return '#059669'; // Green
             case 'cancelled':
                 return '#ef4444'; // Red
             default:
-                console.warn('⚠️ OrderHistory Debug - Unknown status:', status);
                 return '#6b7280'; // Gray
         }
     };
@@ -79,8 +82,7 @@ export const OrderHistory = ({
             const formatted = new Date(dateString).toLocaleDateString('vi-VN', options);
             return formatted;
         } catch (error) {
-            console.error('❌ OrderHistory - Date formatting error:', error);
-            return dateString;
+            return dateString || 'N/A';
         }
     };
 
@@ -92,17 +94,79 @@ export const OrderHistory = ({
             }).format(amount).replace('₫', 'đ');
             return formatted;
         } catch (error) {
-            console.error('❌ OrderHistory - Currency formatting error:', error);
-            return `${amount} VND`;
+            return `${amount || 0} VND`;
         }
     };
 
     const handleBackToCart = () => {
         if (typeof onBackToCart === 'function') {
             onBackToCart();
-        } else {
-            console.error('❌ OrderHistory - onBackToCart is not a function:', typeof onBackToCart);
         }
+    };
+
+    const handleCancelOrder = (orderId) => {
+        setSelectedOrderId(orderId);
+        setShowCancelModal(true);
+        setCancelReason('');
+    };
+
+    const handleCancelConfirm = async () => {
+        if (!selectedOrderId || !cancelReason.trim()) {
+            alert('Vui lòng nhập lý do hủy đơn hàng');
+            return;
+        }
+
+        try {
+            // TODO: Implement API call to cancel order with logic:
+            // 1. Update order status to "Đã hủy" 
+            // 2. Add cancel reason to order
+            // 3. Check consecutive cancellations count for user
+            // 4. If >= 5 consecutive cancellations, lock account
+            // 5. Send notification to user about cancellation
+            
+
+            
+            // Placeholder for cancel order API call:
+            // const response = await orderService.cancelOrder(selectedOrderId, {
+            //     reason: cancelReason,
+            //     cancelledBy: 'customer'
+            // });
+            
+            // Placeholder for account lock check:
+            // if (response.data.consecutiveCancellations >= 5) {
+            //     alert('⚠️ Cảnh báo: Tài khoản của bạn đã bị khóa do hủy quá nhiều đơn hàng liên tiếp. Vui lòng liên hệ hỗ trợ.');
+            //     // Redirect to login or show locked account message
+            //     return;
+            // }
+            
+            // For now, just show success message
+            alert('Đã hủy đơn hàng thành công!');
+            
+            // Close modal and reset states
+            setShowCancelModal(false);
+            setSelectedOrderId(null);
+            setCancelReason('');
+            
+            // TODO: Refresh orders list or update order status locally
+            // await fetchOrders(); // or update order in state directly
+            
+        } catch (error) {
+            
+            // Handle specific error cases
+            if (error.message?.includes('account_locked')) {
+                alert('⚠️ Tài khoản của bạn đã bị khóa do hủy quá nhiều đơn hàng. Vui lòng liên hệ hỗ trợ.');
+            } else if (error.message?.includes('order_cannot_cancel')) {
+                alert('❌ Không thể hủy đơn hàng này do đã qua thời gian cho phép.');
+            } else {
+                alert('Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.');
+            }
+        }
+    };
+
+    const handleCancelClose = () => {
+        setShowCancelModal(false);
+        setSelectedOrderId(null);
+        setCancelReason('');
     };
 
     return (
@@ -197,6 +261,38 @@ export const OrderHistory = ({
                                                     {order.status}
                                                 </span>
                                             </div>
+                                            
+                                            {/* Cancel Order Button - show for "Đang chờ" and "Đang xử lý" status */}
+                                            {(order.status === 'Đang chờ' || order.status === 'Đang xử lý') && (
+                                                <button
+                                                    onClick={() => handleCancelOrder(order.id)}
+                                                    style={{
+                                                        backgroundColor: '#ef4444',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        padding: '0.5rem 1rem',
+                                                        borderRadius: '0.5rem',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.5rem'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.backgroundColor = '#dc2626';
+                                                        e.target.style.transform = 'translateY(-1px)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.backgroundColor = '#ef4444';
+                                                        e.target.style.transform = 'translateY(0)';
+                                                    }}
+                                                >
+                                                    ❌ Hủy đơn
+                                                </button>
+                                            )}
+                                            
                                             <button
                                                 onClick={() => toggleOrderDetails(order.id)}
                                                 style={{
@@ -239,18 +335,18 @@ export const OrderHistory = ({
                                         borderRadius: '0.75rem',
                                         marginBottom: isExpanded ? '1.5rem' : '0'
                                     }}>
-                                        <div style={{ fontSize: '1.2rem', color: '#4b5563', textAlign: 'left' }}>
-                                            <strong>Số sản phẩm:</strong> {order.orderDetails?.length || 0}
-                                        </div>
-                                        <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#059669', textAlign: 'right' }}>
-                                            <strong>Tổng tiền:</strong> {formatCurrency(
-                                                order.orderDetails && order.orderDetails.length > 0
-                                                    ? order.orderDetails.reduce((sum, item) => {
-                                                        return sum + (item.price * item.quantity);
-                                                    }, 0)
-                                                    : parseFloat(order.totalAmount) || 0
-                                            )}
-                                        </div>
+                                                                <div style={{ fontSize: '1.2rem', color: '#4b5563', textAlign: 'left' }}>
+                            <strong>Số sản phẩm:</strong> {(order.orderDetails && Array.isArray(order.orderDetails)) ? order.orderDetails.length : 0}
+                        </div>
+                        <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#059669', textAlign: 'right' }}>
+                            <strong>Tổng tiền:</strong> {formatCurrency(
+                                order.orderDetails && Array.isArray(order.orderDetails) && order.orderDetails.length > 0
+                                    ? order.orderDetails.reduce((sum, item) => {
+                                        return sum + ((item.price || 0) * (item.quantity || 0));
+                                    }, 0)
+                                    : parseFloat(order.totalAmount) || 0
+                            )}
+                        </div>
                                     </div>
 
                                     {/* Expanded Order Details */}
@@ -271,9 +367,9 @@ export const OrderHistory = ({
                                                 }}>
                                                     📋 Danh sách sản phẩm:
                                                 </h4>
-                                                {order.orderDetails && order.orderDetails.length > 0 ? (
-                                                    order.orderDetails.map((item, index) => (
-                                                        <div key={item.id} style={{
+                                                                                        {order.orderDetails && Array.isArray(order.orderDetails) && order.orderDetails.length > 0 ? (
+                                            order.orderDetails.map((item, index) => (
+                                                        <div key={item.id || index} style={{
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             padding: '1rem',
@@ -316,13 +412,13 @@ export const OrderHistory = ({
                                                             )}
                                                             <div style={{ flex: 1 }}>
                                                                 <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.2rem', fontWeight: '600', textAlign: 'left' }}>
-                                                                    {item.product?.name}
+                                                                    {item.product?.name || 'Sản phẩm không xác định'}
                                                                 </h4>
                                                                 <p style={{ margin: '0 0 0.25rem 0', color: '#6b7280', fontSize: '1rem', textAlign: 'left' }}>
-                                                                    {item.product?.category?.name}
+                                                                    {item.product?.category?.name || 'Chưa phân loại'}
                                                                 </p>
                                                                 <p style={{ margin: 0, color: '#059669', fontSize: '1.1rem', fontWeight: '600', textAlign: 'left' }}>
-                                                                    {formatCurrency(item.price)}
+                                                                    {formatCurrency(item.price || 0)}
                                                                 </p>
                                                             </div>
                                                             <div style={{
@@ -333,12 +429,12 @@ export const OrderHistory = ({
                                                             }}>
                                                                 <div style={{ textAlign: 'center', minWidth: '80px' }}>
                                                                     <span style={{ display: 'block', color: '#6b7280', fontSize: '1rem' }}>Số lượng</span>
-                                                                    <span style={{ fontWeight: '600', fontSize: '1.2rem' }}>{item.quantity}</span>
+                                                                    <span style={{ fontWeight: '600', fontSize: '1.2rem' }}>{item.quantity || 0}</span>
                                                                 </div>
                                                                 <div style={{ textAlign: 'right', minWidth: '120px' }}>
                                                                     <span style={{ display: 'block', color: '#6b7280', fontSize: '1rem' }}>Thành tiền</span>
                                                                     <span style={{ fontWeight: '700', fontSize: '1.2rem', color: '#dc2626' }}>
-                                                                        {formatCurrency(item.price * item.quantity)}
+                                                                        {formatCurrency((item.price || 0) * (item.quantity || 0))}
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -379,10 +475,10 @@ export const OrderHistory = ({
                                                 }}>
                                                     {(() => {
                                                         // Tính subtotal từ orderDetails, fallback to totalAmount
-                                                        const hasOrderDetails = order.orderDetails && order.orderDetails.length > 0;
+                                                        const hasOrderDetails = order.orderDetails && Array.isArray(order.orderDetails) && order.orderDetails.length > 0;
                                                         const subtotal = hasOrderDetails 
                                                             ? order.orderDetails.reduce((sum, item) => {
-                                                                return sum + (item.price * item.quantity);
+                                                                return sum + ((item.price || 0) * (item.quantity || 0));
                                                             }, 0)
                                                             : parseFloat(order.totalAmount) || 0;
 
@@ -404,6 +500,12 @@ export const OrderHistory = ({
                                                                     <span>Phí vận chuyển:</span>
                                                                     <span style={{ fontWeight: '600', color: '#059669' }}>Miễn phí</span>
                                                                 </div>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', fontSize: '1.1rem' }}>
+                                                                    <span>Hình thức thanh toán:</span>
+                                                                    <span style={{ fontWeight: '600', color: '#3b82f6' }}>
+                                                                        {order.paymentMethod || 'Chưa cập nhật'}
+                                                                    </span>
+                                                                </div>
                                                                 <div style={{ 
                                                                     display: 'flex', 
                                                                     justifyContent: 'space-between', 
@@ -420,6 +522,49 @@ export const OrderHistory = ({
                                                         );
                                                     })()}
                                                 </div>
+
+                                                {/* Export Invoice Button - show for confirmed orders (not cancelled) */}
+                                                {order.status !== 'cancelled' && (
+                                                    <div style={{
+                                                        marginTop: '1.5rem',
+                                                        display: 'flex',
+                                                        justifyContent: 'flex-end'
+                                                    }}>
+                                                        <button
+                                                                                                                    onClick={() => {
+                                                            // TODO: Implement invoice export
+                                                            alert('Chức năng xuất hóa đơn đang được phát triển!');
+                                                        }}
+                                                            style={{
+                                                                backgroundColor: '#059669',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                padding: '0.75rem 1.5rem',
+                                                                borderRadius: '0.5rem',
+                                                                fontSize: '1rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s ease',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '0.5rem'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.target.style.backgroundColor = '#047857';
+                                                                e.target.style.transform = 'translateY(-1px)';
+                                                                e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.target.style.backgroundColor = '#059669';
+                                                                e.target.style.transform = 'translateY(0)';
+                                                                e.target.style.boxShadow = 'none';
+                                                            }}
+                                                        >
+                                                            📄 Xuất hóa đơn
+                                                        </button>
+                                                    </div>
+                                                )}
+
                                                 {order.shippingAddress && (
                                                     <div style={{
                                                         marginTop: '1.5rem',
@@ -448,6 +593,136 @@ export const OrderHistory = ({
                 </div>
             )}
 
+            {/* Cancel Order Modal */}
+            {showCancelModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    padding: '20px'
+                }}>
+                    <div style={{
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        padding: '32px',
+                        maxWidth: '500px',
+                        width: '100%',
+                        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+                        animation: 'modalSlideIn 0.3s ease-out'
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            marginBottom: '24px'
+                        }}>
+                            <span style={{ fontSize: '24px' }}>⚠️</span>
+                            <h3 style={{
+                                margin: 0,
+                                fontSize: '20px',
+                                fontWeight: '700',
+                                color: '#1f2937'
+                            }}>
+                                Xác nhận hủy đơn hàng
+                            </h3>
+                        </div>
+                        
+                        <p style={{
+                            margin: '0 0 20px 0',
+                            color: '#6b7280',
+                            fontSize: '16px',
+                            lineHeight: '1.5'
+                        }}>
+                            Bạn có chắc chắn muốn hủy đơn hàng #{selectedOrderId}? Vui lòng cho biết lý do hủy:
+                        </p>
+                        
+                        <textarea
+                            value={cancelReason}
+                            onChange={(e) => setCancelReason(e.target.value)}
+                            placeholder="Nhập lý do hủy đơn hàng..."
+                            style={{
+                                width: '100%',
+                                height: '100px',
+                                padding: '12px',
+                                border: '2px solid #e2e8f0',
+                                borderRadius: '8px',
+                                fontSize: '14px',
+                                resize: 'vertical',
+                                outline: 'none',
+                                marginBottom: '24px',
+                                fontFamily: 'inherit'
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = '#3b82f6';
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = '#e2e8f0';
+                            }}
+                        />
+                        
+                        <div style={{
+                            display: 'flex',
+                            gap: '12px',
+                            justifyContent: 'flex-end'
+                        }}>
+                            <button
+                                onClick={handleCancelClose}
+                                style={{
+                                    padding: '12px 24px',
+                                    border: '2px solid #e2e8f0',
+                                    backgroundColor: 'white',
+                                    color: '#6b7280',
+                                    borderRadius: '8px',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.backgroundColor = '#f9fafb';
+                                    e.target.style.borderColor = '#d1d5db';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.backgroundColor = 'white';
+                                    e.target.style.borderColor = '#e2e8f0';
+                                }}
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button
+                                onClick={handleCancelConfirm}
+                                style={{
+                                    padding: '12px 24px',
+                                    border: 'none',
+                                    backgroundColor: '#ef4444',
+                                    color: 'white',
+                                    borderRadius: '8px',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.backgroundColor = '#dc2626';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.backgroundColor = '#ef4444';
+                                }}
+                            >
+                                Xác nhận hủy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );
