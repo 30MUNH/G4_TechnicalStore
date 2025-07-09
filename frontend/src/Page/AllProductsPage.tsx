@@ -4,9 +4,11 @@ import ProductCard from '../components/Product/ProductCard';
 import Pagination from '../components/Product/Pagination';
 import { productService } from '../services/productService';
 import type { Product, FilterState, ProductCategory } from '../types/product';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ProductDetailModal from '../components/Product/productDetailModal';
 import Footer from '../components/footer';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const PRODUCTS_PER_PAGE = 16;
 
@@ -24,7 +26,21 @@ const AllProductsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [addToCartStatus, setAddToCartStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const location = useLocation();
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  // Auto-hide cart notification after 3 seconds
+  useEffect(() => {
+    if (addToCartStatus) {
+      const timer = setTimeout(() => {
+        setAddToCartStatus(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [addToCartStatus]);
 
   // Fetch all products on mount or when location changes (search, filter from homepage)
   useEffect(() => {
@@ -122,9 +138,37 @@ const AllProductsPage: React.FC = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
-  const handleAddToCart = (product: Product) => {
-    // TODO: Thêm logic add to cart
-    alert(`Đã thêm ${product.name} vào giỏ hàng!`);
+  const handleAddToCart = async (product: Product) => {
+    if (!isAuthenticated()) {
+      navigate('/login', { 
+        state: { 
+          returnUrl: window.location.pathname,
+          message: 'Please login to add items to cart'
+        } 
+      });
+      return;
+    }
+
+    if (!product.id) {
+      setAddToCartStatus({
+        message: 'Invalid product data',
+        type: 'error'
+      });
+      return;
+    }
+
+    try {
+      await addToCart(product.id, 1);
+      setAddToCartStatus({
+        message: 'Product added to cart successfully!',
+        type: 'success'
+      });
+    } catch (error) {
+      setAddToCartStatus({
+        message: 'Failed to add product to cart',
+        type: 'error'
+      });
+    }
   };
   const handleQuickView = async (product: Product) => {
     const detail = await productService.getProductById(product.id);
@@ -142,6 +186,23 @@ const AllProductsPage: React.FC = () => {
 
   return (
     <>
+      {addToCartStatus && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '15px',
+            borderRadius: '5px',
+            backgroundColor: addToCartStatus.type === 'success' ? '#4CAF50' : '#f44336',
+            color: 'white',
+            zIndex: 1000,
+            boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+          }}
+        >
+          {addToCartStatus.message}
+        </div>
+      )}
       <div className="w-full bg-[#f7f8fa] min-h-screen py-8 px-2 sm:px-6 lg:px-12 pr-4 sm:pr-8 lg:pr-24">
         <div className="w-full flex flex-col md:flex-row gap-8 max-w-[1800px] mx-auto pr-4 sm:pr-8 lg:pr-24">
           {/* Sidebar filter */}

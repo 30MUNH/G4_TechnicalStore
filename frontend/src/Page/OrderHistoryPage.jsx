@@ -10,39 +10,39 @@ export const OrderHistoryPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Fetch both statistics and orders in parallel
-                const [statsResponse, ordersResponse] = await Promise.all([
-                    orderService.getOrderStatistics(),
-                    orderService.getOrders()
-                ]);
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            // Fetch both statistics and orders in parallel
+            const [statsResponse, ordersResponse] = await Promise.all([
+                orderService.getOrderStatistics(),
+                orderService.getOrders()
+            ]);
 
-                // Handle statistics
-                if (statsResponse.message === "Order statistics retrieved successfully") {
-                    setStatistics(statsResponse.statistics);
-                }
-
-                // Handle orders
-                if (ordersResponse.success && ordersResponse.data) {
-                    setOrders(ordersResponse.data);
-                } else if (Array.isArray(ordersResponse)) {
-                    // Fallback for direct array response
-                    setOrders(ordersResponse);
-                } else {
-                    console.warn('⚠️ Unexpected orders response format:', ordersResponse);
-                    setOrders([]);
-                }
-
-            } catch (err) {
-                console.error('❌ OrderHistoryPage Error:', err);
-                setError(err.message || 'Không thể tải dữ liệu đơn hàng');
-            } finally {
-                setLoading(false);
+            // Handle statistics
+            if (statsResponse.message === "Order statistics retrieved successfully") {
+                setStatistics(statsResponse.statistics);
             }
-        };
 
+            // Handle orders
+            if (ordersResponse.message === "Orders retrieved successfully") {
+                setOrders(ordersResponse.data || []);
+            } else if (Array.isArray(ordersResponse)) {
+                // Fallback for direct array response
+                setOrders(ordersResponse);
+            } else {
+                setOrders([]);
+            }
+
+        } catch (err) {
+            console.error('❌ OrderHistoryPage Error:', err);
+            setError(err.message || 'Không thể tải dữ liệu đơn hàng');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchData();
         document.body.classList.add('order-history-page-active');
         return () => document.body.classList.remove('order-history-page-active');
@@ -76,7 +76,7 @@ export const OrderHistoryPage = () => {
                                 <span style={{ fontSize: '1.8rem' }}>📋</span>
                                 Lịch sử đơn hàng
                             </h1>
-                            {!loading && !error && statistics && (
+                            {!loading && !error && (
                                 <p style={{
                                     fontSize: '0.9rem',
                                     opacity: '0.8',
@@ -84,7 +84,7 @@ export const OrderHistoryPage = () => {
                                     marginTop: '0.2rem',
                                     marginLeft: '3.4rem'
                                 }}>
-                                    {statistics.total === 0 ? 'Chưa có đơn hàng' : `${statistics.total} đơn hàng`}
+                                    {orders.length === 0 ? 'Chưa có đơn hàng' : `${orders.length} đơn hàng`}
                                 </p>
                             )}
                         </div>

@@ -40,7 +40,8 @@ export const orderService = {
 
     async getOrders() {
         try {
-            const response = await api.get('/orders');
+            // Use high limit to get all orders
+            const response = await api.get('/orders?limit=1000');
             return response.data;
         } catch (error) {
             const errorMsg = error instanceof Error && 'response' in error 

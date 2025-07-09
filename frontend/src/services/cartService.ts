@@ -12,6 +12,11 @@ export interface CartItem {
         stock: number;
         category?: string;
         isActive: boolean;
+        images?: Array<{
+            id: string;
+            url: string;
+            alt?: string;
+        }>;
     };
 }
 

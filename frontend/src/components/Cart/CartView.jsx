@@ -47,7 +47,7 @@ const CartView = ({
                     Giỏ hàng
                     <span className={styles.itemCount}>({cartItems.length} sản phẩm trong giỏ)</span>
                 </h1>
-                <button onClick={onViewOrderHistory} className={styles.historyButton}>
+                <button onClick={() => onViewOrderHistory(1)} className={styles.historyButton}>
                     <HistoryIcon />
                     Lịch sử đơn hàng
                 </button>
@@ -67,47 +67,53 @@ const CartView = ({
                 <div className={styles.cartContent}>
                     <div className={styles.cartItems}>
                         {cartItems.map(item => (
-                            <div key={item.id} className={styles.cartItem}>
-                                <img src={item.image} alt={item.name} className={styles.itemImage} />
-                                <div className={styles.itemDetails}>
-                                    <h3>{item.name}</h3>
-                                    <p className={styles.itemCategory}>{item.category}</p>
-                                    <p className={styles.itemPrice}>{formatCurrency(item.price)}</p>
+                            <div key={item.id} className={styles.cartItem} style={{alignItems: 'center', minHeight: '150px'}}>
+                                <button 
+                                    onClick={() => onRemoveItem(item.id)}
+                                    className={styles.removeButton}
+                                    aria-label="Xóa sản phẩm"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                        <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                    </svg>
+                                </button>
+                                <div className={styles.leftSection}>
+                                    <img src={item.image} alt={item.name} className={styles.itemImage} />
                                     <div className={styles.quantityControls}>
-                                        <button 
-                                            onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
-                                            className={styles.quantityButton}
-                                            aria-label="Giảm số lượng"
-                                        >
-                                            -
-                                        </button>
-                                        <span className={styles.quantity}>{item.quantity}</span>
-                                        <button 
-                                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                                            className={styles.quantityButton}
-                                            aria-label="Tăng số lượng"
-                                        >
-                                            +
-                                        </button>
+                                        <span className={styles.quantityLabel}>Số lượng:</span>
+                                        <div className={styles.quantityInputGroup}>
+                                            <button 
+                                                onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                                                className={styles.quantityButton}
+                                                aria-label="Giảm số lượng"
+                                            >
+                                                -
+                                            </button>
+                                            <span className={styles.quantity}>{item.quantity}</span>
+                                            <button 
+                                                onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                                                className={styles.quantityButton}
+                                                aria-label="Tăng số lượng"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className={styles.itemActions}>
+                                <div className={styles.itemContent}>
+                                    <div className={styles.itemInfo}>
+                                        <h3 className={styles.itemName}>{item.name}</h3>
+                                        <p className={styles.itemCategory}>{item.category}</p>
+                                    </div>
+                                </div>
+                                <div className={styles.rightSection}>
                                     <div className={styles.itemTotal}>
                                         <span>Thành tiền:</span>
                                         <span className={styles.totalValue}>
                                             {formatCurrency(item.price * item.quantity)}
                                         </span>
                                     </div>
-                                    <button 
-                                        onClick={() => onRemoveItem(item.id)}
-                                        className={styles.removeButton}
-                                        aria-label="Xóa sản phẩm"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                                            <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                                        </svg>
-                                    </button>
                                 </div>
                             </div>
                         ))}

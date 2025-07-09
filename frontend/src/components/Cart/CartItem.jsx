@@ -71,7 +71,7 @@ const CartItem = ({ item }) => {
                         src={item.product.images[0].url} 
                         alt={item.product.name}
                         onError={(e) => {
-                            e.target.src = '/img/product-placeholder.png';
+                            e.target.src = '/img/pc.png';
                         }}
                     />
                 ) : (
