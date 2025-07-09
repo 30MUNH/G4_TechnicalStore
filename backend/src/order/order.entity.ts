@@ -37,6 +37,9 @@ export class Order extends BaseEntity {
   @Column({ nullable: true })
   cancelReason: string;
 
+  @Column({ nullable: true, name: 'payment_method' })
+  paymentMethod: string;
+
   @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.order)
   orderDetails: OrderDetail[];
 
