@@ -30,7 +30,7 @@ export class CartService {
       
       const cart = await Cart.findOne({
         where: { account: { id: account.id } },
-        relations: ['cartItems', 'cartItems.product', 'account']
+        relations: ['cartItems', 'cartItems.product', 'cartItems.product.images', 'account']
       });
 
       if (cart) return cart;
@@ -98,7 +98,7 @@ export class CartService {
         
         let cart = await transactionalEntityManager.findOne(Cart, {
           where: { account: { id: account.id } },
-          relations: ['cartItems', 'cartItems.product', 'account']
+          relations: ['cartItems', 'cartItems.product', 'cartItems.product.images', 'account']
         });
 
         if (!cart) {
@@ -146,7 +146,7 @@ export class CartService {
         // Reload cart with updated items within transaction to get fresh data
         const updatedCart = await transactionalEntityManager.findOne(Cart, {
           where: { id: cart.id },
-          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
+          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'cartItems.product.images', 'account']
         });
         
         if (!updatedCart) {
@@ -182,7 +182,7 @@ export class CartService {
 
     const cart = await Cart.findOne({
       where: { account: { id: account.id } },
-      relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
+      relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'cartItems.product.images', 'account']
     });
 
     if (!cart) {
@@ -212,7 +212,7 @@ export class CartService {
         
         const cart = await transactionalEntityManager.findOne(Cart, {
           where: { account: { id: account.id } },
-          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
+          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'cartItems.product.images', 'account']
         });
         
         if (!cart) throw new EntityNotFoundException('Cart');
@@ -243,7 +243,7 @@ export class CartService {
         // Reload cart with fresh data after updating
         const reloadedCart = await transactionalEntityManager.findOne(Cart, {
           where: { id: cart.id },
-          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
+          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'cartItems.product.images', 'account']
         });
         
         if (!reloadedCart) {
@@ -287,7 +287,7 @@ export class CartService {
         
         const cart = await transactionalEntityManager.findOne(Cart, {
           where: { account: { id: account.id } },
-          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
+          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'cartItems.product.images', 'account']
         });
         
         if (!cart) throw new EntityNotFoundException('Cart');
@@ -308,7 +308,7 @@ export class CartService {
         // Reload cart with fresh data after updating
         const reloadedCart = await transactionalEntityManager.findOne(Cart, {
           where: { id: cart.id },
-          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
+          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'cartItems.product.images', 'account']
         });
         
         if (!reloadedCart) {
@@ -350,7 +350,7 @@ export class CartService {
         
         const cart = await transactionalEntityManager.findOne(Cart, {
           where: { account: { id: account.id } },
-          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
+          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'cartItems.product.images', 'account']
         });
         
         if (!cart) throw new EntityNotFoundException('Cart');
@@ -366,7 +366,7 @@ export class CartService {
         // Reload cart with fresh data after removing item
         const reloadedCart = await transactionalEntityManager.findOne(Cart, {
           where: { id: cart.id },
-          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
+          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'cartItems.product.images', 'account']
         });
         
         if (!reloadedCart) {
@@ -408,7 +408,7 @@ export class CartService {
         
         const cart = await transactionalEntityManager.findOne(Cart, {
           where: { account: { id: account.id } },
-          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'account']
+          relations: ['cartItems', 'cartItems.product', 'cartItems.product.category', 'cartItems.product.images', 'account']
         });
         
         if (!cart) throw new EntityNotFoundException('Cart');

@@ -11,7 +11,6 @@ const CartPage = () => {
     const location = useLocation();
     const [showOrderHistory, setShowOrderHistory] = useState(false);
     const [orders, setOrders] = useState([]);
-
     const [orderError, setOrderError] = useState(null);
     const { isAuthenticated } = useAuth();
     const { 
@@ -30,35 +29,22 @@ const CartPage = () => {
         setShowOrderHistory(true);
         setOrderError(null);
         
-        // Check authentication first
-        console.log('🔐 Auth check before loading orders:', {
-            isAuthenticated: isAuthenticated(),
-            hasToken: !!localStorage.getItem('authToken'),
-            username: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user'))?.username : 'none'
-        });
-        
         if (!isAuthenticated()) {
             setOrderError('Vui lòng đăng nhập để xem lịch sử đơn hàng');
             return;
         }
         
         try {
-            console.log('📤 Calling orderService.getOrders()...');
             const response = await orderService.getOrders();
-            console.log('📋 Order history RAW response:', response);
-            console.log('📋 Response structure:', {
-                hasData: !!response.data,
-                dataType: typeof response.data,
-                dataKeys: response.data ? Object.keys(response.data) : [],
-                nestedData: response.data?.data,
-                nestedDataType: typeof response.data?.data,
-                nestedDataLength: Array.isArray(response.data?.data) ? response.data.data.length : 'not array'
-            });
             
-            // ResponseInterceptor wraps: { success: true, data: { data: orders.orders } }
-            const orders = response.data?.data || [];
-            console.log('📋 Final orders array:', orders, 'Length:', orders.length);
-            setOrders(orders);
+            if (response.message === "Orders retrieved successfully") {
+                const orders = response.data || [];
+                setOrders(orders);
+            } else {
+                // Fallback for old response format
+                const orders = response.data?.data || [];
+                setOrders(orders);
+            }
         } catch (err) {
             console.error('❌ Failed to load order history:', err);
             setOrderError(err.message || 'Failed to load order history');
@@ -115,14 +101,22 @@ const CartPage = () => {
     };
 
     // Transform cart items to match CartView expected format - with fallback for empty/undefined items
-    const transformedCartItems = (items || []).map(item => ({
-        id: item.product?.id || item.id, // Use product ID for cart operations
-        name: item.product?.name || 'Unknown Product',
-        price: item.product?.price || 0,
-        quantity: item.quantity || 1,
-        category: item.product?.category?.name || 'Product', // Extract name from category object
-        image: item.product?.url || '/img/product01.png'
-    }));
+    const transformedCartItems = (items || []).map(item => {
+        const imageUrl = item.product?.images && item.product.images.length > 0 
+            ? item.product.images[0].url 
+            : item.product?.url || '/img/pc.png';
+            
+        return {
+            id: item.product?.id || item.id, // Use product ID for cart operations
+            name: item.product?.name || 'Unknown Product',
+            price: item.product?.price || 0,
+            quantity: item.quantity || 1,
+            category: item.product?.category?.name || 'Product', // Extract name from category object
+            image: imageUrl,
+            // Pass through the full product data so CartItem can access images
+            product: item.product
+        };
+    });
 
     const subtotal = totalAmount || 0;
     const shippingFee = subtotal > 1000000 ? 0 : 30000; // Free shipping over 1M VND
@@ -139,7 +133,6 @@ const CartPage = () => {
     // Check authentication but don't block rendering
     useEffect(() => {
         if (!isAuthenticated()) {
-            console.log('🔐 Not authenticated on cart page, user will see empty cart');
             // Don't redirect immediately - let them see the page
         }
     }, [isAuthenticated]);
@@ -186,6 +179,7 @@ const CartPage = () => {
     }
 
     if (showOrderHistory) {
+
         return (
             <div style={{ margin: 0, padding: 0 }}>
                 {/* Header */}
@@ -217,7 +211,7 @@ const CartPage = () => {
                                     marginTop: '0.2rem',
                                     marginLeft: '3.4rem'
                                 }}>
-                                    {orders.length === 0 ? 'No orders yet' : `${orders.length} orders`}
+                                    {orders.length === 0 ? 'Chưa có đơn hàng' : `${orders.length} đơn hàng`}
                                 </p>
                             </div>
                         </div>
@@ -235,7 +229,7 @@ const CartPage = () => {
                     )}
                     <OrderHistory 
                         orders={orders} 
-                        onBackToCart={handleBackToCart} 
+                        onBackToCart={handleBackToCart}
                     />
                 </div>
             </div>
@@ -247,6 +241,7 @@ const CartPage = () => {
             <div className="container">
                 <div className="row">
                     <div className="col-md-12">
+
                         <CartView 
                             cartItems={transformedCartItems}
                             onUpdateQuantity={handleUpdateQuantity}

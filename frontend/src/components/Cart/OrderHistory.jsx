@@ -2,19 +2,31 @@ import React, { useState } from 'react';
 import styles from './CartView.module.css'; // Use the same CSS module as CartView
 import { formatDateTime } from '../../utils/dateFormatter';
 
-export const OrderHistory = ({ orders, onBackToCart }) => {
+export const OrderHistory = ({ 
+    orders, 
+    onBackToCart
+}) => {
     const [expandedOrders, setExpandedOrders] = useState(new Set());
-    
-    console.log('📋 OrderHistory Debug - Component rendered with props:', {
-        ordersCount: orders?.length,
-        orders,
-        onBackToCart: typeof onBackToCart
-    });
 
     // Validate props
     if (!Array.isArray(orders)) {
         console.error('❌ OrderHistory Debug - orders is not an array:', orders);
-        return <div>Error: Invalid orders data</div>;
+        return (
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+                <h3>⚠️ Lỗi dữ liệu đơn hàng</h3>
+                <p>Dữ liệu đơn hàng không hợp lệ. Vui lòng thử lại.</p>
+                <button onClick={onBackToCart} style={{ 
+                    padding: '10px 20px', 
+                    backgroundColor: '#007bff', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                }}>
+                    ← Quay lại giỏ hàng
+                </button>
+            </div>
+        );
     }
 
     const toggleOrderDetails = (orderId) => {
@@ -28,7 +40,6 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
     };
 
     const getStatusColor = (status) => {
-        console.log('🎨 OrderHistory Debug - Getting status color for:', status);
         switch (status) {
             case 'Đang xử lý':
                 return '#f59e0b'; // Amber - Processing
@@ -57,7 +68,6 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
     };
 
     const formatDate = (dateString) => {
-        console.log('📅 OrderHistory Debug - Formatting date:', dateString);
         try {
             const options = { 
                 year: 'numeric', 
@@ -67,16 +77,14 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
                 minute: '2-digit'
             };
             const formatted = new Date(dateString).toLocaleDateString('vi-VN', options);
-            console.log('📅 OrderHistory Debug - Date formatted:', { original: dateString, formatted });
             return formatted;
         } catch (error) {
-            console.error('❌ OrderHistory Debug - Date formatting error:', error, { dateString });
+            console.error('❌ OrderHistory - Date formatting error:', error);
             return dateString;
         }
     };
 
     const formatCurrency = (amount) => {
-        console.log('💰 OrderHistory Debug - Formatting currency:', { amount, type: typeof amount });
         try {
             const formatted = new Intl.NumberFormat('vi-VN', {
                 style: 'currency',
@@ -84,17 +92,16 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
             }).format(amount).replace('₫', 'đ');
             return formatted;
         } catch (error) {
-            console.error('❌ OrderHistory Debug - Currency formatting error:', error, { amount });
+            console.error('❌ OrderHistory - Currency formatting error:', error);
             return `${amount} VND`;
         }
     };
 
     const handleBackToCart = () => {
-        console.log('🔙 OrderHistory Debug - Back to cart clicked');
         if (typeof onBackToCart === 'function') {
             onBackToCart();
         } else {
-            console.error('❌ OrderHistory Debug - onBackToCart is not a function:', typeof onBackToCart);
+            console.error('❌ OrderHistory - onBackToCart is not a function:', typeof onBackToCart);
         }
     };
 
@@ -103,16 +110,39 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
             <div className={styles.cartHeader}>
                 <h1>
                     📋 Lịch sử đơn hàng
-                    <span className={styles.itemCount}>({orders.length} đơn hàng)</span>
+                    <span className={styles.itemCount}>({orders.length} đơn hàng hiện tại)</span>
                 </h1>
                 <button onClick={handleBackToCart} className={styles.historyButton}>
                     ← Quay lại giỏ hàng
                 </button>
             </div>
 
+
+
+            {/* Notice for empty order details */}
+            {orders.length > 0 && orders.every(order => !order.orderDetails || order.orderDetails.length === 0) && (
+                <div style={{
+                    backgroundColor: '#fff3cd',
+                    border: '1px solid #ffeaa7',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    margin: '1rem 0',
+                    color: '#856404'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>💡</span>
+                        <strong>Thông báo:</strong>
+                    </div>
+                    <p style={{ margin: 0, lineHeight: '1.5' }}>
+                        Các đơn hàng hiện tại không có chi tiết sản phẩm (có thể là dữ liệu test). 
+                        Để tạo đơn hàng mới với sản phẩm, hãy thêm sản phẩm vào giỏ hàng và đặt hàng.
+                    </p>
+                </div>
+            )}
+
             {orders.length === 0 ? (
                 <div className={styles.emptyCart}>
-                    <h2>Chưa có đơn hàng nào</h2>
+                    <h2>🛒 Chưa có đơn hàng nào</h2>
                     <p>Bạn chưa có đơn hàng nào trong lịch sử. Hãy mua sắm và đặt hàng nhé!</p>
                     <button onClick={handleBackToCart} className={styles.continueShoppingButton}>
                         🛒 Quay lại giỏ hàng
@@ -134,22 +164,6 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
                         maxWidth: '1300px'
                     }}>
                         {orders.map((order) => {
-                            console.log('📦 OrderHistory Debug - Rendering order:', order);
-                            
-                            // Validate order data
-                            if (!order.id) {
-                                console.error('❌ OrderHistory Debug - Order missing ID:', order);
-                            }
-                            if (!order.orderDate) {
-                                console.error('❌ OrderHistory Debug - Order missing orderDate:', order);
-                            }
-                            if (!order.status) {
-                                console.error('❌ OrderHistory Debug - Order missing status:', order);
-                            }
-                            if (!Array.isArray(order.orderDetails)) {
-                                console.warn('⚠️ OrderHistory Debug - Order details is not an array:', order.orderDetails);
-                            }
-
                             const isExpanded = expandedOrders.has(order.id);
 
                             return (
@@ -249,9 +263,11 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
                                         </div>
                                         <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#059669', textAlign: 'right' }}>
                                             <strong>Tổng tiền:</strong> {formatCurrency(
-                                                order.orderDetails?.reduce((sum, item) => {
-                                                    return sum + (item.price * item.quantity);
-                                                }, 0) || parseFloat(order.totalAmount) || 0
+                                                order.orderDetails && order.orderDetails.length > 0
+                                                    ? order.orderDetails.reduce((sum, item) => {
+                                                        return sum + (item.price * item.quantity);
+                                                    }, 0)
+                                                    : parseFloat(order.totalAmount) || 0
                                             )}
                                         </div>
                                     </div>
@@ -259,7 +275,8 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
                                     {/* Expanded Order Details */}
                                     {isExpanded && (
                                         <div style={{ 
-                                            animation: 'fadeIn 0.3s ease-in-out',
+                                            opacity: 1,
+                                            transition: 'opacity 0.3s ease-in-out',
                                             width: '100%' 
                                         }}>
                                             {/* Order Items */}
@@ -273,24 +290,8 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
                                                 }}>
                                                     📋 Danh sách sản phẩm:
                                                 </h4>
-                                                {order.orderDetails?.map((item, index) => {
-                                                    console.log('📦 OrderHistory Debug - Rendering order detail item:', item);
-                                                    
-                                                    // Validate item data
-                                                    if (!item.id) {
-                                                        console.error('❌ OrderHistory Debug - Order detail missing ID:', item);
-                                                    }
-                                                    if (!item.product) {
-                                                        console.error('❌ OrderHistory Debug - Order detail missing product:', item);
-                                                    }
-                                                    if (typeof item.quantity !== 'number') {
-                                                        console.warn('⚠️ OrderHistory Debug - Invalid quantity type:', typeof item.quantity, item);
-                                                    }
-                                                    if (typeof item.price !== 'number') {
-                                                        console.warn('⚠️ OrderHistory Debug - Invalid price type:', typeof item.price, item);
-                                                    }
-
-                                                    return (
+                                                {order.orderDetails && order.orderDetails.length > 0 ? (
+                                                    order.orderDetails.map((item, index) => (
                                                         <div key={item.id} style={{
                                                             display: 'flex',
                                                             alignItems: 'center',
@@ -340,8 +341,32 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    );
-                                                })}
+                                                    ))
+                                                ) : (
+                                                    <div style={{
+                                                        padding: '2rem',
+                                                        textAlign: 'center',
+                                                        backgroundColor: '#f8fafc',
+                                                        borderRadius: '0.75rem',
+                                                        border: '2px dashed #e2e8f0'
+                                                    }}>
+                                                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
+                                                        <h4 style={{ 
+                                                            color: '#6b7280', 
+                                                            marginBottom: '0.5rem',
+                                                            fontSize: '1.2rem'
+                                                        }}>
+                                                            Không có chi tiết sản phẩm
+                                                        </h4>
+                                                        <p style={{ 
+                                                            color: '#9ca3af', 
+                                                            margin: 0,
+                                                            fontSize: '1rem'
+                                                        }}>
+                                                            Đơn hàng này có thể là đơn hàng test hoặc dữ liệu chưa đầy đủ
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Order Summary */}
@@ -358,10 +383,13 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
                                                     fontSize: '1.1rem'
                                                 }}>
                                                     {(() => {
-                                                        // Tính subtotal từ orderDetails thay vì dựa vào order.subtotal
-                                                        const subtotal = order.orderDetails?.reduce((sum, item) => {
-                                                            return sum + (item.price * item.quantity);
-                                                        }, 0) || parseFloat(order.totalAmount) || 0;
+                                                        // Tính subtotal từ orderDetails, fallback to totalAmount
+                                                        const hasOrderDetails = order.orderDetails && order.orderDetails.length > 0;
+                                                        const subtotal = hasOrderDetails 
+                                                            ? order.orderDetails.reduce((sum, item) => {
+                                                                return sum + (item.price * item.quantity);
+                                                            }, 0)
+                                                            : parseFloat(order.totalAmount) || 0;
 
                                                         const shippingFee = 0; // Miễn phí vận chuyển
                                                         const total = subtotal + shippingFee;
@@ -369,7 +397,12 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
                                                         return (
                                                             <>
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', fontSize: '1.1rem' }}>
-                                                                    <span>Tạm tính ({order.orderDetails?.length || 0} sản phẩm):</span>
+                                                                    <span>
+                                                                        {hasOrderDetails 
+                                                                            ? `Tạm tính (${order.orderDetails.length} sản phẩm):`
+                                                                            : 'Tạm tính:'
+                                                                        }
+                                                                    </span>
                                                                     <span style={{ fontWeight: '600' }}>{formatCurrency(subtotal)}</span>
                                                                 </div>
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', fontSize: '1.1rem' }}>
@@ -387,6 +420,19 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
                                                                     <span>Tổng cộng:</span>
                                                                     <span style={{ color: '#dc2626' }}>{formatCurrency(total)}</span>
                                                                 </div>
+                                                                {!hasOrderDetails && (
+                                                                    <div style={{
+                                                                        padding: '0.75rem',
+                                                                        backgroundColor: '#fef3c7',
+                                                                        borderRadius: '0.5rem',
+                                                                        fontSize: '0.9rem',
+                                                                        color: '#92400e',
+                                                                        textAlign: 'center',
+                                                                        marginTop: '0.5rem'
+                                                                    }}>
+                                                                        ⚠️ Tổng tiền được lấy từ thông tin đơn hàng
+                                                                    </div>
+                                                                )}
                                                             </>
                                                         );
                                                     })()}
@@ -418,19 +464,8 @@ export const OrderHistory = ({ orders, onBackToCart }) => {
                     </div>
                 </div>
             )}
-            
-            <style jsx>{`
-                @keyframes fadeIn {
-                    from {
-                        opacity: 0;
-                        transform: translateY(-10px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-            `}</style>
+
+
         </div>
     );
 }; 
