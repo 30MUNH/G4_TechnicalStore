@@ -1,57 +1,59 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useCart } from '../../contexts/CartContext';
 import { FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
 import styles from './CartItem.module.css';
 
 const CartItem = ({ item }) => {
-    const { increaseQuantity, decreaseQuantity, removeItem } = useCart();
-    const [isUpdating, setIsUpdating] = useState(false);
+    const { increaseQuantity, decreaseQuantity, removeItem, operationLoading } = useCart();
+    const [optimisticQuantity, setOptimisticQuantity] = useState(item.quantity);
     const debounceRef = useRef(null);
 
-    const handleIncrease = async () => {
-        if (isUpdating) return;
+    // Update optimistic quantity when item changes
+    React.useEffect(() => {
+        setOptimisticQuantity(item.quantity);
+    }, [item.quantity]);
+
+    const handleIncrease = useCallback(async () => {
+        // Check stock limit
+        if (optimisticQuantity >= item.product.stock) return;
         
-        setIsUpdating(true);
+        // Optimistic update
+        const newQuantity = optimisticQuantity + 1;
+        setOptimisticQuantity(newQuantity);
+        
         try {
             await increaseQuantity(item.product.id, 1);
         } catch (error) {
-            console.error('Failed to increase quantity:', error);
-        } finally {
-            setTimeout(() => setIsUpdating(false), 50); 
+            // Revert on error
+            setOptimisticQuantity(item.quantity);
         }
-    };
+    }, [increaseQuantity, item.product.id, item.product.stock, optimisticQuantity, item.quantity]);
 
-    const handleDecrease = async () => {
-        if (isUpdating) return; 
-        
-        if (item.quantity <= 1) {
-           
+    const handleDecrease = useCallback(async () => {
+        if (optimisticQuantity <= 1) {
             handleRemove();
             return;
         }
         
-        setIsUpdating(true);
+        // Optimistic update
+        const newQuantity = optimisticQuantity - 1;
+        setOptimisticQuantity(newQuantity);
+        
         try {
             await decreaseQuantity(item.product.id, 1);
         } catch (error) {
-            console.error('Failed to decrease quantity:', error);
-        } finally {
-            setTimeout(() => setIsUpdating(false), 50); 
+            // Revert on error
+            setOptimisticQuantity(item.quantity);
         }
-    };
+    }, [decreaseQuantity, item.product.id, optimisticQuantity, item.quantity]);
 
-    const handleRemove = async () => {
-        if (isUpdating) return; 
-        
-        setIsUpdating(true);
+    const handleRemove = useCallback(async () => {
         try {
             await removeItem(item.product.id);
         } catch (error) {
-            console.error('Failed to remove item:', error);
-        } finally {
-            setTimeout(() => setIsUpdating(false), 50);
+            // Handle error silently
         }
-    };
+    }, [removeItem, item.product.id]);
 
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('vi-VN', {
@@ -60,8 +62,8 @@ const CartItem = ({ item }) => {
         }).format(amount).replace('₫', '₫');
     };
 
-    // Calculate item total
-    const itemTotal = item.product.price * item.quantity;
+    // Calculate item total using optimistic quantity
+    const itemTotal = item.product.price * optimisticQuantity;
 
     return (
         <div className={styles.cartItem}>
@@ -102,20 +104,20 @@ const CartItem = ({ item }) => {
                 <button 
                     className={styles.quantityBtn}
                     onClick={handleDecrease}
-                    disabled={isUpdating}
+                    disabled={optimisticQuantity <= 0}
                     aria-label="Decrease quantity"
                 >
                     <FaMinus />
                 </button>
                 
-                <span className={styles.quantity}>{item.quantity}</span>
+                <span className={styles.quantity}>{optimisticQuantity}</span>
                 
                 <button 
                     className={styles.quantityBtn}
                     onClick={handleIncrease}
-                    disabled={isUpdating || item.product.stock <= item.quantity}
+                    disabled={optimisticQuantity >= item.product.stock}
                     aria-label="Increase quantity"
-                    style={{ opacity: (isUpdating || item.product.stock <= item.quantity) ? 0.6 : 1 }}
+                    style={{ opacity: optimisticQuantity >= item.product.stock ? 0.6 : 1 }}
                 >
                     <FaPlus />
                 </button>
@@ -132,9 +134,7 @@ const CartItem = ({ item }) => {
                 <button 
                     className={styles.removeBtn}
                     onClick={handleRemove}
-                    disabled={isUpdating}
                     aria-label="Remove item from cart"
-                    style={{ opacity: isUpdating ? 0.6 : 1 }}
                 >
                     <FaTrash />
                 </button>

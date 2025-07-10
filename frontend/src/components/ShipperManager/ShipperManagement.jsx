@@ -11,6 +11,7 @@ import FilterBar from "./FilterBar";
 import ShipperOrderList from "./ShipperOrderList";
 import styles from "./ShipperManagement.module.css";
 import { shipperService } from "../../services/shipperService";
+import { formatDate } from "../../utils/dateFormatter";
 
 const ShipperManagement = () => {
   // State management
