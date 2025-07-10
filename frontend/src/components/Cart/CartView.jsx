@@ -44,23 +44,23 @@ const CartView = ({
         <div className={styles.cartView}>
             <div className={styles.cartHeader}>
                 <h1>
-                    Giỏ hàng
-                    <span className={styles.itemCount}>({cartItems.length} sản phẩm trong giỏ)</span>
+                    Shopping Cart
+                    <span className={styles.itemCount}>({cartItems.length} items in cart)</span>
                 </h1>
                 <button onClick={() => onViewOrderHistory(1)} className={styles.historyButton}>
                     <HistoryIcon />
-                    Lịch sử đơn hàng
+                    Order History
                 </button>
             </div>
 
             {cartItems.length === 0 ? (
                 <div className={styles.emptyCart}>
                     <EmptyCartIcon />
-                    <h2>Giỏ hàng của bạn đang trống</h2>
-                    <p>Hãy thêm sản phẩm vào giỏ hàng và quay lại để tiến hành thanh toán</p>
+                    <h2>Your cart is empty</h2>
+                    <p>Add products to cart to proceed with checkout</p>
                     <button onClick={onContinueShopping} className={styles.continueShoppingButton}>
                         <ShoppingIcon />
-                        Tiếp tục mua sắm
+                        Continue Shopping
                     </button>
                 </div>
             ) : (
@@ -71,7 +71,7 @@ const CartView = ({
                                 <button 
                                     onClick={() => onRemoveItem(item.id)}
                                     className={styles.removeButton}
-                                    aria-label="Xóa sản phẩm"
+                                    aria-label="Remove item"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                         <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
@@ -113,12 +113,12 @@ const CartView = ({
                                         );
                                     })()}
                                     <div className={styles.quantityControls}>
-                                        <span className={styles.quantityLabel}>Số lượng:</span>
+                                        <span className={styles.quantityLabel}>Quantity:</span>
                                         <div className={styles.quantityInputGroup}>
                                             <button 
                                                 onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
                                                 className={styles.quantityButton}
-                                                aria-label="Giảm số lượng"
+                                                aria-label="Decrease quantity"
                                             >
                                                 -
                                             </button>
@@ -126,7 +126,7 @@ const CartView = ({
                                             <button 
                                                 onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
                                                 className={styles.quantityButton}
-                                                aria-label="Tăng số lượng"
+                                                aria-label="Increase quantity"
                                             >
                                                 +
                                             </button>
@@ -141,7 +141,7 @@ const CartView = ({
                                 </div>
                                 <div className={styles.rightSection}>
                                     <div className={styles.itemTotal}>
-                                        <span>Thành tiền:</span>
+                                        <span>Total:</span>
                                         <span className={styles.totalValue}>
                                             {formatCurrency(item.price * item.quantity)}
                                         </span>
@@ -151,18 +151,18 @@ const CartView = ({
                         ))}
                     </div>
                     <div className={styles.cartSummary}>
-                        <h2>Tóm tắt đơn hàng</h2>
+                        <h2>Order Summary</h2>
                         <div className={styles.summaryDetails}>
                             <div className={styles.summaryRow}>
-                                <span>Tạm tính ({cartItems.length} sản phẩm)</span>
+                                <span>Subtotal ({cartItems.length} items)</span>
                                 <span>{formatCurrency(subtotal)}</span>
                             </div>
                             <div className={styles.summaryRow}>
-                                <span>Phí vận chuyển</span>
-                                <span>{shippingFee === 0 ? 'Miễn phí' : formatCurrency(shippingFee)}</span>
+                                <span>Shipping Fee</span>
+                                <span>{shippingFee === 0 ? 'Free' : formatCurrency(shippingFee)}</span>
                             </div>
                             <div className={`${styles.summaryRow} ${styles.total}`}>
-                                <span>Tổng cộng</span>
+                                <span>Total</span>
                                 <span>{formatCurrency(totalAmount)}</span>
                             </div>
                         </div>
@@ -171,18 +171,18 @@ const CartView = ({
                             className={styles.checkoutButton}
                             disabled={cartItems.length === 0}
                         >
-                            Thanh toán
+                            Checkout
                         </button>
                         <button 
                             onClick={onContinueShopping} 
                             className={styles.continueShoppingBtn}
                         >
                             <ShoppingIcon />
-                            Tiếp tục mua sắm
+                            Continue Shopping
                         </button>
                         {totalAmount > 1000000 && shippingFee === 0 && (
                             <p className={styles.shippingPromo}>
-                                Miễn phí vận chuyển cho đơn hàng trên 1.000.000đ
+                                Free shipping for orders over 1,000,000₫
                             </p>
                         )}
                     </div>

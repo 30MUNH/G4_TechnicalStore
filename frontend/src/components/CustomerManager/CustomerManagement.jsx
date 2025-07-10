@@ -388,59 +388,127 @@ const Modal = ({ isOpen, title, onClose, children }) => {
   );
 };
 
-// Customer Detail Component
-const CustomerDetail = ({ customer }) => (
-  <div className={styles.customerDetail}>
-    <div className={styles.customerHeader}>
-      <div className={styles.customerAvatar}>
-        {customer.name.charAt(0)}
-      </div>
-      <div className={styles.customerHeaderInfo}>
-        <h3 className={styles.customerHeaderName}>{customer.name}</h3>
-        <span className={`${styles.status} ${customer.status === 'Active' ? styles.statusActive : styles.statusInactive}`}>
-          {customer.status === 'Active' ? 'Active' : 'Inactive'}
-        </span>
-      </div>
-    </div>
+// Customer Detail Component  
+const CustomerDetail = ({ customer }) => {
+  // Calculate order statistics with both English and Vietnamese status support
+  const orders = customer.customerOrders || [];
+  const totalOrders = orders.length;
+  
+  // Support both English and Vietnamese status values
+  const completedStatuses = ['Delivered', 'Đã giao', 'Hoàn thành'];
+  const activeStatuses = ['Processing', 'Shipping', 'Confirmed', 'Đang xử lý', 'Đang giao', 'Đã xác nhận'];
+  const cancelledStatuses = ['Cancelled', 'Đã hủy'];
+  
+  const completedOrders = orders.filter(order => 
+    completedStatuses.includes(order.status)
+  ).length;
+  
+  const activeOrders = orders.filter(order => 
+    activeStatuses.includes(order.status)
+  ).length;
+  
+  const cancelledOrders = orders.filter(order => 
+    cancelledStatuses.includes(order.status)
+  ).length;
+  
+  const totalSpent = orders
+    .filter(order => completedStatuses.includes(order.status))
+    .reduce((sum, order) => sum + (parseFloat(order.totalAmount) || 0), 0);
 
-    <div className={styles.customerDetailGrid}>
-      <div className={styles.detailField}>
-        <div className={styles.detailLabel}>
-          <User size={16} />
-          <span>Username</span>
+  // Format currency properly
+  const formatCurrency = (amount) => {
+    if (amount === 0) return '0 ₫';
+    return new Intl.NumberFormat('vi-VN').format(amount) + ' ₫';
+  };
+
+
+
+  return (
+    <div className={styles.customerDetail}>
+      {/* Customer Header */}
+      <div className={styles.customerHeader}>
+        <div className={styles.customerAvatar}>
+          {customer.name ? customer.name.charAt(0).toUpperCase() : 'N'}
         </div>
-        <div className={styles.detailValue}>{customer.username}</div>
-      </div>
-      
-      <div className={styles.detailField}>
-        <div className={styles.detailLabel}>
-          <Phone size={16} />
-          <span>Phone Number</span>
-        </div>
-        <div className={styles.detailValue}>{customer.phone}</div>
-      </div>
-      
-      <div className={styles.detailField}>
-        <div className={styles.detailLabel}>
-          <Calendar size={16} />
-          <span>Created Date</span>
-        </div>
-        <div className={styles.detailValue}>
-          {formatDate(customer.createdAt)}
-        </div>
-      </div>
-      
-      <div className={styles.detailField}>
-        <span className={styles.detailLabel}>Registration Status</span>
-        <div>
-          <span className={`${styles.status} ${customer.isRegistered ? styles.statusActive : styles.statusInactive}`}>
-            {customer.isRegistered ? 'Registered' : 'Not Registered'}
+        <div className={styles.customerHeaderInfo}>
+          <h3 className={styles.customerHeaderName}>{customer.name || 'N/A'}</h3>
+          <span className={`${styles.status} ${customer.status === 'Active' ? styles.statusActive : styles.statusInactive}`}>
+            {customer.status === 'Active' ? 'Active' : 'Inactive'}
           </span>
         </div>
       </div>
+
+      <div className={styles.detailContainer}>
+        {/* Basic Information Section */}
+        <div className={styles.detailSection}>
+          <h4 className={styles.detailSectionTitle}>
+            <User size={18} />
+            Basic Information
+          </h4>
+          <div className={styles.infoGrid}>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Username</span>
+              <span className={styles.infoValue}>{customer.username || 'N/A'}</span>
+            </div>
+            
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Phone Number</span>
+              <span className={styles.infoValue}>{customer.phone || 'N/A'}</span>
+            </div>
+            
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Member Since</span>
+              <span className={styles.infoValue}>{formatDate(customer.createdAt)}</span>
+            </div>
+            
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Registration Status</span>
+              <span className={`${styles.statusCompact} ${customer.isRegistered ? styles.statusActive : styles.statusInactive}`}>
+                {customer.isRegistered ? 'Registered' : 'Not Registered'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Order Statistics Section */}
+        <div className={styles.detailSection}>
+          <h4 className={styles.detailSectionTitle}>
+            <Calendar size={18} />
+            Order Statistics
+          </h4>
+          <div className={styles.statsGrid}>
+            <div className={styles.statCard}>
+              <div className={styles.statNumber}>{totalOrders}</div>
+              <div className={styles.statLabel}>Total Orders</div>
+            </div>
+            
+            <div className={styles.statCard}>
+              <div className={styles.statNumber}>{completedOrders}</div>
+              <div className={styles.statLabel}>Completed</div>
+            </div>
+            
+            <div className={styles.statCard}>
+              <div className={styles.statNumber}>{activeOrders}</div>
+              <div className={styles.statLabel}>Active</div>
+            </div>
+            
+            <div className={styles.statCard}>
+              <div className={styles.statNumber}>{cancelledOrders}</div>
+              <div className={styles.statLabel}>Cancelled</div>
+            </div>
+          </div>
+          
+          <div className={styles.summarySection}>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Total Spent:</span>
+              <span className={styles.summaryValue}>{formatCurrency(totalSpent)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Customer Form Component
 const CustomerForm = ({ mode, initialData, onSubmit, onCancel }) => {
@@ -448,6 +516,7 @@ const CustomerForm = ({ mode, initialData, onSubmit, onCancel }) => {
     name: initialData?.name || '',
     username: initialData?.username || '',
     phone: initialData?.phone || '',
+    isRegistered: initialData?.isRegistered || false,
     status: initialData?.status || 'Active',
     password: ''
   });
@@ -457,18 +526,26 @@ const CustomerForm = ({ mode, initialData, onSubmit, onCancel }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (formData.name.length > 50) {
-      newErrors.name = 'Name must not exceed 50 characters';
+    if (!formData.name || formData.name.trim().length === 0) {
+      newErrors.name = 'Full name is required';
+    } else if (formData.name.length > 100) {
+      newErrors.name = 'Name must not exceed 100 characters';
     }
 
-    if (formData.username.length < 3) {
+    if (!formData.username || formData.username.trim().length === 0) {
+      newErrors.username = 'Username is required';
+    } else if (formData.username.length < 3) {
       newErrors.username = 'Username must be at least 3 characters';
     }
 
-    // Support both formats: 0xxxxxxxxx or +84xxxxxxxxx
-    const phoneRegex = /^(0\d{9}|\+84\d{9})$/;
-    if (!phoneRegex.test(formData.phone)) {
-      newErrors.phone = 'Phone format: 0xxxxxxxxx or +84xxxxxxxxx';
+    if (!formData.phone || formData.phone.trim().length === 0) {
+      newErrors.phone = 'Phone number is required';
+    } else {
+      // Support both formats: 0xxxxxxxxx or +84xxxxxxxxx
+      const phoneRegex = /^(0\d{9}|\+84\d{9})$/;
+      if (!phoneRegex.test(formData.phone)) {
+        newErrors.phone = 'Phone format: 0xxxxxxxxx or +84xxxxxxxxx';
+      }
     }
 
     if (mode === 'add' && (!formData.password || formData.password.length < 8)) {
@@ -498,100 +575,118 @@ const CustomerForm = ({ mode, initialData, onSubmit, onCancel }) => {
   const isViewMode = mode === 'view';
 
   return (
-    <form onSubmit={handleSubmit} className={styles.form}>
-      <div className={styles.formGrid}>
-        <div className={styles.formField}>
-          <label className={styles.label}>Full Name *</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            disabled={isViewMode}
-            required
-            className={`${styles.input} ${errors.name ? styles.errorInput : ''}`}
-          />
-          {errors.name && <span className={styles.errorMessage}>{errors.name}</span>}
-        </div>
-        
-        <div className={styles.formField}>
-          <label className={styles.label}>Username *</label>
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            disabled={isViewMode}
-            required
-            className={`${styles.input} ${errors.username ? styles.errorInput : ''}`}
-          />
-          {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
-        </div>
-        
-        <div className={styles.formField}>
-          <label className={styles.label}>Phone Number *</label>
-          <input
-            type="tel"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            disabled={isViewMode}
-            required
-            className={`${styles.input} ${errors.phone ? styles.errorInput : ''}`}
-          />
-          {errors.phone && <span className={styles.errorMessage}>{errors.phone}</span>}
-        </div>
-
-        <div className={styles.formField}>
-          <label className={styles.label}>Status *</label>
-          <select
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            disabled={isViewMode}
-            required
-            className={styles.select}
-          >
-            <option value="Active">Active</option>
-            <option value="Suspended">Suspended</option>
-          </select>
-        </div>
-
-        {mode === 'add' && (
+    <div className={styles.formContainer}>
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.formGrid}>
           <div className={styles.formField}>
-            <label className={styles.label}>Password *</label>
+            <label className={styles.label}>Full Name *</label>
             <input
-              type="password"
-              name="password"
-              value={formData.password}
+              type="text"
+              name="name"
+              value={formData.name}
               onChange={handleChange}
+              disabled={isViewMode}
               required
-              className={`${styles.input} ${errors.password ? styles.errorInput : ''}`}
+              className={`${styles.input} ${errors.name ? styles.errorInput : ''}`}
             />
-            {errors.password && <span className={styles.errorMessage}>{errors.password}</span>}
+            {errors.name && <span className={styles.errorMessage}>{errors.name}</span>}
+          </div>
+          
+          <div className={styles.formField}>
+            <label className={styles.label}>Username *</label>
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              disabled={isViewMode || mode === 'edit'}
+              required
+              className={`${styles.input} ${errors.username ? styles.errorInput : ''}`}
+            />
+            {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
+          </div>
+          
+          <div className={styles.formField}>
+            <label className={styles.label}>Phone Number *</label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              disabled={isViewMode}
+              required
+              className={`${styles.input} ${errors.phone ? styles.errorInput : ''}`}
+            />
+            {errors.phone && <span className={styles.errorMessage}>{errors.phone}</span>}
+          </div>
+
+          <div className={styles.formField}>
+            <label className={styles.label}>Registration Status</label>
+            <select
+              name="isRegistered"
+              value={formData.isRegistered.toString()}
+              onChange={(e) => handleChange({
+                target: { name: 'isRegistered', value: e.target.value === 'true' }
+              })}
+              disabled={isViewMode}
+              className={styles.select}
+            >
+              <option value="true">Registered</option>
+              <option value="false">Not Registered</option>
+            </select>
+          </div>
+
+          <div className={styles.formField}>
+            <label className={styles.label}>Account Status *</label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              disabled={isViewMode}
+              required
+              className={styles.select}
+            >
+              <option value="Active">Active</option>
+              <option value="Suspended">Suspended</option>
+            </select>
+          </div>
+
+          {mode === 'add' && (
+            <div className={styles.formField}>
+              <label className={styles.label}>Password *</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                className={`${styles.input} ${errors.password ? styles.errorInput : ''}`}
+              />
+              {errors.password && <span className={styles.errorMessage}>{errors.password}</span>}
+            </div>
+          )}
+        </div>
+
+        {!isViewMode && (
+          <div className={styles.formActions}>
+            <button
+              type="button"
+              onClick={onCancel}
+              className={`${styles.formButton} ${styles.cancelFormButton}`}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={`${styles.formButton} ${styles.saveButton}`}
+            >
+              <Save size={16} />
+              <span>Save Changes</span>
+            </button>
           </div>
         )}
-      </div>
-
-      {!isViewMode && (
-        <div className={styles.formActions}>
-          <button
-            type="button"
-            onClick={onCancel}
-            className={`${styles.formButton} ${styles.cancelFormButton}`}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className={`${styles.formButton} ${styles.saveButton}`}
-          >
-            <Save size={16} />
-            <span>Save Changes</span>
-          </button>
-        </div>
-      )}
-    </form>
+      </form>
+    </div>
   );
 };
 

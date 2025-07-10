@@ -13,7 +13,7 @@
   justify-content: space-between;
   align-items: center;
   margin: 0;
-  background-color: #2d2645;
+  background-color: rgb(153, 27, 27);
   padding: 20px 40px;
   color: #ffffff;
   position: fixed;
@@ -93,10 +93,6 @@
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s;
-}
-
-.historyButton:hover {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .historyButton svg,
@@ -461,7 +457,7 @@
 .checkoutButton {
   width: 100%;
   padding: 16px;
-  background-color: #7c3aed;
+  background-color: #6d28d9;
   color: white;
   border: none;
   border-radius: 8px;

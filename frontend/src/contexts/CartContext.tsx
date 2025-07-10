@@ -9,6 +9,7 @@ interface CartState {
     totalAmount: number;
     loading: boolean;
     operationLoading: boolean; // Separate loading for cart operations (add/update/remove)
+    activeOperations: Set<string>; // Track operations per product
     error: string | null;
     isInitialized: boolean;
 }
@@ -16,6 +17,8 @@ interface CartState {
 type CartAction =
     | { type: 'SET_LOADING'; payload: boolean }
     | { type: 'SET_OPERATION_LOADING'; payload: boolean }
+    | { type: 'ADD_OPERATION'; payload: string }
+    | { type: 'REMOVE_OPERATION'; payload: string }
     | { type: 'SET_ERROR'; payload: string | null }
     | { type: 'SET_CART'; payload: { items: CartItem[]; totalAmount: number } }
     | { type: 'CLEAR_CART' }
@@ -57,6 +60,7 @@ const initialState: CartState = {
     totalAmount: 0,
     loading: false,
     operationLoading: false,
+    activeOperations: new Set<string>(),
     error: null,
     isInitialized: false,
 };
@@ -67,6 +71,24 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             return { ...state, loading: action.payload };
         case 'SET_OPERATION_LOADING':
             return { ...state, operationLoading: action.payload };
+        case 'ADD_OPERATION': {
+            const newOperations = new Set(state.activeOperations);
+            newOperations.add(action.payload);
+            return { 
+                ...state, 
+                activeOperations: newOperations,
+                operationLoading: newOperations.size > 0 
+            };
+        }
+        case 'REMOVE_OPERATION': {
+            const newOperations = new Set(state.activeOperations);
+            newOperations.delete(action.payload);
+            return { 
+                ...state, 
+                activeOperations: newOperations,
+                operationLoading: newOperations.size > 0 
+            };
+        }
         case 'SET_ERROR':
             return { ...state, error: action.payload, loading: false, operationLoading: false };
         case 'SET_CART':
@@ -86,6 +108,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
                 totalAmount: 0,
                 loading: false,
                 operationLoading: false,
+                activeOperations: new Set<string>(),
                 error: null,
             };
         case 'SET_INITIALIZED':
@@ -102,17 +125,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Helper function to handle API responses
     const handleApiResponse = (response: ApiResponse, operation: string) => {
-        console.log(`🛒 [CART CONTEXT] ${operation} response:`, response);
-        console.log(`🛒 [CART CONTEXT] ${operation} detailed analysis:`, {
-            hasSuccess: !!response.success,
-            hasData: !!response.data,
-            dataType: typeof response.data,
-            dataContent: response.data
-        });
         
         if (!response.success) {
             const errorMessage = response.message || response.error || 'Unknown error occurred';
-            console.error(`❌ ${operation} failed:`, errorMessage);
             dispatch({ type: 'SET_ERROR', payload: errorMessage });
             throw new Error(errorMessage);
         }
@@ -121,62 +136,52 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             let cartData = null;
             
-                        // Try to extract cart data from response
-            // @ts-ignore - Temporary ignore for flexible response handling
+                        // Try to extract cart data from response  
             if (response.data && typeof response.data === 'object') {
                 // Check if it's the cart entity directly
-                // @ts-ignore
+                // @ts-expect-error - Dynamic response structure from backend API
                 if (response.data.cartItems !== undefined) {
                     cartData = response.data;
                 }
 
                 // Check if it's wrapped (response.data.data.data) - 3 levels for interceptor
-                // @ts-ignore
+                // @ts-expect-error - Nested data structure from API interceptor
                 else if (response.data.data && response.data.data.data && response.data.data.data.cartItems !== undefined) {
-                    // @ts-ignore
+                    // @ts-expect-error - Accessing nested cart data from interceptor wrapper
                     cartData = response.data.data.data;
                 }
                 // Check if it's wrapped (response.data.data) - 2 levels fallback
 
                 // Check if it's wrapped (response.data.data)
 
-                // @ts-ignore
+                // @ts-expect-error - Alternative nested data structure from API
                 else if (response.data.data && response.data.data.cartItems !== undefined) {
-                    // @ts-ignore
+                    // @ts-expect-error - Accessing nested cart data from API wrapper
                     cartData = response.data.data;
                 }
             }
             
-            // @ts-ignore
             if (cartData && cartData.cartItems !== undefined) {
-                // @ts-ignore
                 const cartItems = Array.isArray(cartData.cartItems) ? cartData.cartItems : [];
                 dispatch({
                     type: 'SET_CART',
                     payload: {
                         items: cartItems,
-                        // @ts-ignore
                         totalAmount: Number(cartData.totalAmount) || 0,
                     },
                 });
-                // @ts-ignore
-                console.log(`✅ [CART CONTEXT] Cart updated: ${cartItems.length} items, total: ${cartData.totalAmount}`);
             } else if (operation === 'CLEAR_CART') {
                 dispatch({ type: 'CLEAR_CART' });
-                console.log(`✅ [CART CONTEXT] Cart cleared`);
             } else {
-                console.warn(`🛒 [CART CONTEXT] No cart data found for ${operation}`);
                 // Don't auto-refresh to avoid infinite loops
             }
         } catch (error) {
-            console.error(`🛒 [CART CONTEXT] Error processing ${operation} response:`, error);
             dispatch({ type: 'SET_ERROR', payload: 'Failed to process cart response' });
         }
     };
 
     // Helper function to handle API errors
-    const handleApiError = (error: unknown, operation: string) => {
-        console.error(`❌ [CART CONTEXT] ${operation} error:`, error);
+    const handleApiError = (error: unknown) => {
         
         const apiError = error as ApiError;
         let errorMessage = 'An error occurred';
@@ -194,7 +199,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         // Don't throw authentication errors to avoid breaking UX
         if (apiError.response?.status === 401) {
-            console.warn('🔐 Authentication required for cart operations');
             dispatch({ type: 'CLEAR_CART' });
             return;
         }
@@ -203,82 +207,87 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const addToCart = async (productId: string, quantity: number): Promise<void> => {
-        // Prevent multiple simultaneous calls for the same product
-        if (state.operationLoading) {
-            console.log(`🛒 [CART CONTEXT] Skipping add to cart - operation already in progress`);
+        // Only prevent if the same product is already being processed
+        if (state.activeOperations.has(`add-${productId}`)) {
             return;
         }
 
-        // Set loading briefly to prevent spam clicks, but don't show UI loading
-        dispatch({ type: 'SET_OPERATION_LOADING', payload: true });
+        const operationId = `add-${productId}`;
+        dispatch({ type: 'ADD_OPERATION', payload: operationId });
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
-            console.log(`🛒 [CART CONTEXT] Adding to cart: ${productId} x ${quantity}`);
             const response = await cartService.addToCart(productId, quantity);
             handleApiResponse(response, 'ADD_TO_CART');
         } catch (error) {
-            handleApiError(error, 'ADD_TO_CART');
+            handleApiError(error);
+        } finally {
+            dispatch({ type: 'REMOVE_OPERATION', payload: operationId });
         }
     };
 
     const increaseQuantity = async (productId: string, amount: number = 1): Promise<void> => {
-        if (state.operationLoading) {
-            console.log(`🛒 [CART CONTEXT] Skipping increase quantity - operation already in progress`);
+        // Only prevent if the same product is already being processed
+        if (state.activeOperations.has(`increase-${productId}`)) {
             return;
         }
 
-        // Brief loading state to prevent spam clicks, but no UI loading shown
-        dispatch({ type: 'SET_OPERATION_LOADING', payload: true });
+        const operationId = `increase-${productId}`;
+        dispatch({ type: 'ADD_OPERATION', payload: operationId });
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
             const response = await cartService.increaseQuantity(productId, amount);
             handleApiResponse(response, 'INCREASE_QUANTITY');
         } catch (error) {
-            handleApiError(error, 'INCREASE_QUANTITY');
+            handleApiError(error);
+        } finally {
+            dispatch({ type: 'REMOVE_OPERATION', payload: operationId });
         }
     };
 
     const decreaseQuantity = async (productId: string, amount: number = 1): Promise<void> => {
-        if (state.operationLoading) {
-            console.log(`🛒 [CART CONTEXT] Skipping decrease quantity - operation already in progress`);
+        // Only prevent if the same product is already being processed
+        if (state.activeOperations.has(`decrease-${productId}`)) {
             return;
         }
 
-        // Brief loading state to prevent spam clicks, but no UI loading shown
-        dispatch({ type: 'SET_OPERATION_LOADING', payload: true });
+        const operationId = `decrease-${productId}`;
+        dispatch({ type: 'ADD_OPERATION', payload: operationId });
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
             const response = await cartService.decreaseQuantity(productId, amount);
             handleApiResponse(response, 'DECREASE_QUANTITY');
         } catch (error) {
-            handleApiError(error, 'DECREASE_QUANTITY');
+            handleApiError(error);
+        } finally {
+            dispatch({ type: 'REMOVE_OPERATION', payload: operationId });
         }
     };
 
     const removeItem = async (productId: string): Promise<void> => {
-        if (state.operationLoading) {
-            console.log(`🛒 [CART CONTEXT] Skipping remove item - operation already in progress`);
+        // Only prevent if the same product is already being processed
+        if (state.activeOperations.has(`remove-${productId}`)) {
             return;
         }
 
-        // Brief loading state to prevent spam clicks, but no UI loading shown
-        dispatch({ type: 'SET_OPERATION_LOADING', payload: true });
+        const operationId = `remove-${productId}`;
+        dispatch({ type: 'ADD_OPERATION', payload: operationId });
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
             const response = await cartService.removeItem(productId);
             handleApiResponse(response, 'REMOVE_ITEM');
         } catch (error) {
-            handleApiError(error, 'REMOVE_ITEM');
+            handleApiError(error);
+        } finally {
+            dispatch({ type: 'REMOVE_OPERATION', payload: operationId });
         }
     };
 
     const clearCart = async (): Promise<void> => {
         if (state.operationLoading) {
-            console.log(`🛒 [CART CONTEXT] Skipping clear cart - operation already in progress`);
             return;
         }
 
@@ -290,7 +299,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const response = await cartService.clearCart();
             handleApiResponse(response, 'CLEAR_CART');
         } catch (error) {
-            handleApiError(error, 'CLEAR_CART');
+            handleApiError(error);
         }
     };
 
@@ -305,13 +314,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Handle auth errors silently for refresh
             const apiError = error as ApiError;
             if (apiError.response?.status === 401) {
-                console.warn('🔐 Not authenticated, clearing cart');
                 dispatch({ type: 'CLEAR_CART' });
                 dispatch({ type: 'SET_INITIALIZED', payload: true });
                 return;
             }
-            // Don't throw errors for refresh - just log them
-            console.warn('🛒 [CART CONTEXT] Refresh cart failed silently:', error);
+            // Don't throw errors for refresh
             dispatch({ type: 'SET_INITIALIZED', payload: true });
         }
     };
@@ -327,13 +334,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const authToken = localStorage.getItem('authToken');
             
             if (!authToken) {
-                console.log('🔐 No auth token, setting empty cart');
                 dispatch({ type: 'CLEAR_CART' });
                 dispatch({ type: 'SET_INITIALIZED', payload: true });
                 return;
             }
 
-            console.log('🛒 Initializing cart with auth token');
             // Set initialized immediately to prevent loading screen
             dispatch({ type: 'SET_INITIALIZED', payload: true });
             // Then refresh cart in background
@@ -348,10 +353,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key === 'authToken') {
                 if (e.newValue) {
-                    console.log('🔐 Auth token added, refreshing cart');
                     refreshCart();
                 } else {
-                    console.log('🔐 Auth token removed, clearing cart');
                     dispatch({ type: 'CLEAR_CART' });
                 }
             }
@@ -384,15 +387,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 export const useCart = (): CartContextType => {
     const context = useContext(CartContext);
     if (context === undefined) {
-        console.error('🛒 [useCart] Context is undefined. Make sure component is wrapped in CartProvider');
-        console.error('🛒 [useCart] Current component tree might not have CartProvider as parent');
-        console.error('🛒 [useCart] CartContext:', CartContext);
-        console.error('🛒 [useCart] Current location:', window.location.pathname);
-        
-        // Check if we have providers in DOM
-        const providers = document.querySelectorAll('[data-provider="cart"]');
-        console.error('🛒 [useCart] Cart providers in DOM:', providers.length);
-        
         throw new Error('useCart must be used within a CartProvider');
     }
     return context;
