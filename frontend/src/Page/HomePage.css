@@ -120,3 +120,50 @@
   max-height: 44px;
   height: 44px;
 } 
+
+/* Ẩn arrow mặc định của slick */
+.promo-slider-hover-area .slick-arrow:not(.custom-banner-arrow) {
+  display: none !important;
+}
+/* Arrow custom chỉ hiện khi hover vùng banner */
+.promo-slider-hover-area .custom-banner-arrow {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(-50%) scale(0.95);
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.promo-slider-hover-area:hover .custom-banner-arrow {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: translateY(-50%) scale(1);
+}
+.promo-slider-hover-area .custom-banner-arrow:hover {
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  transform: translateY(-50%) scale(1.08);
+} 
+
+/* Bỏ dots ở banner slider */
+.promo-slider-hover-area .slick-dots {
+  display: none !important;
+}
+
+/* Tăng khoảng cách giữa banner và navigation */
+.promo-slider-hover-area {
+  margin-bottom: 32px;
+}
+
+#footer .section {
+  padding-bottom: 24px !important;
+  padding-top: 24px !important;
+}
+
+#footer .container {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  max-width: 1400px;
+}
+
+#footer {
+  margin-bottom: 0 !important;
+}
