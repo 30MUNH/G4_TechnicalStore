@@ -14,6 +14,66 @@ import ProductDetailModal from '../components/Product/productDetailModal';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 
+const promoSlides = [
+  { id: 1, image: "/img/banner/banner1.png" },
+  { id: 2, image: "/img/banner/banner2.png" },
+  { id: 3, image: "/img/banner/banner3.jpg" },
+  { id: 4, image: "/img/banner/banner4.png" },
+  { id: 5, image: "/img/banner/banner5.png" },
+  { id: 6, image: "/img/banner/banner6.jpg" },
+  { id: 7, image: "/img/banner/banner7.png" },
+  { id: 8, image: "/img/banner/banner8.png" },
+  { id: 9, image: "/img/banner/banner9.png" },
+  { id: 10, image: "/img/banner/banner10.png" },
+  { id: 11, image: "/img/banner/banner11.png" },
+  { id: 12, image: "/img/banner/banner12.png" },
+  { id: 13, image: "/img/banner/banner13.png" },
+  { id: 14, image: "/img/banner/banner14.png" },
+];
+
+// Custom Arrow Components
+type ArrowProps = React.ComponentPropsWithoutRef<'button'>;
+
+const ArrowStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  zIndex: 2,
+  width: 48,
+  height: 48,
+  background: 'rgba(255,255,255,0.5)',
+  border: 'none',
+  borderRadius: 8,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  transition: 'background 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+  fontSize: 32,
+};
+
+const NextArrow = ({ onClick, isImgHover }: ArrowProps & { isImgHover: boolean }) => (
+  <button
+    className="custom-banner-arrow custom-banner-arrow-next"
+    style={{ ...ArrowStyle, right: 16, opacity: isImgHover ? 1 : 0, pointerEvents: isImgHover ? 'auto' : 'none' }}
+    onClick={onClick}
+    aria-label="Next"
+  >
+    <span style={{ color: '#222' }}>&#8250;</span>
+  </button>
+);
+const PrevArrow = ({ onClick, isImgHover }: ArrowProps & { isImgHover: boolean }) => (
+  <button
+    className="custom-banner-arrow custom-banner-arrow-prev"
+    style={{ ...ArrowStyle, left: 16, opacity: isImgHover ? 1 : 0, pointerEvents: isImgHover ? 'auto' : 'none' }}
+    onClick={onClick}
+    aria-label="Previous"
+  >
+    <span style={{ color: '#222' }}>&#8249;</span>
+  </button>
+);
+
 const HomePage: React.FC = () => {
   
   const navigate = useNavigate();
@@ -29,6 +89,19 @@ const HomePage: React.FC = () => {
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [addToCartStatus, setAddToCartStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const [paymentSuccessMessage, setPaymentSuccessMessage] = useState<string | null>(null);
+  const [isImgHover, setIsImgHover] = useState(false);
+  const promoSliderSettings = {
+    dots: true,
+    infinite: true,
+    speed: 600,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    arrows: true,
+    autoplay: true,
+    autoplaySpeed: 5000,
+    nextArrow: <NextArrow isImgHover={isImgHover} />,
+    prevArrow: <PrevArrow isImgHover={isImgHover} />,
+  };
 
   // Debug auth state changes - FIXED: Remove isAuthenticated function from dependencies
   useEffect(() => {
@@ -280,6 +353,28 @@ const HomePage: React.FC = () => {
 
   return (
     <>
+      {/* Promo Banner Slider */}
+      <div
+        style={{ width: '100%', background: 'transparent', marginTop: 30, marginBottom: 16, height: 340 }}
+        className="promo-slider-hover-area"
+      >
+        <div className="container" style={{ height: '100%' }}>
+          <Slider {...promoSliderSettings}>
+            {promoSlides.map(slide => (
+              <div key={slide.id} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 340, background: '#222', position: 'relative' }}>
+                <img
+                  src={slide.image}
+                  alt="promo"
+                  style={{ maxHeight: 340, width: '100%', objectFit: 'cover', borderRadius: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}
+                  onMouseEnter={() => setIsImgHover(true)}
+                  onMouseLeave={() => setIsImgHover(false)}
+                />
+              </div>
+            ))}
+          </Slider>
+        </div>
+      </div>
+      {/* End Promo Banner Slider */}
       {addToCartStatus && (
         <div 
           style={{
@@ -337,7 +432,7 @@ const HomePage: React.FC = () => {
         </div>
       )}
       {/* SECTION: SHOP BOXES */}
-      <div className="section">
+      <div className="section" style={{ marginTop: 0 }}>
         <div className="container">
           <div className="row">
             {/* shop */}

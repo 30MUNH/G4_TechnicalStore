@@ -139,7 +139,7 @@ const Header = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
                 {/* Cart */}
                 <div className="dropdown" style={{ minWidth: 140, display: 'flex', alignItems: 'center' }}>
-                  <Link to="/cart" className="dropdown-toggle" style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <Link to="/cart" style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                     <FontAwesomeIcon icon={faShoppingCart} />
                     <span style={{ marginLeft: 8, whiteSpace: 'nowrap', fontWeight: 500, fontSize: 17 }}>Your Cart</span>
                     <div className="qty" style={{ marginLeft: 8 }}>{totalItems}</div>
