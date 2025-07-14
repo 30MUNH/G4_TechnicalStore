@@ -49,11 +49,11 @@ const FilterBar = ({
           value={statusFilter}
           onChange={(e) => onStatusChange(e.target.value)}
         >
-          <option value="all">Tất cả trạng thái</option>
-          <option value="Đang xử lý">Đang xử lý</option>
-          <option value="Đang giao">Đang giao</option>
-          <option value="Đã giao">Đã giao</option>
-          <option value="Đã hủy">Đã hủy</option>
+          <option value="all">All status</option>
+          <option value="Processing">Processing</option>
+          <option value="Shipping">Shipping</option>
+          <option value="Delivered">Delivered</option>
+          <option value="Cancelled">Cancelled</option>
         </select>
 
         {/* Date Filter */}

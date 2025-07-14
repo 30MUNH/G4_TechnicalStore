@@ -12,11 +12,11 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
   // Các trạng thái cho phép chuyển
   const getStatusOptions = (currentStatus) => {
     if (role === 'shipper') {
-      if (currentStatus === 'Đang xử lý') return ['Đang giao', 'Đã hủy'];
-      if (currentStatus === 'Đang giao') return ['Đã giao', 'Đã hủy'];
+      if (currentStatus === 'Processing') return ['Shipping', 'Cancelled'];  
+      if (currentStatus === 'Shipping') return ['Delivered', 'Cancelled'];
       return [];
     }
-    return ['Đang xử lý', 'Đang giao', 'Đã giao', 'Đã hủy'];
+    return ['Processing', 'Shipping', 'Delivered', 'Cancelled'];
   };
 
   const statusOptions = getStatusOptions(order.status);
@@ -34,10 +34,10 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Đang xử lý': return '#f59e0b';
-      case 'Đang giao': return '#3b82f6';
-      case 'Đã giao': return '#059669';
-      case 'Đã hủy': return '#ef4444';
+      case 'Processing': return '#f59e0b';
+      case 'Shipping': return '#3b82f6';
+      case 'Delivered': return '#059669';
+      case 'Cancelled': return '#ef4444';
       default: return '#6b7280';
     }
   };
@@ -45,7 +45,7 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
   // Calculate order summary
   const orderDetails = order.orderDetails || [];
   const subtotal = orderDetails.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const shippingFee = 0; // Free shipping
+  const shippingFee = 0; 
   const total = subtotal + shippingFee;
 
   return (
@@ -56,7 +56,7 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
           <div className={styles.headerLeft}>
             <Package className={styles.headerIcon} />
             <div>
-              <h2 className={styles.title}>Chi tiết đơn hàng</h2>
+              <h2 className={styles.title}>Order details</h2>
               <p className={styles.orderId}>#{order.id}</p>
             </div>
           </div>
@@ -100,15 +100,15 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
             <div className={styles.section}>
               <div className={styles.sectionHeader}>
                 <Calendar className={styles.sectionIcon} />
-                <h3>Thông tin đơn hàng</h3>
+                <h3>Order information</h3>
               </div>
               <div className={styles.infoGrid}>
                 <div className={styles.infoItem}>
-                  <span className={styles.label}>Ngày đặt:</span>
+                  <span className={styles.label}>Order date:</span>
                   <span className={styles.value}>{formatDateTime(order.orderDate)}</span>
                 </div>
                 <div className={styles.infoItem}>
-                  <span className={styles.label}>Trạng thái:</span>
+                  <span className={styles.label}>Status:</span>
                   <span 
                     className={styles.status}
                     style={{ backgroundColor: getStatusColor(order.status) }}
@@ -119,7 +119,7 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
                 
                 {order.cancelReason && (
                   <div className={styles.infoItem}>
-                    <span className={styles.label}>Lý do hủy:</span>
+                      <span className={styles.label}>Reason for cancellation:</span>
                     <span className={styles.value} style={{ color: '#ef4444' }}>{order.cancelReason}</span>
                   </div>
                 )}
@@ -130,7 +130,7 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
             <div className={styles.section}>
               <div className={styles.sectionHeader}>
                 <MapPin className={styles.sectionIcon} />
-                <h3>Địa chỉ giao hàng</h3>
+                <h3>Shipping address</h3>
               </div>
               <div className={styles.shippingCard}>
                 <Truck className={styles.shippingIcon} />
@@ -143,7 +143,7 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
               <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                   <CreditCard className={styles.sectionIcon} />
-                  <h3>Cập nhật trạng thái</h3>
+                  <h3>Update status</h3>
                 </div>
                 <select
                   className={styles.statusSelect}
@@ -165,7 +165,7 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
             <div className={styles.section}>
               <div className={styles.sectionHeader}>
                 <Package className={styles.sectionIcon} />
-                <h3>Sản phẩm đã đặt ({orderDetails.length})</h3>
+                <h3>Products ordered({orderDetails.length})</h3>
               </div>
               
               <div className={styles.productsList}>
@@ -203,7 +203,7 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
                 ) : (
                   <div className={styles.emptyProducts}>
                     <Package className={styles.emptyIcon} />
-                    <p>Không có sản phẩm nào trong đơn hàng</p>
+                    <p>There are no products in the order</p>
                   </div>
                 )}
               </div>
@@ -211,15 +211,15 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
               {/* Order Summary */}
               <div className={styles.orderSummary}>
                 <div className={styles.summaryRow}>
-                  <span>Tạm tính ({orderDetails.length} sản phẩm):</span>
+                  <span>Provisional ({orderDetails.length} product):</span>
                   <span>{formatCurrency(subtotal)}</span>
                 </div>
                 <div className={styles.summaryRow}>
-                  <span>Phí vận chuyển:</span>
-                  <span style={{ color: '#059669' }}>Miễn phí</span>
+                  <span>Shipping fee:</span>
+                  <span style={{ color: '#059669' }}>free shipping</span>
                 </div>
                 <div className={styles.summaryTotal}>
-                  <span>Tổng cộng:</span>
+                  <span>Total:</span>
                   <span>{formatCurrency(total)}</span>
                 </div>
               </div>

@@ -132,15 +132,15 @@ export const OrderHistory = ({
         if (!status) return '#6b7280'; // Gray for null/undefined
         
         switch (status) {
-            case 'Đang chờ':
+            case 'Pending':
                 return '#f59e0b'; // Amber - Waiting
-            case 'Đang xử lý':
+                case 'Processing':
                 return '#3b82f6'; // Blue - Processing
-            case 'Đang giao':
+            case 'Shipping':
                 return '#8b5cf6'; // Purple - Shipping
-            case 'Đã giao':
+            case '  ':
                 return '#059669'; // Green - Delivered
-            case 'Đã hủy':
+            case 'Cancelled':
                 return '#ef4444'; // Red - Cancelled
             // Fallback for English values (backward compatibility)
             case 'processing':
@@ -212,13 +212,13 @@ export const OrderHistory = ({
                 onOrderUpdate((prevOrders) => 
                     prevOrders.map(order => 
                         order.id === selectedOrderId 
-                            ? { ...order, status: 'Đã hủy', cancelReason: cancelReason }
+                            ? { ...order, status: 'Cancelled', cancelReason: cancelReason }
                             : order
                     )
                 );
             }
             
-            showNotification('✅ Đã hủy đơn hàng thành công!', 'success');
+            showNotification('✅ Order cancelled successfully!', 'success');
             
             // Close modal and reset states
             setShowCancelModal(false);
@@ -230,11 +230,11 @@ export const OrderHistory = ({
             
             // Handle specific error cases
             if (error.message?.includes('account_locked')) {
-                showNotification('⚠️ Tài khoản của bạn đã bị khóa do hủy quá nhiều đơn hàng. Vui lòng liên hệ hỗ trợ.', 'error');
+                showNotification('⚠️ Your account has been locked due to too many order cancellations. Please contact support.', 'error');
             } else if (error.message?.includes('order_cannot_cancel')) {
-                showNotification('❌ Không thể hủy đơn hàng này do đã qua thời gian cho phép.', 'error');
+                showNotification('❌ Cannot cancel this order because it has passed the allowed time.', 'error');
             } else {
-                showNotification('❌ Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.', 'error');
+                showNotification('❌ An error occurred while cancelling the order. Please try again.', 'error');
             }
         }
     };
@@ -247,18 +247,18 @@ export const OrderHistory = ({
 
     // Check if order can be cancelled (only pending and processing orders)
     const canCancelOrder = (status) => {
-        return status === 'Đang chờ' || status === 'Đang xử lý' ;
+        return status === 'Pending' || status === 'Processing' ;
     };
 
     return (
         <div className={styles.cartView}>
             <div className={styles.cartHeader}>
                 <h1>
-                    📋 Lịch sử đơn hàng
-                    <span className={styles.itemCount}>({orders.length} đơn hàng hiện tại)</span>
+                    📋 Order history
+                    <span className={styles.itemCount}>({orders.length} current orders)</span>
                 </h1>
                 <button onClick={handleBackToCart} className={styles.historyButton}>
-                    ← Quay lại giỏ hàng
+                    ← Back to cart
                 </button>
             </div>
 
@@ -268,10 +268,10 @@ export const OrderHistory = ({
 
             {orders.length === 0 ? (
                 <div className={styles.emptyCart}>
-                    <h2>🛒 Chưa có đơn hàng nào</h2>
-                    <p>Bạn chưa có đơn hàng nào trong lịch sử. Hãy mua sắm và đặt hàng nhé!</p>
+                    <h2>🛒 No orders yet</h2>
+                    <p>You don't have any orders in your history. Please shop and order now!</p>
                     <button onClick={handleBackToCart} className={styles.continueShoppingButton}>
-                        🛒 Quay lại giỏ hàng
+                        🛒 Back to cart
                     </button>
                 </div>
             ) : (
@@ -314,10 +314,10 @@ export const OrderHistory = ({
                                     }}>
                                         <div style={{ flex: 1, textAlign: 'left' }}>
                                             <h3 style={{ margin: '0 0 0.8rem 0', fontSize: '1.4rem', color: '#1f2937', fontWeight: '700', textAlign: 'left' }}>
-                                                📦 Đơn hàng #{order.id}
+                                                📦 Order #{order.id}
                                             </h3>
                                             <p style={{ margin: 0, color: '#6b7280', fontSize: '1rem', textAlign: 'left' }}>
-                                                📅 Đặt ngày: {formatDateTime(order.orderDate)}
+                                                📅 Order date: {formatDateTime(order.orderDate)}
                                             </p>
                                         </div>
                                         <div style={{
@@ -330,7 +330,7 @@ export const OrderHistory = ({
                                                 alignItems: 'center',
                                                 gap: '0.5rem'
                                             }}>
-                                                <span style={{ fontSize: '1rem', color: '#6b7280' }}>Trạng thái:</span>
+                                                <span style={{ fontSize: '1rem', color: '#6b7280' }}>Status:</span>
                                                 <span style={{
                                                     backgroundColor: getStatusColor(order.status),
                                                     color: 'white',
@@ -370,7 +370,7 @@ export const OrderHistory = ({
                                                         e.target.style.transform = 'translateY(0)';
                                                     }}
                                                 >
-                                                    ❌ Hủy đơn
+                                                    ❌ Cancel order
                                                 </button>
                                             )}
                                             
@@ -401,7 +401,7 @@ export const OrderHistory = ({
                                                     e.target.style.boxShadow = 'none';
                                                 }}
                                             >
-                                                {isExpanded ? '🔼 Ẩn chi tiết' : '🔽 Chi tiết đơn hàng'}
+                                                {isExpanded ? '🔼 Hide details' : '🔽 Order details'}
                                             </button>
                                         </div>
                                     </div>
@@ -417,10 +417,10 @@ export const OrderHistory = ({
                                         marginBottom: isExpanded ? '1.5rem' : '0'
                                     }}>
                                                                 <div style={{ fontSize: '1.2rem', color: '#4b5563', textAlign: 'left' }}>
-                            <strong>Số sản phẩm:</strong> {(order.orderDetails && Array.isArray(order.orderDetails)) ? order.orderDetails.length : 0}
+                            <strong>Number of products:</strong> {(order.orderDetails && Array.isArray(order.orderDetails)) ? order.orderDetails.length : 0}
                         </div>
                         <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#059669', textAlign: 'right' }}>
-                            <strong>Tổng tiền:</strong> {formatCurrency(
+                            <strong>Total amount:</strong> {formatCurrency(
                                 order.orderDetails && Array.isArray(order.orderDetails) && order.orderDetails.length > 0
                                     ? order.orderDetails.reduce((sum, item) => {
                                         return sum + ((item.price || 0) * (item.quantity || 0));
@@ -446,7 +446,7 @@ export const OrderHistory = ({
                                                     fontWeight: '600',
                                                     textAlign: 'left'
                                                 }}>
-                                                    📋 Danh sách sản phẩm:
+                                                    📋 Product list:
                                                 </h4>
                                                                                         {order.orderDetails && Array.isArray(order.orderDetails) && order.orderDetails.length > 0 ? (
                                             order.orderDetails.map((item, index) => (
@@ -462,7 +462,7 @@ export const OrderHistory = ({
                                                             {item.product?.images && item.product.images.length > 0 ? (
                                                                 <img
                                                                     src={item.product.images[0].url}
-                                                                    alt={item.product?.name || 'Sản phẩm'}
+                                                                    alt={item.product?.name || 'Product'}
                                                                     style={{
                                                                         width: '80px',
                                                                         height: '80px',
@@ -493,10 +493,10 @@ export const OrderHistory = ({
                                                             )}
                                                             <div style={{ flex: 1 }}>
                                                                 <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.2rem', fontWeight: '600', textAlign: 'left' }}>
-                                                                    {item.product?.name || 'Sản phẩm không xác định'}
+                                                                    {item.product?.name || 'Product not specified'}
                                                                 </h4>
                                                                 <p style={{ margin: '0 0 0.25rem 0', color: '#6b7280', fontSize: '1rem', textAlign: 'left' }}>
-                                                                    {item.product?.category?.name || 'Chưa phân loại'}
+                                                                    {item.product?.category?.name || 'No category'}
                                                                 </p>
                                                                 <p style={{ margin: 0, color: '#059669', fontSize: '1.1rem', fontWeight: '600', textAlign: 'left' }}>
                                                                     {formatCurrency(item.price || 0)}
@@ -509,11 +509,11 @@ export const OrderHistory = ({
                                                                 fontSize: '1.1rem'
                                                             }}>
                                                                 <div style={{ textAlign: 'center', minWidth: '80px' }}>
-                                                                    <span style={{ display: 'block', color: '#6b7280', fontSize: '1rem' }}>Số lượng</span>
+                                                                    <span style={{ display: 'block', color: '#6b7280', fontSize: '1rem' }}>Quantity</span>
                                                                     <span style={{ fontWeight: '600', fontSize: '1.2rem' }}>{item.quantity || 0}</span>
                                                                 </div>
                                                                 <div style={{ textAlign: 'right', minWidth: '120px' }}>
-                                                                    <span style={{ display: 'block', color: '#6b7280', fontSize: '1rem' }}>Thành tiền</span>
+                                                                    <span style={{ display: 'block', color: '#6b7280', fontSize: '1rem' }}>Total</span>
                                                                     <span style={{ fontWeight: '700', fontSize: '1.2rem', color: '#dc2626' }}>
                                                                         {formatCurrency((item.price || 0) * (item.quantity || 0))}
                                                                     </span>
@@ -535,7 +535,7 @@ export const OrderHistory = ({
                                                             marginBottom: '0.5rem',
                                                             fontSize: '1.2rem'
                                                         }}>
-                                                            Không có chi tiết sản phẩm
+                                                            No product details
                                                         </h4>
                                                     </div>
                                                 )}
@@ -563,7 +563,7 @@ export const OrderHistory = ({
                                                             }, 0)
                                                             : parseFloat(order.totalAmount) || 0;
 
-                                                        const shippingFee = 0; // Miễn phí vận chuyển
+                                                        const shippingFee = 0; 
                                                         const total = subtotal + shippingFee;
 
                                                         return (
@@ -571,20 +571,20 @@ export const OrderHistory = ({
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', fontSize: '1.1rem' }}>
                                                                     <span>
                                                                         {hasOrderDetails 
-                                                                            ? `Tạm tính (${order.orderDetails.length} sản phẩm):`
-                                                                            : 'Tạm tính:'
+                                                                            ? `Temporary calculation (${order.orderDetails.length} products):`
+                                                                            : 'Temporary calculation:'
                                                                         }
                                                                     </span>
                                                                     <span style={{ fontWeight: '600' }}>{formatCurrency(subtotal)}</span>
                                                                 </div>
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', fontSize: '1.1rem' }}>
-                                                                    <span>Phí vận chuyển:</span>
-                                                                    <span style={{ fontWeight: '600', color: '#059669' }}>Miễn phí</span>
+                                                                    <span>Shipping fee:</span>
+                                                                    <span style={{ fontWeight: '600', color: '#059669' }}>Free</span>
                                                                 </div>
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', fontSize: '1.1rem' }}>
-                                                                    <span>Hình thức thanh toán:</span>
+                                                                    <span>Payment method:</span>
                                                                     <span style={{ fontWeight: '600', color: '#3b82f6' }}>
-                                                                        {order.paymentMethod || 'Chưa cập nhật'}
+                                                                        {order.paymentMethod || 'Not updated'}
                                                                     </span>
                                                                 </div>
                                                                 <div style={{ 
@@ -595,7 +595,7 @@ export const OrderHistory = ({
                                                                     fontSize: '1.3rem',
                                                                     fontWeight: 'bold'
                                                                 }}>
-                                                                    <span>Tổng cộng:</span>
+                                                                    <span>Total:</span>
                                                                     <span style={{ color: '#dc2626' }}>{formatCurrency(total)}</span>
                                                                 </div>
 
@@ -638,7 +638,7 @@ export const OrderHistory = ({
                                                                 e.target.style.boxShadow = 'none';
                                                             }}
                                                         >
-                                                            📄 Xuất hóa đơn
+                                                            📄 Export invoice
                                                         </button>
                                                     </div>
                                                 )}
@@ -657,7 +657,7 @@ export const OrderHistory = ({
                                                         gap: '0.75rem'
                                                     }}>
                                                         <span style={{fontSize: '1.4rem'}}>📍</span>
-                                                        <span>Địa chỉ giao hàng:</span>
+                                                        <span>Shipping address:</span>
                                                         <span style={{fontWeight: 700, fontSize: '1.2rem'}}>{order.shippingAddress}</span>
                                                     </div>
                                                 )}
@@ -709,7 +709,7 @@ export const OrderHistory = ({
                                 fontWeight: '700',
                                 color: '#1f2937'
                             }}>
-                                Xác nhận hủy đơn hàng
+                                Confirm order cancellation
                             </h3>
                         </div>
                         
@@ -719,13 +719,13 @@ export const OrderHistory = ({
                             fontSize: '16px',
                             lineHeight: '1.5'
                         }}>
-                            Bạn có chắc chắn muốn hủy đơn hàng #{selectedOrderId}? Vui lòng cho biết lý do hủy:
+                            Are you sure you want to cancel order #{selectedOrderId}? Please enter the reason for cancellation:
                         </p>
                         
                         <textarea
                             value={cancelReason}
                             onChange={(e) => setCancelReason(e.target.value)}
-                            placeholder="Nhập lý do hủy đơn hàng..."
+                            placeholder="Enter the reason for cancellation..."
                             style={{
                                 width: '100%',
                                 height: '100px',
@@ -773,7 +773,7 @@ export const OrderHistory = ({
                                     e.target.style.borderColor = '#e2e8f0';
                                 }}
                             >
-                                Hủy bỏ
+                                Cancel
                             </button>
                             <button
                                 onClick={handleCancelConfirm}
@@ -795,7 +795,7 @@ export const OrderHistory = ({
                                     e.target.style.backgroundColor = '#ef4444';
                                 }}
                             >
-                                Xác nhận hủy
+                                Confirm cancellation
                             </button>
                         </div>
                     </div>

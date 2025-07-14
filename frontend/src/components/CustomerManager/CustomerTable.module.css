@@ -42,7 +42,7 @@
 }
 
 .tableCell {
-  padding: 1rem 1.5rem;
+  padding: 0.5rem 1rem;
   font-size: 1rem;
   color: #374151;
 }
@@ -77,7 +77,7 @@
 }
 
 .phoneNumber {
-  color: #6b7280;
+  color: #000000;
 }
 
 .status {
