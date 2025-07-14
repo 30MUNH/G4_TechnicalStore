@@ -9,11 +9,68 @@ import {
   ChevronRight,
   Search
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { productService } from '../../services/productService';
 import type { Product, Category } from '../../types/product';
 import ProductDetailAdminModal from './ProductDetailAdminModal';
 import ProductEditAdminModal from './ProductEditAdminModal';
 import ProductAddAdminModal from './ProductAddAdminModal';
+
+// Notification function (dùng chung, không phụ thuộc CSS module)
+const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+  const notification = document.createElement('div');
+  notification.textContent = message;
+  notification.style.position = 'fixed';
+  notification.style.top = '20px';
+  notification.style.right = '20px';
+  notification.style.padding = '16px 24px';
+  notification.style.borderRadius = '8px';
+  notification.style.color = 'white';
+  notification.style.fontWeight = '600';
+  notification.style.fontSize = '14px';
+  notification.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+  notification.style.zIndex = '10000';
+  notification.style.maxWidth = '400px';
+  notification.style.wordWrap = 'break-word';
+  notification.style.animation = 'slideInRight 0.3s ease-out';
+  switch (type) {
+    case 'success':
+      notification.style.backgroundColor = '#22c55e';
+      break;
+    case 'error':
+      notification.style.backgroundColor = '#ef4444';
+      break;
+    default:
+      notification.style.backgroundColor = '#3b82f6';
+  }
+  // Add animation keyframes if not already added
+  if (!document.querySelector('#notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+      @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  document.body.appendChild(notification);
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.style.animation = 'slideOutRight 0.3s ease-in';
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 300);
+    }
+  }, 3000);
+};
 
 const ProductManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -314,12 +371,12 @@ const ProductManagement: React.FC = () => {
         setProducts(Array.isArray(productsData) ? productsData : []);
         setShowEditModal(false);
         setEditingProduct(null);
-        alert('Product updated successfully!');
+        showNotification('Product updated successfully!', 'success');
       } else {
-        alert('Failed to update product. Please try again!');
+        showNotification('Failed to update product. Please try again!', 'error');
       }
     } catch (err) {
-      alert('An error occurred while updating the product.');
+      showNotification('An error occurred while updating the product.', 'error');
     }
   };
 
@@ -330,7 +387,7 @@ const ProductManagement: React.FC = () => {
       // Update product list
       const productsData = await productService.getAllProductsIncludingOutOfStock();
       setProducts(Array.isArray(productsData) ? productsData : []);
-      alert('Product deleted successfully!');
+      showNotification('Product deleted successfully!', 'success');
     }
   };
 
@@ -345,12 +402,47 @@ const ProductManagement: React.FC = () => {
         const productsData = await productService.getAllProductsIncludingOutOfStock();
         setProducts(Array.isArray(productsData) ? productsData : []);
         setShowAddModal(false);
-        alert('Product added successfully!');
+        showNotification('Product added successfully!', 'success');
       } else {
-        alert('Failed to add product. Please try again!');
+        showNotification('Failed to add product. Please try again!', 'error');
       }
     } catch (err) {
-      alert('An error occurred while adding the product.');
+      showNotification('An error occurred while adding the product.', 'error');
+    }
+  };
+
+  const exportToExcel = () => {
+    try {
+      // Chuẩn bị dữ liệu để export
+      const exportData = products.map(product => ({
+        Name: product.name || '',
+        Image: product.images && product.images.length > 0 ? product.images[0].url : 'No Image',
+        Category: product.category?.name || 'Unknown',
+        Stock: product.stock || 0,
+        Price: product.price ? new Intl.NumberFormat('vi-VN', {
+          style: 'currency',
+          currency: 'VND'
+        }).format(product.price) : 'N/A'
+      }));
+
+      // Tạo workbook và worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+      // Đặt tên cho worksheet
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
+
+      // Tạo tên file với timestamp
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      const fileName = `products_export_${timestamp}.xlsx`;
+
+      // Export file
+      XLSX.writeFile(workbook, fileName);
+      
+      showNotification('Data exported successfully!', 'success');
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      showNotification('Failed to export data. Please try again.', 'error');
     }
   };
 
@@ -395,7 +487,10 @@ const ProductManagement: React.FC = () => {
               <Download size={18} className="text-white" />
               <span className="text-white font-medium">Import Data</span>
             </button> */}
-            <button className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all duration-200">
+            <button 
+              className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all duration-200"
+              onClick={exportToExcel}
+            >
               <Upload size={18} className="text-white" />
               <span className="text-white font-medium">Export Data</span>
             </button>

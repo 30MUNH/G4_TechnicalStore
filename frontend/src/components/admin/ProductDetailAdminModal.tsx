@@ -270,7 +270,7 @@ const ProductDetailAdminModal: React.FC<ProductDetailAdminModalProps> = ({ isOpe
             <div style={{ color: '#ff2d55', fontWeight: 700, fontSize: 20, margin: '8px 0' }}>
               {product.price ? product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : 'Giá không có sẵn'}
             </div>
-            <div style={{ marginBottom: 8 }}><b>Danh mục:</b> {product.category?.name || 'Không có danh mục'}</div>
+            <div style={{ marginBottom: 8 }}><b>Category:</b> {product.category?.name || 'Không có danh mục'}</div>
             {renderDetail()}
           </div>
         </div>
