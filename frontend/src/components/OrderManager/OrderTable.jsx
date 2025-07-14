@@ -19,10 +19,10 @@ const OrderTable = ({
 
   const getStatusClass = (status) => {
     switch (status) {
-      case 'Đang xử lý': return styles.statusProcessing;
-      case 'Đang giao': return styles.statusShipping;
-      case 'Đã giao': return styles.statusDelivered;
-      case 'Đã hủy': return styles.statusCancelled;
+      case 'Processing': return styles.statusProcessing;
+      case 'Shipping': return styles.statusShipping;
+      case 'Delivered': return styles.statusDelivered;
+      case 'Cancelled': return styles.statusCancelled;
       default: return styles.statusDefault;
     }
   };
@@ -38,11 +38,11 @@ const OrderTable = ({
   // Status options for admin and shipper
   const getStatusOptions = (currentStatus) => {
     if (role === 'shipper') {
-      if (currentStatus === 'Đang xử lý') return ['Đang giao', 'Đã hủy'];
-      if (currentStatus === 'Đang giao') return ['Đã giao', 'Đã hủy'];
+      if (currentStatus === 'Processing') return ['Shipping', 'Cancelled'];
+      if (currentStatus === 'Shipping') return ['Delivered', 'Cancelled'];
       return [];
     }
-    return ['Đang xử lý', 'Đang giao', 'Đã giao', 'Đã hủy'];
+    return ['Processing', 'Shipping', 'Delivered', 'Cancelled'];
   };
 
   return (
@@ -51,13 +51,13 @@ const OrderTable = ({
         <table className={styles.table}>
           <thead className={styles.tableHeader}>
             <tr>
-              <th className={styles.headerCell}>MÃ ĐƠN HÀNG</th>
-              <th className={styles.headerCell}>KHÁCH HÀNG</th>
-              <th className={styles.headerCell}>NGÀY ĐẶT</th>
-              <th className={styles.headerCell}>TỔNG TIỀN</th>
-              <th className={styles.headerCell}>TRẠNG THÁI</th>
-              <th className={styles.headerCell}>ĐỊA CHỈ GIAO HÀNG</th>
-              <th className={styles.headerCell}>THAO TÁC</th>
+              <th className={styles.headerCell}>ORDER ID</th>
+              <th className={styles.headerCell}>CUSTOMER</th>
+              <th className={styles.headerCell}>ORDER DATE</th>
+              <th className={styles.headerCell}>TOTAL AMOUNT</th>
+              <th className={styles.headerCell}>STATUS</th>
+              <th className={styles.headerCell}>SHIPPING ADDRESS</th>
+              <th className={styles.headerCell}>ACTIONS</th>
             </tr>
           </thead>
           <tbody className={styles.tableBody}>
@@ -66,9 +66,9 @@ const OrderTable = ({
                 <td colSpan="7" className={styles.emptyStateCell}>
                   <div className={styles.emptyState}>
                     <ShoppingCart className={styles.emptyIcon} />
-                    <h3 className={styles.emptyTitle}>Không tìm thấy đơn hàng</h3>
+                    <h3 className={styles.emptyTitle}>No order found</h3>
                     <p className={styles.emptyDescription}>
-                      Không có đơn hàng trong hệ thống hoặc không có đơn hàng nào phù hợp với bộ lọc
+                      No order found in the system or no order matches the filter
                     </p>
                   </div>
                 </td>
@@ -134,7 +134,7 @@ const OrderTable = ({
                         >
                           <Eye size={18} />
                         </button>
-                        {(role === 'admin' || role === 'staff') && onReject && order.status !== 'Đã hủy' && (
+                        {(role === 'admin' || role === 'staff') && onReject && order.status !== 'Cancelled' && (
                           <button
                             className={`${styles.actionButton} ${styles.rejectButton}`}
                             onClick={() => onReject(order.id)}
@@ -156,7 +156,7 @@ const OrderTable = ({
       {/* Pagination */}
       <div className={styles.pagination}>
         <div className={styles.paginationInfo}>
-          Hiển thị {indexOfFirstItem + 1} đến {indexOfLastItem} của {totalOrders} đơn hàng
+          Display {indexOfFirstItem + 1} to {indexOfLastItem} of {totalOrders} orders
         </div>
         <div className={styles.paginationControls}>
           <button

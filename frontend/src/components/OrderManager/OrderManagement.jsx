@@ -97,10 +97,10 @@ const OrderManagement = ({ role = 'admin' }) => {
       
       // Handle 401 Unauthorized specifically
       if (err.message && err.message.includes('401')) {
-        setError('Bạn không có quyền xem đơn hàng. Vui lòng đăng nhập với tài khoản admin.');
-        showNotification('Vui lòng đăng nhập với tài khoản admin để xem đơn hàng', 'error');
+        setError('You do not have permission to view orders. Please login with admin account.');
+        showNotification('Please login with admin account to view orders', 'error');
       } else {
-        setError('Không thể tải đơn hàng: ' + err.message);
+        setError('Cannot load orders: ' + err.message);
         showNotification('Không thể tải đơn hàng: ' + err.message, 'error');
       }
       
@@ -207,13 +207,13 @@ const OrderManagement = ({ role = 'admin' }) => {
       const response = await orderService.updateOrderStatus(orderId, { status: newStatus });
       
       if (response.success) {
-        showNotification('Cập nhật trạng thái đơn hàng thành công', 'success');
+        showNotification('Update order status successfully', 'success');
         await fetchOrders(); // Refresh the list
       } else {
-        throw new Error(response.message || 'Không thể cập nhật trạng thái đơn hàng');
+        throw new Error(response.message || 'Cannot update order status');
       }
     } catch (error) {
-      showNotification(error.message || 'Đã xảy ra lỗi', 'error');
+      showNotification(error.message || 'An error occurred', 'error');
     }
   };
 
@@ -227,23 +227,23 @@ const OrderManagement = ({ role = 'admin' }) => {
     if (!selectedOrder) return;
     
     try {
-      // Reject order by changing status to "Đã hủy"
+      // Reject order by changing status to "Cancelled"
       const response = await orderService.updateOrderStatus(selectedOrder.id, { 
-        status: 'Đã hủy',
-        cancelReason: 'Đã bị từ chối bởi admin'
+        status: 'Cancelled',
+        cancelReason: 'Rejected by admin'
       });
       
       if (response.success) {
-        showNotification('Từ chối đơn hàng thành công', 'success');
+        showNotification('Reject order successfully', 'success');
         await fetchOrders(); // Refresh the list
       } else {
-        throw new Error(response.message || 'Không thể từ chối đơn hàng');
+        throw new Error(response.message || 'Cannot reject order');
       }
       
       setShowRejectModal(false);
       setSelectedOrder(null);
     } catch (error) {
-      showNotification(error.message || 'Đã xảy ra lỗi', 'error');
+      showNotification(error.message || 'An error occurred', 'error');
     }
   };
 
@@ -265,12 +265,12 @@ const OrderManagement = ({ role = 'admin' }) => {
         link.remove();
         window.URL.revokeObjectURL(url);
         
-        showNotification('Xuất dữ liệu thành công', 'success');
+        showNotification('Export data successfully', 'success');
       } else {
-        throw new Error('Không thể xuất dữ liệu');
+        throw new Error('Cannot export data');
       }
     } catch (error) {
-      showNotification('Không thể xuất dữ liệu', 'error');
+      showNotification('Cannot export data', 'error');
     }
   };
 
@@ -281,7 +281,7 @@ const OrderManagement = ({ role = 'admin' }) => {
     setShipperFilter('all');
     setAmountFilter('all');
     setCurrentPage(1);
-    showNotification('Đã xoá bộ lọc', 'info');
+    showNotification('Cleared filters', 'info');
   };
 
   // Loading state
@@ -316,8 +316,8 @@ const OrderManagement = ({ role = 'admin' }) => {
       <div className={styles.header}>
         <div className={styles.headerContent}>
           <div className={styles.headerInfo}>
-            <h1 className={styles.title}>Quản lý đơn hàng</h1>
-            <p className={styles.description}>Quản lý thông tin và trạng thái đơn hàng</p>
+            <h1 className={styles.title}>Order management</h1>
+            <p className={styles.description}>Manage order information and status</p>
           </div>
           
           <div className={styles.headerActions}>
@@ -326,7 +326,7 @@ const OrderManagement = ({ role = 'admin' }) => {
               onClick={handleExportData}
             >
               <Upload size={18} />
-              <span>Xuất dữ liệu</span>
+              <span>Export data</span>
             </button>
           </div>
         </div>
@@ -388,7 +388,7 @@ const OrderManagement = ({ role = 'admin' }) => {
   // Helper function for modal title
   function getModalTitle() {
     switch (modalMode) {
-      case 'view': return 'Chi tiết đơn hàng';
+      case 'view': return 'Order details';
       default: return '';
     }
   }
@@ -429,7 +429,7 @@ const OrderDetail = ({ order }) => (
       <div className={styles.detailField}>
         <div className={styles.detailLabel}>
           <User size={16} />
-          <span>Khách hàng</span>
+          <span>Customer</span>
         </div>
         <div className={styles.detailValue}>{order.customer?.name || order.customer?.username}</div>
       </div>
@@ -437,7 +437,7 @@ const OrderDetail = ({ order }) => (
       <div className={styles.detailField}>
         <div className={styles.detailLabel}>
           <Calendar size={16} />
-          <span>Ngày đặt hàng</span>
+          <span>Order date</span>
         </div>
         <div className={styles.detailValue}>
           {new Date(order.orderDate).toLocaleDateString('vi-VN')}
@@ -515,16 +515,16 @@ const RejectConfirmation = ({ order, onConfirm, onClose }) => (
         <div className={styles.deleteIcon}>
           <XCircle size={24} color="#dc2626" />
         </div>
-        <h3 className={styles.deleteTitle}>Xác nhận từ chối đơn hàng</h3>
+        <h3 className={styles.deleteTitle}>Confirm reject order</h3>
         <p className={styles.deleteMessage}>
-          Bạn có chắc chắn muốn từ chối đơn hàng "#{order.id}"? Đơn hàng sẽ được chuyển sang trạng thái "Đã hủy".
+          Are you sure you want to reject order "#{order.id}"? The order will be changed to "Cancelled".
         </p>
         <div className={styles.deleteActions}>
           <button onClick={onClose} className={styles.cancelButton}>
-            Hủy bỏ
+            Cancel
           </button>
           <button onClick={onConfirm} className={styles.confirmDeleteButton}>
-            Từ chối
+            Reject
           </button>
         </div>
       </div>

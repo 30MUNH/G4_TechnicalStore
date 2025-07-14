@@ -30,17 +30,17 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
 
   // Order status options cho shipper (sync với backend enum)
   const statusOptions = [
-    { value: "", label: "Tất cả trạng thái" },
-    { value: "Đang xử lý", label: "Đang xử lý" },
-    { value: "Đang giao", label: "Đang giao" },
-    { value: "Đã giao", label: "Đã giao" },
-    { value: "Đã hủy", label: "Đã hủy" },
+    { value: "", label: "All status" },
+    { value: "Processing", label: "Processing" },
+    { value: "Shipping", label: "Shipping" },
+    { value: "Delivered", label: "Delivered" },
+    { value: "Cancelled", label: "Cancelled" },
   ];
 
   const sortOptions = [
-    { value: "date", label: "Ngày đặt (Mới nhất)" },
-    { value: "amount", label: "Tổng tiền (Cao nhất)" },
-    { value: "customer", label: "Tên khách hàng" },
+    { value: "date", label: "Order date (Newest)" },
+    { value: "amount", label: "Total amount (Highest)" },
+    { value: "customer", label: "Customer name" },
   ];
 
   // Fetch orders
@@ -73,12 +73,12 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
             response.pagination?.totalPages || Math.ceil(total / prev.limit),
         }));
       } else {
-        throw new Error(response.message || "Không thể lấy danh sách đơn hàng");
+        throw new Error(response.message || "Cannot load order list");
       }
     } catch (err) {
       console.error("❌ Error fetching orders:", err);
       setError(err.message || "Failed to load order list");
-      setOrders([]); // Đảm bảo luôn set array
+      setOrders([]); // Ensure always set array
       setPagination((prev) => ({ ...prev, total: 0, totalPages: 0 }));
     } finally {
       setLoading(false);
@@ -106,22 +106,22 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
   // Handle status update with enhanced validation
   const handleStatusUpdate = async () => {
     if (!selectedOrder || !statusUpdateData.status) {
-      setError("Vui lòng chọn trạng thái");
+      setError("Please select status");
       return;
     }
 
-    if (statusUpdateData.status === "Đã hủy") {
+    if (statusUpdateData.status === "Cancelled") {
       const reason = statusUpdateData.reason.trim();
       if (!reason) {
-        setError("Vui lòng nhập lý do hủy đơn hàng");
+        setError("Please enter cancellation reason");
         return;
       }
       if (reason.length < 10) {
-        setError("Lý do hủy đơn hàng phải có ít nhất 10 ký tự");
+        setError("Cancellation reason must be at least 10 characters");
         return;
       }
-      if (reason.length > 500) {
-        setError("Lý do hủy đơn hàng không được vượt quá 500 ký tự");
+      if (reason.length > 200) {
+        setError("Cancellation reason cannot exceed 200 characters");
         return;
       }
     }
@@ -140,7 +140,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
         setStatusUpdateData({ status: "", reason: "" });
         await fetchOrders(); // Refresh list
       } else {
-        throw new Error(response.message || "Cập nhật thất bại");
+        throw new Error(response.message || "Update failed");
       }
     } catch (err) {
       console.error("❌ Error updating status:", err);
@@ -153,11 +153,11 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
   // Get status badge class (sync với backend enum values)
   const getStatusBadgeClass = (status) => {
     const statusClasses = {
-      "Đang chờ": styles.statusPending,
-      "Đang xử lý": styles.statusProcessing,
-      "Đang giao": styles.statusShipping,
-      "Đã giao": styles.statusDelivered,
-      "Đã hủy": styles.statusCancelled,
+      "Pending": styles.statusPending,
+      "Processing": styles.statusProcessing,
+      "Shipping": styles.statusShipping,
+      "Delivered": styles.statusDelivered,
+      "Cancelled": styles.statusCancelled,
     };
     return statusClasses[status] || styles.statusDefault;
   };
@@ -165,13 +165,13 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
   // Get available status transitions for current order (sync với backend logic)
   const getAvailableStatusTransitions = (currentStatus) => {
     const transitions = {
-      "Đang xử lý": [
-        { value: "Đang giao", label: "Chuyển sang Đang giao" },
-        { value: "Đã hủy", label: "Hủy đơn hàng" },
+      "Processing": [
+        { value: "Shipping", label: "Change to Shipping" },
+        { value: "Cancelled", label: "Cancel order" },
       ],
-      "Đang giao": [
-        { value: "Đã giao", label: "Hoàn thành giao hàng" },
-        { value: "Đã hủy", label: "Hủy đơn hàng" },
+      "Shipping": [
+        { value: "Delivered", label: "Complete delivery" },
+        { value: "Cancelled", label: "Cancel order" },
       ],
     };
     return transitions[currentStatus] || [];
@@ -194,11 +194,11 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerTitle}>
-            <h3>Danh sách đơn hàng - {shipperName}</h3>
+            <h3>Order list - {shipperName}</h3>
             <button
               className={styles.closeButton}
               onClick={onClose}
-              aria-label="Đóng"
+              aria-label="Close" 
             >
               ×
             </button>
@@ -207,7 +207,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
           {/* Filters */}
           <div className={styles.filtersRow}>
             <div className={styles.filterGroup}>
-              <label>Trạng thái:</label>
+              <label>Status:</label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange("status", e.target.value)}
@@ -222,7 +222,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
             </div>
 
             <div className={styles.filterGroup}>
-              <label>Sắp xếp:</label>
+              <label>Sort:</label>
               <select
                 value={filters.sort}
                 onChange={(e) => handleFilterChange("sort", e.target.value)}
@@ -237,10 +237,10 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
             </div>
 
             <div className={styles.filterGroup}>
-              <label>Tìm kiếm:</label>
+              <label>Search:</label>
               <input
                 type="text"
-                placeholder="Mã đơn, tên khách hàng..."
+                placeholder="Order ID, customer name..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange("search", e.target.value)}
                 className={styles.searchInput}
@@ -256,7 +256,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
         {loading && (
           <div className={styles.loadingState}>
             <div className={styles.spinner}></div>
-            <span>Đang tải...</span>
+            <span>Loading...</span>
           </div>
         )}
 
@@ -266,13 +266,13 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
             <table className={styles.ordersTable}>
               <thead>
                 <tr>
-                  <th>Mã đơn</th>
-                  <th>Khách hàng</th>
-                  <th>Ngày đặt</th>
-                  <th>Tổng tiền</th>
-                  <th>Trạng thái</th>
-                  <th>Địa chỉ giao</th>
-                  <th>Thao tác</th>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Order date</th>
+                  <th>Total amount</th>
+                  <th>Status</th>
+                  <th>Shipping address</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -280,10 +280,10 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
                   <tr>
                     <td colSpan="7" className={styles.emptyState}>
                       {!Array.isArray(orders)
-                        ? "Đang tải dữ liệu..."
+                        ? "Loading data..."
                         : filters.status || filters.search
-                        ? "Không tìm thấy đơn hàng phù hợp"
-                        : "Shipper này chưa có đơn hàng nào"}
+                        ? "No order found"
+                        : "This shipper has no orders"}
                     </td>
                   </tr>
                 ) : (
@@ -330,7 +330,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
                               setError("");
                             }}
                           >
-                            Cập nhật
+                            Update
                           </button>
                         )}
                       </td>
@@ -350,12 +350,12 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
               disabled={pagination.page === 1}
               className={styles.paginationButton}
             >
-              « Trước
+              « Previous
             </button>
 
             <span className={styles.paginationInfo}>
-              Trang {pagination.page} / {pagination.totalPages}(
-              {pagination.total} đơn hàng)
+              Page {pagination.page} / {pagination.totalPages}(
+              {pagination.total} orders)
             </span>
 
             <button
@@ -363,7 +363,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
               disabled={pagination.page === pagination.totalPages}
               className={styles.paginationButton}
             >
-              Sau »
+              Next »
             </button>
           </div>
         )}
@@ -373,7 +373,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
           <div className={styles.modalOverlay}>
             <div className={styles.modal}>
               <div className={styles.modalHeader}>
-                <h4>Cập nhật trạng thái đơn hàng #{selectedOrder.id}</h4>
+                <h4>Update order status #{selectedOrder.id}</h4>
                 <button
                   className={styles.modalCloseButton}
                   onClick={() => {
@@ -390,10 +390,10 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
               <div className={styles.modalBody}>
                 <div className={styles.currentOrderInfo}>
                   <p>
-                    <strong>Khách hàng:</strong> {selectedOrder.customer?.name}
+                    <strong>Customer:</strong> {selectedOrder.customer?.name}
                   </p>
                   <p>
-                    <strong>Trạng thái hiện tại:</strong>
+                    <strong>Current status:</strong>
                     <span
                       className={`${styles.statusBadge} ${getStatusBadgeClass(
                         selectedOrder.status
@@ -405,7 +405,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label>Chọn trạng thái mới:</label>
+                  <label>Select new status:</label>
                   <select
                     value={statusUpdateData.status}
                     onChange={(e) =>
@@ -416,7 +416,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
                     }
                     className={styles.formControl}
                   >
-                    <option value="">-- Chọn trạng thái --</option>
+                    <option value="">-- Select status --</option>
                     {getAvailableStatusTransitions(selectedOrder.status).map(
                       (option) => (
                         <option key={option.value} value={option.value}>
@@ -427,10 +427,10 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
                   </select>
                 </div>
 
-                {statusUpdateData.status === "Đã hủy" && (
+                {statusUpdateData.status === "Cancelled" && (
                   <div className={styles.formGroup}>
                     <label>
-                      Lý do hủy đơn hàng:{" "}
+                      Cancellation reason:{" "}
                       <span className={styles.required}>*</span>
                     </label>
                     <textarea
@@ -441,13 +441,13 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
                           reason: e.target.value,
                         }))
                       }
-                      placeholder="Nhập lý do hủy đơn hàng (10-500 ký tự)..."
+                      placeholder="Enter cancellation reason (10-200 characters)..."
                       className={styles.textarea}
                       rows={3}
                       maxLength={500}
                     />
                     <div className={styles.characterCount}>
-                      {statusUpdateData.reason.length}/500 ký tự
+                      {statusUpdateData.reason.length}/200 characters
                     </div>
                   </div>
                 )}
@@ -465,14 +465,14 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
                     setError("");
                   }}
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   className={styles.confirmButton}
                   onClick={handleStatusUpdate}
                   disabled={loading || !statusUpdateData.status}
                 >
-                  {loading ? "Đang cập nhật..." : "Xác nhận"}
+                  {loading ? "Updating..." : "Confirm"}
                 </button>
               </div>
             </div>
