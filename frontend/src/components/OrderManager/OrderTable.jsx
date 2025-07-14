@@ -19,10 +19,11 @@ const OrderTable = ({
 
   const getStatusClass = (status) => {
     switch (status) {
-      case 'Processing': return styles.statusProcessing;
-      case 'Shipping': return styles.statusShipping;
-      case 'Delivered': return styles.statusDelivered;
-      case 'Cancelled': return styles.statusCancelled;
+      case 'PENDING': return styles.statusPending;
+      case 'PROCESSING': return styles.statusProcessing;
+      case 'SHIPPING': return styles.statusShipping;
+      case 'DELIVERED': return styles.statusDelivered;
+      case 'CANCELLED': return styles.statusCancelled;
       default: return styles.statusDefault;
     }
   };
@@ -38,11 +39,11 @@ const OrderTable = ({
   // Status options for admin and shipper
   const getStatusOptions = (currentStatus) => {
     if (role === 'shipper') {
-      if (currentStatus === 'Processing') return ['Shipping', 'Cancelled'];
-      if (currentStatus === 'Shipping') return ['Delivered', 'Cancelled'];
+      if (currentStatus === 'PROCESSING') return ['SHIPPING', 'CANCELLED'];
+      if (currentStatus === 'SHIPPING') return ['DELIVERED', 'CANCELLED'];
       return [];
     }
-    return ['Processing', 'Shipping', 'Delivered', 'Cancelled'];
+    return ['PENDING', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'CANCELLED'];
   };
 
   return (
@@ -134,7 +135,7 @@ const OrderTable = ({
                         >
                           <Eye size={18} />
                         </button>
-                        {(role === 'admin' || role === 'staff') && onReject && order.status !== 'Cancelled' && (
+                        {(role === 'admin' || role === 'staff') && onReject && order.status !== 'CANCELLED' && (
                           <button
                             className={`${styles.actionButton} ${styles.rejectButton}`}
                             onClick={() => onReject(order.id)}

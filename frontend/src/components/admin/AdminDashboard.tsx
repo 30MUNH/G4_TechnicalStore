@@ -55,7 +55,7 @@ const AdminDashboard: React.FC = () => {
           orders = Array.isArray(orderRes.data) ? orderRes.data : (orderRes.data.data || []);
         }
         // Các trạng thái hoàn thành có thể là 'Delivered', 'Đã giao', 'Hoàn thành'
-        const completedStatuses = ['Delivered', 'Đã giao', 'Hoàn thành'];
+        const completedStatuses = ['DELIVERED'];
         const totalRevenue = orders
           .filter((order: any) => completedStatuses.includes(order.status))
           .reduce((sum: number, order: any) => sum + (parseFloat(order.totalAmount) || 0), 0);
