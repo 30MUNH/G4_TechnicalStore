@@ -16,5 +16,9 @@
   "devDependencies": {
     "@types/jquery": "^3.5.32",
     "concurrently": "^8.0.0"
+  },
+  "dependencies": {
+    "@types/xlsx": "^0.0.35",
+    "xlsx": "^0.18.5"
   }
 }
