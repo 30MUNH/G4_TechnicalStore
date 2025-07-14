@@ -1,11 +1,11 @@
 import { IsString, IsEnum, IsOptional, ValidateIf, IsNotEmpty, Length } from 'class-validator';
 
 export enum OrderStatus {
-    PENDING = 'Pending',
-    PROCESSING = 'Processing',
-    SHIPPING = 'Shipping',
-    DELIVERED = 'Delivered',
-    CANCELLED = 'Cancelled'
+    PENDING = 'PENDING',
+    PROCESSING = 'PROCESSING',
+    SHIPPING = 'SHIPPING',
+    DELIVERED = 'DELIVERED',
+    CANCELLED = 'CANCELLED'
 }
 
 export class UpdateOrderDto {
