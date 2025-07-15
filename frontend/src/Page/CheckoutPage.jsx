@@ -141,7 +141,7 @@ const CheckoutPage = () => {
                     `Số lượng sản phẩm: ${currentCart.cartItems.length}`,
                     `Total amount: ${formatCurrency(currentCart.totalAmount)}`
                 ].join(' | '),
-                                  paymentMethod: formData.paymentMethod === 'cod' ? 'Cash on delivery' : 'Online payment'
+                                  paymentMethod: formData.paymentMethod === 'cod' ? 'COD' : 'VNPAY'
             };
             
             console.log('📤 Submitting order:', {
