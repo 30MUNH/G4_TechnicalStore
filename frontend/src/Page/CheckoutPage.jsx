@@ -177,6 +177,13 @@ const CheckoutPage = () => {
             setOrderData(orderData);
             await refreshCart();
             
+            // Clear saved form data when order is successfully placed
+            try {
+                sessionStorage.removeItem('checkoutFormData');
+            } catch (error) {
+                console.error('Error clearing saved form data:', error);
+            }
+            
             alert('Payment successful');
             
             navigate('/orders', {
