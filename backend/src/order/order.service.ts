@@ -18,8 +18,7 @@ export class OrderService {
 
     private validateOrderStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): boolean {
         const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-            [OrderStatus.PENDING]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
-            [OrderStatus.PROCESSING]: [OrderStatus.SHIPPING, OrderStatus.CANCELLED],
+            [OrderStatus.PENDING]: [OrderStatus.SHIPPING, OrderStatus.CANCELLED],
             [OrderStatus.SHIPPING]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
             [OrderStatus.DELIVERED]: [],
             [OrderStatus.CANCELLED]: []
@@ -141,7 +140,7 @@ export class OrderService {
             order.totalAmount = cart.totalAmount;
             order.shippingAddress = createOrderDto.shippingAddress || '';
             order.note = createOrderDto.note || '';
-            order.paymentMethod = createOrderDto.paymentMethod || 'Chưa chọn';
+            order.paymentMethod = createOrderDto.paymentMethod || 'Not selected';
             
             await transactionalEntityManager.save(order);
 
@@ -290,7 +289,6 @@ export class OrderService {
     async getOrderStatistics(username: string): Promise<{
         total: number;
         pending: number;
-        processing: number;
         shipping: number;
         delivered: number;
         cancelled: number;
@@ -302,14 +300,12 @@ export class OrderService {
         const [
             total,
             pending,
-            processing,
             shipping,
             delivered,
             cancelled
         ] = await Promise.all([
             baseQuery.getCount(),
             baseQuery.clone().andWhere('order.status = :status', { status: OrderStatus.PENDING }).getCount(),
-            baseQuery.clone().andWhere('order.status = :status', { status: OrderStatus.PROCESSING }).getCount(),
             baseQuery.clone().andWhere('order.status = :status', { status: OrderStatus.SHIPPING }).getCount(),
             baseQuery.clone().andWhere('order.status = :status', { status: OrderStatus.DELIVERED }).getCount(),
             baseQuery.clone().andWhere('order.status = :status', { status: OrderStatus.CANCELLED }).getCount()
@@ -318,7 +314,6 @@ export class OrderService {
         return {
             total,
             pending,
-            processing,
             shipping,
             delivered,
             cancelled

@@ -23,7 +23,7 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
             }, 1000);
             return () => clearInterval(timer);
         } else if (countdown === 0) {
-            setError('Phiên thanh toán đã hết hạn. Vui lòng thử lại.');
+            setError('Payment session has expired. Please try again.');
             setPaymentStep('error');
         }
     }, [countdown, paymentStep]);
@@ -92,13 +92,13 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
 
         // Validate required fields
         if (!paymentData.bankCode) {
-            setError('Vui lòng chọn ngân hàng');
+            setError('Please select a bank');
             setIsProcessing(false);
             return;
         }
 
         if (!paymentData.cardNumber || !paymentData.cardHolder || !paymentData.expiryDate || !paymentData.cvv) {
-            setError('Vui lòng nhập đầy đủ thông tin thẻ');
+            setError('Please enter complete card information');
             setIsProcessing(false);
             return;
         }
@@ -123,7 +123,7 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
 
     const handleOTPSubmit = async () => {
         if (!paymentData.otp || paymentData.otp.length !== 6) {
-            setError('Vui lòng nhập mã OTP 6 số');
+            setError('Please enter 6-digit OTP code');
             return;
         }
 
@@ -146,7 +146,7 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
             }, 2000);
             
         } catch (error) {
-            setError('Mã OTP không chính xác. Vui lòng thử lại.');
+            setError('OTP code is incorrect. Please try again.');
             setIsProcessing(false);
         }
     };
@@ -171,8 +171,8 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
                 </div>
                 <div className={styles.processingContainer}>
                     <div className={styles.spinner}></div>
-                    <h2>Đang xử lý thanh toán...</h2>
-                    <p>Vui lòng không đóng trang web này</p>
+                    <h2>Processing payment...</h2>
+                    <p>Please do not close this webpage</p>
                 </div>
             </div>
         );
@@ -187,8 +187,8 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
                 </div>
                 <div className={styles.otpContainer}>
                     <div className={styles.otpInfo}>
-                        <h2>Nhập mã OTP</h2>
-                        <p>Mã OTP đã được gửi đến số điện thoại đăng ký với ngân hàng</p>
+                        <h2>Enter OTP Code</h2>
+                        <p>OTP code has been sent to the phone number registered with the bank</p>
                         <p className={styles.phoneNumber}>***{orderData.phone?.slice(-4)}</p>
                     </div>
                     
@@ -218,18 +218,18 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
                             onClick={handleOTPSubmit}
                             disabled={isProcessing}
                         >
-                            {isProcessing ? 'Đang xác thực...' : 'Xác nhận'}
+                            {isProcessing ? 'Verifying...' : 'Confirm'}
                         </button>
                         <button 
                             className={styles.cancelButton}
                             onClick={onPaymentCancel}
                         >
-                            Hủy thanh toán
+                            Cancel payment
                         </button>
                     </div>
 
                     <div className={styles.countdownTimer}>
-                        <p>Thời gian còn lại: {formatTime(countdown)}</p>
+                        <p>Time remaining: {formatTime(countdown)}</p>
                     </div>
                 </div>
             </div>
@@ -295,44 +295,44 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
         <div className={styles.vnpayContainer}>
             <div className={styles.vnpayHeader}>
                 <img src="/img/logo.png" alt="VNPay" className={styles.vnpayLogo} />
-                <h1>Cổng thanh toán VNPay</h1>
+                <h1>VNPay Payment Gateway</h1>
                 <div className={styles.securityBadge}>
-                    <span>🔒 Bảo mật SSL</span>
+                    <span>🔒 SSL Secure</span>
                 </div>
             </div>
 
             <div className={styles.paymentContent}>
                 <div className={styles.orderSummary}>
-                    <h2>Thông tin đơn hàng</h2>
+                    <h2>Order Information</h2>
                     <div className={styles.orderInfo}>
                         <div className={styles.orderRow}>
-                            <span>Người nhận:</span>
+                            <span>Recipient:</span>
                             <span>{orderData.fullName}</span>
                         </div>
                         <div className={styles.orderRow}>
-                            <span>Số điện thoại:</span>
+                            <span>Phone:</span>
                             <span>{orderData.phone}</span>
                         </div>
                         <div className={styles.orderRow}>
-                            <span>Địa chỉ:</span>
+                            <span>Address:</span>
                             <span>{orderData.address}, {orderData.commune}, {orderData.ward}, {orderData.city}</span>
                         </div>
                         <div className={`${styles.orderRow} ${styles.totalAmount}`}>
-                            <span>Tổng tiền:</span>
+                            <span>Total amount:</span>
                             <span>{formatCurrency(totalAmount)}</span>
                         </div>
                     </div>
                     
                     <div className={styles.countdownTimer}>
-                        <p>⏰ Thời gian còn lại: {formatTime(countdown)}</p>
+                        <p>⏰ Time remaining: {formatTime(countdown)}</p>
                     </div>
                 </div>
 
                 <div className={styles.paymentForm}>
-                    <h2>Thông tin thanh toán</h2>
+                    <h2>Payment Information</h2>
                     
                     <div className={styles.bankSelection}>
-                        <label>Chọn ngân hàng</label>
+                        <label>Select bank</label>
                         <div className={styles.bankOptions}>
                             {bankOptions.map(bank => (
                                 <div 
@@ -358,10 +358,10 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
                     </div>
 
                     <div className={styles.cardInfo}>
-                        <h3>Thông tin thẻ</h3>
+                        <h3>Card Information</h3>
                         
                         <div className={styles.formGroup}>
-                            <label htmlFor="cardNumber">Số thẻ *</label>
+                            <label htmlFor="cardNumber">Card number *</label>
                             <input
                                 type="text"
                                 id="cardNumber"
@@ -374,7 +374,7 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
                         </div>
 
                         <div className={styles.formGroup}>
-                            <label htmlFor="cardHolder">Tên chủ thẻ *</label>
+                            <label htmlFor="cardHolder">Cardholder name *</label>
                             <input
                                 type="text"
                                 id="cardHolder"
@@ -389,7 +389,7 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
 
                         <div className={styles.formRow}>
                             <div className={styles.formGroup}>
-                                <label htmlFor="expiryDate">Ngày hết hạn *</label>
+                                <label htmlFor="expiryDate">Expiry date *</label>
                                 <input
                                     type="text"
                                     id="expiryDate"
@@ -423,8 +423,8 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
                     )}
 
                     <div className={styles.securityNote}>
-                        <p>🔒 Thông tin thẻ của bạn được bảo mật bằng công nghệ mã hóa SSL 256-bit</p>
-                        <p>📱 Bạn sẽ nhận được mã OTP để xác thực giao dịch</p>
+                        <p>🔒 Your card information is secured with 256-bit SSL encryption</p>
+                        <p>📱 You will receive an OTP code to verify the transaction</p>
                     </div>
 
                     <div className={styles.paymentActions}>
@@ -433,14 +433,14 @@ const VNPayPayment = ({ orderData, onPaymentComplete, onPaymentCancel, totalAmou
                             onClick={handlePayment}
                             disabled={isProcessing}
                         >
-                            {isProcessing ? 'Đang xử lý...' : `Thanh toán ${formatCurrency(totalAmount)}`}
+                            {isProcessing ? 'Processing...' : `Pay ${formatCurrency(totalAmount)}`}
                         </button>
                         
                         <button 
                             className={styles.cancelButton}
                             onClick={onPaymentCancel}
                         >
-                            Hủy thanh toán
+                            Cancel payment
                         </button>
                     </div>
                 </div>

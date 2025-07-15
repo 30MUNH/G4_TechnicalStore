@@ -2,7 +2,6 @@ import { IsString, IsEnum, IsOptional, ValidateIf, IsNotEmpty, Length } from 'cl
 
 export enum OrderStatus {
     PENDING = 'PENDING',
-    PROCESSING = 'PROCESSING',
     SHIPPING = 'SHIPPING',
     DELIVERED = 'DELIVERED',
     CANCELLED = 'CANCELLED'

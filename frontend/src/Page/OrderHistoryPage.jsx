@@ -36,7 +36,7 @@ export const OrderHistoryPage = () => {
 
         } catch (err) {
             console.error('❌ OrderHistoryPage Error:', err);
-            setError(err.message || 'Không thể tải dữ liệu đơn hàng');
+            setError(err.message || 'Cannot load order data');
         } finally {
             setLoading(false);
         }
@@ -74,7 +74,7 @@ export const OrderHistoryPage = () => {
                                 gap: '0.8rem'
                             }}>
                                 <span style={{ fontSize: '1.8rem' }}>📋</span>
-                                Lịch sử đơn hàng
+                                Order History
                             </h1>
                             {!loading && !error && (
                                 <p style={{
@@ -84,7 +84,7 @@ export const OrderHistoryPage = () => {
                                     marginTop: '0.2rem',
                                     marginLeft: '3.4rem'
                                 }}>
-                                    {orders.length === 0 ? 'Chưa có đơn hàng' : `${orders.length} đơn hàng`}
+                                    {orders.length === 0 ? 'No orders yet' : `${orders.length} orders`}
                                 </p>
                             )}
                         </div>
@@ -108,7 +108,7 @@ export const OrderHistoryPage = () => {
                             <div className="spinner-border text-primary" role="status">
                                 <span className="visually-hidden">Loading...</span>
                             </div>
-                            <p className="mt-2">Đang tải lịch sử đơn hàng...</p>
+                            <p className="mt-2">Loading order history...</p>
                         </div>
                     </div>
                 ) : (
@@ -150,7 +150,7 @@ export const OrderHistoryPage = () => {
                             }}
                         >
                             <span style={{ fontSize: '1.1rem' }}>←</span>
-                            Quay lại giỏ hàng
+                            Back to cart
                         </button>
                     </div>
                 </div>

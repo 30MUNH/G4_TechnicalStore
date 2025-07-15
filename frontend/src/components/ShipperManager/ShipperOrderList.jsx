@@ -31,10 +31,10 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
   // Order status options cho shipper (sync với backend enum)
   const statusOptions = [
     { value: "", label: "All status" },
-    { value: "Processing", label: "Processing" },
-    { value: "Shipping", label: "Shipping" },
-    { value: "Delivered", label: "Delivered" },
-    { value: "Cancelled", label: "Cancelled" },
+    { value: "PENDING", label: "Pending" },
+    { value: "SHIPPING", label: "Shipping" },
+    { value: "DELIVERED", label: "Delivered" },
+    { value: "CANCELLED", label: "Cancelled" },
   ];
 
   const sortOptions = [
@@ -110,7 +110,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
       return;
     }
 
-    if (statusUpdateData.status === "Cancelled") {
+            if (statusUpdateData.status === "CANCELLED") {
       const reason = statusUpdateData.reason.trim();
       if (!reason) {
         setError("Please enter cancellation reason");
@@ -153,11 +153,10 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
   // Get status badge class (sync với backend enum values)
   const getStatusBadgeClass = (status) => {
     const statusClasses = {
-      "Pending": styles.statusPending,
-      "Processing": styles.statusProcessing,
-      "Shipping": styles.statusShipping,
-      "Delivered": styles.statusDelivered,
-      "Cancelled": styles.statusCancelled,
+      "PENDING": styles.statusPending,
+      "SHIPPING": styles.statusShipping,
+      "DELIVERED": styles.statusDelivered,
+      "CANCELLED": styles.statusCancelled,
     };
     return statusClasses[status] || styles.statusDefault;
   };
@@ -165,13 +164,13 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
   // Get available status transitions for current order (sync với backend logic)
   const getAvailableStatusTransitions = (currentStatus) => {
     const transitions = {
-      "Processing": [
-        { value: "Shipping", label: "Change to Shipping" },
-        { value: "Cancelled", label: "Cancel order" },
+      "PENDING": [
+        { value: "SHIPPING", label: "Change to Shipping" },
+        { value: "CANCELLED", label: "Cancel order" },
       ],
-      "Shipping": [
-        { value: "Delivered", label: "Complete delivery" },
-        { value: "Cancelled", label: "Cancel order" },
+      "SHIPPING": [
+        { value: "DELIVERED", label: "Complete delivery" },
+        { value: "CANCELLED", label: "Cancel order" },
       ],
     };
     return transitions[currentStatus] || [];
@@ -427,7 +426,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
                   </select>
                 </div>
 
-                {statusUpdateData.status === "Cancelled" && (
+                {statusUpdateData.status === "CANCELLED" && (
                   <div className={styles.formGroup}>
                     <label>
                       Cancellation reason:{" "}

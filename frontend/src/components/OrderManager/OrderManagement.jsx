@@ -227,9 +227,9 @@ const OrderManagement = ({ role = 'admin' }) => {
     if (!selectedOrder) return;
     
     try {
-      // Reject order by changing status to "Cancelled"
+      // Reject order by changing status to "CANCELLED"
       const response = await orderService.updateOrderStatus(selectedOrder.id, { 
-        status: 'Cancelled',
+        status: 'CANCELLED',
         cancelReason: 'Rejected by admin'
       });
       
@@ -499,10 +499,10 @@ const OrderDetail = ({ order }) => (
 // Helper function for status class
 const getStatusClass = (status) => {
   switch (status) {
-    case 'Processing': return styles.statusProcessing;
-    case 'Shipping': return styles.statusShipping;
-    case 'Delivered': return styles.statusDelivered;
-    case 'Cancelled': return styles.statusCancelled;
+    case 'PENDING': return styles.statusPending;
+    case 'SHIPPING': return styles.statusShipping;
+    case 'DELIVERED': return styles.statusDelivered;
+    case 'CANCELLED': return styles.statusCancelled;
     default: return styles.statusDefault;
   }
 };
@@ -517,7 +517,7 @@ const RejectConfirmation = ({ order, onConfirm, onClose }) => (
         </div>
         <h3 className={styles.deleteTitle}>Confirm reject order</h3>
         <p className={styles.deleteMessage}>
-          Are you sure you want to reject order "#{order.id}"? The order will be changed to "Cancelled".
+          Are you sure you want to reject order "#{order.id}"? The order will be changed to "CANCELLED".
         </p>
         <div className={styles.deleteActions}>
           <button onClick={onClose} className={styles.cancelButton}>

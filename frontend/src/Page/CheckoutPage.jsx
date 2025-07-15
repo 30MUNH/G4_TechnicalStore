@@ -99,7 +99,7 @@ const CheckoutPage = () => {
         try {
             // Kiểm tra authentication trước khi tiếp tục
             if (!isAuthenticated()) {
-                setOrderError('Vui lòng đăng nhập để đặt hàng');
+                setOrderError('Please login to place order');
                 setSubmitting(false);
                 return;
             }
@@ -108,7 +108,7 @@ const CheckoutPage = () => {
             const cartResponse = await cartService.viewCart();
             
             if (!cartResponse.success || !cartResponse.data?.data?.cartItems || cartResponse.data.data.cartItems.length === 0) {
-                setOrderError('Giỏ hàng của bạn đang trống hoặc đã thay đổi. Vui lòng kiểm tra lại!');
+                setOrderError('Your cart is empty or has changed. Please check again!');
                 setSubmitting(false);
                 return;
             }
@@ -119,7 +119,7 @@ const CheckoutPage = () => {
             const requiredFields = ['fullName', 'phone', 'email', 'address', 'city', 'ward', 'commune'];
             const missingFields = requiredFields.filter(field => !formData[field]?.trim());
             if (missingFields.length > 0) {
-                setOrderError(`Vui lòng điền đầy đủ thông tin: ${missingFields.join(', ')}`);
+                setOrderError(`Please fill in all required information: ${missingFields.join(', ')}`);
                 setSubmitting(false);
                 return;
             }
@@ -139,9 +139,9 @@ const CheckoutPage = () => {
                     `Số điện thoại: ${formData.phone.trim()}`,
                     `Email: ${formData.email.trim()}`,
                     `Số lượng sản phẩm: ${currentCart.cartItems.length}`,
-                    `Tổng tiền: ${formatCurrency(currentCart.totalAmount)}`
+                    `Total amount: ${formatCurrency(currentCart.totalAmount)}`
                 ].join(' | '),
-                paymentMethod: formData.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán trực tuyến'
+                                  paymentMethod: formData.paymentMethod === 'cod' ? 'Cash on delivery' : 'Online payment'
             };
             
             console.log('📤 Submitting order:', {
@@ -159,7 +159,7 @@ const CheckoutPage = () => {
             });
             
             if (!response.success) {
-                throw new Error(response.message || 'Đặt hàng thất bại');
+                throw new Error(response.message || 'Order placement failed');
             }
             
             // Try both direct and nested structure for order ID
@@ -187,7 +187,7 @@ const CheckoutPage = () => {
             });
 
         } catch (error) {
-            setOrderError(error.message || 'Đặt hàng thất bại');
+            setOrderError(error.message || 'Order placement failed');
         } finally {
             setSubmitting(false);
         }
@@ -205,7 +205,7 @@ const CheckoutPage = () => {
                 justifyContent: 'center',
                 backgroundColor: '#f8f9fa'
             }}>
-                <h3>Lỗi tải giỏ hàng</h3>
+                <h3>Cart loading error</h3>
                 <p>{error}</p>
                 <button 
                     onClick={() => navigate('/cart')}
@@ -218,7 +218,7 @@ const CheckoutPage = () => {
                         cursor: 'pointer'
                     }}
                 >
-                    Quay lại giỏ hàng
+                    Back to cart
                 </button>
             </div>
         );
@@ -236,9 +236,9 @@ const CheckoutPage = () => {
             }}>
                 <div style={{ textAlign: 'center' }}>
                     <div className="spinner-border text-primary" role="status">
-                        <span className="sr-only">Đang tải...</span>
+                        <span className="sr-only">Loading...</span>
                     </div>
-                    <p style={{ marginTop: '10px' }}>Đang tải thông tin giỏ hàng...</p>
+                    <p style={{ marginTop: '10px' }}>Loading cart information...</p>
                 </div>
             </div>
         );
@@ -254,10 +254,10 @@ const CheckoutPage = () => {
     if ((!cartItems || cartItems.length === 0)) {
         return (
             <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8f9fa' }}>
-                <h3>Giỏ hàng trống</h3>
-                <p>Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán</p>
+                <h3>Empty cart</h3>
+                <p>Please add products to cart before checkout</p>
                 <button onClick={() => navigate('/cart')} style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                    Quay lại giỏ hàng
+                    Back to cart
                 </button>
             </div>
         );
@@ -268,10 +268,10 @@ const CheckoutPage = () => {
         try {
             return {
                 id: item.product?.id || item.id || `item-${index}`,
-                name: item.product?.name || item.name || `Sản phẩm ${index + 1}`,
+                name: item.product?.name || item.name || `Product ${index + 1}`,
                 price: item.product?.price || item.price || 0,
                 quantity: item.quantity || 1,
-                category: item.product?.category?.name || item.product?.category || 'Sản phẩm',
+                category: item.product?.category?.name || item.product?.category || 'Product',
                 image: item.product?.images && item.product.images.length > 0 
                     ? item.product.images[0].url 
                     : '/img/pc.png',
@@ -281,10 +281,10 @@ const CheckoutPage = () => {
         } catch (error) {
             return {
                 id: `error-item-${index}`,
-                name: `Lỗi sản phẩm ${index + 1}`,
+                name: `Error product ${index + 1}`,
                 price: 0,
                 quantity: 1,
-                category: 'Lỗi',
+                category: 'Error',
                 image: '/img/product01.png'
             };
         }

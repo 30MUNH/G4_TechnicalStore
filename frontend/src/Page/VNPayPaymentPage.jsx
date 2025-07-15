@@ -30,7 +30,7 @@ const VNPayPaymentPage = () => {
     const handlePaymentComplete = (paymentResult) => {
         console.log('✅ Payment completed:', paymentResult);
         
-        // Chuyển hướng về trang thành công hoặc trang chủ
+        // Redirect to success page or home page
         navigate('/', { 
             replace: true,
             state: { 
@@ -44,12 +44,12 @@ const VNPayPaymentPage = () => {
     const handlePaymentCancel = () => {
         console.log('❌ Payment cancelled');
         
-        // Chuyển về trang checkout với thông báo
+        // Redirect to checkout page with message
         navigate('/checkout', { 
             replace: true,
             state: { 
                 paymentCancelled: true,
-                message: 'Thanh toán đã được hủy. Bạn có thể thử lại.'
+                message: 'Payment has been cancelled. You can try again.'
             }
         });
     };
@@ -79,8 +79,8 @@ const VNPayPaymentPage = () => {
                         borderRadius: '50%',
                         margin: '0 auto 20px'
                     }}></div>
-                    <h2 style={{ color: '#1e3c72', marginBottom: '10px' }}>Đang tải...</h2>
-                    <p style={{ color: '#6c757d', margin: 0 }}>Vui lòng chờ trong giây lát</p>
+                                    <h2 style={{ color: '#1e3c72', marginBottom: '10px' }}>Loading...</h2>
+                <p style={{ color: '#6c757d', margin: 0 }}>Please wait a moment</p>
                 </div>
             </div>
         );
