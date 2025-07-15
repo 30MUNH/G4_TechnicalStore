@@ -30,7 +30,7 @@ const CartPage = () => {
         setOrderError(null);
         
         if (!isAuthenticated()) {
-            setOrderError('Vui lòng đăng nhập để xem lịch sử đơn hàng');
+            setOrderError('Please login to view order history');
             return;
         }
         
@@ -90,7 +90,7 @@ const CartPage = () => {
 
     const handleCheckout = () => {
         if (transformedCartItems.length === 0) {
-            alert('Giỏ hàng trống! Vui lòng thêm sản phẩm trước khi thanh toán.');
+            alert('Cart is empty! Please add products before checkout.');
             return;
         }
         navigate('/checkout');
@@ -211,7 +211,7 @@ const CartPage = () => {
                                     marginTop: '0.2rem',
                                     marginLeft: '3.4rem'
                                 }}>
-                                    {orders.length === 0 ? 'Chưa có đơn hàng' : `${orders.length} đơn hàng`}
+                                    {orders.length === 0 ? 'No orders yet' : `${orders.length} orders`}
                                 </p>
                             </div>
                         </div>

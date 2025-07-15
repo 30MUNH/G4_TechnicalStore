@@ -32,8 +32,8 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
     if (!cartItems || !Array.isArray(cartItems)) {
         return (
             <div style={{ padding: '2rem', textAlign: 'center' }}>
-                <h3>⚠️ Lỗi dữ liệu giỏ hàng</h3>
-                <p>Dữ liệu giỏ hàng không hợp lệ. Vui lòng thử lại.</p>
+                <h3>⚠️ Cart data error</h3>
+                <p>Cart data is invalid. Please try again.</p>
                 <button 
                     onClick={() => onBackToCart && onBackToCart()}
                     style={{ 
@@ -45,7 +45,7 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                         cursor: 'pointer'
                     }}
                 >
-                    ← Quay lại giỏ hàng
+                    ← Back to cart
                 </button>
             </div>
         );
@@ -201,12 +201,12 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
         // Validate required fields
         if (!formData.fullName || !formData.phone || !formData.email || 
             !formData.address || !formData.city || !formData.ward || !formData.commune) {
-            showNotification('⚠️ Vui lòng điền đầy đủ thông tin giao hàng', 'warning');
+            showNotification('⚠️ Please fill in all shipping information', 'warning');
             return;
         }
         
         if (!paymentMethod) {
-            showNotification('⚠️ Vui lòng chọn phương thức thanh toán (COD hoặc VNPay)', 'warning');
+            showNotification('⚠️ Please select payment method (COD or VNPay)', 'warning');
             return;
         }
         
@@ -251,24 +251,24 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
         <div className={styles.checkoutContainer}>
             <div className={styles.checkoutHeader}>
                 <h1>
-                    Thanh toán
-                    <span className={styles.itemCount}>({cartItems.length} sản phẩm)</span>
+                    Payment
+                    <span className={styles.itemCount}>({cartItems.length} products)</span>
                 </h1>
                 <button onClick={onBackToCart} className={styles.backButton}>
                     <ArrowLeftIcon />
-                    Quay lại giỏ hàng
+                    Back to cart
                 </button>
             </div>
 
             <div className={styles.checkoutContent}>
                 <div className={styles.orderDetails}>
                     <div className={styles.orderItems}>
-                        <h2>Đơn hàng của bạn</h2>
+                        <h2>Your order</h2>
                         {cartItems.map((item, index) => {
                             // Safe data extraction with fallbacks
-                            const itemName = item.product?.name || item.name || `Sản phẩm ${index + 1}`;
+                            const itemName = item.product?.name || item.name || `Product ${index + 1}`;
                             const itemPrice = item.product?.price ;
-                            const itemCategory = item.product?.category?.name || item.product?.category || item.category || 'Sản phẩm';
+                            const itemCategory = item.product?.category?.name || item.product?.category || item.category || 'Product';
                             const itemQuantity = item.quantity || 1;
                             
                             // Try multiple image sources
@@ -313,10 +313,10 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                     </div>
 
                     <form onSubmit={handleSubmit} className={styles.shippingForm}>
-                        <h2>Thông tin khách hàng</h2>
+                        <h2>Customer information</h2>
                         
                         <div className={styles.formGroup}>
-                            <label htmlFor="fullName">Họ và tên *</label>
+                            <label htmlFor="fullName">Full name *</label>
                             <input
                                 type="text"
                                 id="fullName"
@@ -324,12 +324,12 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                                 value={formData.fullName}
                                 onChange={handleInputChange}
                                 required
-                                placeholder="Nhập họ và tên"
+                                placeholder="Enter full name"
                             />
                         </div>
 
                         <div className={styles.formGroup}>
-                            <label htmlFor="phone">Số điện thoại *</label>
+                            <label htmlFor="phone">Phone number *</label>
                             <input
                                 type="tel"
                                 id="phone"
@@ -355,10 +355,10 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                         </div>
 
                         <div className={styles.addressSection}>
-                            <h2>Địa chỉ giao hàng</h2>
+                            <h2>Shipping address</h2>
 
                         <div className={styles.formGroup}>
-                            <label htmlFor="address">Địa chỉ *</label>
+                            <label htmlFor="address">Address *</label>
                             <input
                                 type="text"
                                 id="address"
@@ -366,13 +366,13 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                                 value={formData.address}
                                 onChange={handleInputChange}
                                 required
-                                placeholder="Số nhà, tên đường"
+                                placeholder="House number, street name"
                             />
                         </div>
 
                         <div className={styles.formRow}>
                             <div className={styles.formGroup}>
-                                <label htmlFor="city">Tỉnh/Thành phố *</label>
+                                <label htmlFor="city">Province/City *</label>
                                 <select
                                     id="city"
                                     name="city"
@@ -381,17 +381,17 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                                     required
                                     disabled={provincesLoading}
                                 >
-                                    <option value="">Chọn tỉnh/thành phố</option>
+                                    <option value="">Select province/city</option>
                                     {Object.keys(provinces).map(province => (
                                         <option key={province} value={province}>{province}</option>
                                     ))}
                                 </select>
-                                {provincesLoading && <small>Đang tải dữ liệu địa chính...</small>}
-                                {provincesError && <small style={{color: 'red'}}>Lỗi: {provincesError}</small>}
+                                {provincesLoading && <small>Loading data...</small>}
+                                {provincesError && <small style={{color: 'red'}}>Error: {provincesError}</small>}
                             </div>
 
                             <div className={styles.formGroup}>
-                                <label htmlFor="ward">Quận/Huyện *</label>
+                                <label htmlFor="ward">District/County *</label>
                                 <select
                                     id="ward"
                                     name="ward"
@@ -400,7 +400,7 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                                     required
                                     disabled={!selectedProvince || availableDistricts.length === 0}
                                 >
-                                    <option value="">Chọn quận/huyện</option>
+                                    <option value="">Select district/county</option>
                                     {availableDistricts.map(district => (
                                         <option key={district} value={district}>{district}</option>
                                     ))}
@@ -409,7 +409,7 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                         </div>
 
                         <div className={styles.formGroup}>
-                            <label htmlFor="commune">Phường/Xã *</label>
+                            <label htmlFor="commune">Ward/Commune *</label>
                             <select
                                 id="commune"
                                 name="commune"
@@ -418,7 +418,7 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                                 required
                                 disabled={!selectedDistrict || availableWards.length === 0}
                             >
-                                <option value="">Chọn phường/xã</option>
+                                <option value="">Select ward/commune</option>
                                 {availableWards.map(ward => (
                                     <option key={ward} value={ward}>{ward}</option>
                                 ))}
@@ -431,24 +431,24 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                 </div>
 
                 <div className={styles.orderSummary}>
-                    <h2>Tóm tắt đơn hàng</h2>
+                    <h2>Order summary</h2>
                     <div className={styles.summaryDetails}>
                         <div className={styles.summaryRow}>
-                            <span>Tạm tính ({cartItems.length} sản phẩm)</span>
+                            <span>Subtotal ({cartItems.length} products)</span>
                             <span>{formatCurrency(subtotal)}</span>
                         </div>
                         <div className={styles.summaryRow}>
-                            <span>Phí vận chuyển</span>
-                            <span>{shippingFee === 0 ? 'Miễn phí' : formatCurrency(shippingFee)}</span>
+                            <span>Shipping fee</span>
+                            <span>{shippingFee === 0 ? 'Free' : formatCurrency(shippingFee)}</span>
                         </div>
                         <div className={`${styles.summaryRow} ${styles.total}`}>
-                            <span>Tổng cộng</span>
+                            <span>Total</span>
                             <span>{formatCurrency(totalAmount)}</span>
                         </div>
                     </div>
 
                     <div className={styles.paymentSectionSummary}>
-                        <h3>Phương thức thanh toán</h3>
+                        <h3>Payment method</h3>
                         
                         <div className={styles.paymentMethodsCompact}>
                             <div className={styles.paymentOptionCompact}>
@@ -465,7 +465,7 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                                     <div className={styles.paymentIconCompact}>💰</div>
                                     <div className={styles.paymentInfoCompact}>
                                         <span className={styles.paymentTitle}>COD</span>
-                                        <span className={styles.paymentDesc}>Thanh toán khi nhận hàng</span>
+                                        <span className={styles.paymentDesc}>Cash on delivery</span>    
                                     </div>
                                 </label>
                             </div>
@@ -484,7 +484,7 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                                     <div className={styles.paymentIconCompact}>💳</div>
                                     <div className={styles.paymentInfoCompact}>
                                         <span className={styles.paymentTitle}>VNPay</span>
-                                        <span className={styles.paymentDesc}>Thanh toán trực tuyến</span>
+                                        <span className={styles.paymentDesc}>Online payment</span>
                                     </div>
                                 </label>
                             </div>
@@ -505,15 +505,15 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                         onClick={handleSubmit}
                         disabled={cartItems.length === 0 || isProcessing}
                     >
-                        {isProcessing ? 'Đang xử lý...' : 
+                        {isProcessing ? 'Processing...' : 
                          paymentMethod === 'vnpay' ? 
-                         `💳 Thanh toán VNPay • ${formatCurrency(totalAmount)}` : 
-                         `💰 Đặt hàng COD • ${formatCurrency(totalAmount)}`}
+                         `💳 Payment VNPay • ${formatCurrency(totalAmount)}` : 
+                         `💰 Order COD • ${formatCurrency(totalAmount)}`}
                     </button>
 
                     {totalAmount > 1000000 && shippingFee === 0 && (
                         <p className={styles.shippingPromo}>
-                            Miễn phí vận chuyển cho đơn hàng trên 1.000.000đ
+                            Free shipping for orders over 1.000.000đ
                         </p>
                     )}
                 </div>
@@ -523,8 +523,8 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
     } catch (error) {
         return (
             <div style={{ padding: '2rem', textAlign: 'center' }}>
-                <h3>⚠️ Lỗi hiển thị trang thanh toán</h3>
-                <p>Đã xảy ra lỗi khi hiển thị trang thanh toán. Vui lòng thử lại.</p>
+                <h3>⚠️ Error displaying payment page</h3>
+                <p>An error occurred while displaying the payment page. Please try again.</p>
                 <p style={{ color: 'red', fontSize: '14px' }}>{error.message}</p>
                 <button 
                     onClick={() => {
@@ -540,7 +540,7 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                         marginRight: '10px'
                     }}
                 >
-                    🔄 Tải lại trang
+                    🔄 Reload page
                 </button>
                 <button 
                     onClick={() => onBackToCart && onBackToCart()}
@@ -553,7 +553,7 @@ const CheckoutForm = ({ cartItems, subtotal, shippingFee, totalAmount, onPlaceOr
                         cursor: 'pointer'
                     }}
                 >
-                    ← Quay lại giỏ hàng
+                    ← Back to cart
                 </button>
             </div>
         );

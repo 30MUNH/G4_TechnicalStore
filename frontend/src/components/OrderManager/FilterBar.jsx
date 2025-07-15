@@ -50,10 +50,11 @@ const FilterBar = ({
           onChange={(e) => onStatusChange(e.target.value)}
         >
           <option value="all">All status</option>
-          <option value="Processing">Processing</option>
-          <option value="Shipping">Shipping</option>
-          <option value="Delivered">Delivered</option>
-          <option value="Cancelled">Cancelled</option>
+          
+          <option value="PENDING">Pending</option>
+          <option value="SHIPPING">Shipping</option>
+          <option value="DELIVERED">Delivered</option>
+          <option value="CANCELLED">Cancelled</option>
         </select>
 
         {/* Date Filter */}

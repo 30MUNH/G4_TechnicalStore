@@ -80,15 +80,15 @@ const ShipperManagement = () => {
 
           // Calculate real statistics from orders
           const totalOrders = shipper.shipperOrders?.length || 0;
-          const deliveredOrders =
-            shipper.shipperOrders?.filter((order) => order.status === "Delivered")
+              const deliveredOrders =
+      shipper.shipperOrders?.filter((order) => order.status === "DELIVERED")
               .length || 0;
           const activeOrders =
             shipper.shipperOrders?.filter((order) =>
-              ["Shipping", "Processing"].includes(order.status)
+              ["SHIPPING", "PENDING"].includes(order.status)
             ).length || 0;
-          const cancelledOrders =
-            shipper.shipperOrders?.filter((order) => order.status === "Cancelled")
+              const cancelledOrders =
+      shipper.shipperOrders?.filter((order) => order.status === "CANCELLED")
               .length || 0;
 
           // Calculate performance metrics

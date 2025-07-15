@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Calendar, MapPin, CreditCard, Package, Truck, Download } from 'lucide-react';
+import { X, Calendar, MapPin, CreditCard, Package, Truck, Upload } from 'lucide-react';
 import styles from './OrderDetailModal.module.css';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useInvoiceExport } from '../../Hook/useInvoiceExport';
@@ -12,11 +12,11 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
   // Các trạng thái cho phép chuyển
   const getStatusOptions = (currentStatus) => {
     if (role === 'shipper') {
-      if (currentStatus === 'Processing') return ['Shipping', 'Cancelled'];  
-      if (currentStatus === 'Shipping') return ['Delivered', 'Cancelled'];
+      if (currentStatus === 'PENDING') return ['SHIPPING', 'CANCELLED'];  
+      if (currentStatus === 'SHIPPING') return ['DELIVERED', 'CANCELLED'];
       return [];
     }
-    return ['Processing', 'Shipping', 'Delivered', 'Cancelled'];
+    return ['PENDING', 'SHIPPING', 'DELIVERED', 'CANCELLED'];
   };
 
   const statusOptions = getStatusOptions(order.status);
@@ -34,10 +34,15 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Processing': return '#f59e0b';
-      case 'Shipping': return '#3b82f6';
-      case 'Delivered': return '#059669';
-      case 'Cancelled': return '#ef4444';
+      case 'PENDING': return '#f59e0b';
+      case 'SHIPPING': return '#3b82f6';
+      case 'DELIVERED': return '#059669';
+      case 'CANCELLED': return '#ef4444';
+      // Fallback for lowercase values (backward compatibility)
+      case 'pending': return '#f59e0b';
+      case 'shipping': return '#3b82f6';
+      case 'delivered': return '#059669';
+      case 'cancelled': return '#ef4444';
       default: return '#6b7280';
     }
   };
@@ -84,7 +89,7 @@ const OrderDetailModal = ({ order, open, onClose, onStatusChange, role = 'admin'
                 e.target.style.backgroundColor = '#059669';
               }}
             >
-              <Download size={16} />
+              <Upload size={16} />
               Xuất hóa đơn
             </button>
           <button onClick={onClose} className={styles.closeBtn}>

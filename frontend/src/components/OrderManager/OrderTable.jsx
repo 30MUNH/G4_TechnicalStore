@@ -20,7 +20,6 @@ const OrderTable = ({
   const getStatusClass = (status) => {
     switch (status) {
       case 'PENDING': return styles.statusPending;
-      case 'PROCESSING': return styles.statusProcessing;
       case 'SHIPPING': return styles.statusShipping;
       case 'DELIVERED': return styles.statusDelivered;
       case 'CANCELLED': return styles.statusCancelled;
@@ -39,11 +38,11 @@ const OrderTable = ({
   // Status options for admin and shipper
   const getStatusOptions = (currentStatus) => {
     if (role === 'shipper') {
-      if (currentStatus === 'PROCESSING') return ['SHIPPING', 'CANCELLED'];
+      if (currentStatus === 'PENDING') return ['SHIPPING', 'CANCELLED'];
       if (currentStatus === 'SHIPPING') return ['DELIVERED', 'CANCELLED'];
       return [];
     }
-    return ['PENDING', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'CANCELLED'];
+    return ['PENDING', 'SHIPPING', 'DELIVERED', 'CANCELLED'];
   };
 
   return (

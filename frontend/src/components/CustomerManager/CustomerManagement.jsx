@@ -395,9 +395,9 @@ const CustomerDetail = ({ customer }) => {
   const totalOrders = orders.length;
   
   // Support both English and Vietnamese status values
-  const completedStatuses = ['Delivered', 'Completed'];
-  const activeStatuses = ['Processing', 'Shipping', 'Confirmed', 'Processing', 'Shipping', 'Confirmed'];
-  const cancelledStatuses = ['Cancelled', 'Cancelled'];
+      const completedStatuses = ['DELIVERED', 'COMPLETED'];
+    const activeStatuses = ['PENDING', 'SHIPPING', 'DELIVERED'];
+      const cancelledStatuses = ['CANCELLED', 'CANCELLED'];
   
   const completedOrders = orders.filter(order => 
     completedStatuses.includes(order.status)

@@ -1,9 +1,8 @@
 export enum OrderStatus {
-    PENDING = 'Pending',
-    PROCESSING = 'Processing',
-    SHIPPING = 'Shipping',
-    DELIVERED = 'Delivered',
-    CANCELLED = 'Cancelled'
+    PENDING = 'PENDING',
+    SHIPPING = 'SHIPPING',
+    DELIVERED = 'DELIVERED',
+    CANCELLED = 'CANCELLED'
 }
 
 export interface OrderDetail {

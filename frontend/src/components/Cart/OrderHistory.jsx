@@ -132,28 +132,25 @@ export const OrderHistory = ({
         if (!status) return '#6b7280'; // Gray for null/undefined
         
         switch (status) {
-            case 'Pending':
-                return '#f59e0b'; // Amber - Waiting
-                case 'Processing':
-                return '#3b82f6'; // Blue - Processing
-            case 'Shipping':
+            case 'PENDING':
+                return '#f59e0b'; // Orange - Pending
+            case 'SHIPPING':
                 return '#8b5cf6'; // Purple - Shipping
-            case '  ':
+            case 'DELIVERED':
                 return '#059669'; // Green - Delivered
-            case 'Cancelled':
+            case 'CANCELLED':
                 return '#ef4444'; // Red - Cancelled
-            // Fallback for English values (backward compatibility)
-            case 'processing':
-                return '#3b82f6'; // Blue
-            case 'shipped':
+            // Fallback for lowercase values (backward compatibility)
+            case 'pending':
+                return '#f59e0b';
             case 'shipping':
-                return '#8b5cf6'; // Purple
+                return '#8b5cf6';
             case 'delivered':
-                return '#059669'; // Green
+                return '#059669';
             case 'cancelled':
-                return '#ef4444'; // Red
+                return '#ef4444';
             default:
-                return '#6b7280'; // Gray
+                return '#6b7280'; // Gray - Default
         }
     };
 
@@ -212,7 +209,7 @@ export const OrderHistory = ({
                 onOrderUpdate((prevOrders) => 
                     prevOrders.map(order => 
                         order.id === selectedOrderId 
-                            ? { ...order, status: 'Cancelled', cancelReason: cancelReason }
+                            ? { ...order, status: 'CANCELLED', cancelReason: cancelReason }
                             : order
                     )
                 );
@@ -245,9 +242,9 @@ export const OrderHistory = ({
         setCancelReason('');
     };
 
-    // Check if order can be cancelled (only pending and processing orders)
+    // Check if order can be cancelled (only pending orders)
     const canCancelOrder = (status) => {
-        return status === 'Pending' || status === 'Processing' ;
+        return status === 'PENDING';
     };
 
     return (
@@ -605,7 +602,7 @@ export const OrderHistory = ({
                                                 </div>
 
                                                 {/* Export Invoice Button - show for confirmed orders (not cancelled) */}
-                                                {order.status !== 'cancelled' && (
+                                                {order.status !== 'cancelled' && order.status !== 'CANCELLED' && (
                                                     <div style={{
                                                         marginTop: '1.5rem',
                                                         display: 'flex',

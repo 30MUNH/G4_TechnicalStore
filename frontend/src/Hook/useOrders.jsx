@@ -52,7 +52,7 @@ export const useOrders = () => {
             setLoading(true);
             const updateOrderDto = {
                 status: newStatus,
-                cancelReason: newStatus === 'Cancelled' ? cancelReason : undefined
+                cancelReason: newStatus === 'CANCELLED' ? cancelReason : undefined
             };
             
             const response = await orderService.updateOrderStatus(orderId, updateOrderDto);
@@ -68,7 +68,7 @@ export const useOrders = () => {
     };
 
     const cancelOrder = async (orderId, cancelReason) => {
-        return updateOrderStatus(orderId, 'Cancelled', cancelReason);
+        return updateOrderStatus(orderId, 'CANCELLED', cancelReason);
     };
 
     const getOrderById = async (orderId) => {

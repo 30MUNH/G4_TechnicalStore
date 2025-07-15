@@ -1,11 +1,11 @@
 /* Import your existing CSS files */
-@import url('/css/bootstrap.min.css');
-@import url('/css/slick.css');
-@import url('/css/slick-theme.css');
-@import url('/css/nouislider.min.css');
-@import url('/css/style.css');
-@import url('https://fonts.googleapis.com/css?family=Montserrat:400,500,700');
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
+@import url("/css/bootstrap.min.css");
+@import url("/css/slick.css");
+@import url("/css/slick-theme.css");
+@import url("/css/nouislider.min.css");
+@import url("/css/style.css");
+@import url("https://fonts.googleapis.com/css?family=Montserrat:400,500,700");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css");
 
 .header-ctn > div > a {
   display: flex;
@@ -36,7 +36,7 @@
   background: #fff;
   border-radius: 30px !important;
   overflow: hidden !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   border: none;
   padding: 0;
 }
@@ -55,7 +55,7 @@
 }
 
 .header-search form .search-btn {
-  background: #D10024 !important;
+  background: #d10024 !important;
   color: #fff !important;
   border: none !important;
   padding: 0 30px !important;
@@ -79,36 +79,40 @@
 .header-search form > * {
   margin: 0 !important;
   border-right: none !important;
-} 
+}
 
 .footer .footer-title + p {
   padding-left: 0px;
   padding-right: 12px;
   text-align: justify;
-} 
+}
 
-.product-name-hover:hover { color: #ff2d55; } 
+.product-name-hover:hover {
+  color: #ff2d55;
+}
 
-.footer-link-btn:hover, .footer-link-btn:focus {
-  color: #D10024;
-} 
+.footer-link-btn:hover,
+.footer-link-btn:focus {
+  color: #d10024;
+}
 
-.footer-links .footer-link-btn:hover, .footer-links .footer-link-btn:focus {
-  color: #D10024 !important;
-} 
+.footer-links .footer-link-btn:hover,
+.footer-links .footer-link-btn:focus {
+  color: #d10024 !important;
+}
 
 /* Fix: Đảm bảo sản phẩm ngoài cùng bên phải luôn có viền khi hover */
 .new-products-row .product:last-child,
 .slick-slide:last-child .product {
   margin-right: 0 !important;
-  border-right: 2px solid #D10024 !important;
-} 
+  border-right: 2px solid #d10024 !important;
+}
 
 /* Fix: Đảm bảo sản phẩm cuối cùng hiển thị trên mỗi slide luôn có viền phải đúng */
-.slick-slide[aria-hidden='false']:last-of-type .product {
-  border-right: 2px solid #D10024 !important;
+.slick-slide[aria-hidden="false"]:last-of-type .product {
+  border-right: 2px solid #d10024 !important;
   margin-right: 0 !important;
-} 
+}
 
 .product .product-body .product-name {
   display: -webkit-box;
@@ -119,7 +123,7 @@
   min-height: 40px;
   max-height: 44px;
   height: 44px;
-} 
+}
 
 /* Ẩn arrow mặc định của slick */
 .promo-slider-hover-area .slick-arrow:not(.custom-banner-arrow) {
@@ -139,9 +143,9 @@
 }
 .promo-slider-hover-area .custom-banner-arrow:hover {
   background: #fff;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
   transform: translateY(-50%) scale(1.08);
-} 
+}
 
 /* Bỏ dots ở banner slider */
 .promo-slider-hover-area .slick-dots {
