@@ -15,6 +15,7 @@ const Header = () => {
   const [searchValue, setSearchValue] = React.useState("");
   const [isSearching, setIsSearching] = React.useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
+  const userDropdownTimeout = React.useRef();
 
   // Debug user data
   React.useEffect(() => {
@@ -183,8 +184,13 @@ const Header = () => {
                         position: 'relative',
                         display: 'inline-block'
                       }}
-                      onMouseEnter={() => handleUserDropdown(true)}
-                      onMouseLeave={() => handleUserDropdown(false)}
+                      onMouseEnter={() => {
+                        if (userDropdownTimeout.current) clearTimeout(userDropdownTimeout.current);
+                        setUserDropdownOpen(true);
+                      }}
+                      onMouseLeave={() => {
+                        userDropdownTimeout.current = setTimeout(() => setUserDropdownOpen(false), 120);
+                      }}
                     >
                       <span style={{
                         cursor: 'pointer',
@@ -218,6 +224,13 @@ const Header = () => {
                             padding: '10px 0',
                             borderRadius: 6,
                             marginTop: 8
+                          }}
+                          onMouseEnter={() => {
+                            if (userDropdownTimeout.current) clearTimeout(userDropdownTimeout.current);
+                            setUserDropdownOpen(true);
+                          }}
+                          onMouseLeave={() => {
+                            userDropdownTimeout.current = setTimeout(() => setUserDropdownOpen(false), 120);
                           }}
                         >
                           <button
