@@ -103,9 +103,9 @@ const Header = () => {
           <div className="container">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, padding: '16px 0' }}>
               {/* LOGO */}
-              <div style={{ minWidth: 160, display: 'flex', alignItems: 'center' }}>
+              <div style={{ minWidth: 200, display: 'flex', alignItems: 'center'}}>
                 <Link to="/" className="logo">
-                  <img src="/img/logo.png" alt="" style={{ height: 60, width: 'auto' }} />
+                  <img src="/img/logo.png" alt="" style={{ height: 70, width: 'auto' }} />
                 </Link>
               </div>
               {/* /LOGO */}
@@ -136,51 +136,42 @@ const Header = () => {
               {/* /SEARCH BAR */}
 
               {/* Cart + Login */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
                 {/* Cart */}
-                <div className="dropdown" style={{ minWidth: 140, display: 'flex', alignItems: 'center' }}>
-                  <Link to="/cart" style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <FontAwesomeIcon icon={faShoppingCart} />
-                    <span style={{ marginLeft: 8, whiteSpace: 'nowrap', fontWeight: 500, fontSize: 17 }}>Your Cart</span>
-                    <div className="qty" style={{ marginLeft: 8 }}>{totalItems}</div>
-                  </Link>
-                  {isAuthenticated() && items && items.length > 0 && (
-                    <div className="cart-dropdown">
-                      <div className="cart-list">
-                        {items.slice(0, 3).map(item => (
-                          <div key={item.id} className="product-widget">
-                            <div className="product-img">
-                              <img 
-                                src={item.product.images && item.product.images.length > 0 ? item.product.images[0].url : "/img/product01.png"} 
-                                alt={item.product.name} 
-                              />
-                            </div>
-                            <div className="product-body">
-                              <h3 className="product-name">
-                                <a href="#">{item.product.name}</a>
-                              </h3>
-                              <h4 className="product-price">
-                                <span className="qty">{item.quantity}x</span>
-                                {formatCurrency(item.product.price)}
-                              </h4>
-                            </div>
-                            <button className="delete">
-                              <FontAwesomeIcon icon={faTimes} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="cart-summary">
-                        <small>{totalItems} Item(s) selected</small>
-                        <h5>SUBTOTAL: {formatCurrency(totalAmount)}</h5>
-                      </div>
-                      <div className="cart-btns">
-                        <Link to="/cart">View Cart</Link>
-                        <Link to="/checkout">Checkout <FontAwesomeIcon icon={faArrowCircleRight} /></Link>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <Link to="/cart" style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: '#fff',
+                  fontWeight: 600,
+                  fontSize: 18,
+                  position: 'relative',
+                  padding: '12px 20px',
+                  borderRadius: 24,
+                  background: 'rgba(255,255,255,0.08)',
+                  transition: 'background 0.2s',
+                  textDecoration: 'none',
+                  minWidth: 180,
+                  gap: 12
+                }}>
+                  <FontAwesomeIcon icon={faShoppingCart} size="lg" />
+                  <span style={{ whiteSpace: 'nowrap' }}>Your Cart</span>
+                  <div style={{
+                    background: totalItems > 0 ? '#D10024' : '#444',
+                    color: '#fff',
+                    borderRadius: '50%',
+                    minWidth: 26,
+                    height: 26,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: 16,
+                    padding: '0 8px',
+                    flexShrink: 0
+                  }}>
+                    {totalItems}
+                  </div>
+                </Link>
                 {/* /Cart */}
 
                 {/* Login Button */}
@@ -188,12 +179,29 @@ const Header = () => {
                   {isAuthenticated() ? (
                     <div
                       className="user-dropdown-wrapper"
-                      style={{ position: 'relative', display: 'inline-block' }}
+                      style={{
+                        position: 'relative',
+                        display: 'inline-block'
+                      }}
                       onMouseEnter={() => handleUserDropdown(true)}
                       onMouseLeave={() => handleUserDropdown(false)}
                     >
-                      <span style={{ cursor: 'pointer' }}>
-                        <FontAwesomeIcon icon={faUserRegular} /> Welcome, {user?.username || 'User'}
+                      <span style={{
+                        cursor: 'pointer',
+                        color: '#fff',
+                        fontWeight: 600,
+                        fontSize: 18,
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '12px 20px',
+                        borderRadius: 24,
+                        background: 'rgba(255,255,255,0.08)',
+                        transition: 'background 0.2s',
+                        minWidth: 180,
+                        gap: 12
+                      }}>
+                        <FontAwesomeIcon icon={faUserRegular} style={{ fontSize: 18 }} />
+                        <span style={{ whiteSpace: 'nowrap' }}>Welcome, {user?.username || 'User'}</span>
                       </span>
                       {userDropdownOpen && (
                         <div
@@ -202,12 +210,14 @@ const Header = () => {
                             position: 'absolute',
                             top: '100%',
                             left: 0,
-                            background: '#fff',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            background: '#222',
+                            color: '#fff',
+                            boxShadow: '0 2px 16px rgba(0,0,0,0.25)',
                             zIndex: 1000,
-                            minWidth: 120,
-                            padding: '8px 0',
-                            borderRadius: 4
+                            minWidth: 140,
+                            padding: '10px 0',
+                            borderRadius: 6,
+                            marginTop: 8
                           }}
                         >
                           <button
@@ -217,10 +227,11 @@ const Header = () => {
                               border: 'none',
                               width: '100%',
                               textAlign: 'left',
-                              padding: '8px 16px',
+                              padding: '10px 20px',
                               cursor: 'pointer',
                               color: '#D10024',
-                              fontWeight: 500
+                              fontWeight: 600,
+                              fontSize: 16
                             }}
                           >
                             Log out
@@ -229,7 +240,24 @@ const Header = () => {
                       )}
                     </div>
                   ) : (
-                    <Link to="/login"><FontAwesomeIcon icon={faUserRegular} /> Login</Link>
+                    <Link to="/login" style={{
+                      color: '#fff',
+                      background: '#D10024',
+                      borderRadius: 24,
+                      padding: '12px 20px',
+                      fontWeight: 700,
+                      fontSize: 18,
+                      transition: 'background 0.2s',
+                      border: 'none',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      minWidth: 180,
+                      gap: 12
+                    }}>
+                      <FontAwesomeIcon icon={faUserRegular} style={{ fontSize: 18 }} />
+                      <span style={{ whiteSpace: 'nowrap' }}>Login</span>
+                    </Link>
                   )}
                 </div>
               </div>

@@ -364,7 +364,7 @@ const HomePage: React.FC = () => {
           marginTop: 0,
           marginBottom: 5,
           height: 400,
-          overflow: 'hidden',
+          overflow: 'visible',
           maxWidth: '100vw',
           padding: 0,
         }}
@@ -372,11 +372,32 @@ const HomePage: React.FC = () => {
       >
         <Slider {...promoSliderSettings}>
           {promoSlides.map(slide => (
-            <div key={slide.id} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400, background: '#222', position: 'relative' }}>
+            <div
+              key={slide.id}
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: 400,
+                background: '#222',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.18)'
+              }}
+            >
               <img
                 src={slide.image}
                 alt="promo"
-                style={{ height: 400, width: '100vw', objectFit: 'cover', borderRadius: 0, boxShadow: '0 4px 24px rgba(0,0,0,0.10)', margin: 0, padding: 0 }}
+                style={{
+                  height: 400,
+                  width: '100vw',
+                  objectFit: 'cover',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                  margin: 0,
+                  padding: 0,
+                  position: 'relative',
+                  zIndex: 0
+                }}
                 onMouseEnter={() => setIsImgHover(true)}
                 onMouseLeave={() => setIsImgHover(false)}
               />
