@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowCircleRight, faEye, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
-import { faHeart as faHeartRegular2 } from '@fortawesome/free-regular-svg-icons';
 import './HomePage.css';
+// @ts-expect-error: No type declaration for footer.jsx, accept any type for Footer import
 import Footer from '../components/footer';
 import { productService } from '../services/productService';
 import type { Product } from '../types/product';
@@ -43,7 +43,7 @@ const ArrowStyle: React.CSSProperties = {
   height: 48,
   background: 'rgba(255,255,255,0.5)',
   border: 'none',
-  borderRadius: 8,
+  borderRadius: 25,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -83,7 +83,6 @@ const HomePage: React.FC = () => {
   const [newProducts, setNewProducts] = useState<{ laptops: Product[]; pcs: Product[]; accessories: Product[] }>({ laptops: [], pcs: [], accessories: [] });
   const [topSellingProducts, setTopSellingProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hoveredProductId, setHoveredProductId] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<'laptop' | 'pc' | 'accessories'>('laptop');
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
@@ -105,7 +104,7 @@ const HomePage: React.FC = () => {
 
   // Debug auth state changes - FIXED: Remove isAuthenticated function from dependencies
   useEffect(() => {
-    const authStatus = isAuthenticated();
+    // const authStatus = isAuthenticated(); // Không dùng, xóa dòng này
   }, [user, token]);
 
   // Debug registration success state
@@ -113,15 +112,16 @@ const HomePage: React.FC = () => {
     const registrationSuccess = sessionStorage.getItem('registrationSuccess');
     if (registrationSuccess) {
       try {
-        const regData = JSON.parse(registrationSuccess);
+        // const regData = JSON.parse(registrationSuccess); // Không dùng, xóa dòng này
       } catch (e) {
+        // Không làm gì
       }
     }
   }, []);
 
   // Handle payment success messages from VNPay
   useEffect(() => {
-    const state = location.state as any;
+    const state = location.state as { paymentSuccess?: boolean; message?: string } | null;
     if (state && state.paymentSuccess && state.message) {
       setPaymentSuccessMessage(state.message);
       // Clear the state
@@ -239,8 +239,6 @@ const HomePage: React.FC = () => {
       key={product.id}
       className="product"
       style={{ margin: '0 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}
-      onMouseEnter={() => setHoveredProductId(product.id)}
-      onMouseLeave={() => setHoveredProductId(null)}
     >
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div className="product-img">
@@ -355,24 +353,36 @@ const HomePage: React.FC = () => {
     <>
       {/* Promo Banner Slider */}
       <div
-        style={{ width: '100%', background: 'transparent', marginTop: 30, marginBottom: 16, height: 340 }}
+        style={{
+          width: '100vw',
+          position: 'relative',
+          left: '50%',
+          right: '50%',
+          marginLeft: '-50vw',
+          marginRight: '-50vw',
+          background: 'transparent',
+          marginTop: 0,
+          marginBottom: 5,
+          height: 400,
+          overflow: 'hidden',
+          maxWidth: '100vw',
+          padding: 0,
+        }}
         className="promo-slider-hover-area"
       >
-        <div className="container" style={{ height: '100%' }}>
-          <Slider {...promoSliderSettings}>
-            {promoSlides.map(slide => (
-              <div key={slide.id} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 340, background: '#222', position: 'relative' }}>
-                <img
-                  src={slide.image}
-                  alt="promo"
-                  style={{ maxHeight: 340, width: '100%', objectFit: 'cover', borderRadius: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}
-                  onMouseEnter={() => setIsImgHover(true)}
-                  onMouseLeave={() => setIsImgHover(false)}
-                />
-              </div>
-            ))}
-          </Slider>
-        </div>
+        <Slider {...promoSliderSettings}>
+          {promoSlides.map(slide => (
+            <div key={slide.id} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400, background: '#222', position: 'relative' }}>
+              <img
+                src={slide.image}
+                alt="promo"
+                style={{ height: 400, width: '100vw', objectFit: 'cover', borderRadius: 0, boxShadow: '0 4px 24px rgba(0,0,0,0.10)', margin: 0, padding: 0 }}
+                onMouseEnter={() => setIsImgHover(true)}
+                onMouseLeave={() => setIsImgHover(false)}
+              />
+            </div>
+          ))}
+        </Slider>
       </div>
       {/* End Promo Banner Slider */}
       {addToCartStatus && (
