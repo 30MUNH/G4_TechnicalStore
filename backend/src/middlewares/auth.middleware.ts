@@ -20,11 +20,11 @@ export class Auth implements ExpressMiddlewareInterface {
     if (!token) {
       return next(new HttpException(401, HttpMessages._UNAUTHORIZED));
     }
-
     try {
       const payload = this.jwtService.verifyAccessToken(
         token
       ) as AccountDetailsDto | null;
+      console.log("payload:", payload);
       if (!payload) {
         return next(new HttpException(401, HttpMessages._UNAUTHORIZED));
       }
