@@ -103,9 +103,9 @@ const Header = () => {
           <div className="container">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, padding: '16px 0' }}>
               {/* LOGO */}
-              <div style={{ minWidth: 200, display: 'flex', alignItems: 'center'}}>
+              <div style={{ minWidth: 160, display: 'flex', alignItems: 'center'}}>
                 <Link to="/" className="logo">
-                  <img src="/img/logo.png" alt="" style={{ height: 70, width: 'auto' }} />
+                  <img src="/img/logo.png" alt="" style={{ height: 60, width: 'auto' }} />
                 </Link>
               </div>
               {/* /LOGO */}
@@ -136,37 +136,37 @@ const Header = () => {
               {/* /SEARCH BAR */}
 
               {/* Cart + Login */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
                 {/* Cart */}
                 <Link to="/cart" style={{
                   display: 'flex',
                   alignItems: 'center',
                   color: '#fff',
                   fontWeight: 600,
-                  fontSize: 18,
+                  fontSize: 14,
                   position: 'relative',
-                  padding: '12px 20px',
-                  borderRadius: 24,
+                  padding: '10px 16px',
+                  borderRadius: 20,
                   background: 'rgba(255,255,255,0.08)',
                   transition: 'background 0.2s',
                   textDecoration: 'none',
-                  minWidth: 180,
-                  gap: 12
+                  minWidth: 140,
+                  gap: 8
                 }}>
-                  <FontAwesomeIcon icon={faShoppingCart} size="lg" />
+                  <FontAwesomeIcon icon={faShoppingCart} size="sm" />
                   <span style={{ whiteSpace: 'nowrap' }}>Your Cart</span>
                   <div style={{
                     background: totalItems > 0 ? '#D10024' : '#444',
                     color: '#fff',
                     borderRadius: '50%',
-                    minWidth: 26,
-                    height: 26,
+                    minWidth: 20,
+                    height: 20,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontWeight: 700,
-                    fontSize: 16,
-                    padding: '0 8px',
+                    fontSize: 12,
+                    padding: '0 6px',
                     flexShrink: 0
                   }}>
                     {totalItems}
@@ -190,17 +190,17 @@ const Header = () => {
                         cursor: 'pointer',
                         color: '#fff',
                         fontWeight: 600,
-                        fontSize: 18,
+                        fontSize: 14,
                         display: 'flex',
                         alignItems: 'center',
-                        padding: '12px 20px',
-                        borderRadius: 24,
+                        padding: '10px 16px',
+                        borderRadius: 20,
                         background: 'rgba(255,255,255,0.08)',
                         transition: 'background 0.2s',
-                        minWidth: 180,
-                        gap: 12
+                        minWidth: 'auto',
+                        gap: 8
                       }}>
-                        <FontAwesomeIcon icon={faUserRegular} style={{ fontSize: 18 }} />
+                        <FontAwesomeIcon icon={faUserRegular} style={{ fontSize: 14 }} />
                         <span style={{ whiteSpace: 'nowrap' }}>Welcome, {user?.username || 'User'}</span>
                       </span>
                       {userDropdownOpen && (
@@ -243,19 +243,19 @@ const Header = () => {
                     <Link to="/login" style={{
                       color: '#fff',
                       background: '#D10024',
-                      borderRadius: 24,
-                      padding: '12px 20px',
+                      borderRadius: 20,
+                      padding: '10px 16px',
                       fontWeight: 700,
-                      fontSize: 18,
+                      fontSize: 14,
                       transition: 'background 0.2s',
                       border: 'none',
                       textDecoration: 'none',
                       display: 'flex',
                       alignItems: 'center',
-                      minWidth: 180,
-                      gap: 12
+                      minWidth: 'auto',
+                      gap: 8
                     }}>
-                      <FontAwesomeIcon icon={faUserRegular} style={{ fontSize: 18 }} />
+                      <FontAwesomeIcon icon={faUserRegular} style={{ fontSize: 14 }} />
                       <span style={{ whiteSpace: 'nowrap' }}>Login</span>
                     </Link>
                   )}
