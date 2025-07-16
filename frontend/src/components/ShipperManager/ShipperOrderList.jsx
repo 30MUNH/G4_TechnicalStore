@@ -76,7 +76,6 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
         throw new Error(response.message || "Cannot load order list");
       }
     } catch (err) {
-      console.error("❌ Error fetching orders:", err);
       setError(err.message || "Failed to load order list");
       setOrders([]); // Ensure always set array
       setPagination((prev) => ({ ...prev, total: 0, totalPages: 0 }));
@@ -143,7 +142,6 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
         throw new Error(response.message || "Update failed");
       }
     } catch (err) {
-      console.error("❌ Error updating status:", err);
               setError(err.message || "Failed to update status");
     } finally {
       setLoading(false);

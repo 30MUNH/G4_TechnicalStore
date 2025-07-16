@@ -9,11 +9,14 @@ import { OrderStatus, UpdateOrderDto } from './dtos/update-order.dto';
 import { EntityNotFoundException } from '@/exceptions/http-exceptions';
 import { DbConnection } from '@/database/dbConnection';
 import { Cart } from '@/Cart/cart.entity';
+import { InvoiceService } from '@/payment/invoice.service';
+import { Invoice, InvoiceStatus } from '@/payment/invoice.entity';
 
 @Service()
 export class OrderService {
     constructor(
         private readonly cartService: CartService,
+        private readonly invoiceService: InvoiceService
     ) {}
 
     private validateOrderStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): boolean {
@@ -133,9 +136,10 @@ export class OrderService {
             }
 
             // Step 6: Create order entity
+            const currentDateTime = new Date(); // Use single timestamp for consistency
             const order = new Order();
             order.customer = cart.account;
-            order.orderDate = new Date();
+            order.orderDate = currentDateTime;
             order.status = OrderStatus.PENDING;
             order.totalAmount = cart.totalAmount;
             order.shippingAddress = createOrderDto.shippingAddress || '';
@@ -172,7 +176,22 @@ export class OrderService {
             cart.totalAmount = 0;
             await transactionalEntityManager.save(cart);
 
-            // Step 9: Return order with relations
+            // Step 9: Create Invoice WITHIN the same transaction
+            try {
+                const invoice = new Invoice();
+                invoice.order = order;
+                invoice.invoiceNumber = `INV${currentDateTime.getFullYear()}${(currentDateTime.getMonth() + 1).toString().padStart(2, '0')}${currentDateTime.getDate().toString().padStart(2, '0')}${currentDateTime.getTime().toString().slice(-6)}`;
+                invoice.totalAmount = order.totalAmount;
+                invoice.paymentMethod = createOrderDto.paymentMethod || 'COD';
+                invoice.status = InvoiceStatus.UNPAID; // All new invoices start as UNPAID, payment processing will update status
+                invoice.notes = `Invoice created for order ${order.id}`;
+                
+                await transactionalEntityManager.save(invoice);
+            } catch (invoiceError) {
+                // Silent fail - don't break order creation if invoice fails
+            }
+
+            // Step 10: Return order with relations
             const savedOrder = await transactionalEntityManager.findOne(Order, {
                 where: { id: order.id },
                 relations: [
@@ -181,7 +200,8 @@ export class OrderService {
                     'orderDetails', 
                     'orderDetails.product',
                     'orderDetails.product.category',
-                    'orderDetails.product.images'
+                    'orderDetails.product.images',
+                    'invoices'
                 ]
             });
 

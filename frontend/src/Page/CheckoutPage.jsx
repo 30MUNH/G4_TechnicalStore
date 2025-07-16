@@ -21,7 +21,6 @@ const CheckoutPage = () => {
     // Check authentication but don't block rendering
     useEffect(() => {
         if (!isAuthenticated()) {
-            console.log('🔐 Not authenticated on checkout page');
             // Don't redirect immediately - let them see the form
         }
     }, [isAuthenticated]);
@@ -79,7 +78,6 @@ const CheckoutPage = () => {
     // Check cart but don't block rendering  
     useEffect(() => {
         if (!items || items.length === 0) {
-            console.log('🛒 Empty cart on checkout page');
             // Don't redirect immediately - let them see empty state
         }
     }, [items]);
@@ -144,19 +142,7 @@ const CheckoutPage = () => {
                                   paymentMethod: formData.paymentMethod === 'cod' ? 'Cash on delivery' : 'Online payment'
             };
             
-            console.log('📤 Submitting order:', {
-                cartItems: currentCart.cartItems.length,
-                totalAmount: currentCart.totalAmount,
-                orderData: formData
-            });
-            
             const response = await orderService.createOrder(orderRequest);
-            console.log('🎯 [CHECKOUT] Order response:', {
-                success: response.success,
-                hasData: !!response.data,
-                hasOrderId: !!response.data?.id,
-                hasNestedOrderId: !!response.data?.data?.id
-            });
             
             if (!response.success) {
                 throw new Error(response.message || 'Order placement failed');
@@ -165,14 +151,8 @@ const CheckoutPage = () => {
             // Try both direct and nested structure for order ID
             const orderData = response.data?.id ? response.data : response.data?.data;
             if (!orderData?.id) {
-                console.error('❌ [CHECKOUT] No order ID found in response:', response);
                 throw new Error('Payment successful but order ID not received');
             }
-            
-            console.log('✅ [CHECKOUT] Order created successfully:', {
-                orderId: orderData.id,
-                totalAmount: orderData.totalAmount
-            });
             
             setOrderData(orderData);
             await refreshCart();

@@ -66,7 +66,6 @@ const CheckoutForm = ({
     try {
       sessionStorage.removeItem("checkoutFormData");
     } catch (error) {
-      console.error("Error clearing saved form data:", error);
     }
   };
 
@@ -99,7 +98,6 @@ const CheckoutForm = ({
       const saved = sessionStorage.getItem("checkoutFormData");
       return saved ? JSON.parse(saved) : null;
     } catch (error) {
-      console.error("Error loading saved form data:", error);
       return null;
     }
   };
@@ -242,7 +240,6 @@ const CheckoutForm = ({
       };
       sessionStorage.setItem("checkoutFormData", JSON.stringify(dataToSave));
     } catch (error) {
-      console.error("Error saving form data:", error);
     }
   };
 
@@ -364,14 +361,12 @@ const CheckoutForm = ({
       orderService
         .createOrder(orderRequest)
         .then((response) => {
-          console.log("✅ Order created for VNPAY:", response);
 
           // Get the order data with ID
           const orderData = response.data?.id
             ? response.data
             : response.data?.data;
           if (!orderData?.id) {
-            console.error("❌ No order ID found in response:", response);
             showNotification(
               "Order creation failed - no order ID received",
               "error"
@@ -380,7 +375,6 @@ const CheckoutForm = ({
             return;
           }
 
-          console.log("🎯 VNPAY order ID:", orderData.id);
 
           // Navigate to VNPay payment page with the real order object
           navigate("/vnpay-payment", {
@@ -392,7 +386,6 @@ const CheckoutForm = ({
           });
         })
         .catch((error) => {
-          console.error("❌ Order creation failed:", error);
           showNotification(error.message || "Order creation failed", "error");
           setIsVNPayProcessing(false);
         });
