@@ -8,7 +8,7 @@ export class CreateOrderDto {
 
     @IsString()
     @IsOptional()
-    @Length(0, 300, { message: 'Ghi chú không được vượt quá 1000 ký tự' })
+    @Length(0, 500, { message: 'Ghi chú không được vượt quá 500 ký tự' })
     note?: string;
 
     @IsString()

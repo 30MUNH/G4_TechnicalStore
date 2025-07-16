@@ -3,6 +3,7 @@ import { BaseEntity } from "@/common/BaseEntity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { OrderDetail } from "./orderDetail.entity";
 import { Payment } from "@/payment/payment.entity";
+import { Invoice } from "@/payment/invoice.entity";
 import { OrderStatus } from "./dtos/update-order.dto";
 
 @Entity('orders')
@@ -45,4 +46,7 @@ export class Order extends BaseEntity {
 
   @OneToMany(() => Payment, (payment) => payment.order)
   payments: Payment[];
+
+  @OneToMany(() => Invoice, (invoice) => invoice.order)
+  invoices: Invoice[];
 }

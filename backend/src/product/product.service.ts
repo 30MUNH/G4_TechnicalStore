@@ -258,7 +258,6 @@ export class ProductService {
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
     return DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
-      console.log('Creating product with data:', createProductDto);
       
       // Validate category exists
       const category = await Category.findOne({ where: { id: createProductDto.categoryId } });
@@ -293,9 +292,7 @@ export class ProductService {
         product.isActive = false;
       }
       
-      console.log('Saving product:', product);
       const savedProduct = await transactionalEntityManager.save(product);
-      console.log('Product saved successfully:', savedProduct);
       // Load lại product kèm category
       const savedProductWithCategory = await transactionalEntityManager.findOne(Product, { where: { id: savedProduct.id }, relations: ['category'] });
       if (!savedProductWithCategory) {
@@ -305,7 +302,6 @@ export class ProductService {
       try {
         await this.updateComponentDetails(transactionalEntityManager, savedProductWithCategory, createProductDto);
       } catch (componentError) {
-        console.error('Lỗi khi lưu vào bảng component đặc thù:', componentError);
         throw new BadRequestException('Lỗi khi lưu vào bảng component đặc thù: ' + String(componentError));
       }
       return savedProductWithCategory;
@@ -316,7 +312,6 @@ export class ProductService {
     id: string,
     updateProductDto: any
   ): Promise<Product | null> {
-    console.log('UpdateProduct called with:', { id, updateProductDto });
     
     return DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
       const product = await Product.findOne({ 
@@ -324,10 +319,8 @@ export class ProductService {
         relations: ['category']
       });
       if (!product) {
-        console.log('Product not found:', id);
         throw new EntityNotFoundException('Product');
       }
-      console.log('Found product:', product.name);
 
       // Extract product fields and component fields
       const productFields = {
@@ -357,13 +350,11 @@ export class ProductService {
 
       // Validate price if provided
       if (productFields.price !== undefined && productFields.price <= 0) {
-        console.log('Invalid price:', productFields.price);
         throw new BadRequestException('Price must be greater than 0');
       }
 
       // Validate stock if provided
       if (productFields.stock !== undefined && productFields.stock < 0) {
-        console.log('Invalid stock:', productFields.stock);
         throw new BadRequestException('Stock cannot be negative');
       }
 
@@ -374,23 +365,19 @@ export class ProductService {
         });
 
         if (existingProduct) {
-          console.log('Duplicate product name:', productFields.name);
           throw new BadRequestException('Product with this name already exists');
         }
       }
 
       // Update product basic fields
-      console.log('Updating product with fields:', productFields);
       Object.assign(product, productFields);
       
       try {
         const updatedProduct = await transactionalEntityManager.save(product);
-        console.log('Product updated successfully:', updatedProduct.name);
         // Bật lại update component details
         await this.updateComponentDetails(transactionalEntityManager, updatedProduct, updateProductDto);
         return updatedProduct;
       } catch (error) {
-        console.log('Error saving product:', error);
         throw error;
       }
     });
@@ -474,12 +461,9 @@ export class ProductService {
     if (updateData.capacityGb !== undefined) ram.capacityGb = updateData.capacityGb;
     if (updateData.speedMhz !== undefined) ram.speedMhz = updateData.speedMhz;
     if (updateData.type !== undefined) ram.type = updateData.type;
-    console.log('[RAM] Saving RAM entity:', ram);
     try {
       await transactionalEntityManager.save(ram);
-      console.log('[RAM] Saved RAM entity successfully:', ram);
     } catch (err) {
-      console.error('[RAM] Error saving RAM entity:', err);
       throw new Error('Không thể lưu thông tin RAM cho sản phẩm');
     }
   }
@@ -507,12 +491,9 @@ export class ProductService {
     if (updateData.weightKg !== undefined) laptop.weightKg = updateData.weightKg;
     if (updateData.os !== undefined) laptop.os = updateData.os;
     if (updateData.ramCount !== undefined) laptop.ramCount = updateData.ramCount;
-    console.log('[Laptop] Saving Laptop entity:', laptop);
     try {
       await transactionalEntityManager.save(laptop);
-      console.log('[Laptop] Saved Laptop entity successfully:', laptop);
     } catch (err) {
-      console.error('[Laptop] Error saving Laptop entity:', err);
       throw new Error('Không thể lưu thông tin Laptop cho sản phẩm');
     }
   }
@@ -539,12 +520,9 @@ export class ProductService {
     if (updateData.architecture !== undefined) cpu.architecture = updateData.architecture;
     if (updateData.tdp !== undefined) cpu.tdp = updateData.tdp;
     if (updateData.integratedGraphics !== undefined) cpu.integratedGraphics = updateData.integratedGraphics;
-    console.log('[CPU] Saving CPU entity:', cpu);
     try {
       await transactionalEntityManager.save(cpu);
-      console.log('[CPU] Saved CPU entity successfully:', cpu);
     } catch (err) {
-      console.error('[CPU] Error saving CPU entity:', err);
       throw new Error('Không thể lưu thông tin CPU cho sản phẩm');
     }
   }
@@ -569,12 +547,9 @@ export class ProductService {
     if (updateData.chipset !== undefined) gpu.chipset = updateData.chipset;
     if (updateData.memoryType !== undefined) gpu.memoryType = updateData.memoryType;
     if (updateData.lengthMm !== undefined) gpu.lengthMm = updateData.lengthMm;
-    console.log('[GPU] Saving GPU entity:', gpu);
     try {
       await transactionalEntityManager.save(gpu);
-      console.log('[GPU] Saved GPU entity successfully:', gpu);
     } catch (err) {
-      console.error('[GPU] Error saving GPU entity:', err);
       throw new Error('Không thể lưu thông tin GPU cho sản phẩm');
     }
   }
@@ -599,12 +574,9 @@ export class ProductService {
     if (updateData.resolution !== undefined) monitor.resolution = updateData.resolution;
     if (updateData.panelType !== undefined) monitor.panelType = updateData.panelType;
     if (updateData.refreshRate !== undefined) monitor.refreshRate = updateData.refreshRate;
-    console.log('[Monitor] Saving Monitor entity:', monitor);
     try {
       await transactionalEntityManager.save(monitor);
-      console.log('[Monitor] Saved Monitor entity successfully:', monitor);
     } catch (err) {
-      console.error('[Monitor] Error saving Monitor entity:', err);
       throw new Error('Không thể lưu thông tin Monitor cho sản phẩm');
     }
   }
@@ -630,12 +602,9 @@ export class ProductService {
     if (updateData.formFactor !== undefined) motherboard.formFactor = updateData.formFactor;
     if (updateData.ramSlots !== undefined) motherboard.ramSlots = updateData.ramSlots;
     if (updateData.maxRam !== undefined) motherboard.maxRam = updateData.maxRam;
-    console.log('[Motherboard] Saving Motherboard entity:', motherboard);
     try {
       await transactionalEntityManager.save(motherboard);
-      console.log('[Motherboard] Saved Motherboard entity successfully:', motherboard);
     } catch (err) {
-      console.error('[Motherboard] Error saving Motherboard entity:', err);
       throw new Error('Không thể lưu thông tin Motherboard cho sản phẩm');
     }
   }
