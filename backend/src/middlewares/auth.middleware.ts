@@ -15,11 +15,15 @@ export class Auth implements ExpressMiddlewareInterface {
   constructor(private readonly jwtService: JwtService) {}
 
   use(req: RequestWithUser, res: Response, next: NextFunction): any {
-    const token = req.header("Authorization");
+    const authHeader = req.header("Authorization");
 
-    if (!token) {
+    if (!authHeader) {
       return next(new HttpException(401, HttpMessages._UNAUTHORIZED));
     }
+    
+    // Extract token from "Bearer [token]" format
+    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+    
     try {
       const payload = this.jwtService.verifyAccessToken(
         token
@@ -41,13 +45,16 @@ export class Auth implements ExpressMiddlewareInterface {
 export class Staff implements ExpressMiddlewareInterface {
   constructor(private readonly jwtService: JwtService) {}
   use(req: RequestWithUser, res: Response, next: NextFunction): any {
-    const token = req.header("Authorization");
+    const authHeader = req.header("Authorization");
 
     let user: AccountDetailsDto;
 
-    if (!token) {
+    if (!authHeader) {
       return next(new HttpException(401, HttpMessages._UNAUTHORIZED));
     }
+
+    // Extract token from "Bearer [token]" format
+    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
 
     try {
       user = this.jwtService.verifyAccessToken(
@@ -78,13 +85,16 @@ export class Staff implements ExpressMiddlewareInterface {
 export class Admin implements ExpressMiddlewareInterface {
   constructor(private readonly jwtService: JwtService) {}
   use(req: RequestWithUser, res: Response, next: NextFunction): any {
-    const token = req.header("Authorization");
+    const authHeader = req.header("Authorization");
 
     let user: AccountDetailsDto;
 
-    if (!token) {
+    if (!authHeader) {
       return next(new HttpException(401, HttpMessages._UNAUTHORIZED));
     }
+
+    // Extract token from "Bearer [token]" format
+    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
 
     try {
       user = this.jwtService.verifyAccessToken(

@@ -241,3 +241,24 @@
     height: 28px;
   }
 }
+
+/* Selection checkbox styles */
+.selectionCheckbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #007bff;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.checkbox:hover {
+  transform: scale(1.1);
+}

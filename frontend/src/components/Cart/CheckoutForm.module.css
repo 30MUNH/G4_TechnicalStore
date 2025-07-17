@@ -726,6 +726,36 @@
   line-height: 1.4;
 }
 
+/* VAT Invoice Checkbox Styles */
+.vatInvoiceSection {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.vatInvoiceLabel {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+  color: #495057;
+}
+
+.vatInvoiceCheckbox {
+  width: 18px;
+  height: 18px;
+  margin-right: 12px;
+  accent-color: #007bff;
+  cursor: pointer;
+}
+
+.vatInvoiceText {
+  font-size: 15px;
+  user-select: none;
+}
+
 @media (max-width: 480px) {
   .orderItem {
     padding: 1rem;
@@ -796,4 +826,33 @@
     padding: 8px;
     font-size: 11px;
   }
+}
+
+/* Guest notification styles */
+.guestNotification {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  background-color: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.guestNotificationIcon {
+  font-size: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.guestNotificationText {
+  color: #1565c0;
+  flex: 1;
+}
+
+.guestNotificationText strong {
+  color: #0d47a1;
 }

@@ -1,6 +1,6 @@
 .cartView {
   width: 100%;
-  margin: 0;
+  margin-bottom: 10px;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -12,7 +12,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0;
+  margin-bottom: 10px;
   background-color: rgb(153, 27, 27);
   padding: 20px 40px;
   color: #ffffff;
@@ -636,4 +636,31 @@
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+/* Warning message styles */
+.noSelectionWarning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.noSelectionWarning p {
+  margin: 0;
+  color: #856404;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Disabled button state */
+.checkoutButton.disabled {
+  background-color: #6c757d !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
+.checkoutButton.disabled:hover {
+  background-color: #6c757d !important;
 }

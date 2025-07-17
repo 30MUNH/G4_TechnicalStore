@@ -1,9 +1,34 @@
 import api from './apiInterceptor';
 import { OrderStatus } from '../types/order';
 
+interface ErrorResponse {
+    success: boolean;
+    message?: string;
+    error?: string;
+    data?: {
+        success: boolean;
+        message?: string;
+        error?: string;
+    };
+}
+
 export interface CreateOrderDto {
     shippingAddress: string;
     note?: string;
+    paymentMethod: 'Cash on delivery' | 'Online payment';
+    requireInvoice?: boolean;
+    isGuest?: boolean;
+    guestInfo?: {
+        fullName: string;
+        phone: string;
+        email: string;
+    };
+    guestCartItems?: Array<{
+        productId: string;
+        quantity: number;
+        price: number;
+        name: string;
+    }>;
 }
 
 export interface UpdateOrderDto {
@@ -28,20 +53,52 @@ export const orderService = {
     async createOrder(createOrderDto: CreateOrderDto) {
         try {
             const response = await api.post('/orders', createOrderDto);
-            return response.data;
+            const responseData = response.data;
+
+            // Check for nested error structure
+            if (responseData.data?.success === false) {
+                throw new Error(responseData.data.message || responseData.data.error || 'Order creation failed');
+            }
+
+            // Return the response data
+            return responseData;
         } catch (error) {
             console.error('❌ [ORDER_SERVICE] Create order failed:', error);
-            const errorMsg = error instanceof Error && 'response' in error 
-                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
-                : 'Đặt hàng thất bại';
-            throw new Error(errorMsg || 'Đặt hàng thất bại');
+            
+            // Handle nested error structure
+            if (error instanceof Error && 'response' in error) {
+                const responseError = error as { response?: { data?: ErrorResponse } };
+                const errorData = responseError.response?.data;
+                
+                // Check for nested error structure
+                if (errorData?.data?.success === false) {
+                    throw new Error(errorData.data.message || errorData.data.error || 'Order creation failed');
+                }
+                
+                // Check for regular error structure
+                if (errorData?.message) {
+                    throw new Error(errorData.message);
+                }
+            }
+            
+            throw new Error('Đặt hàng thất bại');
         }
     },
 
-    async getOrders() {
+    async getOrders(params = {}) {
         try {
-            // Use high limit to get all orders
-            const response = await api.get('/orders?limit=1000');
+            // Build query parameters for pagination and filtering
+            const queryParams = new URLSearchParams();
+            Object.entries(params).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '') {
+                    queryParams.append(key, value.toString());
+                }
+            });
+
+            const queryString = queryParams.toString();
+            const url = `/orders${queryString ? '?' + queryString : ''}`;
+            
+            const response = await api.get(url);
             return response.data;
         } catch (error) {
             const errorMsg = error instanceof Error && 'response' in error 

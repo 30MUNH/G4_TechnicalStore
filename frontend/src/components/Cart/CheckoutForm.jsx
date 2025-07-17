@@ -53,6 +53,7 @@ const CheckoutForm = ({
   onBackToCart,
   isProcessing = false,
   error = null,
+  isGuest = false,
 }) => {
   const navigate = useNavigate();
   const {
@@ -118,6 +119,7 @@ const CheckoutForm = ({
   const [availableWards, setAvailableWards] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("cod"); // Default to Cash on Delivery
   const [isVNPayProcessing, setIsVNPayProcessing] = useState(false); // Local state for VNPAY processing
+  const [requireInvoice, setRequireInvoice] = useState(false); // VAT invoice checkbox state
 
   // Load saved form data on component mount
   React.useEffect(() => {
@@ -310,15 +312,40 @@ const CheckoutForm = ({
 
     // Validate required fields
     if (
-      !formData.fullName ||
-      !formData.phone ||
-      !formData.email ||
-      !formData.address ||
-      !formData.city ||
-      !formData.ward ||
-      !formData.commune
+      !formData.fullName?.trim() ||
+      !formData.phone?.trim() ||
+      !formData.email?.trim() ||
+      !formData.address?.trim() ||
+      !formData.city?.trim() ||
+      !formData.ward?.trim() ||
+      !formData.commune?.trim()
     ) {
       showNotification("⚠️ Please fill in all shipping information", "warning");
+      return;
+    }
+
+    // Validate field lengths
+    if (formData.fullName.trim().length > 100) {
+      showNotification("⚠️ Full name cannot exceed 100 characters", "warning");
+      return;
+    }
+
+    if (formData.address.trim().length > 200) {
+      showNotification("⚠️ Address cannot exceed 200 characters", "warning");
+      return;
+    }
+
+    // Validate phone format (Vietnamese phone number)
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (!phoneRegex.test(formData.phone.trim())) {
+      showNotification("⚠️ Please enter a valid phone number (10-11 digits)", "warning");
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      showNotification("⚠️ Please enter a valid email address", "warning");
       return;
     }
 
@@ -330,21 +357,33 @@ const CheckoutForm = ({
       return;
     }
 
+    // Build the full address
+    const fullAddress = [
+      formData.address.trim(),
+      formData.commune.trim(),
+      formData.ward.trim(),
+      formData.city.trim(),
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    // Map frontend payment method to backend expected values
+    const backendPaymentMethod = paymentMethod === 'cod' ? 'Cash on delivery' : 'Online payment';
+
+    // Create order data with proper structure
+    const orderData = {
+      ...formData,
+      paymentMethod: backendPaymentMethod, // Use mapped payment method
+      requireInvoice: requireInvoice,
+      shippingAddress: fullAddress, // Add explicit shipping address
+      isGuest: isGuest, // Pass guest flag
+    };
+
     if (paymentMethod === "vnpay") {
       // VNPay payment flow - create order first, then redirect to VNPay
       setIsVNPayProcessing(true);
 
-      // Build the full address
-      const fullAddress = [
-        formData.address.trim(),
-        formData.commune.trim(),
-        formData.ward.trim(),
-        formData.city.trim(),
-      ]
-        .filter(Boolean)
-        .join(", ");
-
-      // Create order request
+      // Create order request with proper structure
       const orderRequest = {
         shippingAddress: fullAddress,
         note: [
@@ -352,16 +391,31 @@ const CheckoutForm = ({
           `Số điện thoại: ${formData.phone.trim()}`,
           `Email: ${formData.email.trim()}`,
           `Số lượng sản phẩm: ${cartItems.length}`,
-          `Total amount: ${formatCurrency(totalAmount)}`,
+          `Total amount: ${formatCurrency(requireInvoice ? totalAmount + (subtotal * 0.1) : totalAmount)}`,
+          requireInvoice ? "VAT Invoice Requested" : "No Invoice Required"
         ].join(" | "),
-        paymentMethod: "Online payment",
+        paymentMethod: backendPaymentMethod,
+        requireInvoice: requireInvoice,
+        isGuest: isGuest,
+        ...(isGuest ? {
+          guestInfo: {
+            fullName: formData.fullName.trim(),
+            phone: formData.phone.trim(),
+            email: formData.email.trim()
+          },
+          guestCartItems: cartItems.map(item => ({
+            productId: item.product?.id || item.id,
+            quantity: item.quantity || 1,
+            price: item.product?.price || item.price || 0,
+            name: item.product?.name || item.name || 'Unknown Product'
+          }))
+        } : {})
       };
 
       // Create order first, then redirect to VNPay
       orderService
         .createOrder(orderRequest)
         .then((response) => {
-
           // Get the order data with ID
           const orderData = response.data?.id
             ? response.data
@@ -374,7 +428,6 @@ const CheckoutForm = ({
             setIsVNPayProcessing(false);
             return;
           }
-
 
           // Navigate to VNPay payment page with the real order object
           navigate("/vnpay-payment", {
@@ -390,11 +443,7 @@ const CheckoutForm = ({
           setIsVNPayProcessing(false);
         });
     } else {
-      // COD payment flow
-      const orderData = {
-        ...formData,
-        paymentMethod: paymentMethod,
-      };
+      // COD payment flow - pass order data to parent component
       // Clear saved form data when order is placed
       clearSavedFormData();
       onPlaceOrder(orderData);
@@ -496,6 +545,17 @@ const CheckoutForm = ({
 
             <form onSubmit={handleSubmit} className={styles.shippingForm}>
               <h2>Customer information</h2>
+              
+              {isGuest && (
+                <div className={styles.guestNotification}>
+                  <div className={styles.guestNotificationIcon}>ℹ️</div>
+                  <div className={styles.guestNotificationText}>
+                    <strong>Bạn đang đặt hàng dưới dạng khách.</strong>
+                    <br />
+                    Đơn hàng sẽ không hiển thị trong tài khoản. Bạn có thể tạo tài khoản sau để theo dõi đơn hàng dễ dàng hơn.
+                  </div>
+                </div>
+              )}
 
               <div className={styles.formGroup}>
                 <label htmlFor="fullName">Full name *</label>
@@ -635,9 +695,33 @@ const CheckoutForm = ({
                   {shippingFee === 0 ? "Free" : formatCurrency(shippingFee)}
                 </span>
               </div>
+              
+              {/* VAT Invoice Checkbox */}
+              <div className={styles.vatInvoiceSection}>
+                <label className={styles.vatInvoiceLabel}>
+                  <input
+                    type="checkbox"
+                    checked={requireInvoice}
+                    onChange={(e) => setRequireInvoice(e.target.checked)}
+                    className={styles.vatInvoiceCheckbox}
+                  />
+                  <span className={styles.vatInvoiceText}>
+                    Export VAT invoice (10%)
+                  </span>
+                </label>
+              </div>
+
+              {/* VAT Row - only show when checkbox is checked */}
+              {requireInvoice && (
+                <div className={styles.summaryRow}>
+                  <span>VAT (10%)</span>
+                  <span>{formatCurrency(subtotal * 0.1)}</span>
+                </div>
+              )}
+
               <div className={`${styles.summaryRow} ${styles.total}`}>
                 <span>Total</span>
-                <span>{formatCurrency(totalAmount)}</span>
+                <span>{formatCurrency(requireInvoice ? totalAmount + (subtotal * 0.1) : totalAmount)}</span>
               </div>
             </div>
 

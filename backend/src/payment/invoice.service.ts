@@ -15,15 +15,25 @@ export class InvoiceService {
     const year = now.getFullYear();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
     const day = now.getDate().toString().padStart(2, '0');
-    const time = now.getTime().toString().slice(-6); // Last 6 digits of timestamp
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
     
-    return `INV${year}${month}${day}${time}`;
+    // Add random component to prevent collisions
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    
+    return `INV${year}${month}${day}${hours}${minutes}${seconds}${random}`;
   }
 
   /**
    * Create invoice for COD order
    */
   async createInvoiceForOrder(orderId: string, paymentMethod: string = 'COD'): Promise<Invoice> {
+    console.log('[Debug] InvoiceService.createInvoiceForOrder called:', {
+      orderId,
+      paymentMethod
+    });
+
     return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
       // Find order
       const order = await transactionalEntityManager.findOne(Order, {
@@ -31,8 +41,16 @@ export class InvoiceService {
       });
 
       if (!order) {
+        console.error('[Error] Order not found:', orderId);
         throw new Error('Order not found');
       }
+
+      console.log('[Debug] Order found:', {
+        orderId: order.id,
+        totalAmount: order.totalAmount,
+        paymentMethod: order.paymentMethod,
+        requireInvoice: order.requireInvoice
+      });
 
       // Check if invoice already exists for this order
       const existingInvoice = await transactionalEntityManager.findOne(Invoice, {
@@ -40,6 +58,11 @@ export class InvoiceService {
       });
 
       if (existingInvoice) {
+        console.log('[Debug] Invoice already exists:', {
+          invoiceId: existingInvoice.id,
+          invoiceNumber: existingInvoice.invoiceNumber,
+          paymentMethod: existingInvoice.paymentMethod
+        });
         return existingInvoice;
       }
 
@@ -52,6 +75,14 @@ export class InvoiceService {
       invoice.status = paymentMethod === 'COD' ? InvoiceStatus.UNPAID : InvoiceStatus.PAID;
       invoice.notes = `Invoice created for order ${orderId}`;
 
+      console.log('[Debug] Creating new invoice:', {
+        invoiceNumber: invoice.invoiceNumber,
+        totalAmount: invoice.totalAmount,
+        paymentMethod: invoice.paymentMethod,
+        status: invoice.status,
+        notes: invoice.notes
+      });
+
       // If it's VNPay and there's a payment, link it
       if (paymentMethod === 'VNPAY') {
         const payment = await transactionalEntityManager.findOne(Payment, {
@@ -61,12 +92,21 @@ export class InvoiceService {
           invoice.payment = payment;
           invoice.status = InvoiceStatus.PAID;
           invoice.paidAt = new Date();
+          console.log('[Debug] Linked VNPay payment to invoice');
         }
       }
 
-      await transactionalEntityManager.save(invoice);
+      const savedInvoice = await transactionalEntityManager.save(invoice);
 
-      return invoice;
+      console.log('[Debug] Invoice saved successfully:', {
+        id: savedInvoice.id,
+        invoiceNumber: savedInvoice.invoiceNumber,
+        paymentMethod: savedInvoice.paymentMethod,
+        totalAmount: savedInvoice.totalAmount,
+        status: savedInvoice.status
+      });
+
+      return savedInvoice;
     });
   }
 
@@ -104,7 +144,7 @@ export class InvoiceService {
   async getInvoiceByOrderId(orderId: string): Promise<Invoice | null> {
     return await DbConnection.appDataSource.manager.findOne(Invoice, {
       where: { order: { id: orderId } },
-      relations: ['order', 'payment']
+      relations: ['order', 'order.customer', 'payment']
     });
   }
 
@@ -114,7 +154,7 @@ export class InvoiceService {
   async getInvoiceByNumber(invoiceNumber: string): Promise<Invoice | null> {
     return await DbConnection.appDataSource.manager.findOne(Invoice, {
       where: { invoiceNumber },
-      relations: ['order', 'payment']
+      relations: ['order', 'order.customer', 'payment']
     });
   }
 

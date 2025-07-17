@@ -199,10 +199,9 @@ const Login = ({ onNavigate }) => {
 
         // Successful login - authenticate user directly
         login({ username: processedUsername }, responseToken);
-        // console.log removed
-
-        // Success logging
-        // console.log removed
+        
+        // Add small delay to ensure token is stored and available for API interceptor
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Fetch user profile to get role information
         try {
