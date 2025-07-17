@@ -4,7 +4,7 @@ import { FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
 import styles from './CartItem.module.css';
 
 const CartItem = ({ item }) => {
-    const { increaseQuantity, decreaseQuantity, removeItem, operationLoading } = useCart();
+    const { increaseQuantity, decreaseQuantity, removeItem, operationLoading, selectedItems, toggleItemSelection } = useCart();
     const [optimisticQuantity, setOptimisticQuantity] = useState(item.quantity);
     const debounceRef = useRef(null);
 
@@ -64,9 +64,29 @@ const CartItem = ({ item }) => {
 
     // Calculate item total using optimistic quantity
     const itemTotal = item.product.price * optimisticQuantity;
+    
+    // Get item ID for selection
+    const itemId = item.product?.id || item.id;
+    const isSelected = itemId && selectedItems ? selectedItems.has(itemId) : false;
+
+    const handleSelectionChange = () => {
+        if (itemId && toggleItemSelection) {
+            toggleItemSelection(itemId);
+        }
+    };
 
     return (
         <div className={styles.cartItem}>
+            {/* Selection checkbox */}
+            <div className={styles.selectionCheckbox}>
+                <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={handleSelectionChange}
+                    className={styles.checkbox}
+                />
+            </div>
+            
             <div className={styles.productImage}>
                 {item.product.images && item.product.images.length > 0 ? (
                     <img 

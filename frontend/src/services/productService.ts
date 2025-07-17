@@ -45,7 +45,7 @@ class ProductService {
   async getCategories(): Promise<Category[]> {
     try {
       const response = await api.get<ApiResponse<Category[]>>('/products/categories/all');
-
+      console.log('Categories API response:', response.data);
       
       // Check for the correct response structure
       if (response.data && response.data.data && response.data.data.categories) {

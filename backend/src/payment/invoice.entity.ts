@@ -19,10 +19,8 @@ export class Invoice extends BaseEntity {
   @JoinColumn({ name: 'payment_id' })
   payment?: Payment;
 
-  @Column({ type: 'varchar', length: 50, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 50, unique: true, nullable: true, name: 'invoice_number' })
   invoiceNumber: string | null;
-
-
 
   @Column({ type: 'decimal', precision: 10, scale: 2, name: 'total_amount' })
   totalAmount: number;
@@ -30,16 +28,17 @@ export class Invoice extends BaseEntity {
   @Column({
     type: 'enum',
     enum: InvoiceStatus,
-    default: InvoiceStatus.UNPAID
+    default: InvoiceStatus.UNPAID,
+    name: 'status'
   })
   status: InvoiceStatus;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'payment_method' })
   paymentMethod: string | null; // 'COD', 'VNPAY', etc.
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true, name: 'paid_at' })
   paidAt?: Date;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, name: 'notes' })
   notes?: string;
 }

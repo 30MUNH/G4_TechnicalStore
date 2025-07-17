@@ -9,14 +9,23 @@ export const OrderHistoryPage = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalOrders, setTotalOrders] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const ordersPerPage = 10;
 
-    const fetchData = async () => {
+    const fetchData = async (page = 1) => {
         try {
             setLoading(true);
             // Fetch both statistics and orders in parallel
             const [statsResponse, ordersResponse] = await Promise.all([
                 orderService.getOrderStatistics(),
-                orderService.getOrders()
+                orderService.getOrders({
+                    page: page,
+                    limit: ordersPerPage
+                })
             ]);
 
             // Handle statistics
@@ -24,14 +33,31 @@ export const OrderHistoryPage = () => {
                 setStatistics(statsResponse.statistics);
             }
 
-            // Handle orders
+            // Handle orders with proper pagination data
             if (ordersResponse.message === "Orders retrieved successfully") {
-                setOrders(ordersResponse.data || []);
+                // Check if response has pagination structure
+                if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
+                    setOrders(ordersResponse.data);
+                    setTotalOrders(ordersResponse.total || ordersResponse.data.length);
+                    setTotalPages(ordersResponse.totalPages || Math.ceil((ordersResponse.total || ordersResponse.data.length) / ordersPerPage));
+                } else if (Array.isArray(ordersResponse.data)) {
+                    setOrders(ordersResponse.data);
+                    setTotalOrders(ordersResponse.data.length);
+                    setTotalPages(Math.ceil(ordersResponse.data.length / ordersPerPage));
+                } else {
+                    setOrders([]);
+                    setTotalOrders(0);
+                    setTotalPages(0);
+                }
             } else if (Array.isArray(ordersResponse)) {
                 // Fallback for direct array response
                 setOrders(ordersResponse);
+                setTotalOrders(ordersResponse.length);
+                setTotalPages(Math.ceil(ordersResponse.length / ordersPerPage));
             } else {
                 setOrders([]);
+                setTotalOrders(0);
+                setTotalPages(0);
             }
 
         } catch (err) {
@@ -43,10 +69,14 @@ export const OrderHistoryPage = () => {
     };
 
     useEffect(() => {
-        fetchData();
+        fetchData(currentPage);
         document.body.classList.add('order-history-page-active');
         return () => document.body.classList.remove('order-history-page-active');
-    }, []);
+    }, [currentPage]);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
 
     const handleBackToCart = () => {
         navigate('/cart');
@@ -84,7 +114,7 @@ export const OrderHistoryPage = () => {
                                     marginTop: '0.2rem',
                                     marginLeft: '3.4rem'
                                 }}>
-                                    {orders.length === 0 ? 'No orders yet' : `${orders.length} orders`}
+                                    {totalOrders === 0 ? 'No orders yet' : `(${orders.length}/${totalOrders} orders)`}
                                 </p>
                             )}
                         </div>
@@ -114,7 +144,12 @@ export const OrderHistoryPage = () => {
                 ) : (
                     <OrderHistory 
                         orders={orders} 
+                        totalOrders={totalOrders}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
                         onBackToCart={handleBackToCart}
+                        onOrderUpdate={setOrders}
                     />
                 )}
 

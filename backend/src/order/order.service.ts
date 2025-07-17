@@ -145,6 +145,7 @@ export class OrderService {
             order.shippingAddress = createOrderDto.shippingAddress || '';
             order.note = createOrderDto.note || '';
             order.paymentMethod = createOrderDto.paymentMethod || 'Not selected';
+            order.requireInvoice = createOrderDto.requireInvoice || false;
             
             await transactionalEntityManager.save(order);
 
@@ -180,15 +181,28 @@ export class OrderService {
             try {
                 const invoice = new Invoice();
                 invoice.order = order;
-                invoice.invoiceNumber = `INV${currentDateTime.getFullYear()}${(currentDateTime.getMonth() + 1).toString().padStart(2, '0')}${currentDateTime.getDate().toString().padStart(2, '0')}${currentDateTime.getTime().toString().slice(-6)}`;
+                
+                const invoiceNumber = `INV${currentDateTime.getFullYear()}${(currentDateTime.getMonth() + 1).toString().padStart(2, '0')}${currentDateTime.getDate().toString().padStart(2, '0')}${currentDateTime.getTime().toString().slice(-6)}`;
+                invoice.invoiceNumber = invoiceNumber;
                 invoice.totalAmount = order.totalAmount;
                 invoice.paymentMethod = createOrderDto.paymentMethod || 'COD';
-                invoice.status = InvoiceStatus.UNPAID; // All new invoices start as UNPAID, payment processing will update status
+                invoice.status = InvoiceStatus.UNPAID;
                 invoice.notes = `Invoice created for order ${order.id}`;
                 
-                await transactionalEntityManager.save(invoice);
+                const savedInvoice = await transactionalEntityManager.save(invoice);
+                
             } catch (invoiceError) {
-                // Silent fail - don't break order creation if invoice fails
+                console.error('[Error] Failed to create invoice:', invoiceError);
+                console.error('[Error] Invoice error details:', {
+                    message: (invoiceError as Error).message,
+                    stack: (invoiceError as Error).stack,
+                    orderData: {
+                        orderId: order.id,
+                        paymentMethod: createOrderDto.paymentMethod,
+                        totalAmount: order.totalAmount
+                    }
+                });
+                // Don't throw - but log the error for debugging
             }
 
             // Step 10: Return order with relations
@@ -206,9 +220,184 @@ export class OrderService {
             });
 
             if (!savedOrder) {
+                console.error('[Error] Failed to retrieve created order after transaction');
                 throw new Error('Failed to retrieve created order');
             }
+            
+            return savedOrder;
+        });
+    }
 
+    async createGuestOrder(createOrderDto: CreateOrderDto): Promise<Order> {
+        if (!createOrderDto.shippingAddress) {
+            throw new Error('Shipping address cannot be empty');
+        }
+
+        if (!createOrderDto.guestInfo) {
+            throw new Error('Guest information is required');
+        }
+
+        // Validate guest info
+        const { fullName, phone, email } = createOrderDto.guestInfo;
+        if (!fullName?.trim() || fullName.trim().length > 100) {
+            throw new Error('Invalid guest name: must be 1-100 characters');
+        }
+        
+        if (!phone?.trim() || !/^[0-9]{10,11}$/.test(phone.trim())) {
+            throw new Error('Invalid guest phone: must be 10-11 digits');
+        }
+        
+        if (!email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+            throw new Error('Invalid guest email format');
+        }
+
+        if (!createOrderDto.guestCartItems || createOrderDto.guestCartItems.length === 0) {
+            throw new Error('Cart items are required');
+        }
+        
+        if (createOrderDto.guestCartItems.length > 50) {
+            throw new Error('Too many items in cart. Maximum 50 items allowed');
+        }
+
+        const shippingAddress = createOrderDto.shippingAddress.trim();
+        if (!shippingAddress) {
+            throw new Error('Shipping address cannot be empty');
+        }
+
+        return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
+            // Step 1: Validate products and check stock
+            const productIds = createOrderDto.guestCartItems!.map(item => item.productId);
+            const products = await transactionalEntityManager
+                .createQueryBuilder(Product, 'product')
+                .setLock('pessimistic_write')
+                .where('product.id IN (:...ids)', { ids: productIds })
+                .getMany();
+
+            const stockIssues = [];
+            const priceIssues = [];
+            
+            for (const cartItem of createOrderDto.guestCartItems!) {
+                // Validate cart item
+                if (!cartItem.quantity || cartItem.quantity <= 0) {
+                    throw new Error(`Invalid quantity for product ${cartItem.name}: ${cartItem.quantity}`);
+                }
+                
+                if (!cartItem.price || cartItem.price < 0) {
+                    throw new Error(`Invalid price for product ${cartItem.name}: ${cartItem.price}`);
+                }
+                
+                const product = products.find(p => p.id === cartItem.productId);
+                if (!product) {
+                    throw new Error(`Product ${cartItem.name} does not exist`);
+                }
+                
+                // Security: Validate price từ frontend với database
+                if (Math.abs(product.price - cartItem.price) > 0.01) {
+                    priceIssues.push(`${product.name} (price changed: frontend ${cartItem.price}, actual ${product.price})`);
+                }
+                
+                if (!product.isActive) {
+                    stockIssues.push(`${product.name} (product no longer active)`);
+                } else if (product.stock < cartItem.quantity) {
+                    stockIssues.push(`${product.name} (insufficient stock: available ${product.stock}, needed ${cartItem.quantity})`);
+                }
+            }
+            
+            if (priceIssues.length > 0) {
+                throw new Error(`Product prices have changed, please refresh cart: ${priceIssues.join(', ')}`);
+            }
+
+            if (stockIssues.length > 0) {
+                throw new Error(`Some products have stock issues: ${stockIssues.join(', ')}`);
+            }
+
+            // Step 2: Calculate total amount using actual database prices (security)
+            const totalAmount = createOrderDto.guestCartItems!.reduce((total, item) => {
+                const product = products.find(p => p.id === item.productId);
+                if (!product) {
+                    throw new Error(`Product ${item.name} not found for total calculation`);
+                }
+                return total + (product.price * item.quantity);
+            }, 0);
+            
+            // Validate total amount
+            if (totalAmount < 0) {
+                throw new Error('Invalid total amount calculated');
+            }
+
+            // Step 3: Create order entity
+            const currentDateTime = new Date();
+            const order = new Order();
+            order.customer = null; // Guest order - no customer
+            order.orderDate = currentDateTime;
+            order.status = OrderStatus.PENDING;
+            order.totalAmount = totalAmount;
+            order.shippingAddress = shippingAddress;
+            order.note = createOrderDto.note || '';
+            order.paymentMethod = createOrderDto.paymentMethod || 'Not selected';
+            order.requireInvoice = createOrderDto.requireInvoice || false;
+            
+            await transactionalEntityManager.save(order);
+
+            // Step 4: Create order details and update stock
+            for (const cartItem of createOrderDto.guestCartItems!) {
+                const product = products.find(p => p.id === cartItem.productId)!;
+
+                const orderDetail = new OrderDetail();
+                orderDetail.order = order;
+                orderDetail.product = product;
+                orderDetail.quantity = cartItem.quantity;
+                orderDetail.price = product.price; // SECURITY: Always use database price
+                await transactionalEntityManager.save(orderDetail);
+
+                // Update stock
+                product.stock -= cartItem.quantity;
+                await transactionalEntityManager.save(product);
+            }
+
+            // Step 5: Create Invoice
+            try {
+                const invoice = new Invoice();
+                invoice.order = order;
+                
+                const invoiceNumber = `INV${currentDateTime.getFullYear()}${(currentDateTime.getMonth() + 1).toString().padStart(2, '0')}${currentDateTime.getDate().toString().padStart(2, '0')}${currentDateTime.getTime().toString().slice(-6)}`;
+                invoice.invoiceNumber = invoiceNumber;
+                invoice.totalAmount = order.totalAmount;
+                invoice.paymentMethod = createOrderDto.paymentMethod || 'COD';
+                invoice.status = InvoiceStatus.UNPAID;
+                invoice.notes = `Guest order invoice - ${createOrderDto.guestInfo!.fullName} (${createOrderDto.guestInfo!.phone})`;
+                
+                const savedInvoice = await transactionalEntityManager.save(invoice);
+                
+            } catch (invoiceError) {
+                console.error('[Error] Failed to create guest invoice:', invoiceError);
+                console.error('[Error] Guest invoice error details:', {
+                    message: (invoiceError as Error).message,
+                    stack: (invoiceError as Error).stack,
+                    orderData: {
+                        orderId: order.id,
+                        paymentMethod: createOrderDto.paymentMethod,
+                        totalAmount: order.totalAmount
+                    }
+                });
+            }
+
+            // Step 6: Return order with relations
+            const savedOrder = await transactionalEntityManager.findOne(Order, {
+                where: { id: order.id },
+                relations: [
+                    'orderDetails', 
+                    'orderDetails.product',
+                    'orderDetails.product.category',
+                    'orderDetails.product.images',
+                    'invoices'
+                ]
+            });
+
+            if (!savedOrder) {
+                throw new Error('Failed to retrieve created guest order');
+            }
+            
             return savedOrder;
         });
     }
@@ -282,7 +471,7 @@ export class OrderService {
         }
 
         // Check permissions
-        const isOrderOwner = order.customer.username === username;
+        const isOrderOwner = order.customer ? order.customer.username === username : false;
         const hasAdminAccess = this.isAdmin(account) || this.isShipper(account);
 
         if (!isOrderOwner && !hasAdminAccess) {

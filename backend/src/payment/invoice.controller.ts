@@ -13,18 +13,21 @@ import { Service } from "typedi";
 import { InvoiceService } from "./invoice.service";
 import { Auth, Admin, Staff } from "@/middlewares/auth.middleware";
 import { AccountDetailsDto } from "@/auth/dtos/account.dto";
+import { JwtService } from "@/auth/jwt/jwt.service";
 
 @Service()
 @Controller("/invoices")
 export class InvoiceController {
-  constructor(private readonly invoiceService: InvoiceService) {}
+  constructor(
+    private readonly invoiceService: InvoiceService,
+    private readonly jwtService: JwtService
+  ) {}
 
   /**
-   * Create invoice for order (automatically called when order is created)
+   * Create invoice for order - supports both authenticated and guest orders
    * POST /api/invoices/create
    */
   @Post("/create")
-  @UseBefore(Auth)
   async createInvoice(
     @Body() body: { orderId: string; paymentMethod?: string },
     @Req() req: any
@@ -50,14 +53,33 @@ export class InvoiceController {
   }
 
   /**
-   * Get invoice by order ID
+   * Get invoice by order ID - supports both authenticated and guest users
    * GET /api/invoices/order/:orderId
    */
   @Get("/order/:orderId")
-  @UseBefore(Auth)
   async getInvoiceByOrderId(@Param("orderId") orderId: string, @Req() req: any) {
     try {
-      const user = req.user as AccountDetailsDto;
+      let user = null;
+      
+      // Try to get user from Authorization header if present
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.substring(7);
+          const decodedToken = this.jwtService.verifyAccessToken(token);
+          if (decodedToken && decodedToken.username) {
+            // Mock user object for compatibility
+            user = { 
+              username: decodedToken.username, 
+              role: decodedToken.role || { name: 'customer' }
+            };
+          }
+        } catch (error) {
+          // Invalid token - treat as guest user
+          user = null;
+        }
+      }
+
       const invoice = await this.invoiceService.getInvoiceByOrderId(orderId);
 
       if (!invoice) {
@@ -67,15 +89,27 @@ export class InvoiceController {
         };
       }
 
-      // Check if user owns this order or is admin/staff
-      const isOwner = invoice.order.customer.username === user.username;
-      const isAdminOrStaff = user.role?.name === 'admin' || user.role?.name === 'staff';
+      // Authorization logic
+      if (user) {
+        // Authenticated user
+        const isOwner = invoice.order.customer ? 
+          invoice.order.customer.username === user.username : false;
+        const isAdminOrStaff = user.role?.name === 'admin' || user.role?.name === 'staff';
 
-      if (!isOwner && !isAdminOrStaff) {
-        return {
-          success: false,
-          message: "Unauthorized access to invoice"
-        };
+        if (!isOwner && !isAdminOrStaff) {
+          return {
+            success: false,
+            message: "Unauthorized access to invoice"
+          };
+        }
+      } else {
+        // Guest user - can only access invoices for guest orders
+        if (invoice.order.customer) {
+          return {
+            success: false,
+            message: "Cannot access user invoice as guest"
+          };
+        }
       }
 
       return {
@@ -92,14 +126,33 @@ export class InvoiceController {
   }
 
   /**
-   * Get invoice by invoice number
+   * Get invoice by invoice number - supports both authenticated and guest users
    * GET /api/invoices/number/:invoiceNumber
    */
   @Get("/number/:invoiceNumber")
-  @UseBefore(Auth)
   async getInvoiceByNumber(@Param("invoiceNumber") invoiceNumber: string, @Req() req: any) {
     try {
-      const user = req.user as AccountDetailsDto;
+      let user = null;
+      
+      // Try to get user from Authorization header if present
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.substring(7);
+          const decodedToken = this.jwtService.verifyAccessToken(token);
+          if (decodedToken && decodedToken.username) {
+            // Mock user object for compatibility
+            user = { 
+              username: decodedToken.username, 
+              role: decodedToken.role || { name: 'customer' }
+            };
+          }
+        } catch (error) {
+          // Invalid token - treat as guest user
+          user = null;
+        }
+      }
+
       const invoice = await this.invoiceService.getInvoiceByNumber(invoiceNumber);
 
       if (!invoice) {
@@ -109,15 +162,27 @@ export class InvoiceController {
         };
       }
 
-      // Check if user owns this order or is admin/staff
-      const isOwner = invoice.order.customer.username === user.username;
-      const isAdminOrStaff = user.role?.name === 'admin' || user.role?.name === 'staff';
+      // Authorization logic
+      if (user) {
+        // Authenticated user
+        const isOwner = invoice.order.customer ? 
+          invoice.order.customer.username === user.username : false;
+        const isAdminOrStaff = user.role?.name === 'admin' || user.role?.name === 'staff';
 
-      if (!isOwner && !isAdminOrStaff) {
-        return {
-          success: false,
-          message: "Unauthorized access to invoice"
-        };
+        if (!isOwner && !isAdminOrStaff) {
+          return {
+            success: false,
+            message: "Unauthorized access to invoice"
+          };
+        }
+      } else {
+        // Guest user - can only access invoices for guest orders
+        if (invoice.order.customer) {
+          return {
+            success: false,
+            message: "Cannot access user invoice as guest"
+          };
+        }
       }
 
       return {

@@ -3,9 +3,14 @@ import styles from './CartView.module.css'; // Use the same CSS module as CartVi
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useInvoiceExport } from '../../Hook/useInvoiceExport';
 import { useOrders } from '../../Hook/useOrders';
+import Pagination from '../Product/Pagination'; // Thêm import Pagination
 
 export const OrderHistory = ({ 
     orders, 
+    totalOrders = 0,
+    currentPage = 1,
+    totalPages = 1,
+    onPageChange,
     onBackToCart,
     onOrderUpdate 
 }) => {
@@ -15,6 +20,12 @@ export const OrderHistory = ({
     const [cancelReason, setCancelReason] = useState('');
     const { exportToPDF } = useInvoiceExport();
     const { cancelOrder } = useOrders();
+
+    // Filter states (cho client-side filtering bổ sung)
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     // Notification function
     const showNotification = (message, type = "info") => {
@@ -246,23 +257,235 @@ export const OrderHistory = ({
         return status === 'PENDING';
     };
 
+    // Filter orders based on filter criteria (client-side filtering for current page)
+    const filteredOrders = orders.filter(order => {
+        // Status filter
+        if (statusFilter !== 'all' && order.status !== statusFilter) {
+            return false;
+        }
+
+        // Search filter (Order ID or Product name)
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            const orderId = order.id?.toString().toLowerCase() || '';
+            
+            // Search in order details product names
+            const productMatch = order.orderDetails?.some(detail => 
+                detail.product?.name?.toLowerCase().includes(query)
+            ) || false;
+
+            if (!orderId.includes(query) && !productMatch) {
+                return false;
+            }
+        }
+
+        // Date range filter
+        if (startDate) {
+            const orderDate = new Date(order.orderDate);
+            const start = new Date(startDate);
+            if (orderDate < start) {
+                return false;
+            }
+        }
+
+        if (endDate) {
+            const orderDate = new Date(order.orderDate);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999); // Include the entire end date
+            if (orderDate > end) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    // Clear filters function
+    const clearFilters = () => {
+        setStatusFilter('all');
+        setSearchQuery('');
+        setStartDate('');
+        setEndDate('');
+    };
+
+    // Check if any filters are active
+    const hasActiveFilters = statusFilter !== 'all' || searchQuery.trim() || startDate || endDate;
+
     return (
         <div className={styles.cartView}>
             <div className={styles.cartHeader}>
                 <h1>
                     📋 Order history
-                    <span className={styles.itemCount}>({orders.length} current orders)</span>
+                    <span className={styles.itemCount}>({filteredOrders.length}/{totalOrders} orders)</span>
                 </h1>
                 <button onClick={handleBackToCart} className={styles.historyButton}>
                     ← Back to cart
                 </button>
             </div>
 
+            {/* Advanced Filter Section */}
+            <div style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '24px',
+                margin: '20px 20px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                border: '1px solid #e5e7eb'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '20px'
+                }}>
+                    <h3 style={{
+                        margin: 0,
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        🔍 Find Orders
+                    </h3>
+                   
+                    {hasActiveFilters && (
+                        <button
+                            onClick={clearFilters}
+                            style={{
+                                background: '#ef4444',
+                                color: 'white',
+                                border: 'none',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                            }}
+                        >
+                            ✕ Clear filters
+                        </button>
+                    )}
+                </div>
 
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px',
+                    alignItems: 'end'
+                }}>
+                    {/* Order Status Filter */}
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            marginBottom: '6px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#374151'
+                        }}>
+                            Order Status
+                        </label>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '6px',
+                                fontSize: '14px',
+                                backgroundColor: 'white'
+                            }}
+                        >
+                            <option value="all">All statuses</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="SHIPPING">Shipping</option>
+                            <option value="DELIVERED">Delivered</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                    </div>
 
+                    {/* Search Orders */}
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            marginBottom: '6px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#374151'
+                        }}>
+                            Search Orders
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="Search by order ID, product name..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '6px',
+                                fontSize: '14px'
+                            }}
+                        />
+                    </div>
 
+                    {/* Order Date Range */}
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            marginBottom: '6px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#374151'
+                        }}>
+                            From Date
+                        </label>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '6px',
+                                fontSize: '14px'
+                            }}
+                        />
+                    </div>
 
-            {orders.length === 0 ? (
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            marginBottom: '6px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#374151'
+                        }}>
+                            To Date
+                        </label>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '6px',
+                                fontSize: '14px'
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {filteredOrders.length === 0 ? (
                 <div className={styles.emptyCart}>
                     <h2>🛒 No orders yet</h2>
                     <p>You don't have any orders in your history. Please shop and order now!</p>
@@ -272,8 +495,7 @@ export const OrderHistory = ({
                 </div>
             ) : (
                 <div style={{
-                    padding: '40px 20px 40px 40px',
-                    marginTop: '40px',
+                    padding: '10px 20px 40px 10px',
                     width: '100%',
                     marginLeft: '0',
                     marginRight: '0'
@@ -285,7 +507,7 @@ export const OrderHistory = ({
                         alignItems: 'stretch',
                         maxWidth: '1300px'
                     }}>
-                        {orders.map((order) => {
+                        {filteredOrders.map((order) => {
                             const isExpanded = expandedOrders.has(order.id);
 
                             return (
@@ -583,6 +805,40 @@ export const OrderHistory = ({
                                                                         {order.paymentMethod || 'Not updated'}
                                                                     </span>
                                                                 </div>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', fontSize: '1.1rem' }}>
+                                                                    <span>Invoice status:</span>
+                                                                    <span style={{ 
+                                                                        fontWeight: '600', 
+                                                                        color: order.requireInvoice ? '#059669' : '#6b7280',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '4px'
+                                                                    }}>
+                                                                        {order.requireInvoice ? (
+                                                                            <>
+                                                                                📄 Invoice Requested
+                                                                                {order.status !== 'CANCELLED' && (
+                                                                                    <span style={{
+                                                                                        background: '#d1fae5',
+                                                                                        color: '#065f46',
+                                                                                        padding: '2px 6px',
+                                                                                        borderRadius: '4px',
+                                                                                        fontSize: '10px',
+                                                                                        marginLeft: '4px'
+                                                                                    }}>
+                                                                                        {order.status === 'PENDING' ? 'Ready to export' :
+                                                                                         order.status === 'SHIPPING' ? 'Ready to export' :
+                                                                                         order.status === 'DELIVERED' ? 'Ready to export' :
+                                                                                         order.status === 'COMPLETED' ? 'Ready to export' :
+                                                                                         'Ready to export'}
+                                                                                    </span>
+                                                                                )}
+                                                                            </>
+                                                                        ) : (
+                                                                            '❌ No Invoice Required'
+                                                                        )}
+                                                                    </span>
+                                                                </div>
                                                                 <div style={{ 
                                                                     display: 'flex', 
                                                                     justifyContent: 'space-between', 
@@ -600,44 +856,63 @@ export const OrderHistory = ({
                                                     })()}
                                                 </div>
 
-                                                {/* Export Invoice Button - show for confirmed orders (not cancelled) */}
-                                                {order.status !== 'cancelled' && order.status !== 'CANCELLED' && (
-                                                    <div style={{
-                                                        marginTop: '1.5rem',
-                                                        display: 'flex',
-                                                        justifyContent: 'flex-end'
-                                                    }}>
-                                                        <button
-                                                            onClick={() => exportToPDF(order)}
-                                                            style={{
-                                                                backgroundColor: '#059669',
-                                                                color: 'white',
-                                                                border: 'none',
-                                                                padding: '0.75rem 1.5rem',
-                                                                borderRadius: '0.5rem',
-                                                                fontSize: '1rem',
-                                                                fontWeight: '600',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s ease',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '0.5rem'
-                                                            }}
-                                                            onMouseEnter={(e) => {
-                                                                e.target.style.backgroundColor = '#047857';
-                                                                e.target.style.transform = 'translateY(-1px)';
-                                                                e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.target.style.backgroundColor = '#059669';
-                                                                e.target.style.transform = 'translateY(0)';
-                                                                e.target.style.boxShadow = 'none';
-                                                            }}
-                                                        >
-                                                            📄 Export invoice
-                                                        </button>
-                                                    </div>
-                                                )}
+                                                {/* Export Invoice Button - show if invoice required and order not cancelled */}
+                                                {(() => {
+                                                    // Sửa logic: Cho phép xuất hóa đơn ngay khi đặt hàng thành công
+                                                    // Chỉ loại trừ các status không thể xuất: CANCELLED
+                                                    const shouldShowButton = order.requireInvoice &&
+                                                      order.status !== 'CANCELLED' &&
+                                                      (!order.invoices || !order.invoices.length || order.invoices.every(inv => inv.status !== 'EXPORTED'));
+                                                    
+                                                    console.log(`Order ${order.id} invoice button check:`, {
+                                                        requireInvoice: order.requireInvoice,
+                                                        status: order.status,
+                                                        invoices: order.invoices,
+                                                        shouldShow: shouldShowButton,
+                                                        reason: !shouldShowButton ? 
+                                                            (!order.requireInvoice ? 'No invoice required' :
+                                                             order.status === 'CANCELLED' ? 'Order cancelled' :
+                                                             'Invoice already exported') : 'Should show'
+                                                    });
+                                                    
+                                                    return shouldShowButton ? (
+                                                        <div style={{
+                                                            marginTop: '1.5rem',
+                                                            display: 'flex',
+                                                            justifyContent: 'flex-end'
+                                                        }}>
+                                                            <button
+                                                                onClick={() => exportToPDF(order)}
+                                                                style={{
+                                                                    backgroundColor: '#059669',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    padding: '0.75rem 1.5rem',
+                                                                    borderRadius: '0.5rem',
+                                                                    fontSize: '1rem',
+                                                                    fontWeight: '600',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.2s ease',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '0.5rem'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.target.style.backgroundColor = '#047857';
+                                                                    e.target.style.transform = 'translateY(-1px)';
+                                                                    e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.target.style.backgroundColor = '#059669';
+                                                                    e.target.style.transform = 'translateY(0)';
+                                                                    e.target.style.boxShadow = 'none';
+                                                                }}
+                                                            >
+                                                                📄 Export Invoice
+                                                            </button>
+                                                        </div>
+                                                    ) : null;
+                                                })()}
 
                                                 {order.shippingAddress && (
                                                     <div style={{
@@ -666,6 +941,15 @@ export const OrderHistory = ({
                     </div>
                 </div>
             )}
+
+            {/* Phân trang */}
+            <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={onPageChange}
+                itemsPerPage={10}
+                totalItems={totalOrders}
+            />
 
             {/* Cancel Order Modal */}
             {showCancelModal && (

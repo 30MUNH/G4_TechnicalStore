@@ -21,6 +21,11 @@ export class PaymentService {
     username: string,
     createPaymentDto: CreatePaymentDto
   ): Promise<string> {
+    // Validate payment amount
+    if (!createPaymentDto.amount || createPaymentDto.amount <= 0) {
+      throw new Error("Invalid payment amount");
+    }
+
     // Get order and validate
     const order = await DbConnection.appDataSource.manager.findOne(Order, {
       where: { id: createPaymentDto.orderId },
@@ -31,9 +36,25 @@ export class PaymentService {
       throw new Error("Order not found");
     }
 
-    if (order.customer.username !== username) {
-      throw new Error("Unauthorized access to order");
+    // Security: Validate payment amount matches order total
+    if (Math.abs(order.totalAmount - createPaymentDto.amount) > 0.01) {
+      throw new Error(`Payment amount mismatch: order ${order.totalAmount}, payment ${createPaymentDto.amount}`);
     }
+
+    // For authenticated users, verify order ownership
+    // For guest orders, customer will be null
+    if (username && order.customer) {
+      if (order.customer.username !== username) {
+        throw new Error("Unauthorized access to order");
+      }
+    } else if (username && !order.customer) {
+      // Authenticated user trying to pay for guest order - not allowed
+      throw new Error("Cannot pay for guest order with authenticated account");
+    } else if (!username && order.customer) {
+      // Guest trying to pay for authenticated user's order - not allowed
+      throw new Error("Cannot pay for user order as guest");
+    }
+    // If (!username && !order.customer) - guest paying for guest order - allowed
 
     if (order.status !== OrderStatus.PENDING) {
       throw new Error("Order is not in pending status");
@@ -70,7 +91,6 @@ export class PaymentService {
     const seconds = vietnamTime.getSeconds().toString().padStart(2, "0");
 
     const createDate = `${year}${month}${day}${hours}${minutes}${seconds}`;
-    console.log("🔍 Create Date:", createDate);
 
     const vnp_Params: any = {
       vnp_Version: "2.1.0",
@@ -87,7 +107,7 @@ export class PaymentService {
       vnp_Locale: createPaymentDto.locale || "vn",
       vnp_ReturnUrl: vnp_ReturnUrl,
       vnp_IpnUrl: vnp_IpnUrl,
-      vnp_IpAddr: "127.0.0.1", // In production, get from request
+      vnp_IpAddr: "127.0.0.1", // TODO: Get real IP from request in production
       vnp_CreateDate: createDate,
     };
 
@@ -110,7 +130,7 @@ export class PaymentService {
 
     // Create secure hash
     const hmac = crypto.createHmac("sha512", vnp_HashSecret);
-    const signed = hmac.update(new Buffer(signData, "utf-8")).digest("hex");
+    const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
 
     // Add secure hash to parameters
     vnp_Params.vnp_SecureHash = signed;
@@ -119,17 +139,6 @@ export class PaymentService {
     const paymentUrl = `${vnp_Url}?${new URLSearchParams(
       vnp_Params
     ).toString()}`;
-
-    // Debug logging
-    console.log("🔍 VNPAY Debug Info:");
-    console.log("📅 Create Date:", createDate);
-    console.log("🔑 TmnCode:", vnp_TmnCode);
-    console.log("💰 Amount:", vnp_Params.vnp_Amount);
-    console.log("🆔 Order ID:", vnp_Params.vnp_TxnRef);
-    console.log("🔗 Return URL:", vnp_Params.vnp_ReturnUrl);
-    console.log("📡 IPN URL:", vnp_Params.vnp_IpnUrl);
-    console.log("🔒 Secure Hash:", vnp_Params.vnp_SecureHash);
-    console.log("🌐 Full URL:", paymentUrl);
 
     return paymentUrl;
   }
@@ -235,8 +244,19 @@ export class PaymentService {
     orderId: string,
     username: string
   ): Promise<PaymentStatusDto> {
+    // Build query conditions based on whether it's an authenticated user or guest order
+    let whereCondition: any = { order: { id: orderId } };
+    
+    if (username) {
+      // For authenticated users, ensure they can only access their own orders
+      whereCondition.order.customer = { username };
+    } else {
+      // For guest orders, ensure the order has no customer (is a guest order)
+      whereCondition.order.customer = null;
+    }
+
     const payment = await DbConnection.appDataSource.manager.findOne(Payment, {
-      where: { order: { id: orderId, customer: { username } } },
+      where: whereCondition,
       relations: ["order", "order.customer"],
     });
 
@@ -263,6 +283,11 @@ export class PaymentService {
     page: number = 1,
     limit: number = 10
   ) {
+    // Payment history is only available for authenticated users
+    if (!username) {
+      throw new Error("Payment history is only available for authenticated users");
+    }
+
     const skip = (page - 1) * limit;
 
     const [payments, total] =
@@ -365,7 +390,7 @@ export class PaymentService {
 
       const crypto = require("crypto");
       const hmac = crypto.createHmac("sha512", hashSecret);
-      const signed = hmac.update(new Buffer(signData, "utf-8")).digest("hex");
+      const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
 
       return vnp_SecureHash === signed;
     } catch (error) {

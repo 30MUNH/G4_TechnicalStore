@@ -16,32 +16,63 @@ import { Auth } from "@/middlewares/auth.middleware";
 import { AccountDetailsDto } from "@/auth/dtos/account.dto";
 import { Response } from "express";
 import { CreatePaymentDto } from "./dtos/payment.dto";
+import { JwtService } from "@/auth/jwt/jwt.service";
 
 @Service()
 @Controller("/payment")
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    private readonly paymentService: PaymentService,
+    private readonly jwtService: JwtService
+  ) {}
 
   /**
-   * Create VNPAY payment URL
+   * Create VNPAY payment URL - supports both authenticated and guest users
    * POST /api/payment/create-vnpay-url
    */
   @Post("/create-vnpay-url")
-  @UseBefore(Auth)
   async createVNPayUrl(
     @Req() req: any,
     @Body() createPaymentDto: CreatePaymentDto
   ) {
-    const user = req.user as AccountDetailsDto;
-    const paymentUrl = await this.paymentService.createVNPayUrl(
-      user.username,
-      createPaymentDto
-    );
+    try {
+      let username = null;
+      
+      // Try to get user from Authorization header if present
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.substring(7);
+          const decodedToken = this.jwtService.verifyAccessToken(token);
+          if (decodedToken && decodedToken.username) {
+            username = decodedToken.username;
+          }
+        } catch (error) {
+          // Invalid token - treat as guest user
+          username = null;
+        }
+      }
 
-    return {
-      paymentUrl,
-      orderId: createPaymentDto.orderId,
-    };
+      const paymentUrl = await this.paymentService.createVNPayUrl(
+        username,
+        createPaymentDto
+      );
+
+      return {
+        success: true,
+        message: "Payment URL created successfully",
+        data: {
+          paymentUrl,
+          orderId: createPaymentDto.orderId,
+        }
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to create payment URL",
+        error: error.message
+      };
+    }
   }
 
   /**
@@ -110,19 +141,46 @@ export class PaymentController {
   }
 
   /**
-   * Get payment status by order ID
+   * Get payment status by order ID - supports both authenticated and guest users
    * GET /api/payment/status/:orderId
    */
   @Get("/status/:orderId")
-  @UseBefore(Auth)
   async getPaymentStatus(@Param("orderId") orderId: string, @Req() req: any) {
-    const user = req.user as AccountDetailsDto;
-    const paymentStatus = await this.paymentService.getPaymentStatus(
-      orderId,
-      user.username
-    );
+    try {
+      let username = null;
+      
+      // Try to get user from Authorization header if present
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.substring(7);
+          const decodedToken = this.jwtService.verifyAccessToken(token);
+          if (decodedToken && decodedToken.username) {
+            username = decodedToken.username;
+          }
+        } catch (error) {
+          // Invalid token - treat as guest user
+          username = null;
+        }
+      }
 
-    return paymentStatus;
+      const paymentStatus = await this.paymentService.getPaymentStatus(
+        orderId,
+        username
+      );
+
+      return {
+        success: true,
+        message: "Payment status retrieved successfully",
+        data: paymentStatus
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to get payment status",
+        error: error.message
+      };
+    }
   }
 
   /**

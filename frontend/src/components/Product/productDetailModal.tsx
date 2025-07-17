@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useCart } from "../../contexts/CartContext";
-import { useAuth } from "../../contexts/AuthContext";
 import type { Product } from "../../types/product";
 
 interface ProductDetailModalProps {
@@ -54,9 +52,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onClose,
   product,
 }) => {
-  const navigate = useNavigate();
   const { addToCart } = useCart();
-  const { isAuthenticated } = useAuth();
   const [addToCartStatus, setAddToCartStatus] = useState<{
     message: string;
     type: "success" | "error";
@@ -509,16 +505,6 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   };
 
   const handleAddToCart = async () => {
-    if (!isAuthenticated()) {
-      navigate("/login", {
-        state: { 
-          returnUrl: window.location.pathname,
-          message: "Please login to add items to cart",
-        },
-      });
-      return;
-    }
-
     if (!product.id) {
       setAddToCartStatus({
         message: "Invalid product data",

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import api from '../services/apiInterceptor';
 
 export const useInvoiceExport = () => {
   const companyInfo = {
@@ -51,13 +52,19 @@ export const useInvoiceExport = () => {
       `;
       document.body.appendChild(loadingDiv);
 
-      const invoiceNumber = generateInvoiceNumber();
-      const invoiceDate = new Date().toISOString();
+      // Get invoice info from order or create if not exists
+      const invoice = order.invoices && order.invoices.length > 0 ? order.invoices[0] : null;
+      const invoiceNumber = invoice?.invoiceNumber || generateInvoiceNumber();
+      const invoiceDate = invoice?.createdAt || new Date().toISOString();
+      const paymentMethod = order.paymentMethod || 'Cash on delivery';
 
       // Calculate totals
       const orderDetails = order.orderDetails || [];
       const subtotal = orderDetails.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      const total = subtotal ;
+      
+      // Calculate VAT if required
+      const vatAmount = order.requireInvoice ? subtotal * 0.1 : 0;
+      const total = subtotal + vatAmount;
 
       // Create invoice HTML content
       const invoiceHTML = `
@@ -83,6 +90,7 @@ export const useInvoiceExport = () => {
               <p style="margin: 8px 0; font-size: 14px;"><strong>Mã đơn hàng:</strong> #${order.id}</p>
               <p style="margin: 8px 0; font-size: 14px;"><strong>Ngày đặt:</strong> ${formatDate(order.orderDate)}</p>
               <p style="margin: 8px 0; font-size: 14px;"><strong>Trạng thái:</strong> ${order.status}</p>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Phương thức thanh toán:</strong> ${paymentMethod}</p>
             </div>
             <div style="width: 48%;">
               <h3 style="font-size: 16px; margin-bottom: 15px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">👤 Thông tin khách hàng</h3>
@@ -117,6 +125,30 @@ export const useInvoiceExport = () => {
                     <td style="border: 1px solid #ddd; padding: 10px 8px; text-align: right; font-weight: 500;">${formatPrice(item.price * item.quantity)}</td>
                   </tr>
                 `).join('')}
+                
+                <!-- Subtotal row -->
+                <tr style="background-color: #f8f9fa;">
+                  <td style="border: 1px solid #ddd; padding: 10px 8px;">&nbsp;</td>
+                  <td style="border: 1px solid #ddd; padding: 10px 8px;">&nbsp;</td>
+                  <td style="border: 1px solid #ddd; padding: 10px 8px;">&nbsp;</td>
+                  <td style="border: 1px solid #ddd; padding: 10px 8px;">&nbsp;</td>
+                  <td style="border: 1px solid #ddd; padding: 10px 8px; text-align: right; font-weight: bold;">Tạm tính:</td>
+                  <td style="border: 1px solid #ddd; padding: 10px 8px; text-align: right; font-weight: bold;">${formatPrice(subtotal)}</td>
+                </tr>
+                
+                ${order.requireInvoice ? `
+                <!-- VAT row -->
+                <tr style="background-color: #f8f9fa;">
+                  <td style="border: 1px solid #ddd; padding: 10px 8px;">&nbsp;</td>
+                  <td style="border: 1px solid #ddd; padding: 10px 8px;">&nbsp;</td>
+                  <td style="border: 1px solid #ddd; padding: 10px 8px;">&nbsp;</td>
+                  <td style="border: 1px solid #ddd; padding: 10px 8px;">&nbsp;</td>
+                  <td style="border: 1px solid #ddd; padding: 10px 8px; text-align: right; font-weight: bold;">VAT (10%):</td>
+                  <td style="border: 1px solid #ddd; padding: 10px 8px; text-align: right; font-weight: bold;">${formatPrice(vatAmount)}</td>
+                </tr>
+                ` : ''}
+                
+                <!-- Total row -->
                 <tr style="background-color: #f8f9fa; border-top: 2px solid #3B82F6;">
                   <td style="border: 1px solid #ddd; padding: 12px 8px;">&nbsp;</td>
                   <td style="border: 1px solid #ddd; padding: 12px 8px;">&nbsp;</td>
@@ -192,24 +224,43 @@ export const useInvoiceExport = () => {
         heightLeft -= pageHeight;
       }
 
-      // Save the PDF
-      pdf.save(`Hoa-don-${order.id}-${new Date().toISOString().split('T')[0]}.pdf`);
+      // Download the PDF
+      pdf.save(`Invoice_${order.id}_${invoiceNumber}.pdf`);
 
       // Remove loading notification
-      document.body.removeChild(loadingDiv);
+      if (loadingDiv.parentNode) {
+        loadingDiv.parentNode.removeChild(loadingDiv);
+      }
+
+      // Try to create/update invoice in database
+      try {
+        const response = await api.post('/invoices/create', {
+          orderId: order.id,
+          paymentMethod: paymentMethod
+        });
+        
+        if (response.data.success) {
+          console.log('✅ Invoice saved to database successfully');
+        } else {
+          console.warn('⚠️ Failed to save invoice to database:', response.data.message);
+        }
+      } catch (dbError) {
+        console.warn('⚠️ Error saving invoice to database:', dbError);
+        // Don't throw - PDF export already succeeded
+      }
 
       // Show success notification
       const successDiv = document.createElement('div');
       successDiv.innerHTML = `
-        <div style="position: fixed; top: 20px; right: 20px; background: #10B981; color: white; padding: 12px 20px; border-radius: 8px; z-index: 9999; font-family: Arial, sans-serif;">
-          ✅ Hóa đơn đã được tải xuống thành công!
+        <div style="position: fixed; top: 20px; right: 20px; background: #059669; color: white; padding: 12px 20px; border-radius: 8px; z-index: 9999; font-family: Arial, sans-serif;">
+          ✅ Hóa đơn đã được xuất thành công!
         </div>
       `;
       document.body.appendChild(successDiv);
-
+      
       setTimeout(() => {
-        if (document.body.contains(successDiv)) {
-          document.body.removeChild(successDiv);
+        if (successDiv.parentNode) {
+          successDiv.parentNode.removeChild(successDiv);
         }
       }, 3000);
 
