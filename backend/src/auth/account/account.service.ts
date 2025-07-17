@@ -34,10 +34,11 @@ export class AccountService {
         username: request.username,
       }
     })) throw new UsernameAlreadyExistedException(HttpMessages._USERNAME_EXISTED);
-    account.phone = request.phone;
+    const phone = "0" + request.phone.slice(-9);
+    account.phone = phone;
     if(await Account.findOne({
       where: {
-        phone: request.phone,
+        phone,
       }
     })) throw new PhoneAlreadyExistedException(HttpMessages._PHONE_EXISTED);
     account.password = await bcrypt.hash(request.password, SALT_ROUNDS);
