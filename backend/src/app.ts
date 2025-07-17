@@ -11,6 +11,7 @@ import swaggerUi from "swagger-ui-express";
 import { DbConnection } from "@/database/dbConnection";
 import { ResponseInterceptor } from "./utils/interceptor/interceptor";
 import cors from "cors";
+import { InvoiceController } from "./payment/invoice.controller";
 
 export default class App {
   public app: express.Application;

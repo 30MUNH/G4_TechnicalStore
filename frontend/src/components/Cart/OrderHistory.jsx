@@ -223,7 +223,6 @@ export const OrderHistory = ({
             setCancelReason('');
             
         } catch (error) {
-            console.error('Cancel order error:', error);
             
             // Handle specific error cases
             if (error.message?.includes('account_locked')) {

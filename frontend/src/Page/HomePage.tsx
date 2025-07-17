@@ -354,18 +354,14 @@ const HomePage: React.FC = () => {
       {/* Promo Banner Slider */}
       <div
         style={{
-          width: '100vw',
+          width: '100%',
           position: 'relative',
-          left: '50%',
-          right: '50%',
-          marginLeft: '-50vw',
-          marginRight: '-50vw',
           background: 'transparent',
           marginTop: 0,
           marginBottom: 5,
           height: 400,
-          overflow: 'visible',
-          maxWidth: '100vw',
+          overflow: 'hidden',
+          maxWidth: '100%',
           padding: 0,
         }}
         className="promo-slider-hover-area"
@@ -385,22 +381,22 @@ const HomePage: React.FC = () => {
                 boxShadow: '0 8px 32px rgba(0,0,0,0.18)'
               }}
             >
-              <img
-                src={slide.image}
-                alt="promo"
-                style={{
-                  height: 400,
-                  width: '100vw',
-                  objectFit: 'cover',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-                  margin: 0,
-                  padding: 0,
-                  position: 'relative',
-                  zIndex: 0
-                }}
-                onMouseEnter={() => setIsImgHover(true)}
-                onMouseLeave={() => setIsImgHover(false)}
-              />
+                              <img
+                  src={slide.image}
+                  alt="promo"
+                  style={{
+                    height: 400,
+                    width: '100%',
+                    objectFit: 'cover',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                    margin: 0,
+                    padding: 0,
+                    position: 'relative',
+                    zIndex: 0
+                  }}
+                  onMouseEnter={() => setIsImgHover(true)}
+                  onMouseLeave={() => setIsImgHover(false)}
+                />
             </div>
           ))}
         </Slider>
