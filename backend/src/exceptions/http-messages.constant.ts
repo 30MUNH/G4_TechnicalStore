@@ -4,4 +4,6 @@ export enum HttpMessages{
     _WRONG_OLD_PASSWORD = "Old password is incorrect",
     _NO_TOKEN = "No refresh tokens found",
     _BAD_REQUEST = "Bad request",
+    _USERNAME_EXISTED = "Username already existed",
+    _PHONE_EXISTED = "Phone already existed",
 }

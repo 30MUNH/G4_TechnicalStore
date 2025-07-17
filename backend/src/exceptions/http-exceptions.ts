@@ -65,3 +65,15 @@ export class BadRequestException extends HttpException {
     super(400, message);
   }
 }
+
+export class UsernameAlreadyExistedException extends HttpException {
+  constructor(message: string) {
+    super(400, message);
+  }
+}
+
+export class PhoneAlreadyExistedException extends HttpException {
+  constructor(message: string) {
+    super(400, message);
+  }
+}
