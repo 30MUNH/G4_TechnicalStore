@@ -8,9 +8,9 @@ import { OrderStatus } from "./dtos/update-order.dto";
 
 @Entity('orders')
 export class Order extends BaseEntity {
-  @ManyToOne(() => Account, (account) => account.customerOrders)
+  @ManyToOne(() => Account, (account) => account.customerOrders, { nullable: true })
   @JoinColumn({ name: 'customer_id' })
-  customer: Account;
+  customer: Account | null;
 
   @ManyToOne(() => Account, (account) => account.shipperOrders)
   @JoinColumn({ name: 'staff_id' })
@@ -40,6 +40,9 @@ export class Order extends BaseEntity {
 
   @Column({ nullable: true, name: 'payment_method' })
   paymentMethod: string;
+
+  @Column({ type: 'boolean', default: false, name: 'require_invoice' })
+  requireInvoice: boolean;
 
   @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.order)
   orderDetails: OrderDetail[];

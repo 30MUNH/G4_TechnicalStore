@@ -2,10 +2,13 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { cartService } from '../services/cartService';
 import type { CartItem } from '../services/cartService';
+import { guestCartService, type GuestCartItem } from '../services/guestCartService';
+import { productService } from '../services/productService';
 
 // Updated interfaces to match backend
 interface CartState {
     items: CartItem[];
+    selectedItems: Set<string>; // Track selected item IDs for checkout
     totalAmount: number;
     loading: boolean;
     operationLoading: boolean; // Separate loading for cart operations (add/update/remove)
@@ -22,7 +25,10 @@ type CartAction =
     | { type: 'SET_ERROR'; payload: string | null }
     | { type: 'SET_CART'; payload: { items: CartItem[]; totalAmount: number } }
     | { type: 'CLEAR_CART' }
-    | { type: 'SET_INITIALIZED'; payload: boolean };
+    | { type: 'SET_INITIALIZED'; payload: boolean }
+    | { type: 'TOGGLE_ITEM_SELECTION'; payload: string }
+    | { type: 'SELECT_ALL_ITEMS'; payload: boolean }
+    | { type: 'SET_SELECTED_ITEMS'; payload: Set<string> };
 
 interface CartContextType extends CartState {
     addToCart: (productId: string, quantity: number) => Promise<void>;
@@ -32,6 +38,11 @@ interface CartContextType extends CartState {
     clearCart: () => Promise<void>;
     refreshCart: () => Promise<void>;
     getItemQuantity: (productId: string) => number;
+    isGuest: boolean;
+    migrateGuestCart: () => Promise<void>;
+    toggleItemSelection: (itemId: string) => void;
+    selectAllItems: (selected: boolean) => void;
+    getSelectedSubtotal: () => number;
 }
 
 // Define proper types for API responses
@@ -57,6 +68,7 @@ interface ApiError {
 
 const initialState: CartState = {
     items: [],
+    selectedItems: new Set<string>(),
     totalAmount: 0,
     loading: false,
     operationLoading: false,
@@ -91,26 +103,62 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         }
         case 'SET_ERROR':
             return { ...state, error: action.payload, loading: false, operationLoading: false };
-        case 'SET_CART':
+        case 'SET_CART': {
+            // Auto-select all items when cart is loaded
+            const newSelectedItems = new Set<string>();
+            action.payload.items.forEach(item => {
+                const itemId = item.product?.id || item.id;
+                if (itemId) {
+                    newSelectedItems.add(itemId);
+                }
+            });
             return {
                 ...state,
                 items: action.payload.items,
+                selectedItems: newSelectedItems,
                 totalAmount: action.payload.totalAmount,
                 loading: false,
                 operationLoading: false,
                 error: null,
                 isInitialized: true,
             };
+        }
         case 'CLEAR_CART':
             return {
                 ...state,
                 items: [],
+                selectedItems: new Set<string>(),
                 totalAmount: 0,
                 loading: false,
                 operationLoading: false,
                 activeOperations: new Set<string>(),
                 error: null,
             };
+        case 'TOGGLE_ITEM_SELECTION': {
+            const newSelectedItems = new Set(state.selectedItems);
+            if (newSelectedItems.has(action.payload)) {
+                newSelectedItems.delete(action.payload);
+            } else {
+                newSelectedItems.add(action.payload);
+            }
+            return { ...state, selectedItems: newSelectedItems };
+        }
+        case 'SELECT_ALL_ITEMS': {
+            const newSelectedItems = new Set<string>();
+            if (action.payload) {
+                // Select all items
+                state.items.forEach(item => {
+                    const itemId = item.product?.id || item.id;
+                    if (itemId) {
+                        newSelectedItems.add(itemId);
+                    }
+                });
+            }
+            // If false, newSelectedItems remains empty (deselect all)
+            return { ...state, selectedItems: newSelectedItems };
+        }
+        case 'SET_SELECTED_ITEMS':
+            return { ...state, selectedItems: action.payload };
         case 'SET_INITIALIZED':
             return { ...state, isInitialized: action.payload };
         default:
@@ -122,6 +170,42 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(cartReducer, initialState);
+
+    // Helper function to check if user is authenticated
+    const isAuthenticated = (): boolean => {
+        return !!localStorage.getItem('authToken');
+    };
+
+    // Helper function to convert GuestCartItem to CartItem format
+    const convertGuestCartToCartItems = (guestItems: GuestCartItem[]): CartItem[] => {
+        try {
+            return guestItems.map(guestItem => {
+                // Validation để tránh lỗi
+                if (!guestItem.productId || !guestItem.name) {
+                    console.warn('Invalid guest cart item:', guestItem);
+                    return null;
+                }
+                
+                return {
+                    id: `guest-${guestItem.productId}`,
+                    quantity: Math.max(1, guestItem.quantity), // Đảm bảo quantity >= 1
+                    product: {
+                        id: guestItem.productId,
+                        name: guestItem.name,
+                        slug: '',
+                        price: Math.max(0, guestItem.price), // Đảm bảo price >= 0
+                        stock: Math.max(0, guestItem.stock), // Đảm bảo stock >= 0
+                        isActive: true,
+                        images: guestItem.image ? [{ id: '1', url: guestItem.image }] : [],
+                        category: guestItem.category || ''
+                    }
+                };
+            }).filter(Boolean) as CartItem[]; // Loại bỏ null items
+        } catch (error) {
+            console.error('Error converting guest cart items:', error);
+            return [];
+        }
+    };
 
     // Helper function to handle API responses
     const handleApiResponse = (response: ApiResponse, operation: string) => {
@@ -217,10 +301,48 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
-            const response = await cartService.addToCart(productId, quantity);
-            handleApiResponse(response, 'ADD_TO_CART');
+            if (isAuthenticated()) {
+                // Authenticated user - use API
+                const response = await cartService.addToCart(productId, quantity);
+                handleApiResponse(response, 'ADD_TO_CART');
+            } else {
+                // Guest user - use sessionStorage
+                const product = await productService.getProductById(productId);
+                if (!product) {
+                    throw new Error('Product not found');
+                }
+
+                const guestCart = guestCartService.addToCart({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.images && product.images.length > 0 ? product.images[0].url : undefined,
+                    category: product.category?.name,
+                    stock: product.stock
+                }, quantity);
+
+                // Update context state with guest cart data and validate sync
+                const cartItems = convertGuestCartToCartItems(guestCart.items);
+                if (cartItems.length !== guestCart.items.length) {
+                    console.warn('Cart sync warning: Some items failed to convert');
+                }
+                
+                dispatch({ 
+                    type: 'SET_CART', 
+                    payload: { 
+                        items: cartItems, 
+                        totalAmount: guestCart.totalAmount 
+                    } 
+                });
+            }
         } catch (error) {
-            handleApiError(error);
+            if (isAuthenticated()) {
+                handleApiError(error);
+            } else {
+                // Handle guest cart errors
+                const errorMessage = error instanceof Error ? error.message : 'Failed to add product to cart';
+                dispatch({ type: 'SET_ERROR', payload: errorMessage });
+            }
         } finally {
             dispatch({ type: 'REMOVE_OPERATION', payload: operationId });
         }
@@ -237,10 +359,29 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
-            const response = await cartService.increaseQuantity(productId, amount);
-            handleApiResponse(response, 'INCREASE_QUANTITY');
+            if (isAuthenticated()) {
+                // Authenticated user - use API
+                const response = await cartService.increaseQuantity(productId, amount);
+                handleApiResponse(response, 'INCREASE_QUANTITY');
+            } else {
+                // Guest user - use sessionStorage
+                const guestCart = guestCartService.increaseQuantity(productId, amount);
+                const cartItems = convertGuestCartToCartItems(guestCart.items);
+                dispatch({ 
+                    type: 'SET_CART', 
+                    payload: { 
+                        items: cartItems, 
+                        totalAmount: guestCart.totalAmount 
+                    } 
+                });
+            }
         } catch (error) {
-            handleApiError(error);
+            if (isAuthenticated()) {
+                handleApiError(error);
+            } else {
+                const errorMessage = error instanceof Error ? error.message : 'Failed to increase quantity';
+                dispatch({ type: 'SET_ERROR', payload: errorMessage });
+            }
         } finally {
             dispatch({ type: 'REMOVE_OPERATION', payload: operationId });
         }
@@ -257,10 +398,29 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
-            const response = await cartService.decreaseQuantity(productId, amount);
-            handleApiResponse(response, 'DECREASE_QUANTITY');
+            if (isAuthenticated()) {
+                // Authenticated user - use API
+                const response = await cartService.decreaseQuantity(productId, amount);
+                handleApiResponse(response, 'DECREASE_QUANTITY');
+            } else {
+                // Guest user - use sessionStorage
+                const guestCart = guestCartService.decreaseQuantity(productId, amount);
+                const cartItems = convertGuestCartToCartItems(guestCart.items);
+                dispatch({ 
+                    type: 'SET_CART', 
+                    payload: { 
+                        items: cartItems, 
+                        totalAmount: guestCart.totalAmount 
+                    } 
+                });
+            }
         } catch (error) {
-            handleApiError(error);
+            if (isAuthenticated()) {
+                handleApiError(error);
+            } else {
+                const errorMessage = error instanceof Error ? error.message : 'Failed to decrease quantity';
+                dispatch({ type: 'SET_ERROR', payload: errorMessage });
+            }
         } finally {
             dispatch({ type: 'REMOVE_OPERATION', payload: operationId });
         }
@@ -277,10 +437,29 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
-            const response = await cartService.removeItem(productId);
-            handleApiResponse(response, 'REMOVE_ITEM');
+            if (isAuthenticated()) {
+                // Authenticated user - use API
+                const response = await cartService.removeItem(productId);
+                handleApiResponse(response, 'REMOVE_ITEM');
+            } else {
+                // Guest user - use sessionStorage
+                const guestCart = guestCartService.removeItem(productId);
+                const cartItems = convertGuestCartToCartItems(guestCart.items);
+                dispatch({ 
+                    type: 'SET_CART', 
+                    payload: { 
+                        items: cartItems, 
+                        totalAmount: guestCart.totalAmount 
+                    } 
+                });
+            }
         } catch (error) {
-            handleApiError(error);
+            if (isAuthenticated()) {
+                handleApiError(error);
+            } else {
+                const errorMessage = error instanceof Error ? error.message : 'Failed to remove item';
+                dispatch({ type: 'SET_ERROR', payload: errorMessage });
+            }
         } finally {
             dispatch({ type: 'REMOVE_OPERATION', payload: operationId });
         }
@@ -296,10 +475,21 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         dispatch({ type: 'SET_ERROR', payload: null });
 
         try {
-            const response = await cartService.clearCart();
-            handleApiResponse(response, 'CLEAR_CART');
+            if (isAuthenticated()) {
+                // Authenticated user - use API
+                const response = await cartService.clearCart();
+                handleApiResponse(response, 'CLEAR_CART');
+            } else {
+                // Guest user - clear sessionStorage
+                guestCartService.clearCart();
+                dispatch({ type: 'CLEAR_CART' });
+            }
         } catch (error) {
-            handleApiError(error);
+            if (isAuthenticated()) {
+                handleApiError(error);
+            } else {
+                dispatch({ type: 'SET_ERROR', payload: 'Failed to clear cart' });
+            }
         }
     };
 
@@ -324,8 +514,80 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const getItemQuantity = (productId: string): number => {
-        const item = state.items.find(item => item.product.id === productId);
-        return item ? item.quantity : 0;
+        if (isAuthenticated()) {
+            const item = state.items.find(item => item.product.id === productId);
+            return item ? item.quantity : 0;
+        } else {
+            return guestCartService.getItemQuantity(productId);
+        }
+    };
+
+    // Migrate guest cart to authenticated cart when user logs in
+    const migrateGuestCart = async (): Promise<void> => {
+        if (!isAuthenticated()) {
+            return;
+        }
+
+        try {
+            const guestCart = guestCartService.getCart();
+            if (guestCart.items.length === 0) {
+                return;
+            }
+
+            // Get current authenticated cart to check for duplicates
+            let currentAuthCart = null;
+            try {
+                const cartResponse = await cartService.viewCart();
+                if (cartResponse.success && cartResponse.data) {
+                    // Handle nested response structure
+                    const responseData = cartResponse.data as { data?: { cartItems?: CartItem[] } } | { cartItems?: CartItem[] };
+                    currentAuthCart = ('data' in responseData ? responseData.data : responseData) as { cartItems?: CartItem[] };
+                }
+            } catch (error) {
+                console.warn('Could not fetch current cart for migration check:', error);
+            }
+
+            const migrationResults = {
+                success: 0,
+                failed: 0,
+                skipped: 0
+            };
+
+            // Add each guest cart item to authenticated cart
+            for (const guestItem of guestCart.items) {
+                try {
+                    // Check if item already exists in authenticated cart
+                    const existsInAuthCart = currentAuthCart?.cartItems?.some(
+                        (item: CartItem) => item.product.id === guestItem.productId
+                    );
+                    
+                    if (existsInAuthCart) {
+                        console.log(`Skipping migration of ${guestItem.name} - already in authenticated cart`);
+                        migrationResults.skipped++;
+                        continue;
+                    }
+
+                    await cartService.addToCart(guestItem.productId, guestItem.quantity);
+                    migrationResults.success++;
+                } catch (error) {
+                    console.error(`Failed to migrate item ${guestItem.productId}:`, error);
+                    migrationResults.failed++;
+                }
+            }
+
+            // Clear guest cart only if at least some items were migrated successfully
+            if (migrationResults.success > 0 || migrationResults.skipped > 0) {
+                guestCartService.clearCart();
+            }
+            
+            // Refresh authenticated cart
+            await refreshCart();
+
+            // Log migration results
+            console.log('Cart migration completed:', migrationResults);
+        } catch (error) {
+            console.error('Failed to migrate guest cart:', error);
+        }
     };
 
     // Initialize cart on mount and auth changes
@@ -334,7 +596,20 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const authToken = localStorage.getItem('authToken');
             
             if (!authToken) {
-                dispatch({ type: 'CLEAR_CART' });
+                // Load guest cart from sessionStorage
+                const guestCart = guestCartService.getCart();
+                if (guestCart.items.length > 0) {
+                    const cartItems = convertGuestCartToCartItems(guestCart.items);
+                    dispatch({ 
+                        type: 'SET_CART', 
+                        payload: { 
+                            items: cartItems, 
+                            totalAmount: guestCart.totalAmount 
+                        } 
+                    });
+                } else {
+                    dispatch({ type: 'CLEAR_CART' });
+                }
                 dispatch({ type: 'SET_INITIALIZED', payload: true });
                 return;
             }
@@ -353,16 +628,56 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key === 'authToken') {
                 if (e.newValue) {
-                    refreshCart();
+                    // User logged in - migrate guest cart then refresh
+                    const handleLogin = async () => {
+                        try {
+                            await migrateGuestCart();
+                            await refreshCart();
+                        } catch (error) {
+                            console.error('Error handling login cart migration:', error);
+                            await refreshCart(); // Fallback to just refresh
+                        }
+                    };
+                    handleLogin();
                 } else {
+                    // User logged out - clear cart and load guest cart
                     dispatch({ type: 'CLEAR_CART' });
+                    const guestCart = guestCartService.getCart();
+                    if (guestCart.items.length > 0) {
+                        const cartItems = convertGuestCartToCartItems(guestCart.items);
+                        dispatch({ 
+                            type: 'SET_CART', 
+                            payload: { 
+                                items: cartItems, 
+                                totalAmount: guestCart.totalAmount 
+                            } 
+                        });
+                    }
                 }
             }
         };
 
         window.addEventListener('storage', handleStorageChange);
         return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+    }, [migrateGuestCart, refreshCart]); // Add dependencies
+
+    // Cart selection functions
+    const toggleItemSelection = (itemId: string): void => {
+        dispatch({ type: 'TOGGLE_ITEM_SELECTION', payload: itemId });
+    };
+
+    const selectAllItems = (selected: boolean): void => {
+        dispatch({ type: 'SELECT_ALL_ITEMS', payload: selected });
+    };
+
+    const getSelectedSubtotal = (): number => {
+        return state.items
+            .filter(item => {
+                const itemId = item.product?.id || item.id;
+                return itemId && state.selectedItems.has(itemId);
+            })
+            .reduce((total, item) => total + (item.product?.price || 0) * item.quantity, 0);
+    };
 
     const contextValue: CartContextType = {
         ...state,
@@ -373,6 +688,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         clearCart,
         refreshCart,
         getItemQuantity,
+        isGuest: !isAuthenticated(),
+        migrateGuestCart,
+        toggleItemSelection,
+        selectAllItems,
+        getSelectedSubtotal,
     };
 
     return (

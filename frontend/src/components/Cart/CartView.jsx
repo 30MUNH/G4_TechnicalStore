@@ -1,4 +1,5 @@
 import React from 'react';
+import { useCart } from '../../contexts/CartContext';
 import styles from './CartView.module.css';
 
 // History icon component
@@ -34,11 +35,24 @@ const CartView = ({
     shippingFee, 
     totalAmount 
 }) => {
+    const { selectedItems, getSelectedSubtotal } = useCart();
+    
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
             .format(amount)
             .replace('₫', 'đ');
     };
+
+    // Calculate selection state
+    const selectedCount = cartItems.filter(item => {
+        const itemId = item.product?.id || item.id;
+        return itemId && selectedItems.has(itemId);
+    }).length;
+
+    // Calculate totals for selected items
+    const selectedSubtotal = getSelectedSubtotal();
+    const selectedShippingFee = selectedSubtotal > 0 ? (selectedSubtotal >= 1000000 ? 0 : 30000) : 0;
+    const selectedTotal = selectedSubtotal + selectedShippingFee;
 
     return (
         <div className={styles.cartView}>
@@ -66,6 +80,7 @@ const CartView = ({
             ) : (
                 <div className={styles.cartContent}>
                     <div className={styles.cartItems}>
+                        {/* Select All checkbox đã được xóa khỏi đây */}
                         {cartItems.map(item => (
                             <div key={item.id} className={styles.cartItem} style={{alignItems: 'center', minHeight: '150px'}}>
                                 <button 
@@ -152,24 +167,29 @@ const CartView = ({
                     </div>
                     <div className={styles.cartSummary}>
                         <h2>Order Summary</h2>
+                        {selectedCount === 0 && (
+                            <div className={styles.noSelectionWarning}>
+                                <p>⚠️ Please select at least 1 product to checkout</p>
+                            </div>
+                        )}
                         <div className={styles.summaryDetails}>
                             <div className={styles.summaryRow}>
-                                <span>Subtotal ({cartItems.length} items)</span>
-                                <span>{formatCurrency(subtotal)}</span>
+                                <span>Subtotal ({selectedCount} selected items)</span>
+                                <span>{formatCurrency(selectedSubtotal)}</span>
                             </div>
                             <div className={styles.summaryRow}>
                                 <span>Shipping Fee</span>
-                                <span>{shippingFee === 0 ? 'Free' : formatCurrency(shippingFee)}</span>
+                                <span>{selectedShippingFee === 0 ? 'Free' : formatCurrency(selectedShippingFee)}</span>
                             </div>
                             <div className={`${styles.summaryRow} ${styles.total}`}>
                                 <span>Total</span>
-                                <span>{formatCurrency(totalAmount)}</span>
+                                <span>{formatCurrency(selectedTotal)}</span>
                             </div>
                         </div>
                         <button 
                             onClick={onCheckout}
-                            className={styles.checkoutButton}
-                            disabled={cartItems.length === 0}
+                            className={`${styles.checkoutButton} ${selectedCount === 0 ? styles.disabled : ''}`}
+                            disabled={selectedCount === 0}
                         >
                             Checkout
                         </button>
