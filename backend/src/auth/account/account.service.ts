@@ -4,13 +4,16 @@ import { Role } from "@/auth/role/role.entity";
 import {
   AccountNotFoundException,
   EntityNotFoundException,
+  PhoneAlreadyExistedException,
   TokenNotFoundException,
+  UsernameAlreadyExistedException,
 } from "@/exceptions/http-exceptions";
 import * as bcrypt from "bcrypt";
 import { CreateAccountDto, CredentialsDto, UpdateAccountDto } from "../dtos/account.dto";
 import { JwtService } from "../jwt/jwt.service";
 import { RefreshToken } from "../jwt/refreshToken.entity";
 import { MoreThan } from "typeorm";
+import { HttpMessages } from "@/exceptions/http-messages.constant";
 
 const SALT_ROUNDS = 8;
 @Service()
@@ -26,9 +29,19 @@ export class AccountService {
     if (role == null) throw new EntityNotFoundException("Role");
     const account = new Account();
     account.username = request.username;
+    if(await Account.findOne({
+      where: {
+        username: request.username,
+      }
+    })) throw new UsernameAlreadyExistedException(HttpMessages._USERNAME_EXISTED);
+    account.phone = request.phone;
+    if(await Account.findOne({
+      where: {
+        phone: request.phone,
+      }
+    })) throw new PhoneAlreadyExistedException(HttpMessages._PHONE_EXISTED);
     account.password = await bcrypt.hash(request.password, SALT_ROUNDS);
     account.role = role;
-    account.phone = request.phone;
     return account;
   }
 
@@ -101,6 +114,16 @@ export class AccountService {
         username,
       },
       relations: ['role'],
+    });
+    if (!account) throw new AccountNotFoundException();
+    return account;
+  }
+
+  async findAccountByPhone(phone: string): Promise<Account> {
+    const account = await Account.findOne({
+      where: {
+        phone,
+      },
     });
     if (!account) throw new AccountNotFoundException();
     return account;
