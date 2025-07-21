@@ -256,18 +256,31 @@ export class OrderService {
             const { OrderAssignmentService } = await import('@/shipper/orderAssignment.service');
             const orderAssignmentService = Container.get(OrderAssignmentService);
             
-            console.log(`[Info] Starting auto-assignment for order ${savedOrder.id}`);
+            console.log(`[AUTO-ASSIGN] ====== BẮT ĐẦU PHÂN CÔNG TỰ ĐỘNG ======`);
+            console.log(`[AUTO-ASSIGN] Đơn hàng: ${savedOrder.id}`);
+            console.log(`[AUTO-ASSIGN] Địa chỉ giao hàng: ${savedOrder.shippingAddress}`);
+            console.log(`[AUTO-ASSIGN] Tổng tiền: ${savedOrder.totalAmount}`);
+            
             const assignmentResult = await orderAssignmentService.assignOrderToShipper(savedOrder);
             
             if (assignmentResult.success) {
-                console.log(`[Info] ✅ Auto-assigned order ${savedOrder.id} to shipper: ${assignmentResult.message}`);
+                console.log(`[AUTO-ASSIGN] ✅ THÀNH CÔNG: Auto-assigned order ${savedOrder.id}`);
+                console.log(`[AUTO-ASSIGN] ✅ Shipper được chọn: ${assignmentResult.shipper?.name || 'Không có'}`);
+                console.log(`[AUTO-ASSIGN] ✅ Phương thức giao hàng: ${assignmentResult.deliveryMethod}`);
+                console.log(`[AUTO-ASSIGN] ✅ Message: ${assignmentResult.message}`);
             } else {
-                console.warn(`[Warning] ❌ Auto-assignment failed for order ${savedOrder.id}: ${assignmentResult.message}`);
+                console.warn(`[AUTO-ASSIGN] ❌ THẤT BẠI: Auto-assignment failed for order ${savedOrder.id}`);
+                console.warn(`[AUTO-ASSIGN] ❌ Lý do: ${assignmentResult.message}`);
+                console.warn(`[AUTO-ASSIGN] ❌ Error code: ${assignmentResult.errorCode || 'N/A'}`);
+                console.warn(`[AUTO-ASSIGN] ❌ Chi tiết địa chỉ: "${savedOrder.shippingAddress}"`);
+                
                 // Mark for manual assignment in separate transaction
                 await this.markOrderForManualAssignmentSafe(savedOrder.id, assignmentResult.message);
             }
+            console.log(`[AUTO-ASSIGN] ====== KẾT THÚC PHÂN CÔNG TỰ ĐỘNG ======`);
         } catch (assignmentError) {
-            console.error('[Error] ❌ Failed to auto-assign order to shipper:', assignmentError);
+            console.error('[AUTO-ASSIGN] ❌❌❌ LỖI NGHIÊM TRỌNG khi phân công tự động:', assignmentError);
+            console.error(`[AUTO-ASSIGN] ❌❌❌ Đơn hàng: ${savedOrder.id}, Địa chỉ: "${savedOrder.shippingAddress}"`);
             // Ensure order is marked for manual assignment in separate transaction
             await this.markOrderForManualAssignmentSafe(savedOrder.id, 'Auto-assignment service error');
         }
@@ -863,16 +876,36 @@ export class OrderService {
     }
 
     private async markOrderForManualAssignmentSafe(orderId: string, reason: string): Promise<void> {
-        // Mark order for manual assignment in database
-        const order = await Order.findOne({ where: { id: orderId } });
-        if (order) {
-            order.status = OrderStatus.PENDING_EXTERNAL_SHIPPING; // Set to pending external shipping
-            order.shipper = null; // Clear auto-assigned shipper
-            order.cancelReason = `Auto-assignment failed: ${reason}`; // Record failure reason
-            await order.save();
-            console.warn(`[Warning] Order ${orderId} marked for manual assignment due to auto-assignment failure: ${reason}`);
-        } else {
-            console.warn(`[Warning] Order ${orderId} not found for manual assignment.`);
+        try {
+            // Tìm order và thông tin chi tiết
+            const order = await Order.findOne({ 
+                where: { id: orderId },
+                relations: ['customer', 'orderDetails', 'orderDetails.product'] 
+            });
+
+            if (order) {
+                // Log thông tin chi tiết về đơn hàng
+                console.log(`[Auto-Assignment] Chi tiết đơn hàng ${orderId}:`);
+                console.log(`- Địa chỉ: ${order.shippingAddress}`);
+                console.log(`- Số sản phẩm: ${order.orderDetails?.length || 0}`);
+                console.log(`- Tổng tiền: ${order.totalAmount}`);
+                console.log(`- Lý do giao thất bại: ${reason}`);
+                
+                // Chỉ cập nhật note để Admin xem xét thay vì tự động chuyển sang bên thứ 3
+                const originalNote = order.note || '';
+                order.note = `${originalNote}\n[Hệ thống] Phân công tự động thất bại: ${reason}\nCần Admin xem xét phân công (${new Date().toLocaleString('vi-VN')})`;
+                
+                // Không thay đổi trạng thái đơn hàng, để Admin quyết định
+                // order.status = OrderStatus.PENDING_EXTERNAL_SHIPPING;
+                
+                await order.save();
+                console.warn(`[Warning] Đơn hàng ${orderId} được đánh dấu cần xem xét thủ công. Lý do: ${reason}`);
+            } else {
+                console.warn(`[Warning] Không tìm thấy đơn hàng ${orderId} để đánh dấu xem xét thủ công.`);
+            }
+        } catch (error) {
+            console.error(`[Error] Lỗi khi đánh dấu đơn hàng ${orderId} cần xem xét thủ công:`, error);
+            // Không throw error để tránh ảnh hưởng đến quy trình chính
         }
     }
 } 

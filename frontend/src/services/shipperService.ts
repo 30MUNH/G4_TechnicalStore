@@ -116,7 +116,7 @@ export const shipperService = {
   // New methods for automatic shipper assignment system
   async updateWorkingZone(shipperId: string, workingZones: string[]): Promise<ApiResponse<IShipper>> {
     try {
-      const response = await api.put<ApiResponse<IShipper>>(`/shipping/shippers/${shipperId}/working-zone`, {
+      const response = await api.put<ApiResponse<IShipper>>(`/api/order-assignment/working-zone/${shipperId}`, {
         workingZones
       });
       return response.data;
@@ -199,7 +199,7 @@ export const shipperService = {
 
   async getAvailableZones(): Promise<ApiResponse<AvailableZones>> {
     try {
-      const response = await api.get<ApiResponse<AvailableZones>>('/shipping/available-zones');
+      const response = await api.get<ApiResponse<AvailableZones>>('/api/order-assignment/available-zones');
       return response.data;
     } catch (error) {
       const apiError = error as ApiError;

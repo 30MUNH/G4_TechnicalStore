@@ -141,8 +141,10 @@ export interface WorkingZone {
 }
 
 export interface AvailableZones {
-  zones: WorkingZone[];
-  totalZones: number;
+  provinces: string[];
+  districtsByProvince: {
+    [province: string]: string[]
+  };
 }
 
 // Custom error types

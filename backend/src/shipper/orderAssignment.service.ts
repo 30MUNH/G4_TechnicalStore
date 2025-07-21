@@ -167,14 +167,23 @@ export class OrderAssignmentService {
 
       ValidationHelper.validateUUID(order.id, 'order.id');
 
+      // LOG: Ghi thông tin chi tiết về đơn hàng
+      Logger.debug(`Bắt đầu phân công đơn hàng ${order.id}`);
+      Logger.debug(`Địa chỉ đơn hàng: "${order.shippingAddress}"`);
+
       // 1. Trích xuất địa chỉ đơn hàng
       const orderAddress = this.extractOrderAddress(order);
       if (!orderAddress) {
+        Logger.error(`Không thể trích xuất địa chỉ từ đơn hàng ${order.id}: "${order.shippingAddress}"`);
         return this.createErrorResult("Không thể trích xuất địa chỉ từ đơn hàng", "ADDRESS_EXTRACTION_FAILED");
       }
 
+      // LOG: Địa chỉ sau khi trích xuất
+      Logger.debug(`Địa chỉ sau khi trích xuất: Tỉnh=${orderAddress.province}, Quận=${orderAddress.district}, Phường=${orderAddress.ward || "N/A"}`);
+
       // 2. Phân tích khoảng cách và quyết định phương thức giao hàng
       const distanceAnalysis = this.analyzeOrderDistance(orderAddress);
+      Logger.debug(`Phân tích khoảng cách: ${distanceAnalysis.distanceType}, ${distanceAnalysis.deliveryMethod}, ${distanceAnalysis.distanceKm}km`);
       
       // 3. Xử lý theo phương thức giao hàng
       const result = await this.processOrderByDeliveryMethod(order, orderAddress, distanceAnalysis);
@@ -192,7 +201,7 @@ export class OrderAssignmentService {
   }
 
   /**
-   * Trích xuất địa chỉ từ đơn hàng - Fix cho format Việt Nam (improved)
+   * Trích xuất địa chỉ từ đơn hàng - Cải tiến cho format Việt Nam
    */
   private extractOrderAddress(order: Order): AddressCoordinates | null {
     if (!order.shippingAddress) {
@@ -209,9 +218,11 @@ export class OrderAssignmentService {
       return null;
     }
 
+    // Tách địa chỉ theo dấu phẩy
     const addressParts = rawAddress.split(',').map(part => part.trim()).filter(part => part.length > 0);
     Logger.debug(`Address parts (${addressParts.length}):`, addressParts);
 
+    // Luôn yêu cầu tối thiểu 2 phần trong địa chỉ (chi tiết + tỉnh/tp)
     if (addressParts.length < 2) {
       Logger.warn(`Not enough address parts (${addressParts.length}), minimum 2 required`);
       return null;
@@ -221,23 +232,75 @@ export class OrderAssignmentService {
     let district = '';
     let ward = '';
 
-    // Enhanced parsing logic cho các format phổ biến
+    // Cải tiến logic phân tích địa chỉ
     try {
-      if (addressParts.length >= 4) {
-        // Format: "Số nhà đường, Phường/Xã, Quận/Huyện, Tỉnh/TP"
-        province = this.normalizeAddress(addressParts[addressParts.length - 1]);
-        district = this.normalizeAddress(addressParts[addressParts.length - 2]);
-        ward = this.normalizeAddress(addressParts[addressParts.length - 3]);
-      } else if (addressParts.length === 3) {
-        // Format: "Số nhà đường, Quận/Huyện, Tỉnh/TP"
-        province = this.normalizeAddress(addressParts[2]);
-        district = this.normalizeAddress(addressParts[1]);
-        ward = ''; // No ward info
-      } else if (addressParts.length === 2) {
-        // Format: "Số nhà đường, Quận/Huyện" (assume Hà Nội)
+      // Luôn lấy phần tử cuối cùng là tỉnh/thành phố
+      province = this.normalizeAddress(addressParts[addressParts.length - 1]);
+
+      // QUAN TRỌNG: Kiểm tra nếu là Hà Nội
+      const isHanoi = province.toLowerCase().includes('ha noi') || 
+                     province.toLowerCase().includes('hanoi');
+      
+      if (isHanoi) {
         province = "Hà Nội";
-        district = this.normalizeAddress(addressParts[1]);
-        ward = '';
+        
+        // Tìm quận/huyện trong các phần của địa chỉ
+        // Trước tiên, kiểm tra phần áp cuối có phải quận/huyện không
+        if (addressParts.length >= 2) {
+          const potentialDistrict = addressParts[addressParts.length - 2].trim();
+          
+          // Danh sách quận/huyện Hà Nội
+          const hanoiDistricts = [
+            "Ba Đình", "Hoàn Kiếm", "Hai Bà Trưng", "Đống Đa", "Tây Hồ",
+            "Cầu Giấy", "Thanh Xuân", "Hoàng Mai", "Long Biên", "Nam Từ Liêm",
+            "Bắc Từ Liêm", "Hà Đông", "Sơn Tây", "Ba Vì", "Phúc Thọ",
+            "Đan Phượng", "Hoài Đức", "Quốc Oai", "Thạch Thất", "Chương Mỹ",
+            "Thanh Oai", "Thường Tín", "Phú Xuyên", "Ứng Hòa", "Mỹ Đức"
+          ];
+          
+          // Tìm quận/huyện phù hợp
+          const foundDistrict = hanoiDistricts.find(d => 
+            this.compareAddressParts(potentialDistrict, d)
+          );
+          
+          if (foundDistrict) {
+            district = foundDistrict;
+            
+            // Nếu có phường/xã (phần áp áp cuối)
+            if (addressParts.length >= 3) {
+              ward = addressParts[addressParts.length - 3].trim();
+            }
+          } else {
+            // Tìm kiếm trong toàn bộ các phần địa chỉ
+            for (let i = 0; i < addressParts.length - 1; i++) {
+              const part = addressParts[i].trim();
+              const foundDistrictInPart = hanoiDistricts.find(d => 
+                this.compareAddressParts(part, d)
+              );
+              
+              if (foundDistrictInPart) {
+                district = foundDistrictInPart;
+                break;
+              }
+            }
+            
+            // Nếu vẫn không tìm thấy, mặc định là quận của cửa hàng
+            if (!district) {
+              Logger.warn(`Could not find district in address: "${rawAddress}". Using store district: Cầu Giấy`);
+              district = "Cầu Giấy";
+            }
+          }
+        }
+      } else {
+        // Không phải Hà Nội, lấy quận/huyện từ phần tử áp cuối
+        if (addressParts.length >= 2) {
+          district = this.normalizeAddress(addressParts[addressParts.length - 2]);
+        }
+        
+        // Lấy phường/xã từ phần áp áp cuối (nếu có)
+        if (addressParts.length >= 3) {
+          ward = this.normalizeAddress(addressParts[addressParts.length - 3]);
+        }
       }
 
       // Post-processing: chuẩn hóa tên
@@ -245,31 +308,14 @@ export class OrderAssignmentService {
       province = this.standardizeProvinceName(province);
 
       // Validation kết quả
-      if (!province || !district) {
-        Logger.warn(`Failed to extract required address parts - Province: "${province}", District: "${district}"`);
+      if (!province) {
+        Logger.warn(`Failed to extract province from address: "${rawAddress}"`);
         return null;
       }
 
-      // Validate Hà Nội districts
-      if (province === 'Hà Nội') {
-        const validHanoiDistricts = [
-          "Ba Đình", "Hoàn Kiếm", "Hai Bà Trưng", "Đống Đa", "Tây Hồ",
-          "Cầu Giấy", "Thanh Xuân", "Hoàng Mai", "Long Biên", "Nam Từ Liêm",
-          "Bắc Từ Liêm", "Hà Đông", "Sơn Tây", "Ba Vì", "Phúc Thọ",
-          "Đan Phượng", "Hoài Đức", "Quốc Oai", "Thạch Thất", "Chương Mỹ",
-          "Thanh Oai", "Thường Tín", "Phú Xuyên", "Ứng Hòa", "Mỹ Đức"
-        ];
-        
-        const isValidDistrict = validHanoiDistricts.some(validDistrict => 
-          this.normalizeAddress(validDistrict) === this.normalizeAddress(district) ||
-          this.normalizeAddress(district).includes(this.normalizeAddress(validDistrict)) ||
-          this.normalizeAddress(validDistrict).includes(this.normalizeAddress(district))
-        );
-
-        if (!isValidDistrict) {
-          Logger.warn(`Invalid Hanoi district: "${district}". Available: ${validHanoiDistricts.slice(0, 5).join(', ')}...`);
-          // Still continue but log warning
-        }
+      // Ưu tiên Hà Nội
+      if (province !== 'Hà Nội') {
+        Logger.info(`Order shipping to non-Hanoi location: ${province}`);
       }
 
       const result = {
@@ -287,6 +333,18 @@ export class OrderAssignmentService {
       Logger.error(`Failed to parse address: "${rawAddress}"`, error);
       return null;
     }
+  }
+  
+  /**
+   * So sánh hai phần địa chỉ
+   */
+  private compareAddressParts(part1: string, part2: string): boolean {
+    const norm1 = this.normalizeAddress(part1);
+    const norm2 = this.normalizeAddress(part2);
+    
+    return norm1 === norm2 || 
+           norm1.includes(norm2) || 
+           norm2.includes(norm1);
   }
 
   /**
@@ -322,7 +380,20 @@ export class OrderAssignmentService {
       'long bien': 'Long Biên',
       'nam tu liem': 'Nam Từ Liêm',
       'bac tu liem': 'Bắc Từ Liêm',
-      'ha dong': 'Hà Đông'
+      'ha dong': 'Hà Đông',
+      // Thêm các từ khóa rút gọn khác
+      'tx': 'Thanh Xuân',
+      'dd': 'Đống Đa',
+      'cg': 'Cầu Giấy',
+      'bd': 'Ba Đình',
+      'hk': 'Hoàn Kiếm',
+      'hbt': 'Hai Bà Trưng',
+      'th': 'Tây Hồ',
+      'hm': 'Hoàng Mai',
+      'lb': 'Long Biên',
+      'ntl': 'Nam Từ Liêm',
+      'btl': 'Bắc Từ Liêm',
+      'hd': 'Hà Đông'
     };
 
     return districtMapping[normalized] || district;
@@ -510,6 +581,11 @@ export class OrderAssignmentService {
         return await this.assignToExpressShipper(order, orderAddress, distanceAnalysis);
       
       case 'third_party':
+        // Ghi log chi tiết về đơn hàng chuyển cho bên thứ 3
+        Logger.warn(`Order ${order.id} assigned to third-party shipping due to: ${distanceAnalysis.reason}`);
+        Logger.warn(`Order address: ${order.shippingAddress}`);
+        Logger.warn(`Parsed address: Province=${orderAddress.province}, District=${orderAddress.district}, Ward=${orderAddress.ward}`);
+        
         return await this.assignToThirdParty(order, orderAddress, distanceAnalysis);
       
       default:
@@ -674,75 +750,99 @@ export class OrderAssignmentService {
    * Tìm shipper có sẵn
    */
   private async findAvailableShippers(orderAddress: AddressCoordinates): Promise<Account[]> {
+    // LOG: Thông tin bắt đầu tìm kiếm shipper
+    Logger.debug(`Bắt đầu tìm kiếm shipper phù hợp cho địa chỉ: ${orderAddress.province}, ${orderAddress.district}`);
+    
     const shipperRole = await Role.findOne({ where: { name: "shipper" } });
     if (!shipperRole) {
       Logger.warn('[Warning] Shipper role not found in database');
       return [];
     }
 
+    Logger.debug(`Tìm thấy role shipper với ID: ${shipperRole.id}`);
+
     // Tìm shipper available
-    const allAvailableShippers = await Account.createQueryBuilder("account")
-      .where("account.role.id = :roleId", { roleId: shipperRole.id })
-      .andWhere("account.isRegistered = :isRegistered", { isRegistered: true })
-      .andWhere("account.isAvailable = :isAvailable", { isAvailable: true })
-      .andWhere(
-        // Fix: Nếu maxOrdersPerDay = 0 thì coi như unlimited (999)
-        "account.currentOrdersToday < CASE WHEN account.maxOrdersPerDay = 0 THEN 999 ELSE account.maxOrdersPerDay END"
-      )
-      .orderBy("account.priority", "DESC")
-      .addOrderBy("account.currentOrdersToday", "ASC")
-      .getMany();
+    try {
+      const allAvailableShippers = await Account.createQueryBuilder("account")
+        .where("account.role.id = :roleId", { roleId: shipperRole.id })
+        .andWhere("account.isRegistered = :isRegistered", { isRegistered: true })
+        .andWhere("account.isAvailable = :isAvailable", { isAvailable: true })
+        .andWhere(
+          // Fix: Nếu maxOrdersPerDay = 0 thì coi như unlimited (999)
+          "account.currentOrdersToday < CASE WHEN account.maxOrdersPerDay = 0 THEN 999 ELSE account.maxOrdersPerDay END"
+        )
+        .orderBy("account.priority", "DESC")
+        .addOrderBy("account.currentOrdersToday", "ASC")
+        .getMany();
 
-    if (allAvailableShippers.length === 0) {
-      Logger.warn('[Warning] No available shippers found in system');
-      return [];
-    }
-
-    Logger.debug(`Found ${allAvailableShippers.length} available shippers before zone filtering`);
-
-    // Zone matching logic với validation chặt chẽ hơn
-    const shippersWithZones = [];
-    
-    for (const shipper of allAvailableShippers) {
-      const zones = await ShipperZone.find({
-        where: { shipper: { id: shipper.id } }
+      Logger.debug(`Tìm thấy ${allAvailableShippers.length} shipper có sẵn từ database`);
+      
+      // LOG: Chi tiết về các shipper tìm được
+      allAvailableShippers.forEach((shipper, index) => {
+        Logger.debug(`Shipper #${index+1}: ID=${shipper.id}, Name=${shipper.name}, Available=${shipper.isAvailable}, Priority=${shipper.priority || 1}`);
       });
 
-      Logger.debug(`Shipper ${shipper.name} has ${zones.length} zones:`, zones.map(z => z.district));
-
-      // Kiểm tra zone matching với validation nghiêm ngặt hơn
-      let hasMatchingZone = false;
-      let matchReason = '';
-      
-      if (zones.length === 0) {
-        // ❌ REMOVED: Không cho phép shipper không có zone nhận đơn
-        Logger.warn(`Shipper ${shipper.name} has no working zones - SKIPPED`);
-        continue;
+      if (allAvailableShippers.length === 0) {
+        Logger.warn('[Warning] No available shippers found in system');
+        return [];
       }
+    
+      // Zone matching logic với validation chặt chẽ hơn
+      const shippersWithZones = [];
       
-      for (const zone of zones) {
-        if (this.isAddressMatch(zone, orderAddress)) {
-          hasMatchingZone = true;
-          matchReason = `Zone match: ${zone.district}`;
-          break;
+      for (const shipper of allAvailableShippers) {
+        const zones = await ShipperZone.find({
+          where: { shipper: { id: shipper.id } }
+        });
+
+        Logger.debug(`Shipper ${shipper.name} có ${zones.length} vùng hoạt động:`);
+        zones.forEach(zone => {
+          Logger.debug(`- Zone: Tỉnh=${zone.province}, Quận=${zone.district}, Phường=${zone.ward || "N/A"}`);
+        });
+
+        // Kiểm tra zone matching với validation nghiêm ngặt hơn
+        let hasMatchingZone = false;
+        let matchReason = '';
+        
+        if (zones.length === 0) {
+          // ❌ REMOVED: Không cho phép shipper không có zone nhận đơn
+          Logger.warn(`Shipper ${shipper.name} không có vùng hoạt động - BỎ QUA`);
+          continue;
+        }
+        
+        for (const zone of zones) {
+          Logger.debug(`Kiểm tra khớp địa chỉ đơn hàng ${orderAddress.province}/${orderAddress.district} với zone ${zone.province}/${zone.district}`);
+          const isMatch = this.isAddressMatch(zone, orderAddress);
+          if (isMatch) {
+            hasMatchingZone = true;
+            matchReason = `Zone match: ${zone.district}`;
+            Logger.debug(`✅ MATCH: Đơn hàng ${orderAddress.province}/${orderAddress.district} khớp với zone ${zone.province}/${zone.district}`);
+            break;
+          } else {
+            Logger.debug(`❌ NO MATCH: Đơn hàng ${orderAddress.province}/${orderAddress.district} KHÔNG khớp với zone ${zone.province}/${zone.district}`);
+          }
+        }
+
+        if (hasMatchingZone) {
+          shippersWithZones.push(shipper);
+          Logger.debug(`✅ Shipper ${shipper.name} được thêm vào danh sách - ${matchReason}`);
+        } else {
+          // ❌ REMOVED: Không còn fallback cho Hà Nội
+          Logger.debug(`❌ Shipper ${shipper.name} không có vùng phù hợp với ${orderAddress.district}, ${orderAddress.province}`);
         }
       }
 
-      if (hasMatchingZone) {
-        shippersWithZones.push(shipper);
-        Logger.debug(`✅ Shipper ${shipper.name} added - ${matchReason}`);
-      } else {
-        // ❌ REMOVED: Không còn fallback cho Hà Nội
-        Logger.debug(`❌ Shipper ${shipper.name} no matching zone for ${orderAddress.district}, ${orderAddress.province}`);
-      }
+      Logger.debug(`Kết quả: Tìm thấy ${shippersWithZones.length} shipper phù hợp với vùng`);
+      return shippersWithZones;
+      
+    } catch (error) {
+      Logger.error(`Lỗi khi tìm shipper phù hợp:`, error);
+      return [];
     }
-
-    Logger.debug(`Final result: ${shippersWithZones.length} shippers with matching zones`);
-    return shippersWithZones;
   }
 
   /**
-   * Kiểm tra địa chỉ có match không (chính xác hơn)
+   * Kiểm tra địa chỉ có match không (cải tiến)
    */
   private isAddressMatch(zone: any, orderAddress: AddressCoordinates): boolean {
     // Validate input
@@ -778,47 +878,104 @@ export class OrderAssignmentService {
 
     Logger.debug(`Zone matching - Zone: ${zoneProvince}/${zoneDistrict}/${zoneWard} vs Order: ${orderProvince}/${orderDistrict}/${orderWard}`);
 
-    // 1. Province validation - must match (strict)
-    if (zoneProvince && orderProvince) {
-      const provinceMatch = zoneProvince.includes('ha noi') && orderProvince.includes('ha noi') ||
-                           zoneProvince === orderProvince;
-      if (!provinceMatch) {
-        Logger.debug(`❌ Province mismatch: ${zoneProvince} vs ${orderProvince}`);
-        return false;
-      }
-    } else {
-      Logger.warn(`[Warning] Missing province data - Zone: ${zoneProvince}, Order: ${orderProvince}`);
-      return false;
-    }
-
-    // 2. District matching (primary criteria)
-    if (zoneDistrict && orderDistrict) {
-      // Exact match
-      if (zoneDistrict === orderDistrict) {
-        Logger.debug(`✅ Exact district match: ${zoneDistrict}`);
-        return true;
-      }
-      
-      // Partial match (contains)
-      if (zoneDistrict.includes(orderDistrict) || orderDistrict.includes(zoneDistrict)) {
-        Logger.debug(`✅ Partial district match: ${zoneDistrict} ↔ ${orderDistrict}`);
-        return true;
-      }
-    } else {
-      Logger.warn(`[Warning] Missing district data - Zone: ${zoneDistrict}, Order: ${orderDistrict}`);
-      return false;
-    }
-
-    // 3. Ward matching (bonus, but not required)
-    if (zoneWard && orderWard &&
-        (zoneWard === orderWard || 
-         zoneWard.includes(orderWard) || 
-         orderWard.includes(zoneWard))) {
-      Logger.debug(`✅ Ward bonus match: ${zoneWard} ↔ ${orderWard}`);
+    // Special case cho Thanh Xuân
+    if ((orderDistrict.includes('thanh xuan') || orderDistrict === 'tx') && 
+        (zoneDistrict.includes('thanh xuan') || zoneDistrict === 'tx')) {
+      Logger.debug(`✅ SPECIAL CASE: Thanh Xuân match!`);
       return true;
     }
 
-    Logger.debug(`❌ No match found`);
+    // 1. Đặc biệt cho Hà Nội
+    const isHanoiMatching = (zoneProvince.includes('ha noi') || zoneProvince.includes('hanoi')) && 
+                           (orderProvince.includes('ha noi') || orderProvince.includes('hanoi'));
+    
+    if (isHanoiMatching) {
+      // So sánh quận/huyện - cải tiến để match chính xác hơn
+      if (zoneDistrict && orderDistrict) {
+        // Xử lý đặc biệt cho các quận Hà Nội
+        const cleanZoneDistrict = zoneDistrict.replace(/[^a-z0-9]/g, '');
+        const cleanOrderDistrict = orderDistrict.replace(/[^a-z0-9]/g, '');
+        
+        // So khớp đúng tên quận
+        if (cleanZoneDistrict === cleanOrderDistrict || 
+            zoneDistrict === orderDistrict || 
+            zoneDistrict.includes(orderDistrict) || 
+            orderDistrict.includes(zoneDistrict)) {
+          Logger.debug(`✅ Quận/huyện Hà Nội khớp: ${zoneDistrict} ↔ ${orderDistrict}`);
+          return true;
+        }
+        
+        // Kiểm tra tên viết tắt hoặc tên rút gọn
+        // Ví dụ: "cau giay" với "cg" hoặc "thanh xuan" với "tx"
+        const districtAbbreviations: {[key: string]: string[]} = {
+          'cau giay': ['cg', 'cau giay', 'c giay', 'c.giay'],
+          'thanh xuan': ['tx', 'thanh xuan', 't xuan', 't.xuan'],
+          'dong da': ['dd', 'dong da', 'd da', 'd.da'],
+          'ba dinh': ['bd', 'ba dinh', 'b dinh', 'b.dinh'],
+          'hai ba trung': ['hbt', 'hai ba trung', 'hb trung', 'h.b.trung'],
+          'hoan kiem': ['hk', 'hoan kiem', 'h kiem', 'h.kiem'],
+          'hoang mai': ['hm', 'hoang mai', 'h mai', 'h.mai'],
+          'long bien': ['lb', 'long bien', 'l bien', 'l.bien'],
+          'tay ho': ['th', 'tay ho', 't ho', 't.ho']
+        };
+        
+        // Kiểm tra xem có match với bất kỳ viết tắt nào không
+        for (const [fullName, abbreviations] of Object.entries(districtAbbreviations)) {
+          if ((fullName === cleanZoneDistrict && abbreviations.includes(cleanOrderDistrict)) || 
+              (fullName === cleanOrderDistrict && abbreviations.includes(cleanZoneDistrict))) {
+            Logger.debug(`✅ Quận/huyện Hà Nội khớp qua viết tắt: ${zoneDistrict} ↔ ${orderDistrict}`);
+            return true;
+          }
+        }
+        
+        Logger.debug(`❌ Quận/huyện Hà Nội không khớp: ${zoneDistrict} ≠ ${orderDistrict}`);
+        return false;
+      } else {
+        // Nếu shipper không có quận/huyện cụ thể thì coi như phục vụ toàn Hà Nội
+        if (!zoneDistrict && orderProvince.includes('ha noi')) {
+          Logger.debug(`✅ Shipper phục vụ toàn Hà Nội`);
+          return true;
+        }
+        
+        Logger.debug(`❌ Thiếu thông tin quận/huyện để so khớp`);
+        return false;
+      }
+    }
+
+    // 2. Đối với các tỉnh/thành phố khác
+    // Province validation - must match
+    if (zoneProvince && orderProvince) {
+      const provinceMatch = zoneProvince === orderProvince;
+      
+      if (!provinceMatch) {
+        Logger.debug(`❌ Tỉnh/thành phố không khớp: ${zoneProvince} ≠ ${orderProvince}`);
+        return false;
+      }
+      
+      // Nếu shipper chỉ có province mà không có district, coi như phục vụ toàn tỉnh
+      if (!zoneDistrict) {
+        Logger.debug(`✅ Shipper phục vụ toàn tỉnh: ${zoneProvince}`);
+        return true;
+      }
+      
+      // Kiểm tra district
+      if (zoneDistrict && orderDistrict) {
+        const districtMatch = zoneDistrict === orderDistrict || 
+                             zoneDistrict.includes(orderDistrict) || 
+                             orderDistrict.includes(zoneDistrict);
+        
+        if (districtMatch) {
+          Logger.debug(`✅ Quận/huyện khớp: ${zoneDistrict} ↔ ${orderDistrict}`);
+          return true;
+        }
+        
+        Logger.debug(`❌ Quận/huyện không khớp: ${zoneDistrict} ≠ ${orderDistrict}`);
+        return false;
+      }
+    }
+    
+    // Nếu đến đây mà vẫn chưa return thì coi như không match
+    Logger.debug(`❌ Không match do thiếu thông tin`);
     return false;
   }
 
@@ -981,10 +1138,9 @@ export class OrderAssignmentService {
         throw new Error(`Shipper ${shipper.id} is no longer available`);
       }
 
-      // 2. Check if order is already assigned
+      // 2. Check if order exists (KHÔNG sử dụng relations và lock riêng)
       const currentOrder = await transactionalEntityManager.findOne(Order, {
         where: { id: order.id },
-        relations: ['shipper'],
         lock: { mode: 'pessimistic_write' }
       });
       
@@ -992,8 +1148,20 @@ export class OrderAssignmentService {
         throw new Error(`Order ${order.id} not found`);
       }
       
+      // Kiểm tra riêng xem order đã có shipper chưa (không dùng relations)
       if (currentOrder.shipper) {
-        throw new Error(`Order ${order.id} is already assigned to shipper ${currentOrder.shipper.id}`);
+        // Tìm thông tin shipper hiện tại (nếu có)
+        const existingShipperId = currentOrder.shipper.id;
+        if (existingShipperId) {
+          const existingShipper = await transactionalEntityManager.findOne(Account, {
+            where: { id: existingShipperId }
+          });
+          
+          if (existingShipper) {
+            throw new Error(`Order ${order.id} is already assigned to shipper ${existingShipper.name || existingShipper.id}`);
+          }
+        }
+        throw new Error(`Order ${order.id} is already assigned to another shipper`);
       }
 
       // 3. Calculate current order count
@@ -1002,7 +1170,7 @@ export class OrderAssignmentService {
 
       const currentOrdersCount = await transactionalEntityManager
         .createQueryBuilder(Order, "order")
-        .where("order.shipper.id = :shipperId", { shipperId: shipper.id })
+        .where("order.shipper_id = :shipperId", { shipperId: shipper.id }) // Dùng shipper_id thay vì shipper.id
         .andWhere("order.orderDate >= :today", { today })
         .andWhere("order.status IN (:...statuses)", { 
           statuses: [OrderStatus.PENDING, OrderStatus.SHIPPING] 
@@ -1032,8 +1200,6 @@ export class OrderAssignmentService {
         })
         .where("id = :shipperId", { shipperId: shipper.id })
         .execute();
-
-
     });
   }
 
@@ -1045,7 +1211,7 @@ export class OrderAssignmentService {
     today.setHours(0, 0, 0, 0);
 
     const count = await Order.createQueryBuilder("order")
-      .where("order.shipper.id = :shipperId", { shipperId })
+      .where("order.shipper_id = :shipperId", { shipperId }) // Sửa thành shipper_id
       .andWhere("order.orderDate >= :today", { today })
       .andWhere("order.status IN (:...statuses)", { 
         statuses: [OrderStatus.PENDING, OrderStatus.SHIPPING] 
@@ -1070,7 +1236,7 @@ export class OrderAssignmentService {
     today.setHours(0, 0, 0, 0);
 
     return await Order.createQueryBuilder("order")
-      .where("order.shipper.id = :shipperId", { shipperId })
+      .where("order.shipper_id = :shipperId", { shipperId }) // Sửa thành shipper_id
       .andWhere("order.orderDate >= :today", { today })
       .andWhere("order.status IN (:...statuses)", { 
         statuses: [OrderStatus.PENDING, OrderStatus.SHIPPING] 
@@ -1270,7 +1436,7 @@ export class OrderAssignmentService {
 
     for (const shipper of shippers) {
       const currentOrdersCount = await Order.createQueryBuilder("order")
-        .where("order.shipper.id = :shipperId", { shipperId: shipper.id })
+        .where("order.shipper_id = :shipperId", { shipperId: shipper.id }) // Sửa thành shipper_id
         .andWhere("order.orderDate >= :today", { today })
         .andWhere("order.status IN (:...statuses)", { 
           statuses: [OrderStatus.PENDING, OrderStatus.SHIPPING] 
@@ -1512,5 +1678,19 @@ export class OrderAssignmentService {
    */
   testNormalize(address: string): string {
     return this.normalizeAddress(address);
+  }
+
+  /**
+   * Test extract address function - for API testing
+   */
+  testExtractOrderAddress(order: Order): AddressCoordinates | null {
+    return this.extractOrderAddress(order);
+  }
+
+  /**
+   * Test address matching function - for API testing
+   */
+  testAddressMatching(zone: any, orderAddress: AddressCoordinates): boolean {
+    return this.isAddressMatch(zone, orderAddress);
   }
 } 
