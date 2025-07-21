@@ -29,15 +29,11 @@ const VNPayPaymentPage = () => {
 
     const handlePaymentComplete = (paymentResult) => {
         console.log('✅ Payment completed:', paymentResult);
-        
-        // Redirect to success page or home page
+        // Lưu message vào sessionStorage để HomePage luôn hiển thị được thông báo
+        sessionStorage.setItem('paymentSuccessMessage', 'Payment successful! Your order is being processed.');
+        // Redirect to home page
         navigate('/', { 
-            replace: true,
-            state: { 
-                paymentSuccess: true, 
-                transactionId: paymentResult.transactionId,
-                message: 'Payment successful! Your order is being processed.'
-            }
+            replace: true
         });
     };
 

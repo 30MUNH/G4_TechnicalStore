@@ -2,22 +2,22 @@ import { Body, BodyParam, Controller, Delete, Get, Patch, Post, Req, Res, UseBef
 import { Service } from "typedi";
 import { AccountService } from "./account.service";
 import { AccountDetailsDto, CreateAccountDto, CredentialsDto, UpdateAccountDto, VerifyRegisterDto } from "../dtos/account.dto";
-import { TwilioService } from "@/utils/twilio/twilio";
 import { Admin, Auth } from "@/middlewares/auth.middleware";
 import { Response } from 'express';
+import { OtpService } from "../otp/otp.service";
 
 @Service()
 @Controller("/account")
 export class AccountController{
     constructor(
         private readonly accountService: AccountService,
-        private readonly twilioService: TwilioService,
+        private readonly otpService: OtpService,
     ){}
 
     @Post("/register")
     async register(@Body() body: CreateAccountDto){
         const account = await this.accountService.register(body);
-        await this.twilioService.sendOtp(account.phone);
+        await this.otpService.sendOtp(account.phone);
         return {
             account: account,
             message: "Check OTP message to complete registration"
@@ -26,7 +26,7 @@ export class AccountController{
 
     @Post("/verify-register")
     async verifyRegister(@Body() body: VerifyRegisterDto, @Res() res: Response){
-        const result = await this.twilioService.verifyOtp(body.phone, body.otp);
+        const result = await this.otpService.verifyOtp(body.phone, body.otp);
         if(!result) return "OTP is wrong or is expired";
         const tokens = await this.accountService.finalizeRegistration(body.username, body.password, body.phone, body.roleSlug);
         res.cookie('refreshToken', tokens.newRefreshToken, {
@@ -60,7 +60,7 @@ export class AccountController{
     @Post('/resend-otp')
     async resendOtp(@BodyParam('username') username: string){
         const account = await this.accountService.findAccountByUsername(username);
-        await this.twilioService.sendOtp(account.phone);
+        await this.otpService.sendOtp(account.phone);
         return "OTP resent";
     }
 
@@ -84,7 +84,7 @@ export class AccountController{
         const account = await this.accountService.findAccountByUsername(user.username);
         const checkOldPassword = await this.accountService.checkOldPassword(account, oldPassword);
         if(!checkOldPassword) return "Wrong old password";
-        await this.twilioService.sendOtp(account.phone);
+        await this.otpService.sendOtp(account.phone);
         return "Check OTP message to complete password change";
     }
 
@@ -93,29 +93,29 @@ export class AccountController{
     @BodyParam("otp") otp: string, 
     @BodyParam('newPassword') newPassword: string){
         const account = await this.accountService.findAccountByUsername(username);
-        const result = await this.twilioService.verifyOtp(account.phone, otp);
+        const result = await this.otpService.verifyOtp(account.phone, otp);
         if(!result) return "OTP is wrong or is expired";
         const token = await this.accountService.changePassword(account, newPassword);
         return token;
     }
 
     @Post('/forgot-password')
-    async forgotPassword(@BodyParam("username") username: string){
-        const account = await this.accountService.findAccountByUsername(username);
-        await this.twilioService.sendOtp(account.phone);
+    async forgotPassword(@BodyParam("phone") phone: string){
+        const account = await this.accountService.findAccountByPhone(phone);
+        await this.otpService.sendOtp(account.phone);
         return "Check OTP message to reset password";
     }
 
     @Post('/send-otp')
     async sendOtp(@BodyParam('username') username: string){
         const account = await this.accountService.findAccountByUsername(username);
-        return await this.twilioService.sendOtp(account.phone);
+        return await this.otpService.sendOtp(account.phone);
     }
 
     @Post('/verify-otp')
     async verifyOtp(@BodyParam('username') username: string, @BodyParam('otp') otp: string){
         const account = await this.accountService.findAccountByUsername(username);
-        return this.twilioService.verifyOtp(account.phone, otp);
+        return this.otpService.verifyOtp(account.phone, otp);
     }
 
     @Get('/all')

@@ -11,7 +11,7 @@ const CheckoutPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { isAuthenticated } = useAuth();
-    const { items, totalAmount, loading, error, isInitialized, refreshCart } = useCart();
+    const { items, totalAmount, loading, error, isInitialized, refreshCart, clearCart } = useCart();
     const [orderData, setOrderData] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [orderError, setOrderError] = useState(null);
@@ -21,7 +21,6 @@ const CheckoutPage = () => {
     // Check authentication but don't block rendering
     useEffect(() => {
         if (!isAuthenticated()) {
-            console.log('🔐 Not authenticated on checkout page');
             // Don't redirect immediately - let them see the form
         }
     }, [isAuthenticated]);
@@ -53,23 +52,24 @@ const CheckoutPage = () => {
     }, [paymentMessage]);
 
 
-    // Khi vào trang checkout, luôn lấy cart mới nhất từ backend
+    // Khi vào trang checkout, luôn lấy cart mới nhất
     useEffect(() => {
         const validateCartOnMount = async () => {
-            if (!isAuthenticated()) {
-                setValidatedCart(null);
-                return;
-            }
-            
-            try {
-                const cartResponse = await cartService.viewCart();
-                
-                if (cartResponse.success && cartResponse.data?.data?.cartItems?.length > 0) {
-                    setValidatedCart(cartResponse.data.data);
-                } else {
+            if (isAuthenticated()) {
+                // Authenticated user - get cart from backend
+                try {
+                    const cartResponse = await cartService.viewCart();
+                    
+                    if (cartResponse.success && cartResponse.data?.data?.cartItems?.length > 0) {
+                        setValidatedCart(cartResponse.data.data);
+                    } else {
+                        setValidatedCart(null);
+                    }
+                } catch (error) {
                     setValidatedCart(null);
                 }
-            } catch (error) {
+            } else {
+                // Guest user - cart is already in context from sessionStorage
                 setValidatedCart(null);
             }
         };
@@ -79,7 +79,6 @@ const CheckoutPage = () => {
     // Check cart but don't block rendering  
     useEffect(() => {
         if (!items || items.length === 0) {
-            console.log('🛒 Empty cart on checkout page');
             // Don't redirect immediately - let them see empty state
         }
     }, [items]);
@@ -97,26 +96,36 @@ const CheckoutPage = () => {
         setOrderError(null);
         
         try {
-            // Kiểm tra authentication trước khi tiếp tục
-            if (!isAuthenticated()) {
-                setOrderError('Please login to place order');
-                setSubmitting(false);
-                return;
-            }
-
-            // Luôn lấy cart mới nhất từ backend trước khi đặt hàng
-            const cartResponse = await cartService.viewCart();
+            let currentCart;
             
-            if (!cartResponse.success || !cartResponse.data?.data?.cartItems || cartResponse.data.data.cartItems.length === 0) {
-                setOrderError('Your cart is empty or has changed. Please check again!');
-                setSubmitting(false);
-                return;
+            if (isAuthenticated()) {
+                // Authenticated user - get latest cart from backend
+                const cartResponse = await cartService.viewCart();
+                
+                if (!cartResponse.success || !cartResponse.data?.data?.cartItems || cartResponse.data.data.cartItems.length === 0) {
+                    setOrderError('Your cart is empty or has changed. Please check again!');
+                    setSubmitting(false);
+                    return;
+                }
+                
+                currentCart = cartResponse.data.data;
+            } else {
+                // Guest user - use cart from context/sessionStorage
+                if (!items || items.length === 0) {
+                    setOrderError('Your cart is empty. Please add products before checkout!');
+                    setSubmitting(false);
+                    return;
+                }
+                
+                // Use context cart for guest
+                currentCart = {
+                    cartItems: items,
+                    totalAmount: totalAmount
+                };
             }
-            
-            const currentCart = cartResponse.data.data;
             
             // Validate thông tin khách hàng
-            const requiredFields = ['fullName', 'phone', 'email', 'address', 'city', 'ward', 'commune'];
+            const requiredFields = ['fullName', 'phone', 'email', 'shippingAddress'];
             const missingFields = requiredFields.filter(field => !formData[field]?.trim());
             if (missingFields.length > 0) {
                 setOrderError(`Please fill in all required information: ${missingFields.join(', ')}`);
@@ -124,77 +133,108 @@ const CheckoutPage = () => {
                 return;
             }
             
-            // Tạo order request
-            const fullAddress = [
-                formData.address.trim(),
-                formData.commune.trim(),
-                formData.ward.trim(),
-                formData.city.trim()
-            ].filter(Boolean).join(', ');
+            // Check if user is guest (not authenticated)
+            const isGuestOrder = !isAuthenticated();
             
+            // Tạo order request với cấu trúc đúng
             const orderRequest = {
-                shippingAddress: fullAddress,
+                shippingAddress: formData.shippingAddress,
                 note: [
                     `Khách hàng: ${formData.fullName.trim()}`,
                     `Số điện thoại: ${formData.phone.trim()}`,
                     `Email: ${formData.email.trim()}`,
                     `Số lượng sản phẩm: ${currentCart.cartItems.length}`,
-                    `Total amount: ${formatCurrency(currentCart.totalAmount)}`
+                    `Total amount: ${formatCurrency(currentCart.totalAmount)}`,
+                    ...(isGuestOrder ? ['Guest Order'] : [])
                 ].join(' | '),
-                                  paymentMethod: formData.paymentMethod === 'cod' ? 'COD' : 'VNPAY'
+                paymentMethod: formData.paymentMethod || 'Cash on delivery',
+                requireInvoice: formData.requireInvoice || false,
+                // Guest order fields
+                ...(isGuestOrder ? {
+                    isGuest: true,
+                    guestInfo: {
+                        fullName: formData.fullName.trim(),
+                        phone: formData.phone.trim(),
+                        email: formData.email.trim()
+                    },
+                    guestCartItems: currentCart.cartItems.map(item => {
+                        // Validate item data before sending
+                        if (!item.product?.id || !item.quantity || !item.product?.price) {
+                            throw new Error(`Invalid cart item: ${item.product?.name || 'Unknown'}`);
+                        }
+                        
+                        return {
+                            productId: item.product.id,
+                            quantity: item.quantity,
+                            price: item.product.price,
+                            name: item.product.name || 'Unknown Product'
+                        };
+                    })
+                } : {})
             };
             
-            console.log('📤 Submitting order:', {
-                cartItems: currentCart.cartItems.length,
-                totalAmount: currentCart.totalAmount,
-                orderData: formData
-            });
-            
             const response = await orderService.createOrder(orderRequest);
-            console.log('🎯 [CHECKOUT] Order response:', {
-                success: response.success,
-                hasData: !!response.data,
-                hasOrderId: !!response.data?.id,
-                hasNestedOrderId: !!response.data?.data?.id
-            });
             
-            if (!response.success) {
-                throw new Error(response.message || 'Order placement failed');
+            // Check for nested error structure
+            if (response.data?.success === false) {
+                throw new Error(response.data.message || response.data.error || 'Order placement failed');
             }
+            
+            // Log để debug cấu trúc response
+            console.log('[DEBUG] Order Response:', JSON.stringify(response));
+            console.log('[DEBUG] Order Data Structure:', {
+                hasDirectId: !!response.data?.id,
+                hasNestedId: !!response.data?.data?.id,
+                responseData: response.data,
+                requireInvoice: orderRequest.requireInvoice
+            });
             
             // Try both direct and nested structure for order ID
             const orderData = response.data?.id ? response.data : response.data?.data;
             if (!orderData?.id) {
-                console.error('❌ [CHECKOUT] No order ID found in response:', response);
+                console.error('[ERROR] Order data missing ID!', {response, orderData, orderRequest});
                 throw new Error('Payment successful but order ID not received');
             }
-            
-            console.log('✅ [CHECKOUT] Order created successfully:', {
-                orderId: orderData.id,
-                totalAmount: orderData.totalAmount
-            });
-            
+
+            // Handle successful order
             setOrderData(orderData);
-            await refreshCart();
             
-            // Clear saved form data when order is successfully placed
-            try {
-                sessionStorage.removeItem('checkoutFormData');
-            } catch (error) {
-                console.error('Error clearing saved form data:', error);
+            // Clear cart after successful order
+            if (isAuthenticated()) {
+                await refreshCart();
+            } else {
+                clearCart();
+            }
+
+            // Redirect based on payment method
+            if (formData.paymentMethod === 'Online payment') {
+                // Handle VNPay redirect
+                navigate('/payment/vnpay', { 
+                    state: { 
+                        orderId: orderData.id,
+                        amount: currentCart.totalAmount
+                    }
+                });
+            } else {
+                // COD - show success and redirect
+                navigate('/order-history', { 
+                    state: { 
+                        paymentSuccess: true,
+                        message: 'Order placed successfully!' 
+                    }
+                });
             }
             
-            alert('Payment successful');
-            
-            navigate('/orders', {
-                state: {
-                    newOrderId: orderData.id,
-                    message: 'Payment successful'
-                }
-            });
-
         } catch (error) {
-            setOrderError(error.message || 'Order placement failed');
+            console.error('Order submission error:', error);
+            
+            // Handle authentication error
+            if (error.message?.includes('Authentication required')) {
+                setOrderError('Please log in to place an order with invoice. For guest orders, please uncheck the VAT invoice option.');
+            } else {
+                setOrderError(error.message || 'Failed to place order. Please try again.');
+            }
+            
         } finally {
             setSubmitting(false);
         }
@@ -251,10 +291,30 @@ const CheckoutPage = () => {
         );
     }
 
-    // Ưu tiên sử dụng validatedCart nếu có, fallback về context
-    const activeCart = validatedCart || { cartItems: items, totalAmount };
-    const cartItems = activeCart.cartItems || items || [];
-    const subtotal = activeCart.totalAmount || totalAmount || 0;
+    // Ưu tiên sử dụng validatedCart nếu có, fallback về context với validation
+    let cartItems = [];
+    let subtotal = 0;
+    
+    if (validatedCart && validatedCart.cartItems) {
+        // Authenticated user - use backend cart data
+        cartItems = validatedCart.cartItems;
+        subtotal = validatedCart.totalAmount || 0;
+    } else if (items && items.length > 0) {
+        // Guest user - use context cart data  
+        cartItems = items;
+        subtotal = totalAmount || 0;
+    }
+    
+    // Validate cart data structure
+    if (cartItems && cartItems.length > 0) {
+        cartItems = cartItems.filter(item => {
+            if (!item || !item.product || !item.product.id) {
+                console.warn('Invalid cart item filtered out:', item);
+                return false;
+            }
+            return true;
+        });
+    }
     const shippingFee = subtotal > 1000000 ? 0 : 30000;
     const finalTotal = subtotal + shippingFee;
 
@@ -339,6 +399,7 @@ const CheckoutPage = () => {
                             onBackToCart={handleBackToCart}
                             isProcessing={submitting}
                             error={orderError}
+                            isGuest={!isAuthenticated()}
                         />
                     </div>
                 </div>

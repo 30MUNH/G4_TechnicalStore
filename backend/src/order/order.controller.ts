@@ -6,31 +6,56 @@ import { UpdateOrderDto } from "./dtos/update-order.dto";
 import { Auth } from "@/middlewares/auth.middleware";
 import { AccountDetailsDto } from "@/auth/dtos/account.dto";
 import { HttpException } from "@/exceptions/http-exceptions";
+import { JwtService } from "@/auth/jwt/jwt.service";
 
 @Service()
 @Controller("/orders")
 export class OrderController {
     constructor(
-        private readonly orderService: OrderService
+        private readonly orderService: OrderService,
+        private readonly jwtService: JwtService
     ) {}
 
     @Post()
-    @UseBefore(Auth)
     async createOrder(
         @Req() req: any,
         @Body() createOrderDto: CreateOrderDto
     ) {
-        const user = req.user as AccountDetailsDto;
-
         try {
-            const order = await this.orderService.createOrder(user.username, createOrderDto);
-
+            let order;
+            // Nếu là guest order thì không cần xác thực
+            if (createOrderDto.isGuest) {
+                order = await this.orderService.createGuestOrder(createOrderDto);
+            } else {
+                // User order: kiểm tra xác thực
+                const authHeader = req.headers.authorization || req.header('Authorization');
+                if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                    return {
+                        success: false,
+                        message: "Authentication required for user orders",
+                        error: "No valid authorization header provided"
+                    };
+                }
+                // Extract token and verify
+                const token = authHeader.substring(7);
+                const decodedToken = this.jwtService.verifyAccessToken(token);
+                if (!decodedToken || !decodedToken.username) {
+                    return {
+                        success: false,
+                        message: "Invalid authentication token",
+                        error: "Token verification failed"
+                    };
+                }
+                order = await this.orderService.createOrder(decodedToken.username, createOrderDto);
+            }
+            // Trả về order object đầy đủ
             return {
                 success: true,
-                message: "Payment successful",
+                message: createOrderDto.isGuest ? "Guest order created successfully" : "Order created successfully",
                 data: order
             };
         } catch (error: any) {
+            console.error('[Error] Order Creation Failed:', error.message);
             return {
                 success: false,
                 message: "Order creation failed",
@@ -105,7 +130,10 @@ export class OrderController {
         @QueryParam("search") search: string,
         @QueryParam("sort") sort: string,
         @QueryParam("page") page: number = 1,
-        @QueryParam("limit") limit: number = 10
+        @QueryParam("limit") limit: number = 10,
+        @QueryParam("shipper") shipper: string,
+        @QueryParam("assigned") assigned: boolean,
+        @QueryParam("unassigned") unassigned: boolean
     ) {
         const user = req.user as AccountDetailsDto;
         
@@ -115,7 +143,7 @@ export class OrderController {
         }
         
         try {
-            const result = await this.orderService.getAllOrdersWithFilter({ status, search, sort, page, limit });
+            const result = await this.orderService.getAllOrdersWithFilter({ status, search, sort, page, limit, shipper, assigned, unassigned });
             return {
                 message: "Orders retrieved successfully",
                 data: result.orders,
@@ -142,7 +170,11 @@ export class OrderController {
             const order = await this.orderService.getOrderById(id);
             
             // Check permission to view order
-            if (order.customer.username !== user.username && !this.isAdmin(user)) {
+            // For guest orders, customer will be null - only admin/staff can view
+            const isOwner = order.customer ? order.customer.username === user.username : false;
+            const hasAdminAccess = this.isAdmin(user) || this.isStaff(user);
+            
+            if (!isOwner && !hasAdminAccess) {
                 throw new HttpException(401, "Access denied to view this order");
             }
             

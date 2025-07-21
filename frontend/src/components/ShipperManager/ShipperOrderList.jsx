@@ -35,6 +35,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
     { value: "SHIPPING", label: "Shipping" },
     { value: "DELIVERED", label: "Delivered" },
     { value: "CANCELLED", label: "Cancelled" },
+    { value: "PENDING_EXTERNAL_SHIPPING", label: "External Shipping" },
   ];
 
   const sortOptions = [
@@ -60,9 +61,11 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
       const response = await orderService.getOrdersByShipper(shipperId, params);
 
       if (response.success) {
-        // Backend trả về: { data: orders[], pagination: {...} }
-        const ordersData = response.data || [];
-        const total = response.pagination?.total || 0;
+        // ✅ FIX: Handle nested response structure from Response Interceptor
+        // Structure: { success: true, statusCode: 200, data: { data: orders[], pagination: {...} } }
+        const responseData = response.data || {};
+        const ordersData = responseData.data || [];
+        const total = responseData.pagination?.total || 0;
 
         // Đảm bảo orders luôn là array
         setOrders(Array.isArray(ordersData) ? ordersData : []);
@@ -70,13 +73,12 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
           ...prev,
           total: total,
           totalPages:
-            response.pagination?.totalPages || Math.ceil(total / prev.limit),
+            responseData.pagination?.totalPages || Math.ceil(total / prev.limit),
         }));
       } else {
         throw new Error(response.message || "Cannot load order list");
       }
     } catch (err) {
-      console.error("❌ Error fetching orders:", err);
       setError(err.message || "Failed to load order list");
       setOrders([]); // Ensure always set array
       setPagination((prev) => ({ ...prev, total: 0, totalPages: 0 }));
@@ -143,7 +145,6 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
         throw new Error(response.message || "Update failed");
       }
     } catch (err) {
-      console.error("❌ Error updating status:", err);
               setError(err.message || "Failed to update status");
     } finally {
       setLoading(false);
@@ -157,6 +158,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
       "SHIPPING": styles.statusShipping,
       "DELIVERED": styles.statusDelivered,
       "CANCELLED": styles.statusCancelled,
+      "PENDING_EXTERNAL_SHIPPING": styles.statusExternalShipping,
     };
     return statusClasses[status] || styles.statusDefault;
   };
@@ -170,6 +172,10 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
       ],
       "SHIPPING": [
         { value: "DELIVERED", label: "Complete delivery" },
+        { value: "CANCELLED", label: "Cancel order" },
+      ],
+      "PENDING_EXTERNAL_SHIPPING": [
+        { value: "DELIVERED", label: "Mark as delivered" },
         { value: "CANCELLED", label: "Cancel order" },
       ],
     };
@@ -188,8 +194,6 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
 
   return (
     <>
-      <div className={styles.backdrop} onClick={onClose}></div>
-      <div className={styles.orderListContainer}>
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerTitle}>
@@ -477,7 +481,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
             </div>
           </div>
         )}
-      </div>
+      
     </>
   );
 };

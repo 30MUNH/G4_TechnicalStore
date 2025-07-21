@@ -9,6 +9,7 @@ import { SMSNotification } from "@/notification/smsNotification.entity";
 import { Image } from "@/image/image.entity";
 import { Feedback } from "@/feedback/feedback.entity";
 
+
 @Entity("accounts")
 export class Account extends NamedEntity {
   @Column({ nullable: false, unique: true })
@@ -47,4 +48,20 @@ export class Account extends NamedEntity {
 
   @OneToMany(() => Feedback, (feedback) => feedback.account)
   feedbacks: Feedback[];
+
+  // Shipper-specific fields
+  @Column({ type: "int", default: 0 })
+  maxOrdersPerDay: number; // Số đơn hàng tối đa mỗi ngày
+
+  @Column({ type: "int", default: 0 })
+  currentOrdersToday: number; // Số đơn hàng hiện tại hôm nay
+
+  @Column({ type: "boolean", default: true })
+  isAvailable: boolean; // Trạng thái online/available
+
+  @Column({ type: "int", default: 1 })
+  priority: number; // Độ ưu tiên khi phân loại đơn hàng
+
+  @Column({ type: "date", nullable: true })
+  lastOrderDate: Date; // Ngày đơn hàng cuối cùng
 }

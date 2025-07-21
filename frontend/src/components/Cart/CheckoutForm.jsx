@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import styles from "./CheckoutForm.module.css";
 import { useVietnamProvinces } from "../../Hook/useVietnamProvinces";
 import { orderService } from "../../services/orderService";
+import { sendOtpForGuest, verifyOtpForGuest } from "../../services/authService";
+import OTPPopup from "../Login/OTPPopup";
 
 // SVG Icons (placeholders)
 const UserIcon = () => (
@@ -53,6 +55,7 @@ const CheckoutForm = ({
   onBackToCart,
   isProcessing = false,
   error = null,
+  isGuest = false,
 }) => {
   const navigate = useNavigate();
   const {
@@ -61,12 +64,17 @@ const CheckoutForm = ({
     error: provincesError,
   } = useVietnamProvinces();
 
+  // OTP states for guest verification
+  const [showOtpPopup, setShowOtpPopup] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [pendingOrderData, setPendingOrderData] = useState(null);
+
   // Clear saved form data when order is successfully placed
   const clearSavedFormData = () => {
     try {
       sessionStorage.removeItem("checkoutFormData");
     } catch (error) {
-      console.error("Error clearing saved form data:", error);
     }
   };
 
@@ -99,7 +107,6 @@ const CheckoutForm = ({
       const saved = sessionStorage.getItem("checkoutFormData");
       return saved ? JSON.parse(saved) : null;
     } catch (error) {
-      console.error("Error loading saved form data:", error);
       return null;
     }
   };
@@ -120,6 +127,7 @@ const CheckoutForm = ({
   const [availableWards, setAvailableWards] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("cod"); // Default to Cash on Delivery
   const [isVNPayProcessing, setIsVNPayProcessing] = useState(false); // Local state for VNPAY processing
+  const [requireInvoice, setRequireInvoice] = useState(false); // VAT invoice checkbox state
 
   // Load saved form data on component mount
   React.useEffect(() => {
@@ -242,7 +250,6 @@ const CheckoutForm = ({
       };
       sessionStorage.setItem("checkoutFormData", JSON.stringify(dataToSave));
     } catch (error) {
-      console.error("Error saving form data:", error);
     }
   };
 
@@ -308,70 +315,87 @@ const CheckoutForm = ({
     saveFormData({ ...formData, paymentMethod: newPaymentMethod });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    // Validate required fields
-    if (
-      !formData.fullName ||
-      !formData.phone ||
-      !formData.email ||
-      !formData.address ||
-      !formData.city ||
-      !formData.ward ||
-      !formData.commune
-    ) {
-      showNotification("⚠️ Please fill in all shipping information", "warning");
-      return;
+  // OTP handling functions for guest users
+  const handleSendOtpForGuest = async () => {
+    try {
+      const result = await sendOtpForGuest(formData.phone);
+      if (result.success) {
+        setShowOtpPopup(true);
+        setOtpError('');
+        showNotification("📱 OTP sent to your phone number", "success");
+      } else {
+        showNotification(result.message || "Failed to send OTP", "error");
+      }
+    } catch (error) {
+      showNotification("Failed to send OTP. Please try again.", "error");
     }
+  };
 
-    if (!paymentMethod) {
-      showNotification(
-        "⚠️ Please select payment method (COD or VNPay)",
-        "warning"
-      );
-      return;
+  const handleVerifyOtpForGuest = async (otpCode) => {
+    try {
+      const result = await verifyOtpForGuest(formData.phone, otpCode);
+      if (result.success) {
+        setOtpVerified(true);
+        setShowOtpPopup(false);
+        setOtpError('');
+        showNotification("✅ Phone number verified successfully!", "success");
+        
+        // If we have pending order data, proceed with order creation
+        if (pendingOrderData) {
+          processOrder(pendingOrderData);
+        }
+      } else {
+        setOtpError(result.message || "Invalid OTP. Please try again.");
+      }
+    } catch (error) {
+      setOtpError("Failed to verify OTP. Please try again.");
     }
+  };
 
+  const processOrder = (orderData) => {
     if (paymentMethod === "vnpay") {
       // VNPay payment flow - create order first, then redirect to VNPay
       setIsVNPayProcessing(true);
 
-      // Build the full address
-      const fullAddress = [
-        formData.address.trim(),
-        formData.commune.trim(),
-        formData.ward.trim(),
-        formData.city.trim(),
-      ]
-        .filter(Boolean)
-        .join(", ");
-
-      // Create order request
+      // Create order request with proper structure
       const orderRequest = {
-        shippingAddress: fullAddress,
+        shippingAddress: orderData.shippingAddress,
         note: [
-          `Khách hàng: ${formData.fullName.trim()}`,
-          `Số điện thoại: ${formData.phone.trim()}`,
-          `Email: ${formData.email.trim()}`,
+          `Khách hàng: ${orderData.fullName.trim()}`,
+          `Số điện thoại: ${orderData.phone.trim()}`,
+          `Email: ${orderData.email.trim()}`,
           `Số lượng sản phẩm: ${cartItems.length}`,
-          `Total amount: ${formatCurrency(totalAmount)}`,
+          `Total amount: ${formatCurrency(requireInvoice ? totalAmount + (subtotal * 0.1) : totalAmount)}`,
+          requireInvoice ? "VAT Invoice Requested" : "No Invoice Required",
+          "Phone Verified" // Add verification flag
         ].join(" | "),
-        paymentMethod: "Online payment",
+        paymentMethod: orderData.paymentMethod,
+        requireInvoice: requireInvoice,
+        isGuest: isGuest,
+        ...(isGuest ? {
+          guestInfo: {
+            fullName: orderData.fullName.trim(),
+            phone: orderData.phone.trim(),
+            email: orderData.email.trim()
+          },
+          guestCartItems: cartItems.map(item => ({
+            productId: item.product?.id || item.id,
+            quantity: item.quantity || 1,
+            price: item.product?.price || item.price || 0,
+            name: item.product?.name || item.name || 'Unknown Product'
+          }))
+        } : {})
       };
 
       // Create order first, then redirect to VNPay
       orderService
         .createOrder(orderRequest)
         .then((response) => {
-          console.log("✅ Order created for VNPAY:", response);
-
           // Get the order data with ID
           const orderData = response.data?.id
             ? response.data
             : response.data?.data;
           if (!orderData?.id) {
-            console.error("❌ No order ID found in response:", response);
             showNotification(
               "Order creation failed - no order ID received",
               "error"
@@ -379,8 +403,6 @@ const CheckoutForm = ({
             setIsVNPayProcessing(false);
             return;
           }
-
-          console.log("🎯 VNPAY order ID:", orderData.id);
 
           // Navigate to VNPay payment page with the real order object
           navigate("/vnpay-payment", {
@@ -392,20 +414,100 @@ const CheckoutForm = ({
           });
         })
         .catch((error) => {
-          console.error("❌ Order creation failed:", error);
           showNotification(error.message || "Order creation failed", "error");
           setIsVNPayProcessing(false);
         });
     } else {
-      // COD payment flow
-      const orderData = {
-        ...formData,
-        paymentMethod: paymentMethod,
-      };
+      // COD payment flow - pass order data to parent component
       // Clear saved form data when order is placed
       clearSavedFormData();
       onPlaceOrder(orderData);
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    // Validate required fields
+    if (
+      !formData.fullName?.trim() ||
+      !formData.phone?.trim() ||
+      !formData.email?.trim() ||
+      !formData.address?.trim() ||
+      !formData.city?.trim() ||
+      !formData.ward?.trim() ||
+      !formData.commune?.trim()
+    ) {
+      showNotification("⚠️ Please fill in all shipping information", "warning");
+      return;
+    }
+
+    // Validate field lengths
+    if (formData.fullName.trim().length > 100) {
+      showNotification("⚠️ Full name cannot exceed 100 characters", "warning");
+      return;
+    }
+
+    if (formData.address.trim().length > 200) {
+      showNotification("⚠️ Address cannot exceed 200 characters", "warning");
+      return;
+    }
+
+    // Validate phone format (Vietnamese phone number)
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (!phoneRegex.test(formData.phone.trim())) {
+      showNotification("⚠️ Please enter a valid phone number (10-11 digits)", "warning");
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      showNotification("⚠️ Please enter a valid email address", "warning");
+      return;
+    }
+
+    if (!paymentMethod) {
+      showNotification(
+        "⚠️ Please select payment method (COD or VNPay)",
+        "warning"
+      );
+      return;
+    }
+
+    // Build the full address
+    const fullAddress = [
+      formData.address.trim(),
+      formData.commune.trim(),
+      formData.ward.trim(),
+      formData.city.trim(),
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    // Map frontend payment method to backend expected values
+    const backendPaymentMethod = paymentMethod === 'cod' ? 'Cash on delivery' : 'Online payment';
+
+    // Create order data with proper structure
+    const orderData = {
+      ...formData,
+      paymentMethod: backendPaymentMethod, // Use mapped payment method
+      requireInvoice: requireInvoice,
+      shippingAddress: fullAddress, // Add explicit shipping address
+      isGuest: isGuest, // Pass guest flag
+    };
+
+    // For guest users, require OTP verification before processing order
+    if (isGuest && !otpVerified) {
+      // Store order data for later processing after OTP verification
+      setPendingOrderData(orderData);
+      // Send OTP to guest's phone number
+      handleSendOtpForGuest();
+      return;
+    }
+
+    // Process order (either authenticated user or OTP-verified guest)
+    processOrder(orderData);
   };
 
   const formatCurrency = (amount) => {
@@ -503,6 +605,17 @@ const CheckoutForm = ({
 
             <form onSubmit={handleSubmit} className={styles.shippingForm}>
               <h2>Customer information</h2>
+              
+              {isGuest && (
+                <div className={styles.guestNotification}>
+                  <div className={styles.guestNotificationIcon}>ℹ️</div>
+                  <div className={styles.guestNotificationText}>
+                    <strong>Bạn đang đặt hàng dưới dạng khách.</strong>
+                    <br />
+                    Đơn hàng sẽ không hiển thị trong tài khoản. Bạn có thể tạo tài khoản sau để theo dõi đơn hàng dễ dàng hơn.
+                  </div>
+                </div>
+              )}
 
               <div className={styles.formGroup}>
                 <label htmlFor="fullName">Full name *</label>
@@ -642,9 +755,33 @@ const CheckoutForm = ({
                   {shippingFee === 0 ? "Free" : formatCurrency(shippingFee)}
                 </span>
               </div>
+              
+              {/* VAT Invoice Checkbox */}
+              <div className={styles.vatInvoiceSection}>
+                <label className={styles.vatInvoiceLabel}>
+                  <input
+                    type="checkbox"
+                    checked={requireInvoice}
+                    onChange={(e) => setRequireInvoice(e.target.checked)}
+                    className={styles.vatInvoiceCheckbox}
+                  />
+                  <span className={styles.vatInvoiceText}>
+                    Export VAT invoice (10%)
+                  </span>
+                </label>
+              </div>
+
+              {/* VAT Row - only show when checkbox is checked */}
+              {requireInvoice && (
+                <div className={styles.summaryRow}>
+                  <span>VAT (10%)</span>
+                  <span>{formatCurrency(subtotal * 0.1)}</span>
+                </div>
+              )}
+
               <div className={`${styles.summaryRow} ${styles.total}`}>
                 <span>Total</span>
-                <span>{formatCurrency(totalAmount)}</span>
+                <span>{formatCurrency(requireInvoice ? totalAmount + (subtotal * 0.1) : totalAmount)}</span>
               </div>
             </div>
 
@@ -728,6 +865,19 @@ const CheckoutForm = ({
             )}
           </div>
         </div>
+
+        {/* OTP Popup for guest verification */}
+        <OTPPopup
+          isOpen={showOtpPopup}
+          onClose={() => {
+            setShowOtpPopup(false);
+            setOtpError('');
+            setPendingOrderData(null);
+          }}
+          onVerify={handleVerifyOtpForGuest}
+          onResend={handleSendOtpForGuest}
+          error={otpError}
+        />
       </div>
     );
   } catch (error) {

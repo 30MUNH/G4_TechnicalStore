@@ -4,11 +4,10 @@ import ProductCard from '../components/Product/ProductCard';
 import Pagination from '../components/Product/Pagination';
 import { productService } from '../services/productService';
 import type { Product, FilterState, ProductCategory } from '../types/product';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import ProductDetailModal from '../components/Product/productDetailModal';
 import Footer from '../components/footer';
 import { useCart } from '../contexts/CartContext';
-import { useAuth } from '../contexts/AuthContext';
 
 const PRODUCTS_PER_PAGE = 16;
 
@@ -29,8 +28,6 @@ const AllProductsPage: React.FC = () => {
   const [addToCartStatus, setAddToCartStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const location = useLocation();
   const { addToCart } = useCart();
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
 
   // Auto-hide cart notification after 3 seconds
   useEffect(() => {
@@ -139,16 +136,6 @@ const AllProductsPage: React.FC = () => {
     setCurrentPage(page);
   };
   const handleAddToCart = async (product: Product) => {
-    if (!isAuthenticated()) {
-      navigate('/login', { 
-        state: { 
-          returnUrl: window.location.pathname,
-          message: 'Please login to add items to cart'
-        } 
-      });
-      return;
-    }
-
     if (!product.id) {
       setAddToCartStatus({
         message: 'Invalid product data',

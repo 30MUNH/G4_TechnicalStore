@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean } from "class-validator";
+import { IsString, IsOptional, IsBoolean, IsNumber } from "class-validator";
 
 export class CreateShipperDto {
   @IsString()
@@ -34,4 +34,16 @@ export class UpdateShipperDto {
   @IsBoolean()
   @IsOptional()
   isRegistered?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isAvailable?: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  priority?: number;
+
+  @IsNumber()
+  @IsOptional()
+  maxDailyOrders?: number;
 }

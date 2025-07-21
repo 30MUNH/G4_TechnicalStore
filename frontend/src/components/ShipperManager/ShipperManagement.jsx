@@ -3,7 +3,10 @@ import {
   Upload, 
   Plus, 
   X,
-  Save
+  Save,
+  MapPin,
+  Clock,
+  Star
 } from 'lucide-react';
 
 import ShipperCard from "./ShipperCard";
@@ -37,6 +40,13 @@ const ShipperManagement = () => {
   const [selectedShipperForOrders, setSelectedShipperForOrders] =
     useState(null);
 
+  // New states for working zone management
+  const [showWorkingZoneModal, setShowWorkingZoneModal] = useState(false);
+  const [selectedShipperForZone, setSelectedShipperForZone] = useState(null);
+  const [workingZones, setWorkingZones] = useState([]);
+  const [availableZones, setAvailableZones] = useState([]);
+  const [loadingZones, setLoadingZones] = useState(false);
+
   const itemsPerPage = 5;
 
   // Notification function
@@ -68,9 +78,9 @@ const ShipperManagement = () => {
 
       const response = await shipperService.getAllShippers();
 
-      if (response.success) {
-        // Backend returns nested structure: { success: true, data: { data: shippers } }
-        // User confirmed this structure by fixing CustomerManagement
+      if (response.success && response.data && response.data.data) {
+        // Backend returns nested structure due to ResponseInterceptor:
+        // { success: true, statusCode: 200, data: { success: true, data: shippers } }
         const rawData = response.data.data;
 
         // Ensure rawData is an array
@@ -135,6 +145,13 @@ const ShipperManagement = () => {
             createdAt: shipper.createdAt,
             updatedAt: shipper.updatedAt,
 
+            // New fields for automatic assignment
+            workingZones: shipper.workingZones || [],
+            isAvailable: shipper.isAvailable !== undefined ? shipper.isAvailable : true,
+            priority: shipper.priority || 1,
+            dailyOrderCount: shipper.dailyOrderCount || 0,
+            maxDailyOrders: shipper.maxDailyOrders || 10,
+
             // Keep original order data for reference
             shipperOrders: shipper.shipperOrders || [],
             feedbacks: shipper.feedbacks || [],
@@ -145,7 +162,7 @@ const ShipperManagement = () => {
         setTotalShippers(shippersData.length);
         setTotalPages(Math.ceil(shippersData.length / itemsPerPage));
       } else {
-        throw new Error(response.message || "Failed to fetch shippers");
+        throw new Error(response.data?.message || response.message || "Failed to fetch shippers");
       }
     } catch (err) {
       setError("Failed to fetch shippers");
@@ -158,6 +175,55 @@ const ShipperManagement = () => {
   useEffect(() => {
     fetchShippers();
   }, []);
+
+  // Fetch available working zones
+  const fetchAvailableZones = async () => {
+    try {
+      setLoadingZones(true);
+      const response = await shipperService.getAvailableZones();
+      
+      if (response.success && response.data) {
+        // Lấy danh sách quận từ tỉnh Hà Nội
+        const hanoi = "Hà Nội";
+        if (response.data.districtsByProvince && response.data.districtsByProvince[hanoi]) {
+          setAvailableZones(response.data.districtsByProvince[hanoi]);
+        } else {
+          // Fallback to hardcoded zones
+          const fallbackZones = [
+            "Ba Đình", "Hoàn Kiếm", "Hai Bà Trưng", "Đống Đa", "Tây Hồ",
+            "Cầu Giấy", "Thanh Xuân", "Hoàng Mai", "Long Biên", "Nam Từ Liêm",
+            "Bắc Từ Liêm", "Hà Đông", "Sơn Tây", "Ba Vì", "Phúc Thọ",
+            "Đan Phượng", "Hoài Đức", "Quốc Oai", "Thạch Thất", "Chương Mỹ",
+            "Thanh Oai", "Thường Tín", "Phú Xuyên", "Ứng Hòa", "Mỹ Đức"
+          ];
+          setAvailableZones(fallbackZones);
+        }
+      } else {
+        // Fallback to hardcoded zones
+        const fallbackZones = [
+          "Ba Đình", "Hoàn Kiếm", "Hai Bà Trưng", "Đống Đa", "Tây Hồ",
+          "Cầu Giấy", "Thanh Xuân", "Hoàng Mai", "Long Biên", "Nam Từ Liêm",
+          "Bắc Từ Liêm", "Hà Đông", "Sơn Tây", "Ba Vì", "Phúc Thọ",
+          "Đan Phượng", "Hoài Đức", "Quốc Oai", "Thạch Thất", "Chương Mỹ",
+          "Thanh Oai", "Thường Tín", "Phú Xuyên", "Ứng Hòa", "Mỹ Đức"
+        ];
+        setAvailableZones(fallbackZones);
+      }
+    } catch (error) {
+      showNotification("Failed to load available zones", "error");
+      // Fallback to hardcoded zones on error
+      const fallbackZones = [
+        "Ba Đình", "Hoàn Kiếm", "Hai Bà Trưng", "Đống Đa", "Tây Hồ",
+        "Cầu Giấy", "Thanh Xuân", "Hoàng Mai", "Long Biên", "Nam Từ Liêm",
+        "Bắc Từ Liêm", "Hà Đông", "Sơn Tây", "Ba Vì", "Phúc Thọ",
+        "Đan Phượng", "Hoài Đức", "Quốc Oai", "Thạch Thất", "Chương Mỹ",
+        "Thanh Oai", "Thường Tín", "Phú Xuyên", "Ứng Hòa", "Mỹ Đức"
+      ];
+      setAvailableZones(fallbackZones);
+    } finally {
+      setLoadingZones(false);
+    }
+  };
 
   // Filter shippers
   const filteredShippers = shippers.filter((shipper) => {
@@ -236,6 +302,89 @@ const ShipperManagement = () => {
     setSelectedShipperForOrders(null);
   };
 
+  // Working zone operations
+  const openWorkingZoneModal = async (shipper) => {
+    setSelectedShipperForZone(shipper);
+    setWorkingZones(shipper.workingZones || []);
+    setShowWorkingZoneModal(true);
+    
+    // Load available zones if not already loaded
+    if (availableZones.length === 0) {
+      await fetchAvailableZones();
+    }
+  };
+
+  const closeWorkingZoneModal = () => {
+    setShowWorkingZoneModal(false);
+    setSelectedShipperForZone(null);
+    setWorkingZones([]);
+  };
+
+  const handleWorkingZoneChange = (zone) => {
+    setWorkingZones(prev => 
+      prev.includes(zone) 
+        ? prev.filter(z => z !== zone)
+        : [...prev, zone]
+    );
+  };
+
+  const saveWorkingZones = async () => {
+    if (!selectedShipperForZone) return;
+
+    try {
+      const response = await shipperService.updateWorkingZone(
+        selectedShipperForZone.id,
+        workingZones
+      );
+
+      if (response.success) {
+        showNotification("Working zones updated successfully", "success");
+        await fetchShippers(); // Refresh the list
+        closeWorkingZoneModal();
+      } else {
+        throw new Error(response.message || "Failed to update working zones");
+      }
+    } catch (error) {
+      showNotification(error.message || "An error occurred", "error");
+    }
+  };
+
+  const toggleAvailability = async (shipperId, currentAvailability) => {
+    try {
+      const response = await shipperService.updateAvailability(
+        shipperId,
+        !currentAvailability
+      );
+
+      if (response.success) {
+        showNotification(
+          `Shipper ${!currentAvailability ? 'activated' : 'deactivated'} successfully`, 
+          "success"
+        );
+        await fetchShippers(); // Refresh the list
+      } else {
+        throw new Error(response.message || "Failed to update availability");
+      }
+    } catch (error) {
+      showNotification(error.message || "An error occurred", "error");
+    }
+  };
+
+  const updatePriority = async (shipperId, newPriority) => {
+    try {
+      const response = await shipperService.updatePriority(shipperId, newPriority);
+
+      if (response.success) {
+        showNotification("Priority updated successfully", "success");
+        await fetchShippers(); // Refresh the list
+      } else {
+        throw new Error(response.message || "Failed to update priority");
+      }
+    } catch (error) {
+      showNotification(error.message || "An error occurred", "error");
+    }
+  };
+
   // CRUD operations
   const handleSave = async (formData) => {
     try {
@@ -304,24 +453,31 @@ const ShipperManagement = () => {
       const response = await shipperService.exportShippers();
       
       if (response.success && response.data) {
-        // Create download link
-        const url = window.URL.createObjectURL(new Blob([response.data], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        }));
+        // Get filename from response or use default
+        const filename = response.meta?.filename || `shippers_export_${new Date().toISOString().split('T')[0]}.csv`;
+        
+        // Create and download CSV file
+        const csvContent = response.data;
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `shippers_${new Date().toISOString().split('T')[0]}.xlsx`);
+        link.setAttribute('download', filename);
         document.body.appendChild(link);
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
         
-        showNotification('Data exported successfully', 'success');
+        showNotification(
+          `Data exported successfully (${response.meta?.totalRecords || 0} records)`, 
+          'success'
+        );
       } else {
-        throw new Error('Failed to export data');
+        throw new Error(response.message || 'Failed to export data');
       }
     } catch (error) {
-      showNotification('Failed to export data', 'error');
+      showNotification('Failed to export data: ' + error.message, 'error');
     }
   };
 
@@ -404,6 +560,9 @@ const ShipperManagement = () => {
         onViewOrders={openOrderList}
         onDelete={handleDelete}
         onPageChange={setCurrentPage}
+        onManageWorkingZones={openWorkingZoneModal}
+        onToggleAvailability={toggleAvailability}
+        onUpdatePriority={updatePriority}
       />
 
       {/* Modal */}
@@ -427,6 +586,62 @@ const ShipperManagement = () => {
               shipperName={selectedShipperForOrders.name}
               onClose={closeOrderList}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Working Zone Modal */}
+      {showWorkingZoneModal && selectedShipperForZone && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>
+                Manage Working Zones - {selectedShipperForZone.name}
+              </h2>
+              <button onClick={closeWorkingZoneModal} className={styles.closeButton}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className={styles.workingZoneContent}>
+              <div className={styles.zoneSelection}>
+                <h3>Select Working Zones for {selectedShipperForZone?.name}:</h3>
+                {loadingZones ? (
+                  <div className={styles.loadingContainer}>
+                    <div className={styles.loadingContent}>
+                      <div className={styles.loadingText}>Loading available zones...</div>
+                    </div>
+                  </div>
+                ) : (
+                <div className={styles.zoneGrid}>
+                  {availableZones.map((zone) => (
+                    <label key={zone} className={styles.zoneCheckbox}>
+                      <input
+                        type="checkbox"
+                        checked={workingZones.includes(zone)}
+                        onChange={() => handleWorkingZoneChange(zone)}
+                      />
+                      <span>{zone}</span>
+                    </label>
+                  ))}
+                </div>
+                )}
+              </div>
+              <div className={styles.modalActions}>
+                <button
+                  onClick={closeWorkingZoneModal}
+                  className={`${styles.formButton} ${styles.cancelFormButton}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveWorkingZones}
+                  className={`${styles.formButton} ${styles.saveButton}`}
+                >
+                  <Save size={16} />
+                  <span>Save Zones</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -592,6 +807,34 @@ const ShipperForm = ({ mode, initialData, onSubmit, onCancel }) => {
                 {initialData?.rating
                   ? `⭐ ${initialData?.rating}/5.0`
                   : "⭐ 5.0/5.0"}
+              </span>
+            </div>
+            {/* New fields for automatic assignment */}
+            <div className={styles.viewField}>
+              <span className={styles.viewLabel}>Availability:</span>
+              <span className={styles.viewValue}>
+                {initialData?.isAvailable ? "Available" : "Unavailable"}
+              </span>
+            </div>
+            <div className={styles.viewField}>
+              <span className={styles.viewLabel}>Priority:</span>
+              <span className={styles.viewValue}>
+                {initialData?.priority || 1}
+              </span>
+            </div>
+            <div className={styles.viewField}>
+              <span className={styles.viewLabel}>Daily Orders:</span>
+              <span className={styles.viewValue}>
+                {initialData?.dailyOrderCount || 0} / {initialData?.maxDailyOrders || 10}
+              </span>
+            </div>
+            <div className={styles.viewField}>
+              <span className={styles.viewLabel}>Working Zones:</span>
+              <span className={styles.viewValue}>
+                {initialData?.workingZones?.length > 0 
+                  ? initialData.workingZones.join(", ")
+                  : "Not set"
+                }
               </span>
             </div>
           </div>

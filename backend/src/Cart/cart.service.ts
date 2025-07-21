@@ -70,6 +70,31 @@ export class CartService {
     }
   }
 
+  private async calculateTotalAmountInTransaction(cart: Cart, transactionalEntityManager: any): Promise<number> {
+    try {
+      let total = 0;
+
+      if (!cart.cartItems || cart.cartItems.length === 0) {
+        return Number(total.toFixed(2));
+      }
+
+      for (const item of cart.cartItems) {
+        const product = await transactionalEntityManager.findOne(Product, { where: { id: item.product.id } });
+        
+        // Skip invalid items but don't remove them - preserve for user review
+        if (!product || !product.isActive || !product.price || product.price <= 0 || product.stock < item.quantity) {
+          continue;
+        }
+        
+        total += product.price * item.quantity;
+      }
+
+      return Number(total.toFixed(2));
+    } catch (error) {
+      throw error;
+    }
+  }
+
   private async updateCartTotals(cart: Cart): Promise<Cart> {
     try {
       cart.totalAmount = await this.calculateTotalAmount(cart);
@@ -84,14 +109,7 @@ export class CartService {
     try {
       this.validateQuantity(addToCartDto.quantity, 'increase');
 
-      const dataSource = await DbConnection.getConnection();
-      if (!dataSource) {
-        throw new Error('Database connection not available');
-      }
-
-      return dataSource.transaction(async transactionalEntityManager => {
-
-        
+      return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
         // Get cart within transaction to ensure we have the latest cart items
         const account = await transactionalEntityManager.findOne(Account, { where: { username } });
         if (!account) throw new EntityNotFoundException('Account');
@@ -106,7 +124,11 @@ export class CartService {
           cart.account = account;
           cart.totalAmount = 0;
           cart = await transactionalEntityManager.save(cart);
-          
+        }
+
+        // Validate max cart items (50 items limit like OrderService)
+        if (cart.cartItems && cart.cartItems.length >= 50) {
+          throw new BadRequestException('Cart is full. Maximum 50 items allowed');
         }
         
         // Lock the product row for update
@@ -153,18 +175,8 @@ export class CartService {
           throw new Error('Failed to reload cart after update');
         }
 
-        // Calculate total with fresh cart items
-        let total = 0;
-        if (updatedCart.cartItems) {
-          for (const item of updatedCart.cartItems) {
-            const product = await transactionalEntityManager.findOne(Product, { where: { id: item.product.id } });
-            if (product && product.isActive) {
-              total += product.price * item.quantity;
-            }
-          }
-        }
-        
-        updatedCart.totalAmount = Number(total.toFixed(2));
+        // Calculate total with fresh cart items - use optimized method
+        updatedCart.totalAmount = await this.calculateTotalAmountInTransaction(updatedCart, transactionalEntityManager);
         await transactionalEntityManager.save(updatedCart);
         
         return updatedCart;
@@ -198,14 +210,7 @@ export class CartService {
     try {
       this.validateQuantity(amount, 'increase');
 
-      const dataSource = await DbConnection.getConnection();
-      if (!dataSource) {
-        throw new Error('Database connection not available');
-      }
-
-      return dataSource.transaction(async transactionalEntityManager => {
-
-        
+      return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
         // Get cart within transaction to ensure we have the latest cart items
         const account = await transactionalEntityManager.findOne(Account, { where: { username } });
         if (!account) throw new EntityNotFoundException('Account');
@@ -250,18 +255,8 @@ export class CartService {
           throw new Error('Failed to reload cart after increase');
         }
         
-        // Calculate total with fresh cart items
-        let total = 0;
-        if (reloadedCart.cartItems) {
-          for (const cartItem of reloadedCart.cartItems) {
-            const product = await transactionalEntityManager.findOne(Product, { where: { id: cartItem.product.id } });
-            if (product && product.isActive) {
-              total += product.price * cartItem.quantity;
-            }
-          }
-        }
-        
-        reloadedCart.totalAmount = Number(total.toFixed(2));
+        // Calculate total with optimized method
+        reloadedCart.totalAmount = await this.calculateTotalAmountInTransaction(reloadedCart, transactionalEntityManager);
         await transactionalEntityManager.save(reloadedCart);
         
         return reloadedCart;

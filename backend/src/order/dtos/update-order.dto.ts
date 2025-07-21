@@ -4,7 +4,8 @@ export enum OrderStatus {
     PENDING = 'PENDING',
     SHIPPING = 'SHIPPING',
     DELIVERED = 'DELIVERED',
-    CANCELLED = 'CANCELLED'
+    CANCELLED = 'CANCELLED',
+    PENDING_EXTERNAL_SHIPPING = 'PENDING_EXTERNAL_SHIPPING' // Đơn hàng chờ giao qua đối tác
 }
 
 export class UpdateOrderDto {

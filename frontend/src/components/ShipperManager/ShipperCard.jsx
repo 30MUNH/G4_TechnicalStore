@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Edit, Trash2, Phone, MapPin, Truck, ChevronLeft, ChevronRight, User, List } from 'lucide-react';
+import { Eye, Edit, Trash2, Phone, MapPin, Truck, ChevronLeft, ChevronRight, User, List, Settings, Power, Star } from 'lucide-react';
 import styles from './ShipperCard.module.css';
 
 const ShipperCard = ({
@@ -12,22 +12,15 @@ const ShipperCard = ({
   onEdit,
   onDelete,
   onViewOrders,
-  onPageChange
+  onPageChange,
+  onManageWorkingZones,
+  onUpdatePriority
 }) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalShippers);
 
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'Active':
-        return styles.statusActive;
-      case 'On Break':
-        return styles.statusBreak;
-      case 'Suspended':
-        return styles.statusSuspended;
-      default:
-        return styles.statusActive;
-    }
+  const getAvailabilityClass = (isAvailable) => {
+    return isAvailable ? styles.available : styles.unavailable;
   };
 
   const renderStars = (rating) => {
@@ -98,9 +91,11 @@ const ShipperCard = ({
                   <p className={styles.shipperId}>ID: {shipper.id}</p>
                 </div>
               </div>
-              <span className={`${styles.status} ${getStatusClass(shipper.status)}`}>
-                {shipper.status}
-              </span>
+              <div className={styles.statusContainer}>
+                <span className={`${styles.availability} ${getAvailabilityClass(shipper.isAvailable)}`}>
+                  {shipper.isAvailable ? 'Available' : 'Unavailable'}
+                </span>
+              </div>
             </div>
 
             <div className={styles.cardBody}>
@@ -113,6 +108,15 @@ const ShipperCard = ({
                   <MapPin className={styles.infoIcon} />
                   <span className={styles.infoText}>Member since: {formatDate(shipper.createdAt)}</span>
                 </div>
+                {shipper.workingZones && shipper.workingZones.length > 0 && (
+                  <div className={styles.infoItem}>
+                    <Truck className={styles.infoIcon} />
+                    <span className={styles.infoText}>
+                      Zones: {shipper.workingZones.slice(0, 2).join(", ")}
+                      {shipper.workingZones.length > 2 && ` +${shipper.workingZones.length - 2} more`}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className={styles.infoGrid}>
@@ -127,6 +131,19 @@ const ShipperCard = ({
                 <div className={styles.statItem}>
                   <span className={styles.statLabel}>Rating:</span>
                   {shipper.rating ? renderStars(parseFloat(shipper.rating)) : renderStars(5.0)}
+                </div>
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>Priority:</span>
+                  <span className={styles.statValue}>
+                    <Star size={14} className={styles.priorityStar} />
+                    {shipper.priority || 1}
+                  </span>
+                </div>
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>Daily:</span>
+                  <span className={styles.statValue}>
+                    {shipper.dailyOrderCount || 0}/{shipper.maxDailyOrders || 10}
+                  </span>
                 </div>
               </div>
             </div>
@@ -146,6 +163,14 @@ const ShipperCard = ({
               >
                 <List className={styles.actionIcon} />
                 Orders
+              </button>
+              <button
+                className={`${styles.actionButton} ${styles.zonesButton}`}
+                onClick={() => onManageWorkingZones(shipper)}
+                title="Manage Working Zones"
+              >
+                <MapPin className={styles.actionIcon} />
+                Zones
               </button>
               <button
                 className={`${styles.actionButton} ${styles.editButton}`}
@@ -169,7 +194,7 @@ const ShipperCard = ({
       {/* Pagination */}
       <div className={styles.pagination}>
         <div className={styles.paginationInfo}>
-          Showing {startIndex + 1} to {endIndex} of {totalShippers} results
+          Display {startIndex + 1} to {endIndex} of {totalShippers} shippers
         </div>
         <div className={styles.paginationControls}>
           <button

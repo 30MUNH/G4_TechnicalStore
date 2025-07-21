@@ -58,53 +58,41 @@ const OrderManagement = ({ role = 'admin' }) => {
     }, 3000);
   };
 
-  // Fetch orders from API
-  const fetchOrders = async () => {
+  // Fetch orders from API with pagination and filters
+  const fetchOrders = async (params = {}) => {
     try {
       setLoading(true);
       setError(null);
+      // Compose params: filters + pagination
+      const queryParams = {
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchTerm,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        date: dateFilter || undefined,
+        shipper: shipperFilter !== 'all' ? shipperFilter : undefined,
+        amount: amountFilter !== 'all' ? amountFilter : undefined,
+        ...params
+      };
+      const response = await orderService.getAllOrdersForAdmin(queryParams);
       
-      const response = await orderService.getAllOrdersForAdmin();
-      
-      if (response && response.data && response.data.data) {
-        // Response structure: interceptor wraps controller response into { data: { success, data: [...orders...], message } }
-        // Access the orders array from response.data.data
-        const ordersArray = Array.isArray(response.data.data) ? response.data.data : [];
-        
-        // Map the orders data
-        const ordersData = ordersArray.map(order => ({
-          id: order.id,
-          customer: order.customer || {},
-          orderDate: order.orderDate,
-          totalAmount: order.totalAmount,
-          status: order.status,
-          shippingAddress: order.shippingAddress,
-          note: order.note,
-          cancelReason: order.cancelReason,
-          orderDetails: order.orderDetails || [],
-          shipper: order.shipper || null
-        }));
-        
-        setOrders(ordersData);
-        setTotalOrders(ordersData.length);
-        setTotalPages(Math.ceil(ordersData.length / itemsPerPage));
+      // Backend returns nested structure due to ResponseInterceptor:
+      // { success: true, statusCode: 200, data: { message: "...", data: orders[], pagination: {...} } }
+      if (response.data && response.data.data && response.data.pagination) {
+        const ordersArr = response.data.data || [];
+        const pagination = response.data.pagination || {};
+        setOrders(ordersArr);
+        setTotalOrders(pagination.total || ordersArr.length);
+        setTotalPages(pagination.totalPages || 1);
       } else {
-        setOrders([]);
-        setTotalOrders(0);
+        // Fallback for simpler response format
+        const ordersArr = Array.isArray(response.data?.data) ? response.data.data : [];
+        setOrders(ordersArr);
+        setTotalOrders(ordersArr.length);
         setTotalPages(1);
       }
     } catch (err) {
-      
-      // Handle 401 Unauthorized specifically
-      if (err.message && err.message.includes('401')) {
-        setError('You do not have permission to view orders. Please login with admin account.');
-        showNotification('Please login with admin account to view orders', 'error');
-      } else {
         setError('Cannot load orders: ' + err.message);
-        showNotification('Không thể tải đơn hàng: ' + err.message, 'error');
-      }
-      
-      // Set empty state
       setOrders([]);
       setTotalOrders(0);
       setTotalPages(1);
@@ -113,81 +101,14 @@ const OrderManagement = ({ role = 'admin' }) => {
     }
   };
 
+  // Fetch orders on mount and when filters/page change
   useEffect(() => {
     fetchOrders();
-  }, []);
+    // eslint-disable-next-line
+  }, [currentPage, searchTerm, statusFilter, dateFilter, shipperFilter, amountFilter]);
 
-  // Filter orders
-  const filteredOrders = orders.filter((order) => {
-    if (!order) return false;
-    
-    const matchesSearch = order.id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.customer?.username?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    
-    let matchesDate = true;
-    if (dateFilter && order.orderDate) {
-      const orderDate = new Date(order.orderDate);
-      const filterDate = new Date(dateFilter);
-      
-      // Compare only the date part (ignore time)
-      const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
-      const filterDateOnly = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
-      
-      matchesDate = orderDateOnly.getTime() === filterDateOnly.getTime();
-    }
-
-    // Shipper filter
-    const matchesShipper = shipperFilter === "all" || 
-      (shipperFilter === "with_shipper" && order.shipper) ||
-      (shipperFilter === "without_shipper" && !order.shipper);
-
-    // Amount range filter - VND values
-    let matchesAmount = true;
-    if (amountFilter !== "all" && order.totalAmount) {
-      const amount = order.totalAmount;
-      switch (amountFilter) {
-        case "0-500000":
-          matchesAmount = amount >= 0 && amount <= 500000;
-          break;
-        case "500000-2000000":
-          matchesAmount = amount > 500000 && amount <= 2000000;
-          break;
-        case "2000000-10000000":
-          matchesAmount = amount > 2000000 && amount <= 10000000;
-          break;
-        case "10000000-50000000":
-          matchesAmount = amount > 10000000 && amount <= 50000000;
-          break;
-        case "50000000+":
-          matchesAmount = amount > 50000000;
-          break;
-        default:
-          matchesAmount = true;
-      }
-    }
-
-    return matchesSearch && matchesStatus && matchesDate && matchesShipper && matchesAmount;
-  });
-
-  // Update pagination when filtered orders change
-  useEffect(() => {
-    const newTotalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-    setTotalPages(newTotalPages);
-    
-    // Reset to page 1 if current page is beyond new total
-    if (currentPage > newTotalPages && newTotalPages > 0) {
-      setCurrentPage(1);
-    }
-  }, [filteredOrders, currentPage]);
-
-  // Get current page orders
-  const getCurrentPageOrders = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentPageData = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
-    return currentPageData;
-  };
+  // Ensure orders is always an array
+  const safeOrders = Array.isArray(orders) ? orders : [];
 
   // Modal operations
   const openModal = (mode, order = null) => {
@@ -349,10 +270,10 @@ const OrderManagement = ({ role = 'admin' }) => {
 
       {/* Order Table */}
       <OrderTable
-        orders={getCurrentPageOrders()}
+        orders={safeOrders}
         currentPage={currentPage}
         totalPages={totalPages}
-        totalOrders={filteredOrders.length}
+        totalOrders={totalOrders}
         itemsPerPage={itemsPerPage}
         role={role}
         onView={(order) => openModal('view', order)}

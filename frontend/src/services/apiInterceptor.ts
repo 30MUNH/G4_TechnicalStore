@@ -9,21 +9,6 @@ const api = axios.create({
 
 console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
 
-let isRefreshing = false;
-let failedQueue: { resolve: (value: unknown) => void; reject: (error: unknown) => void; }[] = [];
-
-const processQueue = (error: Error | null, token: string | null = null) => {
-    failedQueue.forEach(prom => {
-        if (error) {
-            prom.reject(error);
-        } else {
-            prom.resolve(token);
-        }
-    });
-    
-    failedQueue = [];
-};
-
 // Helper to check if we're in registration flow
 const checkRegistrationFlow = () => {
     const justRegistered = sessionStorage.getItem('registrationSuccess');
@@ -118,10 +103,11 @@ api.interceptors.request.use(
             });
             
             if (token) {
-                config.headers.Authorization = token;
+                config.headers.Authorization = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
                 console.log("✅ Authorization header added:", {
                     headerSet: !!config.headers.Authorization,
                     headerLength: config.headers.Authorization?.length,
+                    headerFormat: config.headers.Authorization?.substring(0, 20) + '...',
                     url: url
                 });
             } else {
@@ -157,8 +143,6 @@ api.interceptors.response.use(
         return response;
     },
     async (error) => {
-        const originalRequest = error.config;
-        
         // Handle blocked API calls during registration
         if (error.message === 'API_BLOCKED_REGISTRATION_FLOW') {
             console.log("🚫 API call blocked during registration - this is expected");
@@ -171,66 +155,18 @@ api.interceptors.response.use(
             });
         }
 
-        console.error('❌ API Error:', {
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            url: error.config?.url,
-            method: error.config?.method?.toUpperCase(),
-            data: error.response?.data,
-            message: error.message,
-            hasAuthHeader: !!error.config?.headers?.Authorization
-        });
-
-        // Handle 401 error
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            if (isRefreshing) {
-                try {
-                    const token = await new Promise((resolve, reject) => {
-                        failedQueue.push({ resolve, reject });
-                    });
-                    originalRequest.headers['Authorization'] = token;
-                    return api(originalRequest);
-                } catch (err) {
-                    return Promise.reject(err);
-                }
+        // Handle 401 error (no refresh token logic)
+        if (error.response?.status === 401) {
+            // Clear auth data and redirect to login
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            window.dispatchEvent(new CustomEvent('auth:unauthorized', {
+                detail: { message: 'Session expired. Please login again.' }
+            }));
+            if (!window.location.pathname.includes('/login')) {
+                window.location.href = '/login';
             }
-
-            originalRequest._retry = true;
-            isRefreshing = true;
-
-            try {
-                // Try to refresh token
-                const response = await api.post('/account/refresh-token');
-                const newToken = response.data.accessToken;
-                
-                if (newToken) {
-                    localStorage.setItem('authToken', newToken);
-                    api.defaults.headers.common['Authorization'] = newToken;
-                    originalRequest.headers['Authorization'] = newToken;
-                    
-                    processQueue(null, newToken);
-                    return api(originalRequest);
-                }
-            } catch (refreshError) {
-                processQueue(new Error('Failed to refresh token'));
-                
-                // Clear auth data and redirect to login
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('user');
-                
-                window.dispatchEvent(new CustomEvent('auth:unauthorized', {
-                    detail: { message: 'Session expired. Please login again.' }
-                }));
-                
-                // Redirect to login page
-                if (!window.location.pathname.includes('/login')) {
-                    window.location.href = '/login';
-                }
-                
-                return Promise.reject(refreshError);
-            } finally {
-                isRefreshing = false;
-            }
+            return Promise.reject(error);
         }
         
         return Promise.reject(error);

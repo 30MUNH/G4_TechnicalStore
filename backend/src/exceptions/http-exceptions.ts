@@ -65,3 +65,48 @@ export class BadRequestException extends HttpException {
     super(400, message);
   }
 }
+
+export class UsernameAlreadyExistedException extends HttpException {
+  constructor(message: string) {
+    super(400, message);
+  }
+}
+
+export class PhoneAlreadyExistedException extends HttpException {
+  constructor(message: string) {
+    super(400, message);
+  }
+}
+
+export class BaseException extends Error {
+  public status: number;
+  public code: string;
+  public userMessage: string;
+
+  constructor(message: string, status: number = 500, code: string = 'INTERNAL_ERROR', userMessage?: string) {
+    super(message);
+    this.status = status;
+    this.code = code;
+    this.userMessage = userMessage || message;
+    this.name = this.constructor.name;
+  }
+
+  toJSON() {
+    return {
+      success: false,
+      error: {
+        code: this.code,
+        message: this.message,
+        userMessage: this.userMessage,
+        status: this.status
+      },
+      message: this.userMessage
+    };
+  }
+}
+
+export class ValidationException extends BaseException {
+  constructor(message: string, userMessage?: string) {
+    super(message, 400, 'VALIDATION_ERROR', userMessage || 'Dữ liệu không hợp lệ');
+  }
+}

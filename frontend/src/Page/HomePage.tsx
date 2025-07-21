@@ -79,7 +79,7 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { addToCart } = useCart();
-  const { isAuthenticated, user, token } = useAuth();
+  const { user, token } = useAuth();
   const [newProducts, setNewProducts] = useState<{ laptops: Product[]; pcs: Product[]; accessories: Product[] }>({ laptops: [], pcs: [], accessories: [] });
   const [topSellingProducts, setTopSellingProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,6 +126,13 @@ const HomePage: React.FC = () => {
       setPaymentSuccessMessage(state.message);
       // Clear the state
       navigate(location.pathname, { replace: true });
+    } else {
+      // Check sessionStorage nếu không có state
+      const msg = sessionStorage.getItem('paymentSuccessMessage');
+      if (msg) {
+        setPaymentSuccessMessage(msg);
+        sessionStorage.removeItem('paymentSuccessMessage');
+      }
     }
   }, [location, navigate]);
 
@@ -198,17 +205,6 @@ const HomePage: React.FC = () => {
   };
 
   const handleAddToCart = async (product: Product) => {
-
-    if (!isAuthenticated()) {
-      navigate('/login', { 
-        state: { 
-          returnUrl: window.location.pathname,
-          message: 'Please login to add items to cart'
-        } 
-      });
-      return;
-    }
-
     if (!product.id) {
       setAddToCartStatus({
         message: 'Invalid product data',

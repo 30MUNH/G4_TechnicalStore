@@ -11,6 +11,8 @@ import swaggerUi from "swagger-ui-express";
 import { DbConnection } from "@/database/dbConnection";
 import { ResponseInterceptor } from "./utils/interceptor/interceptor";
 import cors from "cors";
+import { InvoiceController } from "./payment/invoice.controller";
+import { CronJobService } from "./shipper/cronJob.service";
 
 export default class App {
   public app: express.Application;
@@ -35,6 +37,7 @@ export default class App {
     this.app.listen(this.port, () => {
       console.log(`🚀 Backend listening on port ${this.port}`);
       console.log(`📘 Api docs at: http://localhost:${this.port}/api-docs`);
+      this.initializeCronJobs();
     });
   }
 
@@ -48,7 +51,38 @@ export default class App {
         if (req.originalUrl.toString().includes("webhook")) {
           next();
         } else {
-          express.json()(req, res, next);
+          // Better JSON parsing with error handling
+          express.json({
+            limit: '50mb',
+            type: 'application/json'
+          })(req, res, (err) => {
+            if (err) {
+              console.error('🔴 JSON Parse Error:', {
+                url: req.originalUrl,
+                method: req.method,
+                body: req.body,
+                rawBody: err.body,
+                error: err.message
+              });
+              
+              // If it's a JSON parse error for endpoints that don't need body, ignore it
+              if (err.type === 'entity.parse.failed' && 
+                  (req.originalUrl.includes('/assign-shipper') || 
+                   req.originalUrl.includes('/bulk-assign-shipper'))) {
+                console.log('⚠️ Ignoring JSON parse error for assignment endpoint');
+                req.body = {}; // Set empty body
+                next();
+              } else {
+                res.status(400).json({
+                  success: false,
+                  message: 'Invalid JSON format in request body',
+                  error: err.message
+                });
+              }
+            } else {
+              next();
+            }
+          });
         }
       }
     );
@@ -112,5 +146,14 @@ export default class App {
       }
     );
     this.app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(spec));
+  }
+
+  private initializeCronJobs() {
+    try {
+      const cronJobService = Container.get(CronJobService);
+      cronJobService.initializeCronJobs();
+    } catch (error) {
+      console.error("❌ Failed to initialize cron jobs:", error);
+    }
   }
 }
