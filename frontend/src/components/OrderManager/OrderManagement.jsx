@@ -75,12 +75,22 @@ const OrderManagement = ({ role = 'admin' }) => {
         ...params
       };
       const response = await orderService.getAllOrdersForAdmin(queryParams);
-      // Fix: parse nested response structure
-      const ordersArr = response?.data?.data || [];
-      const pagination = response?.data?.pagination || {};
-      setOrders(ordersArr);
-      setTotalOrders(pagination.total || ordersArr.length);
-      setTotalPages(pagination.totalPages || 1);
+      
+      // Backend returns nested structure due to ResponseInterceptor:
+      // { success: true, statusCode: 200, data: { message: "...", data: orders[], pagination: {...} } }
+      if (response.data && response.data.data && response.data.pagination) {
+        const ordersArr = response.data.data || [];
+        const pagination = response.data.pagination || {};
+        setOrders(ordersArr);
+        setTotalOrders(pagination.total || ordersArr.length);
+        setTotalPages(pagination.totalPages || 1);
+      } else {
+        // Fallback for simpler response format
+        const ordersArr = Array.isArray(response.data?.data) ? response.data.data : [];
+        setOrders(ordersArr);
+        setTotalOrders(ordersArr.length);
+        setTotalPages(1);
+      }
     } catch (err) {
         setError('Cannot load orders: ' + err.message);
       setOrders([]);

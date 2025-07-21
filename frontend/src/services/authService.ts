@@ -316,28 +316,9 @@ export const authService = {
             if (!verifyData.username || !verifyData.otp) {
                 throw new Error('Username and OTP are required');
             }
-            const cleanedData = {
-                username: verifyData.username.trim(),
-                otp: verifyData.otp.trim()
-            };
-            const response = await api.post('/account/verify-login', cleanedData);
-            
-            // Store token after successful login and fetch user profile
-            if (response.data && typeof response.data === 'string') {
-                localStorage.setItem('authToken', response.data);
-                
-                // Fetch and store user profile
-                try {
-                    const userProfile = await this.getUserProfile();
-                    if (userProfile) {
-                        localStorage.setItem('user', JSON.stringify(userProfile));
-                    }
-                } catch (error) {
-                    // Silent fail - user can still use the app
-                }
-            }
-            
-            return response.data;
+            // Note: /account/verify-login endpoint doesn't exist in backend
+            // For now, use alternative approach or return error
+            throw new Error('Login verification endpoint not implemented in backend');
         } catch (error: unknown) {
             if (isErrorWithMessage(error) && 'response' in error) {
                 return handleAuthError(error as AuthError);
@@ -452,9 +433,11 @@ export const authService = {
      */
     async getUsernameByPhone(phone: string): Promise<string | null> {
         try {
-            const formattedPhone = formatPhoneNumber(phone);
-            const response = await api.get(`/account/username/${formattedPhone}`);
-            return response.data?.username || null;
+            // Note: This endpoint doesn't exist in backend yet
+            // For now, return null or implement alternative logic
+            // TODO: Implement when backend endpoint is available
+            console.warn(`getUsernameByPhone: Endpoint not implemented in backend for phone: ${phone}`);
+            return null;
         } catch (error) {
             console.error('Error getting username by phone:', error);
             return null;
@@ -493,6 +476,75 @@ export const authService = {
         
         return authState;
     }
+};
+
+/**
+ * Send OTP for guest checkout - uses existing OTP endpoint
+ */
+export const sendOtpForGuest = async (phone: string): Promise<ApiResponse> => {
+  try {
+    const formattedPhone = formatPhoneNumber(phone);
+    const response = await api.post('/otp/send', { phone: formattedPhone });
+    return {
+      success: true,
+      message: 'OTP sent successfully',
+      data: response.data?.data || { message: 'OTP sent successfully' }
+    };
+  } catch (error) {
+    return handleAuthError(error as AuthError);
+  }
+};
+
+/**
+ * Verify OTP for guest checkout - uses existing OTP endpoint
+ */
+export const verifyOtpForGuest = async (phone: string, otp: string): Promise<ApiResponse> => {
+  try {
+    const formattedPhone = formatPhoneNumber(phone);
+    const response = await api.post('/otp/verify', { 
+      phone: formattedPhone,
+      otp: otp
+    });
+    return {
+      success: response.data || false,
+      message: response.data ? 'OTP verified successfully' : 'OTP is wrong or expired',
+      data: { verified: response.data || false }
+    };
+  } catch (error) {
+    return handleAuthError(error as AuthError);
+  }
+};
+
+/**
+ * Send OTP for customer phone change
+ */
+export const sendOtpForCustomer = async (username: string): Promise<ApiResponse> => {
+  try {
+    await api.post('/account/send-otp', { username });
+    return {
+      success: true,
+      message: 'OTP sent successfully',
+      data: { message: 'OTP sent successfully' }
+    };
+  } catch (error) {
+    return handleAuthError(error as AuthError);
+  }
+};
+
+/**
+ * Verify OTP for customer phone change
+ */
+export const verifyOtpForCustomer = async (username: string, otp: string): Promise<ApiResponse> => {
+  try {
+    const response = await api.post('/account/verify-otp', { username, otp });
+    return {
+      success: true,
+      message: 'OTP verified successfully',
+      data: { verified: response.data }
+    };
+  } catch (error) {
+    return handleAuthError(error as AuthError);
+  }
 };
 
 // Expose authService to window for debugging in development

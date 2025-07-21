@@ -1,4 +1,4 @@
-import { Service } from 'typedi';
+import { Service, Container } from 'typedi';
 import { Order } from './order.entity';
 import { OrderDetail } from './orderDetail.entity';
 import { CartService } from '@/Cart/cart.service';
@@ -12,6 +12,18 @@ import { Cart } from '@/Cart/cart.entity';
 import { InvoiceService } from '@/payment/invoice.service';
 import { Invoice, InvoiceStatus } from '@/payment/invoice.entity';
 
+// Định nghĩa type cho filter options để dùng lại và đồng bộ controller-service
+export interface OrderFilterOptions {
+    status?: string;
+    search?: string;
+    sort?: string;
+    page?: number;
+    limit?: number;
+    shipper?: string;
+    assigned?: boolean;
+    unassigned?: boolean;
+}
+
 @Service()
 export class OrderService {
     constructor(
@@ -23,11 +35,20 @@ export class OrderService {
         const validTransitions: Record<OrderStatus, OrderStatus[]> = {
             [OrderStatus.PENDING]: [OrderStatus.SHIPPING, OrderStatus.CANCELLED],
             [OrderStatus.SHIPPING]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
-            [OrderStatus.DELIVERED]: [],
-            [OrderStatus.CANCELLED]: []
+            [OrderStatus.DELIVERED]: [], // Delivered orders cannot change status
+            [OrderStatus.CANCELLED]: [], // Cancelled orders cannot change status
+            [OrderStatus.PENDING_EXTERNAL_SHIPPING]: [OrderStatus.SHIPPING, OrderStatus.CANCELLED] // External shipping can transition to shipping or cancelled
         };
 
-        return validTransitions[currentStatus]?.includes(newStatus) || false;
+        // Check if the status transition is valid
+        const allowedTransitions = validTransitions[currentStatus] || [];
+        const isValidTransition = allowedTransitions.includes(newStatus);
+        
+        if (!isValidTransition) {
+            console.warn(`[Warning] Invalid status transition attempted: ${currentStatus} -> ${newStatus}`);
+        }
+        
+        return isValidTransition;
     }
 
     private isAdmin(account: Account): boolean {
@@ -48,7 +69,7 @@ export class OrderService {
             throw new Error('Shipping address cannot be empty');
         }
 
-        return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
+        const savedOrder = await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
             // Step 1: Get account and check existence
             const account = await transactionalEntityManager.findOne(Account, { 
                 where: { username },
@@ -190,9 +211,10 @@ export class OrderService {
                 invoice.notes = `Invoice created for order ${order.id}`;
                 
                 const savedInvoice = await transactionalEntityManager.save(invoice);
+                console.log(`[Info] ✅ Invoice created successfully for order ${order.id}: ${invoiceNumber}`);
                 
             } catch (invoiceError) {
-                console.error('[Error] Failed to create invoice:', invoiceError);
+                console.error('[Error] ❌ Failed to create invoice:', invoiceError);
                 console.error('[Error] Invoice error details:', {
                     message: (invoiceError as Error).message,
                     stack: (invoiceError as Error).stack,
@@ -202,7 +224,8 @@ export class OrderService {
                         totalAmount: order.totalAmount
                     }
                 });
-                // Don't throw - but log the error for debugging
+                // ✅ FIXED: Throw error để rollback transaction
+                throw new Error(`Failed to create invoice for order ${order.id}: ${(invoiceError as Error).message}`);
             }
 
             // Step 10: Return order with relations
@@ -223,9 +246,34 @@ export class OrderService {
                 console.error('[Error] Failed to retrieve created order after transaction');
                 throw new Error('Failed to retrieve created order');
             }
-            
+
             return savedOrder;
         });
+
+        // Step 11: Auto-assign order to shipper (AFTER main transaction completes)
+        // Run in separate transaction to avoid circular dependency but ensure atomicity
+        try {
+            const { OrderAssignmentService } = await import('@/shipper/orderAssignment.service');
+            const orderAssignmentService = Container.get(OrderAssignmentService);
+            
+            console.log(`[Info] Starting auto-assignment for order ${savedOrder.id}`);
+            const assignmentResult = await orderAssignmentService.assignOrderToShipper(savedOrder);
+            
+            if (assignmentResult.success) {
+                console.log(`[Info] ✅ Auto-assigned order ${savedOrder.id} to shipper: ${assignmentResult.message}`);
+            } else {
+                console.warn(`[Warning] ❌ Auto-assignment failed for order ${savedOrder.id}: ${assignmentResult.message}`);
+                // Mark for manual assignment in separate transaction
+                await this.markOrderForManualAssignmentSafe(savedOrder.id, assignmentResult.message);
+            }
+        } catch (assignmentError) {
+            console.error('[Error] ❌ Failed to auto-assign order to shipper:', assignmentError);
+            // Ensure order is marked for manual assignment in separate transaction
+            await this.markOrderForManualAssignmentSafe(savedOrder.id, 'Auto-assignment service error');
+        }
+        
+        // Return the created order (shipper assignment happens asynchronously)
+        return savedOrder;
     }
 
     async createGuestOrder(createOrderDto: CreateOrderDto): Promise<Order> {
@@ -264,7 +312,7 @@ export class OrderService {
             throw new Error('Shipping address cannot be empty');
         }
 
-        return await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
+        const savedOrder = await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
             // Step 1: Validate products and check stock
             const productIds = createOrderDto.guestCartItems!.map(item => item.productId);
             const products = await transactionalEntityManager
@@ -347,7 +395,7 @@ export class OrderService {
                 orderDetail.order = order;
                 orderDetail.product = product;
                 orderDetail.quantity = cartItem.quantity;
-                orderDetail.price = product.price; // SECURITY: Always use database price
+                orderDetail.price = product.price; 
                 await transactionalEntityManager.save(orderDetail);
 
                 // Update stock
@@ -368,9 +416,10 @@ export class OrderService {
                 invoice.notes = `Guest order invoice - ${createOrderDto.guestInfo!.fullName} (${createOrderDto.guestInfo!.phone})`;
                 
                 const savedInvoice = await transactionalEntityManager.save(invoice);
+                console.log(`[Info] ✅ Guest invoice created successfully for order ${order.id}: ${invoiceNumber}`);
                 
             } catch (invoiceError) {
-                console.error('[Error] Failed to create guest invoice:', invoiceError);
+                console.error('[Error] ❌ Failed to create guest invoice:', invoiceError);
                 console.error('[Error] Guest invoice error details:', {
                     message: (invoiceError as Error).message,
                     stack: (invoiceError as Error).stack,
@@ -380,6 +429,8 @@ export class OrderService {
                         totalAmount: order.totalAmount
                     }
                 });
+                // ✅ FIXED: Throw error để rollback transaction  
+                throw new Error(`Failed to create guest invoice for order ${order.id}: ${(invoiceError as Error).message}`);
             }
 
             // Step 6: Return order with relations
@@ -397,9 +448,37 @@ export class OrderService {
             if (!savedOrder) {
                 throw new Error('Failed to retrieve created guest order');
             }
-            
+
             return savedOrder;
         });
+
+        // Step 7: Auto-assign guest order to shipper (AFTER main transaction completes)
+        try {
+            console.log(`[DEBUG] Starting auto-assignment for guest order ${savedOrder.id} with address: ${savedOrder.shippingAddress}`);
+            
+            const { OrderAssignmentService } = await import('@/shipper/orderAssignment.service');
+            console.log(`[DEBUG] OrderAssignmentService imported successfully`);
+            
+            const orderAssignmentService = Container.get(OrderAssignmentService);
+            console.log(`[DEBUG] OrderAssignmentService instance created`);
+            
+            const assignmentResult = await orderAssignmentService.assignOrderToShipper(savedOrder);
+            console.log(`[DEBUG] Auto-assignment result for guest order ${savedOrder.id}:`, assignmentResult);
+            
+            if (assignmentResult.success) {
+                console.log(`[Info] ✅ Auto-assigned guest order ${savedOrder.id} to shipper: ${assignmentResult.message}`);
+            } else {
+                console.warn(`[Warning] ❌ Auto-assignment failed for guest order ${savedOrder.id}: ${assignmentResult.message}`);
+                // Mark failed order for manual assignment queue
+                await this.markOrderForManualAssignmentSafe(savedOrder.id, assignmentResult.message);
+            }
+        } catch (assignmentError) {
+            console.error('[Error] ❌ Failed to auto-assign guest order to shipper:', assignmentError);
+            // Ensure order is marked for manual assignment
+            await this.markOrderForManualAssignmentSafe(savedOrder.id, 'Auto-assignment service error');
+        }
+        
+        return savedOrder;
     }
 
     async getOrderById(orderId: string): Promise<Order> {
@@ -408,6 +487,7 @@ export class OrderService {
             relations: [
                 'customer',
                 'customer.role',
+                'shipper',
                 'orderDetails',
                 'orderDetails.product',
                 'orderDetails.product.category',
@@ -463,7 +543,7 @@ export class OrderService {
 
         const order = await Order.findOne({
             where: { id: orderId },
-            relations: ['customer', 'customer.role']
+            relations: ['customer', 'customer.role', 'orderDetails', 'orderDetails.product']
         });
 
         if (!order) {
@@ -483,13 +563,52 @@ export class OrderService {
             throw new Error(`Invalid status transition from ${order.status} to ${updateOrderDto.status}`);
         }
 
-        // Update order
-        order.status = updateOrderDto.status;
-        if (updateOrderDto.cancelReason) {
-            order.cancelReason = updateOrderDto.cancelReason;
-        }
+        // Handle stock restoration for cancelled orders
+        const oldStatus = order.status;
+        const newStatus = updateOrderDto.status;
+        
+        await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
+            // If order is being cancelled, restore product stock
+            if (newStatus === OrderStatus.CANCELLED && 
+                [OrderStatus.PENDING, OrderStatus.SHIPPING, OrderStatus.PENDING_EXTERNAL_SHIPPING].includes(oldStatus)) {
+                
+                console.log(`[Info] Restoring stock for cancelled order ${orderId}`);
+                
+                for (const orderDetail of order.orderDetails) {
+                    const product = await transactionalEntityManager.findOne(Product, {
+                        where: { id: orderDetail.product.id },
+                        lock: { mode: 'pessimistic_write' }
+                    });
+                    
+                    if (product) {
+                        const oldStock = product.stock;
+                        product.stock += orderDetail.quantity;
+                        await transactionalEntityManager.save(product);
+                        
+                        console.log(`[Info] Restored stock for product ${product.name}: ${oldStock} -> ${product.stock} (+${orderDetail.quantity})`);
+                    } else {
+                        console.warn(`[Warning] Product ${orderDetail.product.id} not found for stock restoration`);
+                    }
+                }
+            }
 
-        await order.save();
+            // Update order status
+            const orderToUpdate = await transactionalEntityManager.findOne(Order, {
+                where: { id: orderId },
+                lock: { mode: 'pessimistic_write' }
+            });
+            
+            if (!orderToUpdate) {
+                throw new EntityNotFoundException('Order');
+            }
+            
+            orderToUpdate.status = newStatus;
+            if (updateOrderDto.cancelReason) {
+                orderToUpdate.cancelReason = updateOrderDto.cancelReason;
+            }
+
+            await transactionalEntityManager.save(orderToUpdate);
+        });
 
         // Return updated order with full relations
         return await this.getOrderById(orderId);
@@ -578,7 +697,7 @@ export class OrderService {
     ): Promise<Order> {
         const order = await Order.findOne({
             where: { id: orderId },
-            relations: ['customer', 'shipper']
+            relations: ['customer', 'shipper', 'orderDetails', 'orderDetails.product']
         });
 
         if (!order) {
@@ -598,20 +717,56 @@ export class OrderService {
             throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus}`);
         }
 
-        // Update order
-        order.status = newStatus;
-        if (updateData.reason && newStatus === OrderStatus.CANCELLED) {
-            order.cancelReason = updateData.reason;
-        }
+        await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
+            // If order is being cancelled by shipper, restore product stock
+            if (newStatus === OrderStatus.CANCELLED && 
+                [OrderStatus.PENDING, OrderStatus.SHIPPING, OrderStatus.PENDING_EXTERNAL_SHIPPING].includes(currentStatus)) {
+                
+                console.log(`[Info] Shipper ${shipperId} cancelling order ${orderId}, restoring stock`);
+                
+                for (const orderDetail of order.orderDetails) {
+                    const product = await transactionalEntityManager.findOne(Product, {
+                        where: { id: orderDetail.product.id },
+                        lock: { mode: 'pessimistic_write' }
+                    });
+                    
+                    if (product) {
+                        const oldStock = product.stock;
+                        product.stock += orderDetail.quantity;
+                        await transactionalEntityManager.save(product);
+                        
+                        console.log(`[Info] Restored stock for product ${product.name}: ${oldStock} -> ${product.stock} (+${orderDetail.quantity})`);
+                    } else {
+                        console.warn(`[Warning] Product ${orderDetail.product.id} not found for stock restoration`);
+                    }
+                }
+            }
 
-        await order.save();
+            // Update order status
+            const orderToUpdate = await transactionalEntityManager.findOne(Order, {
+                where: { id: orderId },
+                lock: { mode: 'pessimistic_write' }
+            });
+            
+            if (!orderToUpdate) {
+                throw new EntityNotFoundException('Order');
+            }
+            
+            orderToUpdate.status = newStatus;
+            if (updateData.reason && newStatus === OrderStatus.CANCELLED) {
+                orderToUpdate.cancelReason = updateData.reason;
+            }
+
+            await transactionalEntityManager.save(orderToUpdate);
+        });
 
         // Return updated order with relations
         return await this.getOrderById(orderId);
     }
 
-    async getAllOrdersWithFilter(options: { status?: string; search?: string; sort?: string; page?: number; limit?: number }): Promise<{ orders: Order[]; total: number }> {
-        const { status, search, sort = 'orderDate', page = 1, limit = 10 } = options;
+    // Thay đổi: nhận thêm shipper, assigned, unassigned
+    async getAllOrdersWithFilter(options: OrderFilterOptions): Promise<{ orders: Order[]; total: number }> {
+        const { status, search, sort = 'orderDate', page = 1, limit = 10, shipper, assigned, unassigned } = options;
         const offset = (page - 1) * limit;
 
         let queryBuilder = Order.createQueryBuilder('order')
@@ -623,12 +778,26 @@ export class OrderService {
             .leftJoinAndSelect('product.images', 'images')
             .leftJoinAndSelect('order.shipper', 'shipper');
 
+        // Ưu tiên filter shipper cụ thể trước
+        if (shipper) {
+            queryBuilder = queryBuilder.where('shipper.id = :shipperId', { shipperId: shipper });
+        } else if (assigned) {
+            queryBuilder = queryBuilder.where('order.shipper IS NOT NULL');
+        } else if (unassigned) {
+            queryBuilder = queryBuilder.where('order.shipper IS NULL');
+        }
+
         if (status) {
+            // Nếu đã có where ở trên thì dùng andWhere, nếu chưa thì where
+            if (shipper || assigned || unassigned) {
+                queryBuilder = queryBuilder.andWhere('order.status = :status', { status });
+            } else {
             queryBuilder = queryBuilder.where('order.status = :status', { status });
+            }
         }
 
         if (search) {
-            const whereClause = status ? 'andWhere' : 'where';
+            const whereClause = (shipper || assigned || unassigned || status) ? 'andWhere' : 'where';
             queryBuilder = queryBuilder[whereClause](
                 '(customer.username ILIKE :search OR order.id::text ILIKE :search OR order.shippingAddress ILIKE :search)',
                 { search: `%${search}%` }
@@ -660,5 +829,50 @@ export class OrderService {
         }
 
         await order.remove();
+    }
+
+    /**
+     * Lấy tất cả đơn hàng chưa có shipper
+     */
+    async getUnassignedOrders(): Promise<Order[]> {
+        return await Order.createQueryBuilder('order')
+            .leftJoinAndSelect('order.customer', 'customer')
+            .leftJoinAndSelect('order.shipper', 'shipper')
+            .leftJoinAndSelect('order.orderDetails', 'orderDetails')
+            .leftJoinAndSelect('orderDetails.product', 'product')
+            .where('order.shipper IS NULL')
+            .andWhere('order.status IN (:...statuses)', { 
+                statuses: [OrderStatus.PENDING] 
+            })
+            .orderBy('order.orderDate', 'ASC')
+            .getMany();
+    }
+
+    private async markOrderForManualAssignment(orderId: string, reason: string): Promise<void> {
+        // Mark order for manual assignment in database
+        const order = await Order.findOne({ where: { id: orderId } });
+        if (order) {
+            order.status = OrderStatus.PENDING_EXTERNAL_SHIPPING; // Set to pending external shipping
+            order.shipper = null; // Clear auto-assigned shipper
+            order.cancelReason = `Auto-assignment failed: ${reason}`; // Record failure reason
+            await order.save();
+            console.warn(`[Warning] Order ${orderId} marked for manual assignment due to auto-assignment failure: ${reason}`);
+        } else {
+            console.warn(`[Warning] Order ${orderId} not found for manual assignment.`);
+        }
+    }
+
+    private async markOrderForManualAssignmentSafe(orderId: string, reason: string): Promise<void> {
+        // Mark order for manual assignment in database
+        const order = await Order.findOne({ where: { id: orderId } });
+        if (order) {
+            order.status = OrderStatus.PENDING_EXTERNAL_SHIPPING; // Set to pending external shipping
+            order.shipper = null; // Clear auto-assigned shipper
+            order.cancelReason = `Auto-assignment failed: ${reason}`; // Record failure reason
+            await order.save();
+            console.warn(`[Warning] Order ${orderId} marked for manual assignment due to auto-assignment failure: ${reason}`);
+        } else {
+            console.warn(`[Warning] Order ${orderId} not found for manual assignment.`);
+        }
     }
 } 

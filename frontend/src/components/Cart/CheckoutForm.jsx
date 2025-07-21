@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import styles from "./CheckoutForm.module.css";
 import { useVietnamProvinces } from "../../Hook/useVietnamProvinces";
 import { orderService } from "../../services/orderService";
+import { sendOtpForGuest, verifyOtpForGuest } from "../../services/authService";
+import OTPPopup from "../Login/OTPPopup";
 
 // SVG Icons (placeholders)
 const UserIcon = () => (
@@ -61,6 +63,12 @@ const CheckoutForm = ({
     loading: provincesLoading,
     error: provincesError,
   } = useVietnamProvinces();
+
+  // OTP states for guest verification
+  const [showOtpPopup, setShowOtpPopup] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [pendingOrderData, setPendingOrderData] = useState(null);
 
   // Clear saved form data when order is successfully placed
   const clearSavedFormData = () => {
@@ -307,6 +315,116 @@ const CheckoutForm = ({
     saveFormData({ ...formData, paymentMethod: newPaymentMethod });
   };
 
+  // OTP handling functions for guest users
+  const handleSendOtpForGuest = async () => {
+    try {
+      const result = await sendOtpForGuest(formData.phone);
+      if (result.success) {
+        setShowOtpPopup(true);
+        setOtpError('');
+        showNotification("📱 OTP sent to your phone number", "success");
+      } else {
+        showNotification(result.message || "Failed to send OTP", "error");
+      }
+    } catch (error) {
+      showNotification("Failed to send OTP. Please try again.", "error");
+    }
+  };
+
+  const handleVerifyOtpForGuest = async (otpCode) => {
+    try {
+      const result = await verifyOtpForGuest(formData.phone, otpCode);
+      if (result.success) {
+        setOtpVerified(true);
+        setShowOtpPopup(false);
+        setOtpError('');
+        showNotification("✅ Phone number verified successfully!", "success");
+        
+        // If we have pending order data, proceed with order creation
+        if (pendingOrderData) {
+          processOrder(pendingOrderData);
+        }
+      } else {
+        setOtpError(result.message || "Invalid OTP. Please try again.");
+      }
+    } catch (error) {
+      setOtpError("Failed to verify OTP. Please try again.");
+    }
+  };
+
+  const processOrder = (orderData) => {
+    if (paymentMethod === "vnpay") {
+      // VNPay payment flow - create order first, then redirect to VNPay
+      setIsVNPayProcessing(true);
+
+      // Create order request with proper structure
+      const orderRequest = {
+        shippingAddress: orderData.shippingAddress,
+        note: [
+          `Khách hàng: ${orderData.fullName.trim()}`,
+          `Số điện thoại: ${orderData.phone.trim()}`,
+          `Email: ${orderData.email.trim()}`,
+          `Số lượng sản phẩm: ${cartItems.length}`,
+          `Total amount: ${formatCurrency(requireInvoice ? totalAmount + (subtotal * 0.1) : totalAmount)}`,
+          requireInvoice ? "VAT Invoice Requested" : "No Invoice Required",
+          "Phone Verified" // Add verification flag
+        ].join(" | "),
+        paymentMethod: orderData.paymentMethod,
+        requireInvoice: requireInvoice,
+        isGuest: isGuest,
+        ...(isGuest ? {
+          guestInfo: {
+            fullName: orderData.fullName.trim(),
+            phone: orderData.phone.trim(),
+            email: orderData.email.trim()
+          },
+          guestCartItems: cartItems.map(item => ({
+            productId: item.product?.id || item.id,
+            quantity: item.quantity || 1,
+            price: item.product?.price || item.price || 0,
+            name: item.product?.name || item.name || 'Unknown Product'
+          }))
+        } : {})
+      };
+
+      // Create order first, then redirect to VNPay
+      orderService
+        .createOrder(orderRequest)
+        .then((response) => {
+          // Get the order data with ID
+          const orderData = response.data?.id
+            ? response.data
+            : response.data?.data;
+          if (!orderData?.id) {
+            showNotification(
+              "Order creation failed - no order ID received",
+              "error"
+            );
+            setIsVNPayProcessing(false);
+            return;
+          }
+
+          // Navigate to VNPay payment page with the real order object
+          navigate("/vnpay-payment", {
+            state: {
+              orderData: orderData,
+              totalAmount: totalAmount,
+              cartItems: cartItems,
+            },
+          });
+        })
+        .catch((error) => {
+          showNotification(error.message || "Order creation failed", "error");
+          setIsVNPayProcessing(false);
+        });
+    } else {
+      // COD payment flow - pass order data to parent component
+      // Clear saved form data when order is placed
+      clearSavedFormData();
+      onPlaceOrder(orderData);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -379,75 +497,17 @@ const CheckoutForm = ({
       isGuest: isGuest, // Pass guest flag
     };
 
-    if (paymentMethod === "vnpay") {
-      // VNPay payment flow - create order first, then redirect to VNPay
-      setIsVNPayProcessing(true);
-
-      // Create order request with proper structure
-      const orderRequest = {
-        shippingAddress: fullAddress,
-        note: [
-          `Khách hàng: ${formData.fullName.trim()}`,
-          `Số điện thoại: ${formData.phone.trim()}`,
-          `Email: ${formData.email.trim()}`,
-          `Số lượng sản phẩm: ${cartItems.length}`,
-          `Total amount: ${formatCurrency(requireInvoice ? totalAmount + (subtotal * 0.1) : totalAmount)}`,
-          requireInvoice ? "VAT Invoice Requested" : "No Invoice Required"
-        ].join(" | "),
-        paymentMethod: backendPaymentMethod,
-        requireInvoice: requireInvoice,
-        isGuest: isGuest,
-        ...(isGuest ? {
-          guestInfo: {
-            fullName: formData.fullName.trim(),
-            phone: formData.phone.trim(),
-            email: formData.email.trim()
-          },
-          guestCartItems: cartItems.map(item => ({
-            productId: item.product?.id || item.id,
-            quantity: item.quantity || 1,
-            price: item.product?.price || item.price || 0,
-            name: item.product?.name || item.name || 'Unknown Product'
-          }))
-        } : {})
-      };
-
-      // Create order first, then redirect to VNPay
-      orderService
-        .createOrder(orderRequest)
-        .then((response) => {
-          // Get the order data with ID
-          const orderData = response.data?.id
-            ? response.data
-            : response.data?.data;
-          if (!orderData?.id) {
-            showNotification(
-              "Order creation failed - no order ID received",
-              "error"
-            );
-            setIsVNPayProcessing(false);
-            return;
-          }
-
-          // Navigate to VNPay payment page with the real order object
-          navigate("/vnpay-payment", {
-            state: {
-              orderData: orderData,
-              totalAmount: totalAmount,
-              cartItems: cartItems,
-            },
-          });
-        })
-        .catch((error) => {
-          showNotification(error.message || "Order creation failed", "error");
-          setIsVNPayProcessing(false);
-        });
-    } else {
-      // COD payment flow - pass order data to parent component
-      // Clear saved form data when order is placed
-      clearSavedFormData();
-      onPlaceOrder(orderData);
+    // For guest users, require OTP verification before processing order
+    if (isGuest && !otpVerified) {
+      // Store order data for later processing after OTP verification
+      setPendingOrderData(orderData);
+      // Send OTP to guest's phone number
+      handleSendOtpForGuest();
+      return;
     }
+
+    // Process order (either authenticated user or OTP-verified guest)
+    processOrder(orderData);
   };
 
   const formatCurrency = (amount) => {
@@ -805,6 +865,19 @@ const CheckoutForm = ({
             )}
           </div>
         </div>
+
+        {/* OTP Popup for guest verification */}
+        <OTPPopup
+          isOpen={showOtpPopup}
+          onClose={() => {
+            setShowOtpPopup(false);
+            setOtpError('');
+            setPendingOrderData(null);
+          }}
+          onVerify={handleVerifyOtpForGuest}
+          onResend={handleSendOtpForGuest}
+          error={otpError}
+        />
       </div>
     );
   } catch (error) {
