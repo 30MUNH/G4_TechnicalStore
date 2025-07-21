@@ -15,6 +15,8 @@ import FilterBar from './FilterBar';
 import styles from './CustomerManagement.module.css';
 import { customerService } from '../../services/customerService';
 import { formatDate, formatDateForFilename } from '../../utils/dateFormatter';
+import { sendOtpForCustomer, verifyOtpForCustomer } from '../../services/authService';
+import OTPPopup from '../Login/OTPPopup';
 
 const CustomerManagement = () => {
   // State management
@@ -61,9 +63,9 @@ const CustomerManagement = () => {
       
       const response = await customerService.getAllCustomers();
       
-      if (response.success && response.data.data) {
-        // Backend returns nested structure: { success: true, data: { data: customers } }
-        // Updated based on actual API response structure
+      if (response.success && response.data && response.data.data) {
+        // Backend returns nested structure due to ResponseInterceptor: 
+        // { success: true, statusCode: 200, data: { success: true, data: customers } }
         const rawData = response.data.data;
         
         // Ensure data is an array
@@ -84,7 +86,7 @@ const CustomerManagement = () => {
         setTotalCustomers(customersData.length);
         setTotalPages(Math.ceil(customersData.length / itemsPerPage));
       } else {
-        throw new Error(response.message || 'Failed to fetch customers');
+        throw new Error(response.data?.message || response.message || 'Failed to fetch customers');
       }
     } catch (err) {
       setError('Failed to fetch customers');
@@ -340,6 +342,7 @@ const CustomerManagement = () => {
               initialData={selectedCustomer}
               onSubmit={handleSave}
               onCancel={closeModal}
+              showNotification={showNotification}
             />
           )}
         </Modal>
@@ -511,7 +514,7 @@ const CustomerDetail = ({ customer }) => {
 };
 
 // Customer Form Component
-const CustomerForm = ({ mode, initialData, onSubmit, onCancel }) => {
+const CustomerForm = ({ mode, initialData, onSubmit, onCancel, showNotification }) => {
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     username: initialData?.username || '',
@@ -522,6 +525,16 @@ const CustomerForm = ({ mode, initialData, onSubmit, onCancel }) => {
   });
 
   const [errors, setErrors] = useState({});
+  
+  // OTP states for phone number change verification
+  const [showOtpPopup, setShowOtpPopup] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState(null);
+  const [originalPhone, setOriginalPhone] = useState(initialData?.phone || '');
+
+  // Track if phone number has changed
+  const [phoneChanged, setPhoneChanged] = useState(false);
 
   const validateForm = () => {
     const newErrors = {};
@@ -556,9 +569,86 @@ const CustomerForm = ({ mode, initialData, onSubmit, onCancel }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // OTP handling functions for customer phone change
+  const handleSendOtpForCustomerEdit = async () => {
+    console.log('[CustomerForm] Sending OTP for username:', initialData?.username);
+    try {
+      const result = await sendOtpForCustomer(initialData?.username);
+      console.log('[CustomerForm] OTP send result:', result);
+      if (result.success) {
+        setShowOtpPopup(true);
+        setOtpError('');
+        if (showNotification) {
+          showNotification("📱 OTP sent to your current phone number for verification", "success");
+        }
+      } else {
+        setOtpError(result.message || "Failed to send OTP");
+        if (showNotification) {
+          showNotification(result.message || "Failed to send OTP", "error");
+        }
+      }
+    } catch (error) {
+      console.error('[CustomerForm] OTP send error:', error);
+      setOtpError("Failed to send OTP. Please try again.");
+      if (showNotification) {
+        showNotification("Failed to send OTP. Please try again.", "error");
+      }
+    }
+  };
+
+  const handleVerifyOtpForCustomerEdit = async (otpCode) => {
+    console.log('[CustomerForm] Verifying OTP:', otpCode, 'for username:', initialData?.username);
+    try {
+      const result = await verifyOtpForCustomer(initialData?.username, otpCode);
+      console.log('[CustomerForm] OTP verify result:', result);
+      if (result.success && result.data?.verified) {
+        setOtpVerified(true);
+        setShowOtpPopup(false);
+        setOtpError('');
+        if (showNotification) {
+          showNotification("✅ Phone number change verified successfully!", "success");
+        }
+        
+        // If we have pending form data, proceed with form submission
+        if (pendingFormData) {
+          console.log('[CustomerForm] OTP verified, submitting pending data:', pendingFormData);
+          onSubmit(pendingFormData);
+        }
+      } else {
+        setOtpError(result.message || "Invalid OTP. Please try again.");
+      }
+    } catch (error) {
+      console.error('[CustomerForm] OTP verify error:', error);
+      setOtpError("Failed to verify OTP. Please try again.");
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('[CustomerForm] Submit triggered with:', {
+      mode,
+      phoneChanged,
+      otpVerified,
+      originalPhone,
+      currentPhone: formData.phone
+    });
+    
     if (validateForm()) {
+      // Check if this is edit mode and phone number has changed
+      if (mode === 'edit' && phoneChanged && !otpVerified) {
+        console.log('[CustomerForm] Phone changed, sending OTP...');
+        // Store form data for later submission after OTP verification
+        setPendingFormData(formData);
+        if (showNotification) {
+          showNotification("⚠️ Phone number changed. Sending OTP to verify...", "info");
+        }
+        // Send OTP to current phone number for verification
+        handleSendOtpForCustomerEdit();
+        return;
+      }
+      
+      console.log('[CustomerForm] Submitting form data:', formData);
+      // Submit form (either add mode, no phone change, or OTP verified)
       onSubmit(formData);
     }
   };
@@ -566,6 +656,17 @@ const CustomerForm = ({ mode, initialData, onSubmit, onCancel }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Track phone number changes in edit mode
+    if (name === 'phone' && mode === 'edit') {
+      console.log('[CustomerForm] Phone change detected:', {
+        originalPhone,
+        newPhone: value,
+        changed: value !== originalPhone
+      });
+      setPhoneChanged(value !== originalPhone);
+      setOtpVerified(false); // Reset OTP verification if phone changes again
+    }
 
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -618,6 +719,20 @@ const CustomerForm = ({ mode, initialData, onSubmit, onCancel }) => {
               className={`${styles.input} ${errors.phone ? styles.errorInput : ''}`}
             />
             {errors.phone && <span className={styles.errorMessage}>{errors.phone}</span>}
+            {mode === 'edit' && phoneChanged && !otpVerified && (
+              <div className={styles.phoneChangeNotice}>
+                <span style={{ color: '#f59e0b', fontSize: '0.875rem' }}>
+                  ⚠️ Phone number changed. OTP verification will be required to save changes.
+                </span>
+              </div>
+            )}
+            {mode === 'edit' && phoneChanged && otpVerified && (
+              <div className={styles.phoneVerifiedNotice}>
+                <span style={{ color: '#10b981', fontSize: '0.875rem' }}>
+                  ✅ Phone number change verified successfully.
+                </span>
+              </div>
+            )}
           </div>
 
           <div className={styles.formField}>
@@ -686,6 +801,19 @@ const CustomerForm = ({ mode, initialData, onSubmit, onCancel }) => {
           </div>
         )}
       </form>
+
+      {/* OTP Popup for phone number change verification */}
+      <OTPPopup
+        isOpen={showOtpPopup}
+        onClose={() => {
+          setShowOtpPopup(false);
+          setOtpError('');
+          setPendingFormData(null);
+        }}
+        onVerify={handleVerifyOtpForCustomerEdit}
+        onResend={handleSendOtpForCustomerEdit}
+        error={otpError}
+      />
     </div>
   );
 };

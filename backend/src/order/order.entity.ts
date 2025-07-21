@@ -12,9 +12,9 @@ export class Order extends BaseEntity {
   @JoinColumn({ name: 'customer_id' })
   customer: Account | null;
 
-  @ManyToOne(() => Account, (account) => account.shipperOrders)
-  @JoinColumn({ name: 'staff_id' })
-  shipper: Account;
+  @ManyToOne(() => Account, (account) => account.shipperOrders, { nullable: true })
+  @JoinColumn({ name: 'shipper_id' })
+  shipper: Account | null;
 
   @Column()
   orderDate: Date;
@@ -44,7 +44,7 @@ export class Order extends BaseEntity {
   @Column({ type: 'boolean', default: false, name: 'require_invoice' })
   requireInvoice: boolean;
 
-  @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.order)
+  @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.order, { cascade: true })
   orderDetails: OrderDetail[];
 
   @OneToMany(() => Payment, (payment) => payment.order)

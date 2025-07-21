@@ -31,7 +31,7 @@ export class ShipperController {
     }
   }
 
-  @Get("/")
+  @Get()
   async getAllShippers() {
     try {
       const shippers = await this.shipperService.getAllShippers();
@@ -62,6 +62,64 @@ export class ShipperController {
       return {
         success: false,
         message: "Failed to retrieve available shippers",
+        error: error.message || "Unknown error"
+      };
+    }
+  }
+
+  @Get("/:id/statistics")
+  async getShipperStatistics(@Param("id") id: string) {
+    try {
+      const shipper = await this.shipperService.getShipperById(id);
+      
+      // Calculate real statistics
+      const totalOrders = shipper.shipperOrders?.length || 0;
+      const deliveredOrders = shipper.shipperOrders?.filter((order: any) => order.status === 'DELIVERED').length || 0;
+      const activeOrders = shipper.shipperOrders?.filter((order: any) => 
+        ['SHIPPING', 'PENDING'].includes(order.status)
+      ).length || 0;
+      const cancelledOrders = shipper.shipperOrders?.filter((order: any) => order.status === 'CANCELLED').length || 0;
+      
+      // Calculate performance metrics
+      const deliveryRate = totalOrders > 0 ? ((deliveredOrders / totalOrders) * 100).toFixed(1) : "0";
+      const cancellationRate = totalOrders > 0 ? ((cancelledOrders / totalOrders) * 100).toFixed(1) : "0";
+      
+      // Calculate rating from performance (simple algorithm)
+      let rating = "5.0";
+      if (totalOrders > 0) {
+        const successRate = deliveredOrders / totalOrders;
+        rating = (successRate * 5).toFixed(1);
+      }
+      
+      // Get today's orders
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayOrders = shipper.shipperOrders?.filter((order: any) => {
+        const orderDate = new Date(order.orderDate);
+        return orderDate >= today;
+      }).length || 0;
+      
+      return {
+        success: true,
+        data: {
+          totalOrders,
+          deliveredOrders,
+          activeOrders,
+          cancelledOrders,
+          deliveryRate: parseFloat(deliveryRate),
+          cancellationRate: parseFloat(cancellationRate),
+          rating: parseFloat(rating),
+          todayOrders,
+          maxDailyOrders: shipper.maxOrdersPerDay || 10,
+          isAvailable: shipper.isAvailable,
+          priority: shipper.priority || 1
+        },
+        message: "Statistics retrieved successfully"
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to retrieve statistics",
         error: error.message || "Unknown error"
       };
     }
@@ -143,8 +201,8 @@ export class ShipperController {
         { status, search, sort, page, limit }
       );
       
+      // ✅ FIX: Return direct structure to avoid double-wrapping
       return {
-        success: true,
         data: result.orders,
         pagination: {
           page,
@@ -155,11 +213,7 @@ export class ShipperController {
         message: "Orders retrieved successfully"
       };
     } catch (error: any) {
-      return {
-        success: false,
-        message: "Failed to retrieve orders",
-        error: error.message || "Unknown error"
-      };
+      throw error; // Let error handler deal with it
     }
   }
 
@@ -186,6 +240,74 @@ export class ShipperController {
       return {
         success: false,
         message: "Failed to update order status",
+        error: error.message || "Unknown error"
+      };
+    }
+  }
+
+  @Get("/export")
+  async exportShippers() {
+    try {
+      const shippers = await this.shipperService.getAllShippers();
+      
+      // Enhanced CSV export with proper formatting
+      const csvHeader = "ID,Full Name,Username,Phone,Status,Registration Status,Available,Priority,Working Zones,Total Orders,Delivered Orders,Daily Orders,Max Daily Orders,Created Date\n";
+      
+      const csvRows = shippers.map(shipper => {
+        const workingZones = (shipper.workingZones || []).join(';');
+        const status = shipper.isRegistered ? 'Active' : 'Inactive';
+        const available = shipper.isAvailable ? 'Yes' : 'No';
+        const registered = shipper.isRegistered ? 'Yes' : 'No';
+        const createdDate = new Date(shipper.createdAt).toLocaleDateString('vi-VN');
+        
+        // Calculate statistics if not provided
+        const totalOrders = shipper.shipperOrders?.length || 0;
+        const deliveredOrders = shipper.shipperOrders?.filter((order: any) => order.status === 'DELIVERED').length || 0;
+        
+        // Escape commas and quotes in data
+        const escapeCsv = (str: any) => {
+          if (typeof str !== 'string') return str;
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`;
+          }
+          return str;
+        };
+        
+        return [
+          escapeCsv(shipper.id),
+          escapeCsv(shipper.fullName || shipper.name || ''),
+          escapeCsv(shipper.username || ''),
+          escapeCsv(shipper.phone || ''),
+          escapeCsv(status),
+          escapeCsv(registered),
+          escapeCsv(available),
+          shipper.priority || 1,
+          escapeCsv(workingZones),
+          totalOrders,
+          deliveredOrders,
+          shipper.dailyOrderCount || shipper.currentOrdersToday || 0,
+          shipper.maxDailyOrders || shipper.maxOrdersPerDay || 10,
+          escapeCsv(createdDate)
+        ].join(',');
+      }).join('\n');
+      
+      const csvContent = csvHeader + csvRows;
+      const timestamp = new Date().toISOString().split('T')[0];
+      
+      return {
+        success: true,
+        data: csvContent,
+        message: "Export successful",
+        meta: {
+          filename: `shippers_export_${timestamp}.csv`,
+          totalRecords: shippers.length,
+          exportDate: new Date().toISOString()
+        }
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to export shippers",
         error: error.message || "Unknown error"
       };
     }

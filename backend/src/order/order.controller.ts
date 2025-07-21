@@ -130,7 +130,10 @@ export class OrderController {
         @QueryParam("search") search: string,
         @QueryParam("sort") sort: string,
         @QueryParam("page") page: number = 1,
-        @QueryParam("limit") limit: number = 10
+        @QueryParam("limit") limit: number = 10,
+        @QueryParam("shipper") shipper: string,
+        @QueryParam("assigned") assigned: boolean,
+        @QueryParam("unassigned") unassigned: boolean
     ) {
         const user = req.user as AccountDetailsDto;
         
@@ -140,7 +143,7 @@ export class OrderController {
         }
         
         try {
-            const result = await this.orderService.getAllOrdersWithFilter({ status, search, sort, page, limit });
+            const result = await this.orderService.getAllOrdersWithFilter({ status, search, sort, page, limit, shipper, assigned, unassigned });
             return {
                 message: "Orders retrieved successfully",
                 data: result.orders,
@@ -167,9 +170,11 @@ export class OrderController {
             const order = await this.orderService.getOrderById(id);
             
             // Check permission to view order
-            // For guest orders, customer will be null
+            // For guest orders, customer will be null - only admin/staff can view
             const isOwner = order.customer ? order.customer.username === user.username : false;
-            if (!isOwner && !this.isAdmin(user)) {
+            const hasAdminAccess = this.isAdmin(user) || this.isStaff(user);
+            
+            if (!isOwner && !hasAdminAccess) {
                 throw new HttpException(401, "Access denied to view this order");
             }
             

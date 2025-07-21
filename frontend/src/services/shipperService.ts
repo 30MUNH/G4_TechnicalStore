@@ -4,6 +4,11 @@ import type {
   IShipper,
   CreateShipperDto,
   UpdateShipperDto,
+  ShippingStatistics,
+  ShipperStatistics,
+  ShippingConfiguration,
+  AssignmentResult,
+  AvailableZones,
   ApiError
 } from './types';
 
@@ -40,6 +45,17 @@ export const shipperService = {
     } catch (error) {
       const apiError = error as ApiError;
       console.error('Get shipper by ID error:', apiError.response?.data?.message || apiError.message);
+      throw error;
+    }
+  },
+
+  async getShipperStatistics(id: string): Promise<ApiResponse<ShipperStatistics>> {
+    try {
+      const response = await api.get<ApiResponse<ShipperStatistics>>(`/shippers/${id}/statistics`);
+      return response.data;
+    } catch (error) {
+      const apiError = error as ApiError;
+      console.error('Get shipper statistics error:', apiError.response?.data?.message || apiError.message);
       throw error;
     }
   },
@@ -93,6 +109,101 @@ export const shipperService = {
     } catch (error) {
       const apiError = error as ApiError;
       console.error('Export shippers error:', apiError.response?.data?.message || apiError.message);
+      throw error;
+    }
+  },
+
+  // New methods for automatic shipper assignment system
+  async updateWorkingZone(shipperId: string, workingZones: string[]): Promise<ApiResponse<IShipper>> {
+    try {
+      const response = await api.put<ApiResponse<IShipper>>(`/shipping/shippers/${shipperId}/working-zone`, {
+        workingZones
+      });
+      return response.data;
+    } catch (error) {
+      const apiError = error as ApiError;
+      console.error('Update working zone error:', apiError.response?.data?.message || apiError.message);
+      throw error;
+    }
+  },
+
+  async updateAvailability(shipperId: string, isAvailable: boolean): Promise<ApiResponse<IShipper>> {
+    try {
+      const response = await api.put<ApiResponse<IShipper>>(`/shipping/shippers/${shipperId}/availability`, {
+        isAvailable
+      });
+      return response.data;
+    } catch (error) {
+      const apiError = error as ApiError;
+      console.error('Update availability error:', apiError.response?.data?.message || apiError.message);
+      throw error;
+    }
+  },
+
+  async updatePriority(shipperId: string, priority: number): Promise<ApiResponse<IShipper>> {
+    try {
+      const response = await api.put<ApiResponse<IShipper>>(`/shipping/shippers/${shipperId}/priority`, {
+        priority
+      });
+      return response.data;
+    } catch (error) {
+      const apiError = error as ApiError;
+      console.error('Update priority error:', apiError.response?.data?.message || apiError.message);
+      throw error;
+    }
+  },
+
+  async getShippingStatistics(): Promise<ApiResponse<ShippingStatistics>> {
+    try {
+      const response = await api.get<ApiResponse<ShippingStatistics>>('/shipping/statistics');
+      return response.data;
+    } catch (error) {
+      const apiError = error as ApiError;
+      console.error('Get shipping statistics error:', apiError.response?.data?.message || apiError.message);
+      throw error;
+    }
+  },
+
+  async getShippingConfiguration(): Promise<ApiResponse<ShippingConfiguration>> {
+    try {
+      const response = await api.get<ApiResponse<ShippingConfiguration>>('/shipping/configuration');
+      return response.data;
+    } catch (error) {
+      const apiError = error as ApiError;
+      console.error('Get shipping configuration error:', apiError.response?.data?.message || apiError.message);
+      throw error;
+    }
+  },
+
+  async triggerManualAssignment(): Promise<ApiResponse<AssignmentResult>> {
+    try {
+      const response = await api.post<ApiResponse<AssignmentResult>>('/shipping/auto-assign');
+      return response.data;
+    } catch (error) {
+      const apiError = error as ApiError;
+      console.error('Trigger manual assignment error:', apiError.response?.data?.message || apiError.message);
+      throw error;
+    }
+  },
+
+  async resetDailyOrderCounts(): Promise<ApiResponse<AssignmentResult>> {
+    try {
+      const response = await api.post<ApiResponse<AssignmentResult>>('/shipping/reset-daily-counts');
+      return response.data;
+    } catch (error) {
+      const apiError = error as ApiError;
+      console.error('Reset daily order counts error:', apiError.response?.data?.message || apiError.message);
+      throw error;
+    }
+  },
+
+  async getAvailableZones(): Promise<ApiResponse<AvailableZones>> {
+    try {
+      const response = await api.get<ApiResponse<AvailableZones>>('/shipping/available-zones');
+      return response.data;
+    } catch (error) {
+      const apiError = error as ApiError;
+      console.error('Get available zones error:', apiError.response?.data?.message || apiError.message);
       throw error;
     }
   }

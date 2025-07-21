@@ -90,15 +90,40 @@ export class ShipperService {
     }
   }
 
-  async getAllShippers(): Promise<Account[]> {
+  async getAllShippers(): Promise<any[]> {
     const shipperRole = await Role.findOne({ where: { name: "shipper" } });
     if (!shipperRole) return [];
 
-    return await Account.find({
+    const shippers = await Account.find({
       where: { role: { id: shipperRole.id } },
       relations: ["role", "shipperOrders", "feedbacks"],
       order: { createdAt: "DESC" }
     });
+
+    // Import ShipperZone entity
+    const { ShipperZone } = await import('./shipperZone.entity');
+
+    // Lấy working zones cho từng shipper và tạo object mở rộng
+    const shippersWithZones = [];
+    for (const shipper of shippers) {
+      const zones = await ShipperZone.find({
+        where: { shipper: { id: shipper.id } }
+      });
+      
+      // Chuyển đổi zones thành array of district names
+      const workingZones = zones.map(zone => zone.district).filter(district => district);
+      
+      // Tạo object mở rộng với workingZones và field names mà frontend expect
+      shippersWithZones.push({
+        ...shipper,
+        fullName: shipper.name,  // Frontend expect 'fullName'
+        workingZones,
+        dailyOrderCount: shipper.currentOrdersToday || 0,  // Frontend expect 'dailyOrderCount'
+        maxDailyOrders: shipper.maxOrdersPerDay || 10      // Frontend expect 'maxDailyOrders'
+      });
+    }
+
+    return shippersWithZones;
   }
 
   async getShipperById(id: string): Promise<Account> {
@@ -157,6 +182,9 @@ export class ShipperService {
         if (updateShipperDto.fullName) account.name = updateShipperDto.fullName;
         if (updateShipperDto.phone) account.phone = updateShipperDto.phone;
         if (updateShipperDto.isRegistered !== undefined) account.isRegistered = updateShipperDto.isRegistered;
+        if (updateShipperDto.isAvailable !== undefined) account.isAvailable = updateShipperDto.isAvailable;
+        if (updateShipperDto.priority !== undefined) account.priority = updateShipperDto.priority;
+        if (updateShipperDto.maxDailyOrders !== undefined) account.maxOrdersPerDay = updateShipperDto.maxDailyOrders;
 
         return await transactionalEntityManager.save(account);
       });
@@ -183,7 +211,7 @@ export class ShipperService {
           throw new BadRequestException('Cannot delete shipper with active orders');
         }
 
-        await transactionalEntityManager.softRemove(account);
+        await transactionalEntityManager.remove(account);
       });
     } catch (error) {
       throw error;
