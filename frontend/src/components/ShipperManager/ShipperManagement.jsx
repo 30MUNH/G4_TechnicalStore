@@ -182,10 +182,22 @@ const ShipperManagement = () => {
       setLoadingZones(true);
       const response = await shipperService.getAvailableZones();
       
-      if (response.success && response.data && response.data.zones) {
-        // Extract zone names for backward compatibility
-        const zoneNames = response.data.zones.map(zone => zone.name);
-        setAvailableZones(zoneNames);
+      if (response.success && response.data) {
+        // Lấy danh sách quận từ tỉnh Hà Nội
+        const hanoi = "Hà Nội";
+        if (response.data.districtsByProvince && response.data.districtsByProvince[hanoi]) {
+          setAvailableZones(response.data.districtsByProvince[hanoi]);
+        } else {
+          // Fallback to hardcoded zones
+          const fallbackZones = [
+            "Ba Đình", "Hoàn Kiếm", "Hai Bà Trưng", "Đống Đa", "Tây Hồ",
+            "Cầu Giấy", "Thanh Xuân", "Hoàng Mai", "Long Biên", "Nam Từ Liêm",
+            "Bắc Từ Liêm", "Hà Đông", "Sơn Tây", "Ba Vì", "Phúc Thọ",
+            "Đan Phượng", "Hoài Đức", "Quốc Oai", "Thạch Thất", "Chương Mỹ",
+            "Thanh Oai", "Thường Tín", "Phú Xuyên", "Ứng Hòa", "Mỹ Đức"
+          ];
+          setAvailableZones(fallbackZones);
+        }
       } else {
         // Fallback to hardcoded zones
         const fallbackZones = [
