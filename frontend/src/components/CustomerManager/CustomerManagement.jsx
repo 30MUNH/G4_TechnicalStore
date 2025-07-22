@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Upload, 
   Plus, 
   X,
   Save,
@@ -286,13 +285,6 @@ const CustomerManagement = () => {
           </div>
           
           <div className={styles.headerActions}>
-            <button 
-              className={`${styles.actionButton} ${styles.exportButton}`}
-              onClick={handleExportData}
-            >
-              <Upload size={18} />
-              <span>Export Data</span>
-            </button>
             <button 
               className={`${styles.actionButton} ${styles.addButton}`}
               onClick={() => openModal('add')}
