@@ -24,7 +24,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
 
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetail, setShowOrderDetail] = useState(false);
-  
+
   // Order status options cho shipper (sync với backend enum)
   const statusOptions = [
     { value: "", label: "All status" },
@@ -120,7 +120,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
         throw new Error(response.message || "Update failed");
       }
     } catch (err) {
-      setError(err.message || "Failed to update status");
+              setError(err.message || "Failed to update status");
     } finally {
       setLoading(false);
     }
@@ -351,7 +351,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
             open={showOrderDetail}
             onClose={() => {
               setShowOrderDetail(false);
-              setSelectedOrder(null);
+                    setSelectedOrder(null);
             }}
             onStatusChange={handleStatusUpdate}
             role="shipper"

@@ -35,8 +35,8 @@ export class OrderService {
         const validTransitions: Record<OrderStatus, OrderStatus[]> = {
             [OrderStatus.PENDING]: [OrderStatus.SHIPPING, OrderStatus.CANCELLED],
             [OrderStatus.SHIPPING]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
-            [OrderStatus.DELIVERED]: [], // Delivered orders cannot change status
-            [OrderStatus.CANCELLED]: [], // Cancelled orders cannot change status
+            [OrderStatus.DELIVERED]: [], 
+            [OrderStatus.CANCELLED]: [], 
             [OrderStatus.PENDING_EXTERNAL_SHIPPING]: [OrderStatus.SHIPPING, OrderStatus.CANCELLED] // External shipping can transition to shipping or cancelled
         };
 
@@ -211,20 +211,8 @@ export class OrderService {
                 invoice.notes = `Invoice created for order ${order.id}`;
                 
                 const savedInvoice = await transactionalEntityManager.save(invoice);
-                console.log(`[Info] ✅ Invoice created successfully for order ${order.id}: ${invoiceNumber}`);
                 
             } catch (invoiceError) {
-                console.error('[Error] ❌ Failed to create invoice:', invoiceError);
-                console.error('[Error] Invoice error details:', {
-                    message: (invoiceError as Error).message,
-                    stack: (invoiceError as Error).stack,
-                    orderData: {
-                        orderId: order.id,
-                        paymentMethod: createOrderDto.paymentMethod,
-                        totalAmount: order.totalAmount
-                    }
-                });
-                // ✅ FIXED: Throw error để rollback transaction
                 throw new Error(`Failed to create invoice for order ${order.id}: ${(invoiceError as Error).message}`);
             }
 
@@ -243,7 +231,6 @@ export class OrderService {
             });
 
             if (!savedOrder) {
-                console.error('[Error] Failed to retrieve created order after transaction');
                 throw new Error('Failed to retrieve created order');
             }
 
@@ -256,32 +243,14 @@ export class OrderService {
             const { OrderAssignmentService } = await import('@/shipper/orderAssignment.service');
             const orderAssignmentService = Container.get(OrderAssignmentService);
             
-            console.log(`[AUTO-ASSIGN] ====== BẮT ĐẦU PHÂN CÔNG TỰ ĐỘNG ======`);
-            console.log(`[AUTO-ASSIGN] Đơn hàng: ${savedOrder.id}`);
-            console.log(`[AUTO-ASSIGN] Địa chỉ giao hàng: ${savedOrder.shippingAddress}`);
-            console.log(`[AUTO-ASSIGN] Tổng tiền: ${savedOrder.totalAmount}`);
-            
             const assignmentResult = await orderAssignmentService.assignOrderToShipper(savedOrder);
             
             if (assignmentResult.success) {
-                console.log(`[AUTO-ASSIGN] ✅ THÀNH CÔNG: Auto-assigned order ${savedOrder.id}`);
-                console.log(`[AUTO-ASSIGN] ✅ Shipper được chọn: ${assignmentResult.shipper?.name || 'Không có'}`);
-                console.log(`[AUTO-ASSIGN] ✅ Phương thức giao hàng: ${assignmentResult.deliveryMethod}`);
-                console.log(`[AUTO-ASSIGN] ✅ Message: ${assignmentResult.message}`);
+                await this.markOrderForManualAssignmentSafe(savedOrder.id, assignmentResult.message);
             } else {
-                console.warn(`[AUTO-ASSIGN] ❌ THẤT BẠI: Auto-assignment failed for order ${savedOrder.id}`);
-                console.warn(`[AUTO-ASSIGN] ❌ Lý do: ${assignmentResult.message}`);
-                console.warn(`[AUTO-ASSIGN] ❌ Error code: ${assignmentResult.errorCode || 'N/A'}`);
-                console.warn(`[AUTO-ASSIGN] ❌ Chi tiết địa chỉ: "${savedOrder.shippingAddress}"`);
-                
-                // Mark for manual assignment in separate transaction
                 await this.markOrderForManualAssignmentSafe(savedOrder.id, assignmentResult.message);
             }
-            console.log(`[AUTO-ASSIGN] ====== KẾT THÚC PHÂN CÔNG TỰ ĐỘNG ======`);
         } catch (assignmentError) {
-            console.error('[AUTO-ASSIGN] ❌❌❌ LỖI NGHIÊM TRỌNG khi phân công tự động:', assignmentError);
-            console.error(`[AUTO-ASSIGN] ❌❌❌ Đơn hàng: ${savedOrder.id}, Địa chỉ: "${savedOrder.shippingAddress}"`);
-            // Ensure order is marked for manual assignment in separate transaction
             await this.markOrderForManualAssignmentSafe(savedOrder.id, 'Auto-assignment service error');
         }
         
@@ -429,20 +398,8 @@ export class OrderService {
                 invoice.notes = `Guest order invoice - ${createOrderDto.guestInfo!.fullName} (${createOrderDto.guestInfo!.phone})`;
                 
                 const savedInvoice = await transactionalEntityManager.save(invoice);
-                console.log(`[Info] ✅ Guest invoice created successfully for order ${order.id}: ${invoiceNumber}`);
                 
             } catch (invoiceError) {
-                console.error('[Error] ❌ Failed to create guest invoice:', invoiceError);
-                console.error('[Error] Guest invoice error details:', {
-                    message: (invoiceError as Error).message,
-                    stack: (invoiceError as Error).stack,
-                    orderData: {
-                        orderId: order.id,
-                        paymentMethod: createOrderDto.paymentMethod,
-                        totalAmount: order.totalAmount
-                    }
-                });
-                // ✅ FIXED: Throw error để rollback transaction  
                 throw new Error(`Failed to create guest invoice for order ${order.id}: ${(invoiceError as Error).message}`);
             }
 
@@ -467,27 +424,19 @@ export class OrderService {
 
         // Step 7: Auto-assign guest order to shipper (AFTER main transaction completes)
         try {
-            console.log(`[DEBUG] Starting auto-assignment for guest order ${savedOrder.id} with address: ${savedOrder.shippingAddress}`);
             
             const { OrderAssignmentService } = await import('@/shipper/orderAssignment.service');
-            console.log(`[DEBUG] OrderAssignmentService imported successfully`);
             
             const orderAssignmentService = Container.get(OrderAssignmentService);
-            console.log(`[DEBUG] OrderAssignmentService instance created`);
             
             const assignmentResult = await orderAssignmentService.assignOrderToShipper(savedOrder);
-            console.log(`[DEBUG] Auto-assignment result for guest order ${savedOrder.id}:`, assignmentResult);
             
             if (assignmentResult.success) {
-                console.log(`[Info] ✅ Auto-assigned guest order ${savedOrder.id} to shipper: ${assignmentResult.message}`);
+                await this.markOrderForManualAssignmentSafe(savedOrder.id, assignmentResult.message);
             } else {
-                console.warn(`[Warning] ❌ Auto-assignment failed for guest order ${savedOrder.id}: ${assignmentResult.message}`);
-                // Mark failed order for manual assignment queue
                 await this.markOrderForManualAssignmentSafe(savedOrder.id, assignmentResult.message);
             }
         } catch (assignmentError) {
-            console.error('[Error] ❌ Failed to auto-assign guest order to shipper:', assignmentError);
-            // Ensure order is marked for manual assignment
             await this.markOrderForManualAssignmentSafe(savedOrder.id, 'Auto-assignment service error');
         }
         
@@ -585,8 +534,6 @@ export class OrderService {
             if (newStatus === OrderStatus.CANCELLED && 
                 [OrderStatus.PENDING, OrderStatus.SHIPPING, OrderStatus.PENDING_EXTERNAL_SHIPPING].includes(oldStatus)) {
                 
-                console.log(`[Info] Restoring stock for cancelled order ${orderId}`);
-                
                 for (const orderDetail of order.orderDetails) {
                     const product = await transactionalEntityManager.findOne(Product, {
                         where: { id: orderDetail.product.id },
@@ -598,9 +545,6 @@ export class OrderService {
                         product.stock += orderDetail.quantity;
                         await transactionalEntityManager.save(product);
                         
-                        console.log(`[Info] Restored stock for product ${product.name}: ${oldStock} -> ${product.stock} (+${orderDetail.quantity})`);
-                    } else {
-                        console.warn(`[Warning] Product ${orderDetail.product.id} not found for stock restoration`);
                     }
                 }
             }
@@ -735,8 +679,6 @@ export class OrderService {
             if (newStatus === OrderStatus.CANCELLED && 
                 [OrderStatus.PENDING, OrderStatus.SHIPPING, OrderStatus.PENDING_EXTERNAL_SHIPPING].includes(currentStatus)) {
                 
-                console.log(`[Info] Shipper ${shipperId} cancelling order ${orderId}, restoring stock`);
-                
                 for (const orderDetail of order.orderDetails) {
                     const product = await transactionalEntityManager.findOne(Product, {
                         where: { id: orderDetail.product.id },
@@ -748,9 +690,6 @@ export class OrderService {
                         product.stock += orderDetail.quantity;
                         await transactionalEntityManager.save(product);
                         
-                        console.log(`[Info] Restored stock for product ${product.name}: ${oldStock} -> ${product.stock} (+${orderDetail.quantity})`);
-                    } else {
-                        console.warn(`[Warning] Product ${orderDetail.product.id} not found for stock restoration`);
                     }
                 }
             }
@@ -869,9 +808,6 @@ export class OrderService {
             order.shipper = null; // Clear auto-assigned shipper
             order.cancelReason = `Auto-assignment failed: ${reason}`; // Record failure reason
             await order.save();
-            console.warn(`[Warning] Order ${orderId} marked for manual assignment due to auto-assignment failure: ${reason}`);
-        } else {
-            console.warn(`[Warning] Order ${orderId} not found for manual assignment.`);
         }
     }
 
@@ -899,12 +835,8 @@ export class OrderService {
                 // order.status = OrderStatus.PENDING_EXTERNAL_SHIPPING;
                 
                 await order.save();
-                console.warn(`[Warning] Đơn hàng ${orderId} được đánh dấu cần xem xét thủ công. Lý do: ${reason}`);
-            } else {
-                console.warn(`[Warning] Không tìm thấy đơn hàng ${orderId} để đánh dấu xem xét thủ công.`);
             }
         } catch (error) {
-            console.error(`[Error] Lỗi khi đánh dấu đơn hàng ${orderId} cần xem xét thủ công:`, error);
             // Không throw error để tránh ảnh hưởng đến quy trình chính
         }
     }

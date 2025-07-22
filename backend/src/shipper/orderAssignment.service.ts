@@ -19,27 +19,19 @@ class Logger {
   private static currentLevel: LogLevel = process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.DEBUG;
 
   static error(message: string, ...args: any[]) {
-    if (this.currentLevel >= LogLevel.ERROR) {
-      console.error(`[ERROR] ${message}`, ...args);
-    }
+    // Empty method to remove logging
   }
 
   static warn(message: string, ...args: any[]) {
-    if (this.currentLevel >= LogLevel.WARN) {
-      console.warn(`[WARNING] ${message}`, ...args);
-    }
+    // Empty method to remove logging
   }
 
   static info(message: string, ...args: any[]) {
-    if (this.currentLevel >= LogLevel.INFO) {
-      console.log(`[INFO] ${message}`, ...args);
-    }
+    // Empty method to remove logging
   }
 
   static debug(message: string, ...args: any[]) {
-    if (this.currentLevel >= LogLevel.DEBUG) {
-      console.log(`[DEBUG] ${message}`, ...args);
-    }
+    // Empty method to remove logging
   }
 }
 
@@ -381,19 +373,12 @@ export class OrderAssignmentService {
       'nam tu liem': 'Nam Từ Liêm',
       'bac tu liem': 'Bắc Từ Liêm',
       'ha dong': 'Hà Đông',
-      // Thêm các từ khóa rút gọn khác
-      'tx': 'Thanh Xuân',
-      'dd': 'Đống Đa',
-      'cg': 'Cầu Giấy',
-      'bd': 'Ba Đình',
-      'hk': 'Hoàn Kiếm',
-      'hbt': 'Hai Bà Trưng',
-      'th': 'Tây Hồ',
-      'hm': 'Hoàng Mai',
-      'lb': 'Long Biên',
-      'ntl': 'Nam Từ Liêm',
-      'btl': 'Bắc Từ Liêm',
-      'hd': 'Hà Đông'
+      'son tay': 'Sơn Tây',
+      'phuc tho': 'Phúc Thọ',
+      'dan phuong': 'Đan Phượng',
+      'hoai duc': 'Hoài Đức',
+      'quoc oai': 'Quốc Oai',
+      'thach that': 'Thạch Thất',
     };
 
     return districtMapping[normalized] || district;
