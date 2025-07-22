@@ -684,7 +684,7 @@ export class OrderService {
 
         if (search) {
             queryBuilder = queryBuilder.andWhere(
-                '(customer.username ILIKE :search OR order.id::text ILIKE :search OR order.shippingAddress ILIKE :search)',
+                '(customer.username ILIKE :search OR "order".id::text ILIKE :search OR "order".shippingAddress ILIKE :search)',
                 { search: `%${search}%` }
             );
         }
@@ -812,7 +812,7 @@ export class OrderService {
         if (search) {
             const whereClause = (shipper || assigned || unassigned || status) ? 'andWhere' : 'where';
             queryBuilder = queryBuilder[whereClause](
-                '(customer.username ILIKE :search OR order.id::text ILIKE :search OR order.shippingAddress ILIKE :search)',
+                '(customer.username ILIKE :search OR "order".id::text ILIKE :search OR "order".shippingAddress ILIKE :search)',
                 { search: `%${search}%` }
             );
         }

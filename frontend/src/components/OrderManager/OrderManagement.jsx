@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Upload, 
   Plus, 
   X,
   Save,
@@ -242,13 +241,7 @@ const OrderManagement = ({ role = 'admin' }) => {
           </div>
           
           <div className={styles.headerActions}>
-            <button 
-              className={`${styles.actionButton} ${styles.exportButton}`}
-              onClick={handleExportData}
-            >
-              <Upload size={18} />
-              <span>Export data</span>
-            </button>
+            {/* Removed Export Data button */}
           </div>
         </div>
       </div>

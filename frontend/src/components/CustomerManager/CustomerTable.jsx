@@ -47,8 +47,8 @@ const CustomerTable = ({
         <table className={styles.table}>
           <thead className={styles.tableHeader}>
             <tr>
-              <th className={styles.headerCell}>CUSTOMER ID</th>
               <th className={styles.headerCell}>CUSTOMER NAME</th>
+              <th className={styles.headerCell}>USERNAME</th>
               <th className={styles.headerCell}>PHONE NUMBER</th>
               <th className={styles.headerCell}>STATUS</th>
               <th className={styles.headerCell}>ORDERS</th>
@@ -59,9 +59,6 @@ const CustomerTable = ({
           <tbody className={styles.tableBody}>
             {customers.map((customer) => (
               <tr key={customer.id} className={styles.tableRow}>
-                <td className={`${styles.tableCell} ${styles.customerId}`}>
-                  {customer.id}
-                </td>
                 <td className={styles.tableCell}>
                   <div className={styles.customerInfo}>
                     <div className={styles.avatar}>
@@ -71,6 +68,9 @@ const CustomerTable = ({
                       {customer.name}
                     </span>
                   </div>
+                </td>
+                <td className={`${styles.tableCell} ${styles.customerId}`}>
+                  {customer.username}
                 </td>
                 <td className={`${styles.tableCell} ${styles.phoneNumber}`}>
                   {customer.phone}

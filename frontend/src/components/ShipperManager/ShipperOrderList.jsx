@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { orderService } from "../../services/orderService";
 import styles from "./ShipperOrderList.module.css";
 import { formatDateTime } from "../../utils/dateFormatter";
+import { OrderDetailView } from "../OrderManager";
 
 const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
   const [orders, setOrders] = useState([]);
@@ -22,12 +23,8 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
   });
 
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  const [statusUpdateData, setStatusUpdateData] = useState({
-    status: "",
-    reason: "",
-  });
-
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
+  
   // Order status options cho shipper (sync với backend enum)
   const statusOptions = [
     { value: "", label: "All status" },
@@ -105,47 +102,25 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
     setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
-  // Handle status update with enhanced validation
-  const handleStatusUpdate = async () => {
-    if (!selectedOrder || !statusUpdateData.status) {
-      setError("Please select status");
-      return;
-    }
-
-            if (statusUpdateData.status === "CANCELLED") {
-      const reason = statusUpdateData.reason.trim();
-      if (!reason) {
-        setError("Please enter cancellation reason");
-        return;
-      }
-      if (reason.length < 10) {
-        setError("Cancellation reason must be at least 10 characters");
-        return;
-      }
-      if (reason.length > 200) {
-        setError("Cancellation reason cannot exceed 200 characters");
-        return;
-      }
-    }
-
+  // Handle status update
+  const handleStatusUpdate = async (orderId, newStatus) => {
     try {
       setLoading(true);
       const response = await orderService.updateOrderStatusByShipper(
         shipperId,
-        selectedOrder.id,
-        statusUpdateData
+        orderId,
+        { status: newStatus }
       );
 
       if (response.success) {
-        setShowStatusModal(false);
+        setShowOrderDetail(false);
         setSelectedOrder(null);
-        setStatusUpdateData({ status: "", reason: "" });
         await fetchOrders(); // Refresh list
       } else {
         throw new Error(response.message || "Update failed");
       }
     } catch (err) {
-              setError(err.message || "Failed to update status");
+      setError(err.message || "Failed to update status");
     } finally {
       setLoading(false);
     }
@@ -190,7 +165,11 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
     }).format(amount);
   };
 
-
+  // Open order detail modal
+  const viewOrderDetail = (order) => {
+    setSelectedOrder(order);
+    setShowOrderDetail(true);
+  };
 
   return (
     <>
@@ -322,16 +301,10 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
                         {order.shippingAddress}
                       </td>
                       <td className={styles.actionCell}>
-                        {getAvailableStatusTransitions(order.status).length >
-                          0 && (
+                        {getAvailableStatusTransitions(order.status).length > 0 && (
                           <button
                             className={styles.actionButton}
-                            onClick={() => {
-                              setSelectedOrder(order);
-                              setShowStatusModal(true);
-                              setStatusUpdateData({ status: "", reason: "" });
-                              setError("");
-                            }}
+                            onClick={() => viewOrderDetail(order)}
                           >
                             Update
                           </button>
@@ -371,117 +344,19 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
           </div>
         )}
 
-        {/* Status Update Modal */}
-        {showStatusModal && selectedOrder && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
-              <div className={styles.modalHeader}>
-                <h4>Update order status #{selectedOrder.id}</h4>
-                <button
-                  className={styles.modalCloseButton}
-                  onClick={() => {
-                    setShowStatusModal(false);
-                    setSelectedOrder(null);
-                    setStatusUpdateData({ status: "", reason: "" });
-                    setError("");
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className={styles.modalBody}>
-                <div className={styles.currentOrderInfo}>
-                  <p>
-                    <strong>Customer:</strong> {selectedOrder.customer?.name}
-                  </p>
-                  <p>
-                    <strong>Current status:</strong>
-                    <span
-                      className={`${styles.statusBadge} ${getStatusBadgeClass(
-                        selectedOrder.status
-                      )}`}
-                    >
-                      {selectedOrder.status}
-                    </span>
-                  </p>
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label>Select new status:</label>
-                  <select
-                    value={statusUpdateData.status}
-                    onChange={(e) =>
-                      setStatusUpdateData((prev) => ({
-                        ...prev,
-                        status: e.target.value,
-                      }))
-                    }
-                    className={styles.formControl}
-                  >
-                    <option value="">-- Select status --</option>
-                    {getAvailableStatusTransitions(selectedOrder.status).map(
-                      (option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      )
-                    )}
-                  </select>
-                </div>
-
-                {statusUpdateData.status === "CANCELLED" && (
-                  <div className={styles.formGroup}>
-                    <label>
-                      Cancellation reason:{" "}
-                      <span className={styles.required}>*</span>
-                    </label>
-                    <textarea
-                      value={statusUpdateData.reason}
-                      onChange={(e) =>
-                        setStatusUpdateData((prev) => ({
-                          ...prev,
-                          reason: e.target.value,
-                        }))
-                      }
-                      placeholder="Enter cancellation reason (10-200 characters)..."
-                      className={styles.textarea}
-                      rows={3}
-                      maxLength={500}
-                    />
-                    <div className={styles.characterCount}>
-                      {statusUpdateData.reason.length}/200 characters
-                    </div>
-                  </div>
-                )}
-
-                {error && <div className={styles.modalError}>{error}</div>}
-              </div>
-
-              <div className={styles.modalFooter}>
-                <button
-                  className={styles.cancelButton}
-                  onClick={() => {
-                    setShowStatusModal(false);
-                    setSelectedOrder(null);
-                    setStatusUpdateData({ status: "", reason: "" });
-                    setError("");
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className={styles.confirmButton}
-                  onClick={handleStatusUpdate}
-                  disabled={loading || !statusUpdateData.status}
-                >
-                  {loading ? "Updating..." : "Confirm"}
-                </button>
-              </div>
-            </div>
-          </div>
+        {/* Order Detail Modal */}
+        {showOrderDetail && selectedOrder && (
+          <OrderDetailView
+            order={selectedOrder}
+            open={showOrderDetail}
+            onClose={() => {
+              setShowOrderDetail(false);
+              setSelectedOrder(null);
+            }}
+            onStatusChange={handleStatusUpdate}
+            role="shipper"
+          />
         )}
-      
     </>
   );
 };

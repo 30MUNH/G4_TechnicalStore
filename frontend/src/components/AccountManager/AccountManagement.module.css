@@ -137,6 +137,7 @@
   font-weight: 600;
   margin: 0;
   color: #1e293b;
+  text-align: left;
 }
 
 .closeButton {
@@ -214,6 +215,8 @@
   font-size: 14px;
   font-weight: 600;
   color: #374151;
+  text-align: left;
+  margin-bottom: 4px;
 }
 
 .input {
@@ -244,6 +247,7 @@
   color: #ef4444;
   font-size: 12px;
   font-weight: 500;
+  text-align: left;
 }
 
 .formActions {
