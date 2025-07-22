@@ -16,7 +16,7 @@ const SALT_ROUNDS = 8;
 @Service()
 export class CustomerService {
   private validatePhoneNumber(phone: string): void {
-    // Support both formats: 0xxxxxxxxx (10 digits) or +84xxxxxxxxx (12 chars)
+    //Support both formats: 0xxxxxxxxx (10 digits) or +84xxxxxxxxx (12 chars)
     const phoneRegex = /^(0\d{9}|\+84\d{9})$/;
     if (!phoneRegex.test(phone)) {
       throw new BadRequestException('Invalid phone number format. Use: 0xxxxxxxxx or +84xxxxxxxxx');

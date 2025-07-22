@@ -1,11 +1,13 @@
-import { IsString, IsInt, Min } from 'class-validator';
+import { IsString, IsInt, Min, Max, IsNotEmpty } from 'class-validator';
 
 export class AddToCartDto {
   @IsString()
+  @IsNotEmpty({ message: 'Product ID không được để trống' })
   productId: string;
 
-  @IsInt()
-  @Min(1)
+  @IsInt({ message: 'Số lượng phải là số nguyên' })
+  @Min(1, { message: 'Số lượng tối thiểu là 1' })
+  @Max(99, { message: 'Số lượng tối đa là 99' })
   quantity: number;
 }
 

@@ -255,9 +255,10 @@ export class OrderAssignmentController {
 
   /**
    * Cập nhật vùng làm việc của shipper
+   * Chỉ Admin mới có quyền thực hiện thao tác này
    */
   @Put('/working-zone/:shipperId')
-  @UseBefore(Auth)
+  @UseBefore(Admin)
   async updateWorkingZone(
     @Param('shipperId') shipperId: string,
     @Body() data: { workingZones: string[] }
