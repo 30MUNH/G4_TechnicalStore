@@ -94,12 +94,18 @@
   font-size: 1.1rem; /* Tăng cỡ chữ dữ liệu */
   color: #374151;
   vertical-align: middle; /* Căn giữa theo chiều dọc */
+  text-align: left !important;
+
 }
 
 .customerInfo {
   display: flex;
   align-items: center;
+
   gap: 1rem; /* Tăng khoảng cách */
+  gap: 0.75rem;
+  justify-content: flex-start;
+
 }
 
 .avatar {
@@ -172,6 +178,9 @@
   display: inline-block; /* Giúp căn giữa badge */
   min-width: 85px; /* Tăng chiều rộng tối thiểu */
   text-align: center;
+
+  display: inline-block;
+  text-align: left;
 }
 
 .createdDate {
@@ -184,8 +193,13 @@
 .actions {
   display: flex;
   align-items: center;
+
   gap: 0.75rem; /* Tăng khoảng cách giữa các nút */
   justify-content: center; /* Căn giữa các nút hành động */
+
+  gap: 0.5rem;
+  justify-content: flex-start;
+
 }
 
 .actionButton {
@@ -278,7 +292,7 @@
 }
 
 .paginationButton {
-  padding: 0.6rem; /* Tăng kích thước nút */
+  padding: 0.6rem; 
   color: #9ca3af;
   border: none;
   background: none;
@@ -312,8 +326,8 @@
 @media (max-width: 768px) {
   .headerCell,
   .tableCell {
-    padding: 0.75rem 0.75rem; /* Giảm padding ở màn hình nhỏ nhưng vẫn lớn hơn trước */
-    font-size: 0.95rem; /* Giữ cỡ chữ to hơn trước */
+    padding: 0.75rem 0.75rem; 
+    font-size: 0.95rem; 
   }
 
   /* Duy trì padding trái cho USERNAME và PHONE NUMBER trên thiết bị di động */
@@ -330,13 +344,13 @@
   }
 
   .avatar {
-    width: 2.5rem; /* Vẫn lớn hơn trước */
-    height: 2.5rem; /* Vẫn lớn hơn trước */
+    width: 2.5rem; 
+    height: 2.5rem; 
     font-size: 0.9rem;
   }
 
   .customerInfo {
-    gap: 0.75rem; /* Vẫn lớn hơn trước */
+    gap: 0.75rem; 
   }
 
   .actions {
@@ -344,11 +358,11 @@
   }
 
   .actionButton {
-    padding: 0.5rem; /* Vẫn lớn hơn trước */
+    padding: 0.5rem; 
   }
 
   /* Điều chỉnh độ rộng cột trên màn hình nhỏ */
   .table {
-    table-layout: auto; /* Chuyển sang auto để tự điều chỉnh */
+    table-layout: auto; 
   }
 }
