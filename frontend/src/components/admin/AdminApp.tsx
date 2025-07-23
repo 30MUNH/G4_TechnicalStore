@@ -32,17 +32,25 @@ function AdminApp() {
           user.role.name === 'manager'
         ))
       );
+      const isShipperFromCurrentUser = user && (
+        user.role === 'shipper' ||
+        (user.role && typeof user.role === 'object' && user.role.name === 'shipper')
+      );
 
       if (isAdminFromCurrentUser) {
-        console.log('✅ Admin access granted from current user data');
+        // Admin/manager: allow
+        return;
+      }
+      if (isShipperFromCurrentUser) {
+        // Shipper: allow
+        setActiveSection('orders');
         return;
       }
 
-      // Nếu không có user data hoặc không phải admin, thử fetch từ API
+      // Nếu không có user data hoặc không phải admin/shipper, thử fetch từ API
       try {
         const userProfile = await authService.getUserProfile();
         const userData = userProfile.data || userProfile;
-        
         const isAdmin = userData && (
           userData.role === 'admin' || 
           userData.role === 'manager' ||
@@ -51,15 +59,16 @@ function AdminApp() {
             userData.role.name === 'manager'
           ))
         );
-
-        if (!isAdmin) {
-          console.log('❌ Access denied - not admin');
+        const isShipper = userData && (
+          userData.role === 'shipper' ||
+          (userData.role && userData.role.name === 'shipper')
+        );
+        if (!isAdmin && !isShipper) {
           navigate('/', { replace: true });
-        } else {
-          console.log('✅ Admin access granted from API');
+        } else if (isShipper) {
+          setActiveSection('orders');
         }
       } catch (error) {
-        console.error('❌ Error checking admin access:', error);
         navigate('/', { replace: true });
       }
     };
@@ -68,7 +77,44 @@ function AdminApp() {
   }, [isAuthenticated, navigate, user]);
 
   const role = typeof user?.role === 'object' && user?.role?.name ? user.role.name : (typeof user?.role === 'string' ? user.role : 'admin');
+
+  // Restrict accessible sections for shipper and staff
+  useEffect(() => {
+    if (role === 'shipper') {
+      // Nếu là shipper và vào admin hoặc mục không hợp lệ thì mặc định vào shippers
+      if (activeSection !== 'shippers') {
+        setActiveSection('shippers');
+      }
+    } else if (role === 'staff') {
+      // Nếu là staff và vào admin thì mặc định vào products
+      if (activeSection === 'dashboard' || !['products','customers','accounts','orders','shippers'].includes(activeSection)) {
+        setActiveSection('products');
+      }
+    }
+  }, [role, activeSection]);
+
   const renderContent = () => {
+    if (role === 'shipper') {
+      // Chỉ render phần ShipperManagement, không render phần nào khác
+      return <ShipperManagement />;
+    }
+    if (role === 'staff') {
+      switch (activeSection) {
+        case 'products':
+          return <ProductManagement />;
+        case 'customers':
+          return <CustomerManagement />;
+        case 'accounts':
+          return <AccountManagement />;
+        case 'orders':
+          return <OrderManagement role={role} />;
+        case 'shippers':
+          return <ShipperManagement />;
+        default:
+          return <ProductManagement />;
+      }
+    }
+    // admin/manager
     switch (activeSection) {
       case 'dashboard':
         return <AdminDashboard />;

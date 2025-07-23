@@ -369,19 +369,46 @@ const ProductManagement: React.FC = () => {
       } else {
         showNotification('Failed to update product. Please try again!', 'error');
       }
-    } catch (err) {
-      showNotification('An error occurred while updating the product.', 'error');
+    } catch (err: any) {
+      const message = err?.response?.data?.error || err?.response?.data?.message || err?.message || '';
+      if (message.toLowerCase().includes('already exists')) {
+        showNotification('Product name already exists. Please choose another name.', 'error');
+      } else if (message.includes('Price must be greater than 0')) {
+        showNotification('Price must be greater than 0.', 'error');
+      } else if (message.includes('Stock cannot be negative')) {
+        showNotification('Stock cannot be negative.', 'error');
+      } else if (message.toLowerCase().includes('network')) {
+        showNotification('Network error. Please try again later.', 'error');
+      } else if (message) {
+        showNotification(message, 'error');
+      } else {
+        showNotification('An unknown error occurred while updating the product.', 'error');
+      }
     }
   };
 
   const handleDeleteProduct = async (product: Product) => {
     if (!window.confirm(`Are you sure you want to delete the product "${product.name}"?`)) return;
-    const result = await productService.deleteProduct(product.id);
-    if (result) {
-      // Update product list
-      const productsData = await productService.getAllProductsIncludingOutOfStock();
-      setProducts(Array.isArray(productsData) ? productsData : []);
-      showNotification('Product deleted successfully!', 'success');
+    try {
+      const result = await productService.updateProduct(product.id, { isActive: false });
+      if (result) {
+        const productsData = await productService.getAllProductsIncludingOutOfStock();
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        showNotification('Product deleted (deactivated) successfully!', 'success');
+      } else {
+        showNotification('Failed to deactivate product. Please try again!', 'error');
+      }
+    } catch (err: any) {
+      const message = err?.response?.data?.error || err?.response?.data?.message || err?.message || '';
+      if (message.toLowerCase().includes('not found')) {
+        showNotification('Product not found. It may have already been deleted.', 'error');
+      } else if (message.toLowerCase().includes('network')) {
+        showNotification('Network error. Please try again later.', 'error');
+      } else if (message) {
+        showNotification(message, 'error');
+      } else {
+        showNotification('An unknown error occurred while deleting the product.', 'error');
+      }
     }
   };
 
@@ -400,8 +427,21 @@ const ProductManagement: React.FC = () => {
       } else {
         showNotification('Failed to add product. Please try again!', 'error');
       }
-    } catch (err) {
-      showNotification('An error occurred while adding the product.', 'error');
+    } catch (err: any) {
+      const message = err?.response?.data?.error || err?.response?.data?.message || err?.message || '';
+      if (message.toLowerCase().includes('already exists')) {
+        showNotification('Product name already exists. Please choose another name.', 'error');
+      } else if (message.includes('Price must be greater than 0')) {
+        showNotification('Price must be greater than 0.', 'error');
+      } else if (message.includes('Stock cannot be negative')) {
+        showNotification('Stock cannot be negative.', 'error');
+      } else if (message.toLowerCase().includes('network')) {
+        showNotification('Network error. Please try again later.', 'error');
+      } else if (message) {
+        showNotification(message, 'error');
+      } else {
+        showNotification('An unknown error occurred while adding the product.', 'error');
+      }
     }
   };
 
