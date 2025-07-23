@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Shield
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface AdminSidebarProps {
   activeSection: string;
@@ -15,7 +16,10 @@ interface AdminSidebarProps {
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSection }) => {
-  const menuItems = [
+  const { user } = useAuth();
+  const role = typeof user?.role === 'object' && user?.role?.name ? user.role.name : (typeof user?.role === 'string' ? user.role : 'admin');
+
+  let menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'products', label: 'Products', icon: Package },
     { id: 'customers', label: 'Customers', icon: Users },
@@ -23,6 +27,22 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSec
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
     { id: 'shippers', label: 'Shippers', icon: Truck },
   ];
+
+  if (role === 'shipper') {
+    // Only show Shippers for shipper role
+    menuItems = [
+      { id: 'shippers', label: 'Shippers', icon: Truck },
+    ];
+  } else if (role === 'staff') {
+    // Staff: show all except Dashboard
+    menuItems = [
+      { id: 'products', label: 'Products', icon: Package },
+      { id: 'customers', label: 'Customers', icon: Users },
+      { id: 'accounts', label: 'Accounts', icon: Shield },
+      { id: 'orders', label: 'Orders', icon: ShoppingCart },
+      { id: 'shippers', label: 'Shippers', icon: Truck },
+    ];
+  }
 
   return (
     <div className="w-64 bg-gradient-to-b from-red-900 via-red-800 to-black shadow-xl">
