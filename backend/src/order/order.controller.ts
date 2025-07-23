@@ -69,7 +69,7 @@ export class OrderController {
     async getOrders(
         @Req() req: any,
         @QueryParam("page") page: number = 1,
-        @QueryParam("limit") limit: number = 10000 // Đặt limit rất cao để lấy tất cả đơn hàng
+        @QueryParam("limit") limit: number = 1000 // Đặt limit rất cao để lấy tất cả đơn hàng
     ) {
         const user = req.user as AccountDetailsDto;
         try {
