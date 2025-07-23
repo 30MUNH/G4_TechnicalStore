@@ -217,8 +217,7 @@ const CheckoutPage = () => {
                 });
             } else {
                 // COD - show success and redirect
-                // Lưu thông báo thành công vào sessionStorage để hiển thị ở trang Home
-                sessionStorage.setItem('codSuccessMessage', 'Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại cửa hàng chúng tôi.');
+                // Không cần lưu vào sessionStorage vì đã hiển thị thông báo ở CheckoutForm
                 
                 navigate('/order-history', { 
                     state: { 
