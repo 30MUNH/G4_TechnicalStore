@@ -465,9 +465,9 @@ export class OrderService {
     }
 
     async getOrdersByUsername(
-        username: string, 
-        page: number = 1, 
-        limit: number = 10
+        username: string,
+        page: number = 1,
+        limit: number = 10000 // Đặt limit rất cao để lấy tất cả đơn hàng
     ): Promise<{ orders: Order[]; total: number }> {
         const offset = (page - 1) * limit;
         

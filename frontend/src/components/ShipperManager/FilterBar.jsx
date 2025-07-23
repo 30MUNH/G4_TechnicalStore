@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import styles from './FilterBar.module.css';
 
@@ -6,20 +6,46 @@ const FilterBar = ({
   searchTerm = '',
   statusFilter = 'all',
   createdDateFilter = '',
+  zoneFilter = 'all',
   onSearchChange,
   onStatusChange,
   onDateChange,
-  onClearFilters
+  onZoneChange,
+  onClearFilters,
+  availableZones = []
 }) => {
-  const hasActiveFilters = searchTerm || statusFilter !== 'all' || createdDateFilter;
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || createdDateFilter || zoneFilter !== 'all';
+  const [isZoneOpen, setIsZoneOpen] = useState(false);
+  const zoneSelectRef = useRef(null);
 
   const handleClearFilters = () => {
     onSearchChange('');
     onStatusChange('all');
     onDateChange('');
+    if (onZoneChange) onZoneChange('all');
     if (onClearFilters) {
       onClearFilters();
     }
+  };
+
+  // Xử lý đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (zoneSelectRef.current && !zoneSelectRef.current.contains(event.target)) {
+        setIsZoneOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Tạo danh sách zones có giới hạn chiều cao
+  const handleZoneChange = (zone) => {
+    onZoneChange(zone);
+    setIsZoneOpen(false);
   };
 
   return (
@@ -44,9 +70,41 @@ const FilterBar = ({
           onChange={(e) => onStatusChange(e.target.value)}
         >
           <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="active">Available</option>
+          <option value="inactive">Unavailable</option>
         </select>
+
+        {/* Zone Filter - Custom Dropdown */}
+        <div className={styles.zoneSelectContainer} ref={zoneSelectRef}>
+          <div 
+            className={`${styles.customSelect} ${isZoneOpen ? styles.open : ''}`}
+            onClick={() => setIsZoneOpen(!isZoneOpen)}
+          >
+            <div className={styles.selectedValue}>
+              {zoneFilter === 'all' ? 'All Zones' : zoneFilter}
+            </div>
+            <div className={`${styles.customOptions} ${isZoneOpen ? styles.show : ''}`}>
+              <div 
+                className={`${styles.customOption} ${zoneFilter === 'all' ? styles.selected : ''}`}
+                onClick={() => handleZoneChange('all')}
+              >
+                All Zones
+              </div>
+              {availableZones.map(zone => (
+                <div 
+                  key={zone} 
+                  className={`${styles.customOption} ${zoneFilter === zone ? styles.selected : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleZoneChange(zone);
+                  }}
+                >
+                  {zone}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* Created Date Filter */}
         <input

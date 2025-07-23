@@ -14,6 +14,7 @@ const ShipperCard = ({
   onViewOrders,
   onPageChange,
   onManageWorkingZones,
+  onToggleAvailability,
   onUpdatePriority
 }) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -21,26 +22,6 @@ const ShipperCard = ({
 
   const getAvailabilityClass = (isAvailable) => {
     return isAvailable ? styles.available : styles.unavailable;
-  };
-
-  const renderStars = (rating) => {
-    return (
-      <div className={styles.ratingContainer}>
-        <div className={styles.stars}>
-          {[...Array(5)].map((_, index) => (
-            <span
-              key={index}
-              className={`${styles.star} ${
-                index < Math.floor(rating) ? styles.starFilled : styles.starEmpty
-              }`}
-            >
-              ★
-            </span>
-          ))}
-        </div>
-        <span className={styles.ratingText}>({rating})</span>
-      </div>
-    );
   };
 
   const getInitial = (name) => {
@@ -129,10 +110,6 @@ const ShipperCard = ({
                   <span className={styles.statValue}>{shipper.deliveredOrders}</span>
                 </div>
                 <div className={styles.statItem}>
-                  <span className={styles.statLabel}>Rating:</span>
-                  {shipper.rating ? renderStars(parseFloat(shipper.rating)) : renderStars(5.0)}
-                </div>
-                <div className={styles.statItem}>
                   <span className={styles.statLabel}>Priority:</span>
                   <span className={styles.statValue}>
                     <Star size={14} className={styles.priorityStar} />
@@ -142,7 +119,7 @@ const ShipperCard = ({
                 <div className={styles.statItem}>
                   <span className={styles.statLabel}>Daily:</span>
                   <span className={styles.statValue}>
-                    {shipper.dailyOrderCount || 0}/{shipper.maxDailyOrders || 10}
+                    {shipper.dailyOrderCount || 0}
                   </span>
                 </div>
               </div>

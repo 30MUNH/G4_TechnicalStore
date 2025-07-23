@@ -85,13 +85,16 @@ export const orderService = {
         }
     },
 
-    async getOrders(params = {}) {
+    async getOrders(params = { limit: 10000, page: 1 }) { // Đặt limit rất cao để lấy tất cả đơn hàng
         try {
-            // Build query parameters for pagination and filtering
+            // Build query parameters
             const queryParams = new URLSearchParams();
             Object.entries(params).forEach(([key, value]) => {
-                if (value !== undefined && value !== null && value !== '') {
-                    queryParams.append(key, value.toString());
+                if (value !== undefined && value !== null) {
+                    const strValue = String(value);
+                    if (strValue !== '') {
+                        queryParams.append(key, strValue);
+                    }
                 }
             });
 

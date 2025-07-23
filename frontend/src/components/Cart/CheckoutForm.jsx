@@ -475,15 +475,28 @@ const CheckoutForm = ({
       return;
     }
 
-    // Build the full address
-    const fullAddress = [
-      formData.address.trim(),
-      formData.commune.trim(),
-      formData.ward.trim(),
-      formData.city.trim(),
-    ]
-      .filter(Boolean)
-      .join(", ");
+    // Build the full address - Cải tiến để tránh trùng lặp
+    // Kiểm tra xem địa chỉ chi tiết đã có thông tin phường/quận/thành phố chưa
+    const addressDetail = formData.address.trim();
+    const commune = formData.commune.trim();
+    const ward = formData.ward.trim();
+    const city = formData.city.trim();
+    
+    // Tạo địa chỉ đầy đủ theo định dạng chuẩn
+    let fullAddress = addressDetail;
+    
+    // Chỉ thêm thông tin từ dropdown nếu chưa có trong địa chỉ chi tiết
+    if (commune && !addressDetail.toLowerCase().includes(commune.toLowerCase())) {
+      fullAddress += `, ${commune}`;
+    }
+    
+    if (ward && !addressDetail.toLowerCase().includes(ward.toLowerCase())) {
+      fullAddress += `, ${ward}`;
+    }
+    
+    if (city && !addressDetail.toLowerCase().includes(city.toLowerCase())) {
+      fullAddress += `, ${city}`;
+    }
 
     // Map frontend payment method to backend expected values
     const backendPaymentMethod = paymentMethod === 'cod' ? 'Cash on delivery' : 'Online payment';
