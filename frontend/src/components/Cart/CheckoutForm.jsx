@@ -421,7 +421,14 @@ const CheckoutForm = ({
       // COD payment flow - pass order data to parent component
       // Clear saved form data when order is placed
       clearSavedFormData();
-      onPlaceOrder(orderData);
+      
+      // Hiển thị thông báo thành công trước khi chuyển hướng
+      showNotification("✅ Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại cửa hàng chúng tôi.", "success");
+      
+      // Delay a bit để người dùng thấy thông báo thành công
+      setTimeout(() => {
+        onPlaceOrder(orderData);
+      }, 1500);
     }
   };
 

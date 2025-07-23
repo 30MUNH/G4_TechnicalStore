@@ -25,6 +25,16 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
 
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetail, setShowOrderDetail] = useState(false);
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  
+  // Add notification system
+  const showNotification = (message, type = 'info') => {
+    setNotification({ show: true, message, type });
+    // Hide notification after 5 seconds
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+    }, 5000);
+  };
 
   // Order status options cho shipper (sync với backend enum)
   const statusOptions = [
@@ -48,7 +58,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
         status: filters.status || undefined,
         search: filters.search || undefined,
         sort: filters.sort || undefined,
-        orderDate: filters.orderDate || undefined, // Thêm ngày đặt hàng vào params
+        orderDate: filters.orderDate || undefined,
         page: pagination.page,
         limit: pagination.limit,
       };
@@ -111,11 +121,13 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
 
       if (response.success) {
         await fetchOrders(); // Refresh list
+        showNotification(`Trạng thái đơn hàng #${orderId.substring(0, 8)} đã được cập nhật thành ${newStatus}`, 'success');
       } else {
         throw new Error(response.message || "Update failed");
       }
     } catch (err) {
       setError(err.message || "Failed to update status");
+      showNotification(`Không thể cập nhật trạng thái đơn hàng: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -129,6 +141,13 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
 
   return (
     <div className={styles.orderListWrapper}>
+      {/* Notification */}
+      {notification.show && (
+        <div className={`${styles.notification} ${styles[notification.type]}`}>
+          {notification.message}
+        </div>
+      )}
+
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerTitle}>
