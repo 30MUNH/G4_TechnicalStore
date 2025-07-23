@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import styles from './CartView.module.css'; // Use the same CSS module as CartView
+import cartStyles from './CartView.module.css';
+import styles from './OrderHistory.module.css'; 
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useInvoiceExport } from '../../Hook/useInvoiceExport';
 import { useOrders } from '../../Hook/useOrders';
-import Pagination from '../Product/Pagination'; // Thêm import Pagination
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const OrderHistory = ({ 
     orders, 
@@ -312,13 +313,12 @@ export const OrderHistory = ({
     const hasActiveFilters = statusFilter !== 'all' || searchQuery.trim() || startDate || endDate;
 
     return (
-        <div className={styles.cartView}>
-            <div className={styles.cartHeader}>
+        <div className={cartStyles.cartView}>
+            <div className={cartStyles.cartHeader}>
                 <h1>
                     📋 Order history
-                    <span className={styles.itemCount}>({filteredOrders.length}/{totalOrders} orders)</span>
                 </h1>
-                <button onClick={handleBackToCart} className={styles.historyButton}>
+                <button onClick={handleBackToCart} className={cartStyles.historyButton}>
                     ← Back to cart
                 </button>
             </div>
@@ -486,10 +486,10 @@ export const OrderHistory = ({
             </div>
 
             {filteredOrders.length === 0 ? (
-                <div className={styles.emptyCart}>
+                <div className={cartStyles.emptyCart}>
                     <h2>🛒 No orders yet</h2>
                     <p>You don't have any orders in your history. Please shop and order now!</p>
-                    <button onClick={handleBackToCart} className={styles.continueShoppingButton}>
+                    <button onClick={handleBackToCart} className={cartStyles.continueShoppingButton}>
                         🛒 Back to cart
                     </button>
                 </div>
@@ -552,10 +552,13 @@ export const OrderHistory = ({
                                                 <span style={{
                                                     backgroundColor: getStatusColor(order.status),
                                                     color: 'white',
-                                                    padding: '0.5rem 1rem',
+                                                    padding: '0.5rem 0.8rem',
                                                     borderRadius: '1.5rem',
                                                     fontSize: '0.9rem',
-                                                    fontWeight: '600'
+                                                    fontWeight: '600',
+                                                    minWidth: '90px',
+                                                    display: 'inline-block',
+                                                    textAlign: 'center'
                                                 }}>
                                                     {order.status}
                                                 </span>
@@ -942,14 +945,31 @@ export const OrderHistory = ({
                 </div>
             )}
 
-            {/* Phân trang */}
-            <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={onPageChange}
-                itemsPerPage={10}
-                totalItems={totalOrders}
-            />
+            {/* Custom Pagination */}
+            {totalPages > 0 && (
+                <div className={styles.pagination}>
+                    <div className={styles.paginationInfo}>
+                        Display {(currentPage - 1) * 10 + 1} to {Math.min(currentPage * 10, totalOrders)} of {totalOrders} orders
+                    </div>
+                    <div className={styles.paginationControls}>
+                        <button
+                            className={styles.paginationButton}
+                            onClick={() => onPageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                        <span className={styles.currentPage}>{currentPage}</span>
+                        <button
+                            className={styles.paginationButton}
+                            onClick={() => onPageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Cancel Order Modal */}
             {showCancelModal && (

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { orderService } from "../../services/orderService";
 import styles from "./ShipperOrderList.module.css";
-import { formatDateTime } from "../../utils/dateFormatter";
 import { OrderDetailView } from "../OrderManager";
+import ShipperOrderTable from "./ShipperOrderTable";
 
 const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
   const [orders, setOrders] = useState([]);
@@ -20,6 +20,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
     status: "",
     search: "",
     sort: "date",
+    orderDate: "", // Thêm filter cho ngày đặt hàng
   });
 
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -35,11 +36,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
     { value: "PENDING_EXTERNAL_SHIPPING", label: "External Shipping" },
   ];
 
-  const sortOptions = [
-    { value: "date", label: "Order date (Newest)" },
-    { value: "amount", label: "Total amount (Highest)" },
-    { value: "customer", label: "Customer name" },
-  ];
+
 
   // Fetch orders
   const fetchOrders = async () => {
@@ -50,7 +47,8 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
       const params = {
         status: filters.status || undefined,
         search: filters.search || undefined,
-        sort: filters.sort,
+        sort: filters.sort || undefined,
+        orderDate: filters.orderDate || undefined, // Thêm ngày đặt hàng vào params
         page: pagination.page,
         limit: pagination.limit,
       };
@@ -58,19 +56,18 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
       const response = await orderService.getOrdersByShipper(shipperId, params);
 
       if (response.success) {
-        // ✅ FIX: Handle nested response structure from Response Interceptor
-        // Structure: { success: true, statusCode: 200, data: { data: orders[], pagination: {...} } }
+        // Handle nested response structure from Response Interceptor
         const responseData = response.data || {};
         const ordersData = responseData.data || [];
         const total = responseData.pagination?.total || 0;
+        const totalPages = responseData.pagination?.totalPages || Math.ceil(total / pagination.limit);
 
         // Đảm bảo orders luôn là array
         setOrders(Array.isArray(ordersData) ? ordersData : []);
         setPagination((prev) => ({
           ...prev,
           total: total,
-          totalPages:
-            responseData.pagination?.totalPages || Math.ceil(total / prev.limit),
+          totalPages: totalPages,
         }));
       } else {
         throw new Error(response.message || "Cannot load order list");
@@ -113,251 +110,117 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
       );
 
       if (response.success) {
-        setShowOrderDetail(false);
-        setSelectedOrder(null);
         await fetchOrders(); // Refresh list
       } else {
         throw new Error(response.message || "Update failed");
       }
     } catch (err) {
-              setError(err.message || "Failed to update status");
+      setError(err.message || "Failed to update status");
     } finally {
       setLoading(false);
     }
   };
 
-  // Get status badge class (sync với backend enum values)
-  const getStatusBadgeClass = (status) => {
-    const statusClasses = {
-      "PENDING": styles.statusPending,
-      "SHIPPING": styles.statusShipping,
-      "DELIVERED": styles.statusDelivered,
-      "CANCELLED": styles.statusCancelled,
-      "PENDING_EXTERNAL_SHIPPING": styles.statusExternalShipping,
-    };
-    return statusClasses[status] || styles.statusDefault;
-  };
-
-  // Get available status transitions for current order (sync với backend logic)
-  const getAvailableStatusTransitions = (currentStatus) => {
-    const transitions = {
-      "PENDING": [
-        { value: "SHIPPING", label: "Change to Shipping" },
-        { value: "CANCELLED", label: "Cancel order" },
-      ],
-      "SHIPPING": [
-        { value: "DELIVERED", label: "Complete delivery" },
-        { value: "CANCELLED", label: "Cancel order" },
-      ],
-      "PENDING_EXTERNAL_SHIPPING": [
-        { value: "DELIVERED", label: "Mark as delivered" },
-        { value: "CANCELLED", label: "Cancel order" },
-      ],
-    };
-    return transitions[currentStatus] || [];
-  };
-
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
-
-  // Open order detail modal
-  const viewOrderDetail = (order) => {
+  // View order details
+  const handleViewOrder = (order) => {
     setSelectedOrder(order);
     setShowOrderDetail(true);
   };
 
   return (
-    <>
-        {/* Header */}
-        <div className={styles.header}>
-          <div className={styles.headerTitle}>
-            <h3>Order list - {shipperName}</h3>
-            <button
-              className={styles.closeButton}
-              onClick={onClose}
-              aria-label="Close" 
-            >
-              ×
-            </button>
-          </div>
-
-          {/* Filters */}
-          <div className={styles.filtersRow}>
-            <div className={styles.filterGroup}>
-              <label>Status:</label>
-              <select
-                value={filters.status}
-                onChange={(e) => handleFilterChange("status", e.target.value)}
-                className={styles.filterSelect}
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className={styles.filterGroup}>
-              <label>Sort:</label>
-              <select
-                value={filters.sort}
-                onChange={(e) => handleFilterChange("sort", e.target.value)}
-                className={styles.filterSelect}
-              >
-                {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className={styles.filterGroup}>
-              <label>Search:</label>
-              <input
-                type="text"
-                placeholder="Order ID, customer name..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange("search", e.target.value)}
-                className={styles.searchInput}
-              />
-            </div>
-          </div>
+    <div className={styles.orderListWrapper}>
+      {/* Header */}
+      <div className={styles.header}>
+        <div className={styles.headerTitle}>
+          <h3>Order list - {shipperName}</h3>
+          <button
+            className={styles.closeButton}
+            onClick={onClose}
+            aria-label="Close" 
+          >
+            ×
+          </button>
         </div>
 
-        {/* Error message */}
-        {error && <div className={styles.errorMessage}>{error}</div>}
-
-        {/* Loading state */}
-        {loading && (
-          <div className={styles.loadingState}>
-            <div className={styles.spinner}></div>
-            <span>Loading...</span>
+        {/* Filters */}
+        <div className={styles.filtersRow}>
+          {/* Search input - đặt đầu tiên và rộng hơn */}
+          <div className={`${styles.filterGroup} ${styles.searchGroup}`}>
+            <input
+              type="text"
+              placeholder="Search order ID, customer name..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange("search", e.target.value)}
+              className={styles.searchInput}
+            />
           </div>
-        )}
-
-        {/* Orders table */}
-        {!loading && (
-          <div className={styles.tableContainer}>
-            <table className={styles.ordersTable}>
-              <thead>
-                <tr>
-                  <th>Order ID</th>
-                  <th>Customer</th>
-                  <th>Order date</th>
-                  <th>Total amount</th>
-                  <th>Status</th>
-                  <th>Shipping address</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {!Array.isArray(orders) || orders.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className={styles.emptyState}>
-                      {!Array.isArray(orders)
-                        ? "Loading data..."
-                        : filters.status || filters.search
-                        ? "No order found"
-                        : "This shipper has no orders"}
-                    </td>
-                  </tr>
-                ) : (
-                  orders.map((order) => (
-                    <tr key={order.id}>
-                      <td className={styles.orderIdCell}>#{order.id}</td>
-                      <td>
-                        <div className={styles.customerInfo}>
-                          <div className={styles.customerName}>
-                            {order.customer?.name ||
-                              order.customer?.username ||
-                              "N/A"}
-                          </div>
-                          <div className={styles.customerUsername}>
-                            @{order.customer?.username || "N/A"}
-                          </div>
-                        </div>
-                      </td>
-                      <td>{formatDateTime(order.orderDate)}</td>
-                      <td className={styles.amountCell}>
-                        {formatCurrency(order.totalAmount)}
-                      </td>
-                      <td>
-                        <span
-                          className={`${
-                            styles.statusBadge
-                          } ${getStatusBadgeClass(order.status)}`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className={styles.addressCell}>
-                        {order.shippingAddress}
-                      </td>
-                      <td className={styles.actionCell}>
-                        {getAvailableStatusTransitions(order.status).length > 0 && (
-                          <button
-                            className={styles.actionButton}
-                            onClick={() => viewOrderDetail(order)}
-                          >
-                            Update
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {pagination.totalPages > 1 && Array.isArray(orders) && (
-          <div className={styles.pagination}>
-            <button
-              onClick={() => handlePageChange(pagination.page - 1)}
-              disabled={pagination.page === 1}
-              className={styles.paginationButton}
+          
+          {/* Status filter */}
+          <div className={styles.filterGroup}>
+            <select
+              value={filters.status}
+              onChange={(e) => handleFilterChange("status", e.target.value)}
+              className={styles.filterSelect}
             >
-              « Previous
-            </button>
-
-            <span className={styles.paginationInfo}>
-              Page {pagination.page} / {pagination.totalPages}(
-              {pagination.total} orders)
-            </span>
-
-            <button
-              onClick={() => handlePageChange(pagination.page + 1)}
-              disabled={pagination.page === pagination.totalPages}
-              className={styles.paginationButton}
-            >
-              Next »
-            </button>
+              {statusOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
 
-        {/* Order Detail Modal */}
-        {showOrderDetail && selectedOrder && (
-          <OrderDetailView
-            order={selectedOrder}
-            open={showOrderDetail}
-            onClose={() => {
-              setShowOrderDetail(false);
-                    setSelectedOrder(null);
-            }}
-            onStatusChange={handleStatusUpdate}
-            role="shipper"
-          />
-        )}
-    </>
+          {/* Order Date filter - date picker */}
+          <div className={styles.filterGroup}>
+            <input
+              type="date"
+              value={filters.orderDate}
+              onChange={(e) => handleFilterChange("orderDate", e.target.value)}
+              className={styles.filterSelect}
+              placeholder="Order date"
+            />
+          </div>
+
+          
+        </div>
+      </div>
+
+      {/* Error message */}
+      {error && <div className={styles.errorMessage}>{error}</div>}
+
+      {/* Loading state */}
+      {loading ? (
+        <div className={styles.loadingState}>
+          <div className={styles.spinner}></div>
+          <span>Loading...</span>
+        </div>
+      ) : (
+        <ShipperOrderTable 
+          orders={orders}
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages || 1}
+          totalOrders={pagination.total}
+          itemsPerPage={pagination.limit}
+          onView={handleViewOrder}
+          onStatusUpdate={handleStatusUpdate}
+          onPageChange={handlePageChange}
+        />
+      )}
+
+      {/* Order Detail Modal */}
+      {showOrderDetail && selectedOrder && (
+        <OrderDetailView
+          order={selectedOrder}
+          open={showOrderDetail}
+          onClose={() => {
+            setShowOrderDetail(false);
+            setSelectedOrder(null);
+          }}
+          onStatusChange={handleStatusUpdate}
+          role="shipper"
+        />
+      )}
+    </div>
   );
 };
 

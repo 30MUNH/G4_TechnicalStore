@@ -7,14 +7,22 @@ export const useOrders = () => {
     const [error, setError] = useState(null);
 
     // Fetch orders from backend
-    const fetchOrders = async () => {
+    const fetchOrders = async (params) => {
         try {
             setLoading(true);
-            const response = await orderService.getOrders();
-            if (response.orders) {
+            const response = await orderService.getOrders(params);
+            
+            // Handle various response formats
+            if (response.data && Array.isArray(response.data)) {
+                setOrders(response.data);
+            } else if (Array.isArray(response.orders)) {
                 setOrders(response.orders);
+            } else if (Array.isArray(response)) {
+                setOrders(response);
             }
+            
             setError(null);
+            return response; // Return response for pagination info
         } catch (err) {
             setError('Failed to fetch orders');
             console.error('Error fetching orders:', err);

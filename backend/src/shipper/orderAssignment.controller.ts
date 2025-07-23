@@ -173,21 +173,26 @@ export class OrderAssignmentController {
     try {
       console.log(`[API] Testing address matching for: "${data.address}"`);
       
-      // Tạo đơn hàng tạm thời cho việc test
-      const testOrder = new Order();
-      testOrder.id = 'test-order-' + Date.now();
-      testOrder.shippingAddress = data.address;
-      
-      // Phân tích địa chỉ
-      const orderAddress = this.orderAssignmentService.testExtractOrderAddress(testOrder);
-      
-      if (!orderAddress) {
+      // Phân tích địa chỉ đơn giản
+      const addressParts = data.address.split(',').map(part => part.trim());
+      if (addressParts.length < 2) {
         return {
           success: false,
-          message: 'Could not extract address from provided string',
+          message: 'Address should contain at least province and district separated by commas',
           address: data.address
         };
       }
+      
+      // Lấy province từ phần cuối cùng
+      const province = addressParts[addressParts.length - 1];
+      // Lấy district từ phần kế cuối
+      const district = addressParts[addressParts.length - 2];
+      
+      const orderAddress = {
+        province,
+        district,
+        ward: addressParts.length > 2 ? addressParts[addressParts.length - 3] : ''
+      };
       
       let matchingResults = [];
       
@@ -199,7 +204,11 @@ export class OrderAssignmentController {
         });
         
         for (const zone of zones) {
-          const isMatch = this.orderAssignmentService.testAddressMatching(zone, orderAddress);
+          // Kiểm tra đơn giản dựa trên tên province và district
+          const isMatch = this.isSimpleAddressMatch(
+            zone.province, zone.district, 
+            orderAddress.province, orderAddress.district
+          );
           
           matchingResults.push({
             shipperId: data.shipperId,
@@ -220,7 +229,11 @@ export class OrderAssignmentController {
         });
         
         for (const zone of zones) {
-          const isMatch = this.orderAssignmentService.testAddressMatching(zone, orderAddress);
+          // Kiểm tra đơn giản dựa trên tên province và district
+          const isMatch = this.isSimpleAddressMatch(
+            zone.province, zone.district, 
+            orderAddress.province, orderAddress.district
+          );
           
           matchingResults.push({
             shipperId: zone.shipper?.id || 'Unknown',
@@ -251,6 +264,48 @@ export class OrderAssignmentController {
         message: `Error: ${(error as Error).message}`
       };
     }
+  }
+  
+  /**
+   * Phương thức đơn giản để kiểm tra địa chỉ có khớp không
+   */
+  private isSimpleAddressMatch(
+    zoneProvince: string, 
+    zoneDistrict: string, 
+    orderProvince: string, 
+    orderDistrict: string
+  ): boolean {
+    // Chuẩn hóa
+    const normalize = (str: string): string => {
+      return str.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Loại bỏ dấu tiếng Việt
+        .replace(/[^a-z0-9]/g, '') // Chỉ giữ lại chữ cái và số
+        .trim();
+    };
+    
+    // So sánh province
+    const zoneProvinceNorm = normalize(zoneProvince);
+    const orderProvinceNorm = normalize(orderProvince);
+    
+    if (zoneProvinceNorm !== orderProvinceNorm && 
+        !zoneProvinceNorm.includes(orderProvinceNorm) && 
+        !orderProvinceNorm.includes(zoneProvinceNorm)) {
+      return false;
+    }
+    
+    // So sánh district
+    const zoneDistrictNorm = normalize(zoneDistrict);
+    const orderDistrictNorm = normalize(orderDistrict);
+    
+    // Nếu shipper không có district cụ thể
+    if (!zoneDistrict || zoneDistrict.trim() === '') {
+      return true; // Phục vụ toàn tỉnh/thành phố
+    }
+    
+    return zoneDistrictNorm === orderDistrictNorm || 
+           zoneDistrictNorm.includes(orderDistrictNorm) || 
+           orderDistrictNorm.includes(zoneDistrictNorm);
   }
 
   /**

@@ -64,17 +64,33 @@
 
 .statusContainer {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  align-items: flex-end;
+  align-items: center;
 }
 
 .availability {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 0.8rem;
   font-weight: 500;
-  white-space: nowrap;
+}
+
+.availabilityToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleIcon {
+  margin-right: 3px;
 }
 
 .available {
@@ -82,9 +98,17 @@
   color: #065f46;
 }
 
+.available:hover {
+  background-color: #a7f3d0;
+}
+
 .unavailable {
   background-color: #fee2e2;
-  color: #991b1b;
+  color: #b91c1c;
+}
+
+.unavailable:hover {
+  background-color: #fecaca;
 }
 
 .cardBody {
@@ -149,34 +173,6 @@
 
 .priorityStar {
   color: #f59e0b;
-}
-
-.ratingContainer {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.stars {
-  display: flex;
-  gap: 0.125rem;
-}
-
-.star {
-  font-size: 0.875rem;
-}
-
-.starFilled {
-  color: #f59e0b;
-}
-
-.starEmpty {
-  color: #d1d5db;
-}
-
-.ratingText {
-  font-size: 0.75rem;
-  color: #6b7280;
 }
 
 .cardActions {
