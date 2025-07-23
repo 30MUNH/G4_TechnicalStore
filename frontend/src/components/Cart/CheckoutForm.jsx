@@ -423,12 +423,12 @@ const CheckoutForm = ({
       clearSavedFormData();
       
       // Hiển thị thông báo thành công trước khi chuyển hướng
-      showNotification("✅ Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại cửa hàng chúng tôi.", "success");
+      showNotification("Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại cửa hàng chúng tôi.", "success");
       
       // Delay a bit để người dùng thấy thông báo thành công
       setTimeout(() => {
         onPlaceOrder(orderData);
-      }, 1500);
+      }, 1000);
     }
   };
 
