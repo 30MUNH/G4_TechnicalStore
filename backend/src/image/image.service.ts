@@ -40,14 +40,4 @@ export class ImageService {
     await feedback.save();
     return feedback;
   }
-
-  async attachImageToAccount(username: string, imageURL: string){
-    const account = await Account.findOne({ where: { username } });
-    if (!account) throw new EntityNotFoundException("Account");
-    const image = await Image.findOne({ where: { url: imageURL } });
-    if (!image) throw new EntityNotFoundException("Image");
-    account.image = image;
-    await account.save();
-    return account;
-  }
 }

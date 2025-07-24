@@ -29,14 +29,10 @@ export class OtpService {
 
   async getActiveOtp(): Promise<Otp[]> {
     const otp = await Otp.find();
-    console.log("otp", otp);
     const now = new Date(Date.now() - 14 * 60 * 60 * 1000);
-    console.log("now", now);
-    console.log("otp.createdAt", otp[0].createdAt);
     const expired = otp.filter(
       (otp) => now.getTime() - otp.createdAt.getTime() > 3 * 60 * 1000
     );
-    console.log("expired", expired);
     await Otp.remove(expired);
     return otp.filter(
       (otp) => now.getTime() - otp.createdAt.getTime() <= 3 * 60 * 1000

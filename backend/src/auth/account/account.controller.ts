@@ -5,6 +5,8 @@ import { AccountDetailsDto, CreateAccountDto, CredentialsDto, UpdateAccountDto, 
 import { Admin, Auth } from "@/middlewares/auth.middleware";
 import { Response } from 'express';
 import { OtpService } from "../otp/otp.service";
+import { Account } from "./account.entity";
+import { CheckAbility } from "@/middlewares/rbac/permission.decorator";
 
 @Service()
 @Controller("/account")
@@ -119,29 +121,40 @@ export class AccountController{
     }
 
     @Get('/all')
-    @UseBefore(Admin)
-    async getAllAccounts(){
+    @UseBefore(Auth)
+    @CheckAbility("read", Account )
+    async getAllAccounts(@Req() req: any){
         return await this.accountService.getAccounts();
     }
 
     @Post('/create')
-    @UseBefore(Admin)
-    async createAccount(@Body() body: CreateAccountDto){
+    @UseBefore(Auth)
+    @CheckAbility("create", Account)
+    async createAccount(@Body() body: CreateAccountDto, @Req() req: any){
         const account = await this.accountService.createAccount(body.username, body.password, body.phone, body.roleSlug);
         return account;
     }
 
     @Patch('/update')
-    @UseBefore(Admin)
-    async updateAccount(@BodyParam('username') username: string, @Body() body: UpdateAccountDto){
+    @UseBefore(Auth)
+    @CheckAbility("update", Account)
+    async updateAccount(@BodyParam('username') username: string, @Body() body: UpdateAccountDto, @Req() req: any){
         const account = await this.accountService.updateAccount(username, body);
         return account;
     }
 
     @Delete('/delete')
-    @UseBefore(Admin)
-    async deleteAccount(@BodyParam('username') username: string){
+    @UseBefore(Auth)
+    @CheckAbility("delete", Account)
+    async deleteAccount(@BodyParam('username') username: string, @Req() req: any){
         const account = await this.accountService.deleteAccount(username);
+        return account;
+    }
+
+    @Patch('/update-admin')
+    @UseBefore(Admin)
+    async updateAdmin(@BodyParam('username') username: string, @Body() body: UpdateAccountDto){
+        const account = await this.accountService.updateAdmin(username, body);
         return account;
     }
 }

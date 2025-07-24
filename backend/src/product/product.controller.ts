@@ -1,8 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, QueryParam, UseBefore } from "routing-controllers";
+import { Body, Controller, Delete, Get, Param, Post, Put, QueryParam, Req, UseBefore } from "routing-controllers";
 import { Service } from "typedi";
 import { ProductService } from "./product.service";
 import { CreateProductDto, UpdateProductDto } from "./dtos/product.dto";
-import { Auth, Staff } from "@/middlewares/auth.middleware";
+import { Auth } from "@/middlewares/auth.middleware";
+import { CheckAbility } from "@/middlewares/rbac/permission.decorator";
+import { Product } from "./product.entity";
 
 @Service()
 @Controller("/products")
@@ -28,8 +30,9 @@ export class ProductController {
     }
 
     @Get("/all-including-out-of-stock")
-    @UseBefore(Staff)
-    async getAllProductsIncludingOutOfStock() {
+    @UseBefore(Auth)
+    @CheckAbility("read", Product)
+    async getAllProductsIncludingOutOfStock(@Req() req: any) {
         try {
             const products = await this.productService.getAllProductsIncludingOutOfStock();
             return {
@@ -61,8 +64,9 @@ export class ProductController {
     }
 
     @Get("/out-of-stock")
-    @UseBefore(Staff)
-    async getOutOfStockProducts() {
+    @UseBefore(Auth)
+    @CheckAbility("read", Product)
+    async getOutOfStockProducts(@Req() req: any) {
         try {
             const products = await this.productService.getOutOfStockProducts();
             return {
@@ -204,8 +208,10 @@ export class ProductController {
         }
     }
 
+    @UseBefore(Auth)
+    @CheckAbility("create", Product)
     @Post("/")
-    async createProduct(@Body() createProductDto: CreateProductDto) {
+    async createProduct(@Body() createProductDto: CreateProductDto, @Req() req: any) {
         try {
             const product = await this.productService.createProduct(createProductDto);
             return {

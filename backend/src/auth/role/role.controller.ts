@@ -1,6 +1,9 @@
-import { Controller, Get, Post } from "routing-controllers";
+import { Controller, Get, Post, Req, UseBefore } from "routing-controllers";
 import { Service } from "typedi";
 import { RoleService } from "./role.service";
+import { Admin, Auth } from "@/middlewares/auth.middleware";
+import { CheckAbility } from "@/middlewares/rbac/permission.decorator";
+import { Role } from "./role.entity";
 
 @Service()
 @Controller('/auth')
@@ -10,11 +13,14 @@ export class RoleController{
     ){}
 
     @Get('/roles')
-    async getAllRoles(){
+    @UseBefore(Auth)
+    @CheckAbility("read", Role)
+    async getAllRoles(@Req() req: any){
         return await this.roleService.getAllRoles();
     }
 
     @Post('/roles/create-roles')
+    @UseBefore(Admin)
     async createRoles(){
         return await this.roleService.createRoles();
     }

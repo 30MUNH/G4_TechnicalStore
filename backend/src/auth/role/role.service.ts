@@ -1,5 +1,6 @@
 import { Service } from "typedi";
 import { Role } from "./role.entity";
+import { Not } from "typeorm";
 
 @Service()
 export class RoleService {
@@ -57,6 +58,12 @@ export class RoleService {
   }
 
   async getAllRoles(){
-    return await Role.find();
+    return await Role.find(
+      {
+        where: {
+          name: Not("admin"),
+        }
+      }
+    );
   }
 }

@@ -110,3 +110,9 @@ export class ValidationException extends BaseException {
     super(message, 400, 'VALIDATION_ERROR', userMessage || 'Dữ liệu không hợp lệ');
   }
 }
+
+export class ForbiddenException extends BaseException {
+  constructor(message: string, userMessage?: string) {
+    super(message, 403, 'FORBIDDEN_ERROR', userMessage || 'You do not have permission to perform this action.');
+  }
+}
