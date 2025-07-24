@@ -67,11 +67,11 @@ const AdminDashboard: React.FC = () => {
       }
 
       // Doanh thu tổng
-      const completedStatuses = ['DELIVERED'];
+        const completedStatuses = ['DELIVERED'];
       const totalRevenue = ordersData
-        .filter((order: any) => completedStatuses.includes(order.status))
-        .reduce((sum: number, order: any) => sum + (parseFloat(order.totalAmount) || 0), 0);
-      setRevenue(totalRevenue);
+          .filter((order: any) => completedStatuses.includes(order.status))
+          .reduce((sum: number, order: any) => sum + (parseFloat(order.totalAmount) || 0), 0);
+        setRevenue(totalRevenue);
 
       // 1. Doanh thu theo tháng
       const revenueByMonthMap: Record<string, number> = {};
