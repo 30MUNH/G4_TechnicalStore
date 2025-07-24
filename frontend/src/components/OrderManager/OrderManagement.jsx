@@ -414,6 +414,7 @@ const OrderDetail = ({ order }) => (
 const getStatusClass = (status) => {
   switch (status) {
     case 'PENDING': return styles.statusPending;
+    case 'PENDING_EXTERNAL_SHIPPING': return styles.statusPending;
     case 'SHIPPING': return styles.statusShipping;
     case 'DELIVERED': return styles.statusDelivered;
     case 'CANCELLED': return styles.statusCancelled;
