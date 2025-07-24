@@ -15,13 +15,13 @@
 
 @media (min-width: 768px) {
   .filterGrid {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr;
   }
 }
 
 @media (min-width: 1024px) {
   .filterGrid {
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 3fr 1fr 1fr 1fr;
   }
 }
 
@@ -63,6 +63,7 @@
   background: white;
   transition: all 0.2s ease;
   cursor: pointer;
+  width: 100%;
 }
 
 .select:focus {
@@ -78,6 +79,7 @@
   border-radius: 8px;
   font-size: 1rem;
   transition: all 0.2s ease;
+  width: 100%;
 }
 
 .dateInput:focus {

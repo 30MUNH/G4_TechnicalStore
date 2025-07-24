@@ -524,6 +524,11 @@
   font-weight: 500;
 }
 
+.statusPending {
+  background-color: #fef3c7;
+  color: #f59e0b;
+}
+
 .statusProcessing {
   background-color: #fef3c7;
   color: #f59e0b;
