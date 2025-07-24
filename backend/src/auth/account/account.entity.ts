@@ -8,6 +8,7 @@ import { Marketing } from "@/marketing/marketing.entity";
 import { SMSNotification } from "@/notification/smsNotification.entity";
 import { Image } from "@/image/image.entity";
 import { Feedback } from "@/feedback/feedback.entity";
+import { RFQ } from "@/rfq/rfq.entity";
 
 
 @Entity("accounts")
@@ -60,4 +61,7 @@ export class Account extends NamedEntity {
 
   @Column({ type: "date", nullable: true })
   lastOrderDate: Date; // Ngày đơn hàng cuối cùng
+
+  @OneToMany(() => RFQ, (rfq) => rfq.account)
+  rfqs: RFQ[];
 }

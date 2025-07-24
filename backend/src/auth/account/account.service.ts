@@ -157,6 +157,18 @@ export class AccountService {
       },
     });
     if (!role) throw new EntityNotFoundException("Role");
+    const checkUsername = await Account.findOne({
+      where: {
+        username,
+      },
+    });
+    if(checkUsername) throw new UsernameAlreadyExistedException(HttpMessages._USERNAME_EXISTED);
+    const checkPhone = await Account.findOne({
+      where: {
+        phone,
+      },
+    });
+    if(checkPhone) throw new PhoneAlreadyExistedException(HttpMessages._PHONE_EXISTED);
     if(role.name === "admin") throw new ForbiddenException("You do not have permission to create admin account.");
     const account = new Account();
     account.username = username;
@@ -172,6 +184,7 @@ export class AccountService {
     const account = await this.findAccountByUsername(username);
     if(request.username) account.username = request.username;
     if(request.phone) account.phone = request.phone;
+    if(request.name) account.name = request.name;
     if(request.roleSlug) {
       const role = await Role.findOne({
         where: {
@@ -198,6 +211,7 @@ export class AccountService {
     if(account.role.name !== "admin") throw new ForbiddenException("You do not have permission to update admin account.");
     if(request.username) account.username = request.username;
     if(request.phone) account.phone = request.phone;
+    if(request.name) account.name = request.name;
     await account.save();
     return account;
   }

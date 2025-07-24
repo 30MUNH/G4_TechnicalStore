@@ -63,5 +63,9 @@ export class UpdateAccountDto {
     @IsString()
     @IsOptional()
     roleSlug?: string;
+
+    @IsString()
+    @IsOptional()
+    name?: string;
 }
 

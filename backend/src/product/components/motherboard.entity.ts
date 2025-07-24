@@ -1,8 +1,9 @@
 import { BaseEntity } from "@/common/BaseEntity";
-import { Column, Entity, JoinColumn, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne, OneToMany } from "typeorm";
 import { Product } from "../product.entity";
+import { Build } from "@/rfq/build.entity";
 
-@Entity('motherboards')
+@Entity("motherboards")
 export class Motherboard extends BaseEntity {
   @OneToOne(() => Product)
   @JoinColumn()
@@ -20,12 +21,21 @@ export class Motherboard extends BaseEntity {
   @Column()
   socket: string;
 
-  @Column({name: 'form_factor'})
+  @Column({ name: "form_factor" })
   formFactor: string;
 
-  @Column({name: 'ram_slots'})
+  @Column({ name: "ram_slots" })
   ramSlots: number;
 
-  @Column({name: 'max_ram'})
+  @Column({ name: "max_ram" })
   maxRam: number;
+
+  @Column({ nullable: true, name: "ram_type" })
+  ramType: string;
+
+  @Column({ name: "supported_drive_interfaces", nullable: true })
+  supportedDriveInterfaces: string;
+
+  @OneToMany(() => Build, (build) => build.motherboard)
+  builds: Build[];
 }
