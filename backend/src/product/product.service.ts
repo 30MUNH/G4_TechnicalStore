@@ -567,7 +567,6 @@ export class ProductService {
       monitor = new Monitor();
       monitor.product = product;
     }
-    // Update Monitor-specific fields
     if (updateData.brand !== undefined) monitor.brand = updateData.brand;
     if (updateData.model !== undefined) monitor.model = updateData.model;
     if (updateData.sizeInch !== undefined) monitor.sizeInch = updateData.sizeInch;
