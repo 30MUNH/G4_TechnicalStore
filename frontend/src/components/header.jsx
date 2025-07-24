@@ -80,29 +80,128 @@ const Header = () => {
       {/* HEADER */}
       <header>
         {/* TOP HEADER */}
-        <div id="top-header">
+        <div id="top-header" className="bg-gray-900 text-white text-xs">
           <div className="container">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <ul className="header-links pull-left" style={{ display: 'flex', gap: 36, alignItems: 'center', marginBottom: 0 }}>
-                <li style={{ padding: 0, margin: 0 }}>
-                  <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FontAwesomeIcon icon={faPhone} color="#D10024" /> 1900-1234</a>
+            <div className="flex flex-wrap justify-between items-center py-2 gap-2">
+              <ul className="header-links flex flex-wrap gap-16 items-center mb-0">
+                <li className="p-0 m-0">
+                  <a href="#" className="flex items-center gap-1.5"><FontAwesomeIcon icon={faPhone} color="#D10024" /> 1900-1234</a>
                 </li>
-                <li style={{ padding: 0, margin: 0 }}>
-                  <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FontAwesomeIcon icon={faEnvelopeRegular} color="#D10024" /> Technical@gmail.com</a>
+                <li className="p-0 m-0">
+                  <a href="#" className="flex items-center gap-1.5"><FontAwesomeIcon icon={faEnvelopeRegular} color="#D10024" /> Technical@gmail.com</a>
                 </li>
-                <li style={{ padding: 0, margin: 0 }}>
-                  <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FontAwesomeIcon icon={faMapMarker} color="#D10024" /> Khu Công Nghệ Cao Hòa Lạc, km 29, Đại lộ, Thăng Long, Hà Nội</a>
+                <li className="p-0 m-0">
+                  <a href="#" className="flex items-center gap-1.5"><FontAwesomeIcon icon={faMapMarker} color="#D10024" /> Khu Công Nghệ Cao Hòa Lạc, km 29, Đại lộ, Thăng Long, Hà Nội</a>
                 </li>
               </ul>
+              {/* Login Button/Welcome ở top header */}
+              <div className="ml-8">
+                {isAuthenticated() ? (
+                  <div
+                    className="user-dropdown-wrapper"
+                    style={{
+                      position: 'relative',
+                      display: 'inline-block'
+                    }}
+                    onMouseEnter={() => {
+                      if (userDropdownTimeout.current) clearTimeout(userDropdownTimeout.current);
+                      setUserDropdownOpen(true);
+                    }}
+                    onMouseLeave={() => {
+                      userDropdownTimeout.current = setTimeout(() => setUserDropdownOpen(false), 120);
+                    }}
+                  >
+                    <span style={{
+                      cursor: 'pointer',
+                      color: '#fff',
+                      fontWeight: 600,
+                      fontSize: 14,
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '6px 12px',
+                      borderRadius: 20,
+                      background: 'rgba(255,255,255,0.08)',
+                      transition: 'background 0.2s',
+                      minWidth: 'auto',
+                      gap: 8
+                    }}>
+                      <FontAwesomeIcon icon={faUserRegular} style={{ fontSize: 14 }} />
+                      <span style={{ whiteSpace: 'nowrap' }}>Welcome, {user?.username || 'User'}</span>
+                    </span>
+                    {userDropdownOpen && (
+                      <div
+                        className="user-dropdown-menu"
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          background: '#222',
+                          color: '#fff',
+                          boxShadow: '0 2px 16px rgba(0,0,0,0.25)',
+                          zIndex: 1000,
+                          minWidth: 140,
+                          padding: '10px 0',
+                          borderRadius: 6,
+                          marginTop: 8
+                        }}
+                        onMouseEnter={() => {
+                          if (userDropdownTimeout.current) clearTimeout(userDropdownTimeout.current);
+                          setUserDropdownOpen(true);
+                        }}
+                        onMouseLeave={() => {
+                          userDropdownTimeout.current = setTimeout(() => setUserDropdownOpen(false), 120);
+                        }}
+                      >
+                        <button
+                          onClick={handleLogout}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '10px 20px',
+                            cursor: 'pointer',
+                            color: '#D10024',
+                            fontWeight: 600,
+                            fontSize: 16
+                          }}
+                        >
+                          Log out
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Link to="/login" style={{
+                    color: '#fff',
+                    background: '#D10024',
+                    borderRadius: 20,
+                    padding: '6px 12px',
+                    fontWeight: 700,
+                    fontSize: 14,
+                    transition: 'background 0.2s',
+                    border: 'none',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    minWidth: 'auto',
+                    gap: 8
+                  }}>
+                    <FontAwesomeIcon icon={faUserRegular} style={{ fontSize: 14 }} />
+                    <span style={{ whiteSpace: 'nowrap' }}>Login</span>
+                  </Link>
+                )}
+              </div>
+              {/* /Login Button/Welcome ở top header */}
             </div>
           </div>
         </div>
         {/* /TOP HEADER */}
 
         {/* MAIN HEADER */}
-        <div id="header">
+        <div id="header" className="bg-[#15161D] shadow">
           <div className="container">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, padding: '16px 0' }}>
+            <div className="header-main-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, padding: '16px 0', flexWrap: 'nowrap', minHeight: 80 }}>
               {/* LOGO */}
               <div style={{ minWidth: 160, display: 'flex', alignItems: 'center'}}>
                 <Link to="/" className="logo">
@@ -194,103 +293,6 @@ const Header = () => {
                   <span style={{ whiteSpace: 'nowrap' }}>Order History</span>
                 </Link>
                 {/* Login Button */}
-                <div>
-                  {isAuthenticated() ? (
-                    <div
-                      className="user-dropdown-wrapper"
-                      style={{
-                        position: 'relative',
-                        display: 'inline-block'
-                      }}
-                      onMouseEnter={() => {
-                        if (userDropdownTimeout.current) clearTimeout(userDropdownTimeout.current);
-                        setUserDropdownOpen(true);
-                      }}
-                      onMouseLeave={() => {
-                        userDropdownTimeout.current = setTimeout(() => setUserDropdownOpen(false), 120);
-                      }}
-                    >
-                      <span style={{
-                        cursor: 'pointer',
-                        color: '#fff',
-                        fontWeight: 600,
-                        fontSize: 14,
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '10px 16px',
-                        borderRadius: 20,
-                        background: 'rgba(255,255,255,0.08)',
-                        transition: 'background 0.2s',
-                        minWidth: 'auto',
-                        gap: 8
-                      }}>
-                        <FontAwesomeIcon icon={faUserRegular} style={{ fontSize: 14 }} />
-                        <span style={{ whiteSpace: 'nowrap' }}>Welcome, {user?.username || 'User'}</span>
-                      </span>
-                      {userDropdownOpen && (
-                        <div
-                          className="user-dropdown-menu"
-                          style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: 0,
-                            background: '#222',
-                            color: '#fff',
-                            boxShadow: '0 2px 16px rgba(0,0,0,0.25)',
-                            zIndex: 1000,
-                            minWidth: 140,
-                            padding: '10px 0',
-                            borderRadius: 6,
-                            marginTop: 8
-                          }}
-                          onMouseEnter={() => {
-                            if (userDropdownTimeout.current) clearTimeout(userDropdownTimeout.current);
-                            setUserDropdownOpen(true);
-                          }}
-                          onMouseLeave={() => {
-                            userDropdownTimeout.current = setTimeout(() => setUserDropdownOpen(false), 120);
-                          }}
-                        >
-                          <button
-                            onClick={handleLogout}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              width: '100%',
-                              textAlign: 'left',
-                              padding: '10px 20px',
-                              cursor: 'pointer',
-                              color: '#D10024',
-                              fontWeight: 600,
-                              fontSize: 16
-                            }}
-                          >
-                            Log out
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <Link to="/login" style={{
-                      color: '#fff',
-                      background: '#D10024',
-                      borderRadius: 20,
-                      padding: '10px 16px',
-                      fontWeight: 700,
-                      fontSize: 14,
-                      transition: 'background 0.2s',
-                      border: 'none',
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      minWidth: 'auto',
-                      gap: 8
-                    }}>
-                      <FontAwesomeIcon icon={faUserRegular} style={{ fontSize: 14 }} />
-                      <span style={{ whiteSpace: 'nowrap' }}>Login</span>
-                    </Link>
-                  )}
-                </div>
               </div>
               {/* /Cart + Login */}
             </div>
@@ -299,6 +301,26 @@ const Header = () => {
         {/* /MAIN HEADER */}
       </header>
       {/* /HEADER */}
+      {/* Responsive cho mobile */}
+      <style>{`
+      @media (max-width: 767px) {
+        .header-main-row {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 12px !important;
+          padding: 12px 0 !important;
+        }
+        .header-main-row > div {
+          margin: 0 !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+        }
+        .header-search {
+          margin: 0 !important;
+          max-width: 100% !important;
+        }
+      }
+      `}</style>
     </>
   );
 };
