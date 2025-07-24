@@ -114,10 +114,14 @@ const AdminDashboard: React.FC = () => {
       setTopProducts(topProductsArr);
 
       // 4. Sản phẩm tồn kho thấp (stock < 10)
-      const lowStock = productsData.filter((p: any) => p.stock !== undefined && p.stock < 10)
-        .sort((a: any, b: any) => a.stock - b.stock)
-        .slice(0, 10)
-        .map((p: any) => ({ id: p.id, name: p.name, stock: p.stock, category: p.category?.name || 'Không rõ' }));
+      let lowStock = productsData
+        .filter((p: any) => p.stock !== undefined && p.stock < 10 && p.name && p.category && p.category.name)
+        .map((p: any) => ({ id: p.id, name: p.name, stock: p.stock, category: p.category.name }))
+        .sort((a: any, b: any) => {
+          if (a.category < b.category) return -1;
+          if (a.category > b.category) return 1;
+          return a.stock - b.stock;
+        });
       setLowStockProducts(lowStock);
     };
     fetchStats();
@@ -180,22 +184,22 @@ const AdminDashboard: React.FC = () => {
 
       {/* Charts & Analytics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        {/* Doanh thu theo tháng */}
+        {/* Revenue by Month */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">Doanh thu theo tháng</h2>
+          <h2 className="text-xl font-bold mb-4 text-gray-800 text-center">Revenue by Month</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={revenueByMonth} margin={{ top: 10, right: 30, left: 20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" padding={{ left: 30, right: 30 }} />
-              <YAxis tickFormatter={(v: number) => v.toLocaleString('vi-VN')} />
-              <Tooltip formatter={(v: number) => `${v.toLocaleString('vi-VN')} VND`} />
+              <YAxis tickFormatter={(v: number) => v.toLocaleString('en-US')} />
+              <Tooltip formatter={(v: number) => `${v.toLocaleString('en-US')} VND`} />
               <Bar dataKey="revenue" fill="#ef4444" barSize={40} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        {/* Đơn hàng theo trạng thái */}
+        {/* Orders by Status */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">Đơn hàng theo trạng thái</h2>
+          <h2 className="text-xl font-bold mb-4 text-gray-800 text-center">Orders by Status</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={orderStatusStats}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -209,9 +213,9 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Top sản phẩm bán chạy */}
+        {/* Top Selling Products */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">Top 5 sản phẩm bán chạy</h2>
+          <h2 className="text-xl font-bold mb-4 text-gray-800 text-center">Top 5 Best-Selling Products</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={topProducts} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
@@ -222,16 +226,16 @@ const AdminDashboard: React.FC = () => {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        {/* Sản phẩm tồn kho thấp */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800 text-center">Sản phẩm tồn kho thấp</h2>
-          <div className="max-h-72 overflow-y-auto">
+        {/* Low Stock Products */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col" style={{height: '350px'}}>
+          <h2 className="text-xl font-bold mb-4 text-gray-800 text-center">Low Stock Products</h2>
+          <div className="flex-1 overflow-y-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead>
                 <tr>
-                  <th className="px-6 py-2 text-left text-base font-semibold text-gray-500 uppercase">Tên sản phẩm</th>
-                  <th className="px-6 py-2 text-left text-base font-semibold text-gray-500 uppercase">Loại sản phẩm</th>
-                  <th className="px-6 py-2 text-right text-base font-semibold text-gray-500 uppercase">Tồn kho</th>
+                  <th className="px-6 py-2 text-left text-base font-semibold text-gray-500 uppercase">Product Name</th>
+                  <th className="px-6 py-2 text-left text-base font-semibold text-gray-500 uppercase">Category</th>
+                  <th className="px-6 py-2 text-right text-base font-semibold text-gray-500 uppercase">Stock</th>
                 </tr>
               </thead>
               <tbody>
