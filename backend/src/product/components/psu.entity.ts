@@ -1,8 +1,9 @@
-import { Column, Entity, JoinColumn, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne, OneToMany } from "typeorm";
 import { Product } from "../product.entity";
 import { BaseEntity } from "@/common/BaseEntity";
+import { Build } from "@/rfq/build.entity";
 
-@Entity('psus')
+@Entity("psus")
 export class PSU extends BaseEntity {
   @OneToOne(() => Product)
   @JoinColumn()
@@ -17,9 +18,12 @@ export class PSU extends BaseEntity {
   @Column()
   wattage: number;
 
-  @Column({name: 'efficiency_rating'})
+  @Column({ name: "efficiency_rating" })
   efficiencyRating: string;
 
   @Column()
   modular: string;
+
+  @OneToMany(() => Build, (build) => build.psu)
+  builds: Build[];
 }

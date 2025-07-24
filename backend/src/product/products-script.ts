@@ -1,19 +1,20 @@
-// import { Product } from './product.entity';
-// import { Category } from './categories/category.entity';
-// import { CPU } from './components/cpu.entity';
-// import { GPU } from './components/gpu.entity';
-// import { RAM } from './components/ram.entity';
-// import { Drive } from './components/drive.entity';
-// import { Motherboard } from './components/motherboard.entity';
-// import { PSU } from './components/psu.entity';
-// import { Case } from './components/case.entity';
-// import { Monitor } from './components/monitor.entity';
-// import { Mouse } from './components/mouse.entity';
-// import { Keyboard } from './components/keyboard.entity';
-// import { Headset } from './components/headset.entity';
-// import { NetworkCard } from './components/networkCard.entity';
-// import { Laptop } from './components/laptop/laptop.entity';
-// import { PC } from './components/pc.entity';
+import { Product } from "./product.entity";
+import { Category } from "./categories/category.entity";
+import { CPU } from "./components/cpu.entity";
+import { GPU } from "./components/gpu.entity";
+import { RAM } from "./components/ram.entity";
+import { Drive } from "./components/drive.entity";
+import { Motherboard } from "./components/motherboard.entity";
+import { PSU } from "./components/psu.entity";
+import { Case } from "./components/case.entity";
+import { Monitor } from "./components/monitor.entity";
+import { Mouse } from "./components/mouse.entity";
+import { Keyboard } from "./components/keyboard.entity";
+import { Headset } from "./components/headset.entity";
+import { NetworkCard } from "./components/networkCard.entity";
+import { Laptop } from "./components/laptop/laptop.entity";
+import { PC } from "./components/pc.entity";
+import { Cooler } from "./components/cooler.entity";
 
 // async addProducts() {
 //     const caseCategory = await Category.findOne({
@@ -863,6 +864,107 @@
 //     await product72.save();
 //     savedProducts.push(product72);
 //     console.log(`Added product: ${product72.name}`);
+
+//     // 10 new DDR5 RAM products
+//     const product100: Product = new Product();
+//     product100.name = "Corsair Dominator Platinum RGB 32GB DDR5-6000";
+//     product100.price = 4990000;
+//     product100.description = "Corsair Dominator Platinum RGB 32GB (2x16GB) DDR5-6000MHz";
+//     product100.stock = 15;
+//     product100.category = ramCategory;
+//     await product100.save();
+//     savedProducts.push(product100);
+//     console.log(`Added product: ${product100.name}`);
+
+//     const product101: Product = new Product();
+//     product101.name = "G.Skill Ripjaws S5 32GB DDR5-5600";
+//     product101.price = 4290000;
+//     product101.description = "G.Skill Ripjaws S5 32GB (2x16GB) DDR5-5600MHz";
+//     product101.stock = 18;
+//     product101.category = ramCategory;
+//     await product101.save();
+//     savedProducts.push(product101);
+//     console.log(`Added product: ${product101.name}`);
+
+//     const product102: Product = new Product();
+//     product102.name = "Kingston Fury Beast 32GB DDR5-6000";
+//     product102.price = 4590000;
+//     product102.description = "Kingston Fury Beast 32GB (2x16GB) DDR5-6000MHz";
+//     product102.stock = 20;
+//     product102.category = ramCategory;
+//     await product102.save();
+//     savedProducts.push(product102);
+//     console.log(`Added product: ${product102.name}`);
+
+//     const product103: Product = new Product();
+//     product103.name = "TeamGroup T-Force Delta RGB 32GB DDR5-6400";
+//     product103.price = 5690000;
+//     product103.description = "TeamGroup T-Force Delta RGB 32GB (2x16GB) DDR5-6400MHz";
+//     product103.stock = 12;
+//     product103.category = ramCategory;
+//     await product103.save();
+//     savedProducts.push(product103);
+//     console.log(`Added product: ${product103.name}`);
+
+//     const product104: Product = new Product();
+//     product104.name = "Crucial Pro 32GB DDR5-5600";
+//     product104.price = 3990000;
+//     product104.description = "Crucial Pro 32GB (2x16GB) DDR5-5600MHz";
+//     product104.stock = 16;
+//     product104.category = ramCategory;
+//     await product104.save();
+//     savedProducts.push(product104);
+//     console.log(`Added product: ${product104.name}`);
+
+//     const product105: Product = new Product();
+//     product105.name = "Patriot Viper Venom 32GB DDR5-6200";
+//     product105.price = 4890000;
+//     product105.description = "Patriot Viper Venom 32GB (2x16GB) DDR5-6200MHz";
+//     product105.stock = 10;
+//     product105.category = ramCategory;
+//     await product105.save();
+//     savedProducts.push(product105);
+//     console.log(`Added product: ${product105.name}`);
+
+//     const product106: Product = new Product();
+//     product106.name = "ADATA XPG Lancer RGB 32GB DDR5-6000";
+//     product106.price = 4790000;
+//     product106.description = "ADATA XPG Lancer RGB 32GB (2x16GB) DDR5-6000MHz";
+//     product106.stock = 14;
+//     product106.category = ramCategory;
+//     await product106.save();
+//     savedProducts.push(product106);
+//     console.log(`Added product: ${product106.name}`);
+
+//     const product107: Product = new Product();
+//     product107.name = "PNY XLR8 Gaming 32GB DDR5-6000";
+//     product107.price = 4690000;
+//     product107.description = "PNY XLR8 Gaming 32GB (2x16GB) DDR5-6000MHz";
+//     product107.stock = 11;
+//     product107.category = ramCategory;
+//     await product107.save();
+//     savedProducts.push(product107);
+//     console.log(`Added product: ${product107.name}`);
+
+//     const product108: Product = new Product();
+//     product108.name = "Samsung 32GB DDR5-4800";
+//     product108.price = 3590000;
+//     product108.description = "Samsung 32GB (2x16GB) DDR5-4800MHz";
+//     product108.stock = 22;
+//     product108.category = ramCategory;
+//     await product108.save();
+//     savedProducts.push(product108);
+//     console.log(`Added product: ${product108.name}`);
+
+//     const product109: Product = new Product();
+//     product109.name = "Lexar ARES RGB 32GB DDR5-5600";
+//     product109.price = 4190000;
+//     product109.description = "Lexar ARES RGB 32GB (2x16GB) DDR5-5600MHz";
+//     product109.stock = 13;
+//     product109.category = ramCategory;
+//     await product109.save();
+//     savedProducts.push(product109);
+//     console.log(`Added product: ${product109.name}`);
 
 //     console.log(`Successfully added ${savedProducts.length} products`);
 //     return savedProducts;
@@ -2027,3 +2129,1242 @@
 //     console.log(`Successfully added ${savedPCComponents.length} PC component records`);
 //     return savedPCComponents;
 //   }
+
+// Add this new function at the end of the file or after the existing RAM section
+// export async function addMoreDDR5Rams() {
+//   const savedProducts: Product[] = [];
+//   const ramCategory = await Category.findOne({
+//     where: { name: "RAM" },
+//   });
+//   if (!ramCategory) {
+//     throw new Error("RAM category not found");
+//   }
+//   const product100: Product = new Product();
+//   product100.name = "Corsair Dominator Platinum RGB 32GB DDR5-6000";
+//   product100.price = 4990000;
+//   product100.description =
+//     "Corsair Dominator Platinum RGB 32GB (2x16GB) DDR5-6000MHz";
+//   product100.stock = 15;
+//   product100.category = ramCategory;
+//   await product100.save();
+//   console.log(`Added product: ${product100.name}`);
+
+//   const product101: Product = new Product();
+//   product101.name = "G.Skill Ripjaws S5 32GB DDR5-5600";
+//   product101.price = 4290000;
+//   product101.description = "G.Skill Ripjaws S5 32GB (2x16GB) DDR5-5600MHz";
+//   product101.stock = 18;
+//   product101.category = ramCategory;
+//   await product101.save();
+//   savedProducts.push(product101);
+//   console.log(`Added product: ${product101.name}`);
+
+//   const product102: Product = new Product();
+//   product102.name = "Kingston Fury Beast 32GB DDR5-6000";
+//   product102.price = 4590000;
+//   product102.description = "Kingston Fury Beast 32GB (2x16GB) DDR5-6000MHz";
+//   product102.stock = 20;
+//   product102.category = ramCategory;
+//   await product102.save();
+//   savedProducts.push(product102);
+//   console.log(`Added product: ${product102.name}`);
+
+//   const product103: Product = new Product();
+//   product103.name = "TeamGroup T-Force Delta RGB 32GB DDR5-6400";
+//   product103.price = 5690000;
+//   product103.description = "TeamGroup T-Force Delta RGB 32GB (2x16GB) DDR5-6400MHz";
+//   product103.stock = 12;
+//   product103.category = ramCategory;
+//   await product103.save();
+//   savedProducts.push(product103);
+//   console.log(`Added product: ${product103.name}`);
+
+//   const product104: Product = new Product();
+//   product104.name = "Crucial Pro 32GB DDR5-5600";
+//   product104.price = 3990000;
+//   product104.description = "Crucial Pro 32GB (2x16GB) DDR5-5600MHz";
+//   product104.stock = 16;
+//   product104.category = ramCategory;
+//   await product104.save();
+//   savedProducts.push(product104);
+//   console.log(`Added product: ${product104.name}`);
+
+//   const product105: Product = new Product();
+//   product105.name = "Patriot Viper Venom 32GB DDR5-6200";
+//   product105.price = 4890000;
+//   product105.description = "Patriot Viper Venom 32GB (2x16GB) DDR5-6200MHz";
+//   product105.stock = 10;
+//   product105.category = ramCategory;
+//   await product105.save();
+//   savedProducts.push(product105);
+//   console.log(`Added product: ${product105.name}`);
+
+//   const product106: Product = new Product();
+//   product106.name = "ADATA XPG Lancer RGB 32GB DDR5-6000";
+//   product106.price = 4790000;
+//   product106.description = "ADATA XPG Lancer RGB 32GB (2x16GB) DDR5-6000MHz";
+//   product106.stock = 14;
+//   product106.category = ramCategory;
+//   await product106.save();
+//   savedProducts.push(product106);
+//   console.log(`Added product: ${product106.name}`);
+
+//   const product107: Product = new Product();
+//   product107.name = "PNY XLR8 Gaming 32GB DDR5-6000";
+//   product107.price = 4690000;
+//   product107.description = "PNY XLR8 Gaming 32GB (2x16GB) DDR5-6000MHz";
+//   product107.stock = 11;
+//   product107.category = ramCategory;
+//   await product107.save();
+//   savedProducts.push(product107);
+//   console.log(`Added product: ${product107.name}`);
+
+//   const product108: Product = new Product();
+//   product108.name = "Samsung 32GB DDR5-4800";
+//   product108.price = 3590000;
+//   product108.description = "Samsung 32GB (2x16GB) DDR5-4800MHz";
+//   product108.stock = 22;
+//   product108.category = ramCategory;
+//   await product108.save();
+//   savedProducts.push(product108);
+//   console.log(`Added product: ${product108.name}`);
+
+//   const product109: Product = new Product();
+//   product109.name = "Lexar ARES RGB 32GB DDR5-5600";
+//   product109.price = 4190000;
+//   product109.description = "Lexar ARES RGB 32GB (2x16GB) DDR5-5600MHz";
+//   product109.stock = 13;
+//   product109.category = ramCategory;
+//   await product109.save();
+//   savedProducts.push(product109);
+//   console.log(`Added product: ${product109.name}`);
+//   return savedProducts;
+// }
+
+// Add new DDR5 RAM components for the new products
+// export async function addDetailedDDR5RamComponents() {
+//   // 1. Corsair Dominator Platinum RGB 32GB DDR5-6000
+//   const product100 = await Product.findOne({
+//     where: { name: "Corsair Dominator Platinum RGB 32GB DDR5-6000" },
+//     relations: ["category"],
+//   });
+//   if (product100) {
+//     const ram100 = new RAM();
+//     ram100.product = product100;
+//     ram100.brand = "Corsair";
+//     ram100.model = "Dominator Platinum RGB";
+//     ram100.capacityGb = 32;
+//     ram100.speedMhz = 6000;
+//     ram100.type = "DDR5";
+//     await ram100.save();
+//     console.log(`Added RAM component for: ${product100.name}`);
+//   }
+
+//   // 2. G.Skill Ripjaws S5 32GB DDR5-5600
+//   const product101 = await Product.findOne({
+//     where: { name: "G.Skill Ripjaws S5 32GB DDR5-5600" },
+//     relations: ["category"],
+//   });
+//   if (product101) {
+//     const ram101 = new RAM();
+//     ram101.product = product101;
+//     ram101.brand = "G.Skill";
+//     ram101.model = "Ripjaws S5";
+//     ram101.capacityGb = 32;
+//     ram101.speedMhz = 5600;
+//     ram101.type = "DDR5";
+//     await ram101.save();
+//     console.log(`Added RAM component for: ${product101.name}`);
+//   }
+
+//   // 3. Kingston Fury Beast 32GB DDR5-6000
+//   const product102 = await Product.findOne({
+//     where: { name: "Kingston Fury Beast 32GB DDR5-6000" },
+//     relations: ["category"],
+//   });
+//   if (product102) {
+//     const ram102 = new RAM();
+//     ram102.product = product102;
+//     ram102.brand = "Kingston";
+//     ram102.model = "Fury Beast";
+//     ram102.capacityGb = 32;
+//     ram102.speedMhz = 6000;
+//     ram102.type = "DDR5";
+//     await ram102.save();
+//     console.log(`Added RAM component for: ${product102.name}`);
+//   }
+
+//   // 4. TeamGroup T-Force Delta RGB 32GB DDR5-6400
+//   const product103 = await Product.findOne({
+//     where: { name: "TeamGroup T-Force Delta RGB 32GB DDR5-6400" },
+//     relations: ["category"],
+//   });
+//   if (product103) {
+//     const ram103 = new RAM();
+//     ram103.product = product103;
+//     ram103.brand = "TeamGroup";
+//     ram103.model = "T-Force Delta RGB";
+//     ram103.capacityGb = 32;
+//     ram103.speedMhz = 6400;
+//     ram103.type = "DDR5";
+//     await ram103.save();
+//     console.log(`Added RAM component for: ${product103.name}`);
+//   }
+
+//   // 5. Crucial Pro 32GB DDR5-5600
+//   const product104 = await Product.findOne({
+//     where: { name: "Crucial Pro 32GB DDR5-5600" },
+//     relations: ["category"],
+//   });
+//   if (product104) {
+//     const ram104 = new RAM();
+//     ram104.product = product104;
+//     ram104.brand = "Crucial";
+//     ram104.model = "Pro";
+//     ram104.capacityGb = 32;
+//     ram104.speedMhz = 5600;
+//     ram104.type = "DDR5";
+//     await ram104.save();
+//     console.log(`Added RAM component for: ${product104.name}`);
+//   }
+
+//   // 6. Patriot Viper Venom 32GB DDR5-6200
+//   const product105 = await Product.findOne({
+//     where: { name: "Patriot Viper Venom 32GB DDR5-6200" },
+//     relations: ["category"],
+//   });
+//   if (product105) {
+//     const ram105 = new RAM();
+//     ram105.product = product105;
+//     ram105.brand = "Patriot";
+//     ram105.model = "Viper Venom";
+//     ram105.capacityGb = 32;
+//     ram105.speedMhz = 6200;
+//     ram105.type = "DDR5";
+//     await ram105.save();
+//     console.log(`Added RAM component for: ${product105.name}`);
+//   }
+
+//   // 7. ADATA XPG Lancer RGB 32GB DDR5-6000
+//   const product106 = await Product.findOne({
+//     where: { name: "ADATA XPG Lancer RGB 32GB DDR5-6000" },
+//     relations: ["category"],
+//   });
+//   if (product106) {
+//     const ram106 = new RAM();
+//     ram106.product = product106;
+//     ram106.brand = "ADATA";
+//     ram106.model = "XPG Lancer RGB";
+//     ram106.capacityGb = 32;
+//     ram106.speedMhz = 6000;
+//     ram106.type = "DDR5";
+//     await ram106.save();
+//     console.log(`Added RAM component for: ${product106.name}`);
+//   }
+
+//   // 8. PNY XLR8 Gaming 32GB DDR5-6000
+//   const product107 = await Product.findOne({
+//     where: { name: "PNY XLR8 Gaming 32GB DDR5-6000" },
+//     relations: ["category"],
+//   });
+//   if (product107) {
+//     const ram107 = new RAM();
+//     ram107.product = product107;
+//     ram107.brand = "PNY";
+//     ram107.model = "XLR8 Gaming";
+//     ram107.capacityGb = 32;
+//     ram107.speedMhz = 6000;
+//     ram107.type = "DDR5";
+//     await ram107.save();
+//     console.log(`Added RAM component for: ${product107.name}`);
+//   }
+
+//   // 9. Samsung 32GB DDR5-4800
+//   const product108 = await Product.findOne({
+//     where: { name: "Samsung 32GB DDR5-4800" },
+//     relations: ["category"],
+//   });
+//   if (product108) {
+//     const ram108 = new RAM();
+//     ram108.product = product108;
+//     ram108.brand = "Samsung";
+//     ram108.model = "DDR5-4800";
+//     ram108.capacityGb = 32;
+//     ram108.speedMhz = 4800;
+//     ram108.type = "DDR5";
+//     await ram108.save();
+//     console.log(`Added RAM component for: ${product108.name}`);
+//   }
+
+//   // 10. Lexar ARES RGB 32GB DDR5-5600
+//   const product109 = await Product.findOne({
+//     where: { name: "Lexar ARES RGB 32GB DDR5-5600" },
+//     relations: ["category"],
+//   });
+//   if (product109) {
+//     const ram109 = new RAM();
+//     ram109.product = product109;
+//     ram109.brand = "Lexar";
+//     ram109.model = "ARES RGB";
+//     ram109.capacityGb = 32;
+//     ram109.speedMhz = 5600;
+//     ram109.type = "DDR5";
+//     await ram109.save();
+//     console.log(`Added RAM component for: ${product109.name}`);
+//   }
+//   console.log("Successfully added all detailed DDR5 RAM components.");
+// }
+
+// Add sample products and components for each type in Laptop.md
+// export async function addSampleProductsFromLaptopMd() {
+//   // 1. Laptop
+//   const laptopCategory = await Category.findOne({ where: { slug: "laptop" } });
+//   if (laptopCategory) {
+//     const laptopProduct = new Product();
+//     laptopProduct.name = "ASUS ROG Zephyrus G14";
+//     laptopProduct.price = 34990000;
+//     laptopProduct.description =
+//       "ASUS ROG Zephyrus G14 Gaming Laptop with AMD Ryzen 9 and RTX 4060";
+//     laptopProduct.stock = 5;
+//     laptopProduct.category = laptopCategory;
+//     await laptopProduct.save();
+//     const laptop = new Laptop();
+//     laptop.product = laptopProduct;
+//     laptop.brand = "Asus";
+//     laptop.model = "ROG Zephyrus G14";
+//     laptop.screenSize = 14.0;
+//     laptop.screenType = "IPS";
+//     laptop.resolution = "2560x1600";
+//     laptop.batteryLifeHours = 8.0;
+//     laptop.weightKg = 1.7;
+//     laptop.os = "Windows 11";
+//     laptop.ramCount = 2;
+//     await laptop.save();
+//     console.log(`Added Laptop: ${laptopProduct.name}`);
+//   }
+
+//   // 2. RAM
+//   const ramCategory = await Category.findOne({ where: { slug: "ram" } });
+//   if (ramCategory) {
+//     const ramProduct = new Product();
+//     ramProduct.name = "G.Skill Trident Z5 RGB 32GB DDR5-6000";
+//     ramProduct.price = 3990000;
+//     ramProduct.description =
+//       "G.Skill Trident Z5 RGB 32GB (2x16GB) DDR5-6000MHz";
+//     ramProduct.stock = 10;
+//     ramProduct.category = ramCategory;
+//     await ramProduct.save();
+//     const ram = new RAM();
+//     ram.product = ramProduct;
+//     ram.brand = "G.Skill";
+//     ram.model = "Trident Z5 RGB";
+//     ram.capacityGb = 32;
+//     ram.speedMhz = 6000;
+//     ram.type = "DDR5";
+//     await ram.save();
+//     console.log(`Added RAM: ${ramProduct.name}`);
+//   }
+
+//   // 3. CPU
+//   const cpuCategory = await Category.findOne({ where: { slug: "cpu" } });
+//   if (cpuCategory) {
+//     const cpuProduct = new Product();
+//     cpuProduct.name = "Intel Core i7-13700K";
+//     cpuProduct.price = 11990000;
+//     cpuProduct.description =
+//       "Intel Core i7-13700K 16-Core Processor with Intel UHD Graphics 770";
+//     cpuProduct.stock = 8;
+//     cpuProduct.category = cpuCategory;
+//     await cpuProduct.save();
+//     const cpu = new CPU();
+//     cpu.product = cpuProduct;
+//     cpu.cores = 16;
+//     cpu.threads = 24;
+//     cpu.baseClock = "3.4 GHz";
+//     cpu.boostClock = "5.4 GHz";
+//     cpu.socket = "LGA 1700";
+//     cpu.architecture = "Raptor Lake";
+//     cpu.tdp = 253;
+//     cpu.integratedGraphics = "Intel UHD Graphics 770";
+//     await cpu.save();
+//     console.log(`Added CPU: ${cpuProduct.name}`);
+//   }
+
+//   // 4. GPU
+//   const gpuCategory = await Category.findOne({ where: { slug: "gpu" } });
+//   if (gpuCategory) {
+//     const gpuProduct = new Product();
+//     gpuProduct.name = "NVIDIA GeForce RTX 4070 Ti";
+//     gpuProduct.price = 22990000;
+//     gpuProduct.description =
+//       "NVIDIA GeForce RTX 4070 Ti 12GB GDDR6X Graphics Card";
+//     gpuProduct.stock = 6;
+//     gpuProduct.category = gpuCategory;
+//     await gpuProduct.save();
+//     const gpu = new GPU();
+//     gpu.product = gpuProduct;
+//     gpu.brand = "NVIDIA";
+//     gpu.model = "GeForce RTX 4070 Ti";
+//     gpu.vram = 12;
+//     gpu.chipset = "AD104";
+//     gpu.memoryType = "GDDR6X";
+//     gpu.lengthMm = 285;
+//     gpu.tdp = 285;
+//     await gpu.save();
+//     console.log(`Added GPU: ${gpuProduct.name}`);
+//   }
+
+//   // 5. Monitor
+//   const monitorCategory = await Category.findOne({
+//     where: { slug: "monitor" },
+//   });
+//   if (monitorCategory) {
+//     const monitorProduct = new Product();
+//     monitorProduct.name = "LG UltraGear 27GP850-B";
+//     monitorProduct.price = 8990000;
+//     monitorProduct.description =
+//       "LG UltraGear 27GP850-B 27-inch 1440p 165Hz Gaming Monitor";
+//     monitorProduct.stock = 7;
+//     monitorProduct.category = monitorCategory;
+//     await monitorProduct.save();
+//     const monitor = new Monitor();
+//     monitor.product = monitorProduct;
+//     monitor.brand = "LG";
+//     monitor.model = "27GP850-B";
+//     monitor.sizeInch = 27.0;
+//     monitor.resolution = "2560x1440";
+//     monitor.refreshRate = 165;
+//     monitor.panelType = "IPS";
+//     await monitor.save();
+//     console.log(`Added Monitor: ${monitorProduct.name}`);
+//   }
+
+//   // 6. Motherboard
+//   const motherboardCategory = await Category.findOne({
+//     where: { slug: "motherboard" },
+//   });
+//   if (motherboardCategory) {
+//     const mbProduct = new Product();
+//     mbProduct.name = "ASUS ROG Strix Z690-A";
+//     mbProduct.price = 7990000;
+//     mbProduct.description =
+//       "ASUS ROG Strix Z690-A Gaming WiFi D4 ATX Motherboard";
+//     mbProduct.stock = 9;
+//     mbProduct.category = motherboardCategory;
+//     await mbProduct.save();
+//     const mb = new Motherboard();
+//     mb.product = mbProduct;
+//     mb.brand = "ASUS";
+//     mb.model = "ROG Strix Z690-A";
+//     mb.chipset = "Intel Z690";
+//     mb.socket = "LGA 1700";
+//     mb.formFactor = "ATX";
+//     mb.ramSlots = 4;
+//     mb.maxRam = 128;
+//     mb.ramType = "DDR4";
+//     await mb.save();
+//     console.log(`Added Motherboard: ${mbProduct.name}`);
+//   }
+
+//   // 7. PSU
+//   const psuCategory = await Category.findOne({ where: { slug: "psu" } });
+//   if (psuCategory) {
+//     const psuProduct = new Product();
+//     psuProduct.name = "Corsair RM850x 850W 80+ Gold";
+//     psuProduct.price = 3990000;
+//     psuProduct.description = "Corsair RM850x 850W 80+ Gold Fully Modular PSU";
+//     psuProduct.stock = 10;
+//     psuProduct.category = psuCategory;
+//     await psuProduct.save();
+//     const psu = new PSU();
+//     psu.product = psuProduct;
+//     psu.brand = "Corsair";
+//     psu.model = "RM850x";
+//     psu.wattage = 850;
+//     psu.efficiencyRating = "80+ Gold";
+//     psu.modular = "Fully Modular";
+//     await psu.save();
+//     console.log(`Added PSU: ${psuProduct.name}`);
+//   }
+
+//   // 8. Drive
+//   const driveCategory = await Category.findOne({ where: { slug: "drive" } });
+//   if (driveCategory) {
+//     const driveProduct = new Product();
+//     driveProduct.name = "Samsung 980 PRO 1TB NVMe SSD";
+//     driveProduct.price = 2990000;
+//     driveProduct.description = "Samsung 980 PRO 1TB NVMe PCIe Gen4 SSD";
+//     driveProduct.stock = 12;
+//     driveProduct.category = driveCategory;
+//     await driveProduct.save();
+//     const drive = new Drive();
+//     drive.product = driveProduct;
+//     drive.brand = "Samsung";
+//     drive.model = "980 PRO";
+//     drive.type = "SSD";
+//     drive.capacityGb = 1000;
+//     drive.interface = "NVMe M.2";
+//     await drive.save();
+//     console.log(`Added Drive: ${driveProduct.name}`);
+//   }
+
+//   // 9. Cooler
+//   const coolerCategory = await Category.findOne({ where: { slug: "cooler" } });
+//   if (coolerCategory) {
+//     const coolerProduct = new Product();
+//     coolerProduct.name = "Noctua NH-D15";
+//     coolerProduct.price = 2490000;
+//     coolerProduct.description = "Noctua NH-D15 Premium CPU Air Cooler";
+//     coolerProduct.stock = 8;
+//     coolerProduct.category = coolerCategory;
+//     await coolerProduct.save();
+//     const cooler = new Cooler();
+//     cooler.product = coolerProduct;
+//     cooler.brand = "Noctua";
+//     cooler.model = "NH-D15";
+//     cooler.type = "Air";
+//     cooler.supportedSockets = "LGA 1700, AM4, AM5";
+//     cooler.fanSizeMm = 140;
+//     await cooler.save();
+//     console.log(`Added Cooler: ${coolerProduct.name}`);
+//   }
+
+//   // 10. Case
+//   const caseCategory = await Category.findOne({ where: { slug: "case" } });
+//   if (caseCategory) {
+//     const caseProduct = new Product();
+//     caseProduct.name = "NZXT H510 Elite";
+//     caseProduct.price = 3990000;
+//     caseProduct.description =
+//       "NZXT H510 Elite Mid-Tower ATX Case with Tempered Glass";
+//     caseProduct.stock = 7;
+//     caseProduct.category = caseCategory;
+//     await caseProduct.save();
+//     const caseComponent = new Case();
+//     caseComponent.product = caseProduct;
+//     caseComponent.brand = "NZXT";
+//     caseComponent.model = "H510 Elite";
+//     caseComponent.formFactorSupport = "ATX, mATX, ITX";
+//     caseComponent.hasRgb = true;
+//     caseComponent.sidePanelType = "Tempered Glass";
+//     caseComponent.maxGpuLengthMm = 381;
+//     caseComponent.psuType = "ATX";
+//     await caseComponent.save();
+//     console.log(`Added Case: ${caseProduct.name}`);
+//   }
+
+//   console.log(
+//     "Successfully added sample products and components from Laptop.md"
+//   );
+// }
+
+// // Add more popularized sample products and components for each type in Laptop.md
+// export async function addPopularizedSampleProductsFromLaptopMd() {
+//   // Laptops
+//   const laptopCategory = await Category.findOne({ where: { slug: "laptop" } });
+//   if (laptopCategory) {
+//     const laptops = [
+//       {
+//         name: "Dell XPS 13 Plus",
+//         price: 32990000,
+//         description: "Dell XPS 13 Plus Ultrabook with Intel Core i7",
+//         stock: 8,
+//         brand: "Dell",
+//         model: "XPS 13 Plus",
+//         screenSize: 13.4,
+//         screenType: "OLED",
+//         resolution: "3456x2160",
+//         batteryLifeHours: 10.0,
+//         weightKg: 1.2,
+//         os: "Windows 11",
+//         ramCount: 2,
+//       },
+//       {
+//         name: "MacBook Pro 16-inch M3",
+//         price: 59990000,
+//         description: "Apple MacBook Pro 16-inch with M3 Pro chip",
+//         stock: 5,
+//         brand: "Apple",
+//         model: "MacBook Pro 16-inch M3",
+//         screenSize: 16.2,
+//         screenType: "Liquid Retina XDR",
+//         resolution: "3456x2234",
+//         batteryLifeHours: 18.0,
+//         weightKg: 2.1,
+//         os: "macOS",
+//         ramCount: 1,
+//       },
+//       {
+//         name: "HP Spectre x360 14",
+//         price: 28990000,
+//         description: "HP Spectre x360 14 2-in-1 Laptop with Intel Core i7",
+//         stock: 7,
+//         brand: "HP",
+//         model: "Spectre x360 14",
+//         screenSize: 13.5,
+//         screenType: "IPS Touch",
+//         resolution: "1920x1280",
+//         batteryLifeHours: 11.0,
+//         weightKg: 1.3,
+//         os: "Windows 11",
+//         ramCount: 2,
+//       },
+//     ];
+//     for (const l of laptops) {
+//       if (!(await Product.findOne({ where: { name: l.name } }))) {
+//         const laptopProduct = new Product();
+//         laptopProduct.name = l.name;
+//         laptopProduct.price = l.price;
+//         laptopProduct.description = l.description;
+//         laptopProduct.stock = l.stock;
+//         laptopProduct.category = laptopCategory;
+//         await laptopProduct.save();
+//         const laptop = new Laptop();
+//         laptop.product = laptopProduct;
+//         laptop.brand = l.brand;
+//         laptop.model = l.model;
+//         laptop.screenSize = l.screenSize;
+//         laptop.screenType = l.screenType;
+//         laptop.resolution = l.resolution;
+//         laptop.batteryLifeHours = l.batteryLifeHours;
+//         laptop.weightKg = l.weightKg;
+//         laptop.os = l.os;
+//         laptop.ramCount = l.ramCount;
+//         await laptop.save();
+//         console.log(`Added Laptop: ${laptopProduct.name}`);
+//       }
+//     }
+//   }
+
+//   // RAM
+//   const ramCategory = await Category.findOne({ where: { slug: "ram" } });
+//   if (ramCategory) {
+//     const rams = [
+//       {
+//         name: "Corsair Vengeance 16GB DDR4-3200",
+//         price: 1590000,
+//         description: "Corsair Vengeance 16GB (2x8GB) DDR4-3200MHz",
+//         stock: 20,
+//         brand: "Corsair",
+//         model: "Vengeance",
+//         capacityGb: 16,
+//         speedMhz: 3200,
+//         type: "DDR4",
+//       },
+//       {
+//         name: "Kingston Fury Beast 32GB DDR5-5600",
+//         price: 3690000,
+//         description: "Kingston Fury Beast 32GB (2x16GB) DDR5-5600MHz",
+//         stock: 15,
+//         brand: "Kingston",
+//         model: "Fury Beast",
+//         capacityGb: 32,
+//         speedMhz: 5600,
+//         type: "DDR5",
+//       },
+//       {
+//         name: "TeamGroup T-Force Delta RGB 16GB DDR4-3200",
+//         price: 1290000,
+//         description: "TeamGroup T-Force Delta RGB 16GB (2x8GB) DDR4-3200MHz",
+//         stock: 18,
+//         brand: "TeamGroup",
+//         model: "T-Force Delta RGB",
+//         capacityGb: 16,
+//         speedMhz: 3200,
+//         type: "DDR4",
+//       },
+//       {
+//         name: "Crucial Ballistix 32GB DDR4-3600",
+//         price: 1990000,
+//         description: "Crucial Ballistix 32GB (2x16GB) DDR4-3600MHz",
+//         stock: 12,
+//         brand: "Crucial",
+//         model: "Ballistix",
+//         capacityGb: 32,
+//         speedMhz: 3600,
+//         type: "DDR4",
+//       },
+//     ];
+//     for (const r of rams) {
+//       if (!(await Product.findOne({ where: { name: r.name } }))) {
+//         const ramProduct = new Product();
+//         ramProduct.name = r.name;
+//         ramProduct.price = r.price;
+//         ramProduct.description = r.description;
+//         ramProduct.stock = r.stock;
+//         ramProduct.category = ramCategory;
+//         await ramProduct.save();
+//         const ram = new RAM();
+//         ram.product = ramProduct;
+//         ram.brand = r.brand;
+//         ram.model = r.model;
+//         ram.capacityGb = r.capacityGb;
+//         ram.speedMhz = r.speedMhz;
+//         ram.type = r.type;
+//         await ram.save();
+//         console.log(`Added RAM: ${ramProduct.name}`);
+//       }
+//     }
+//   }
+
+//   // CPU
+//   const cpuCategory = await Category.findOne({ where: { slug: "cpu" } });
+//   if (cpuCategory) {
+//     const cpus = [
+//       {
+//         name: "AMD Ryzen 7 5800X",
+//         price: 7990000,
+//         description: "AMD Ryzen 7 5800X 8-Core Processor",
+//         stock: 10,
+//         cores: 8,
+//         threads: 16,
+//         baseClock: "3.8 GHz",
+//         boostClock: "4.7 GHz",
+//         socket: "AM4",
+//         architecture: "Zen 3",
+//         tdp: 105,
+//         integratedGraphics: "",
+//       },
+//       {
+//         name: "Intel Core i5-12400F",
+//         price: 4990000,
+//         description: "Intel Core i5-12400F 6-Core Processor",
+//         stock: 12,
+//         cores: 6,
+//         threads: 12,
+//         baseClock: "2.5 GHz",
+//         boostClock: "4.4 GHz",
+//         socket: "LGA 1700",
+//         architecture: "Alder Lake",
+//         tdp: 65,
+//         integratedGraphics: "",
+//       },
+//       {
+//         name: "Intel Core i9-13900K",
+//         price: 15990000,
+//         description:
+//           "Intel Core i9-13900K 24-Core Processor with Intel UHD Graphics 770",
+//         stock: 6,
+//         cores: 24,
+//         threads: 32,
+//         baseClock: "3.0 GHz",
+//         boostClock: "5.8 GHz",
+//         socket: "LGA 1700",
+//         architecture: "Raptor Lake",
+//         tdp: 253,
+//         integratedGraphics: "Intel UHD Graphics 770",
+//       },
+//       {
+//         name: "AMD Ryzen 5 5600X",
+//         price: 3990000,
+//         description: "AMD Ryzen 5 5600X 6-Core Processor",
+//         stock: 10,
+//         cores: 6,
+//         threads: 12,
+//         baseClock: "3.7 GHz",
+//         boostClock: "4.6 GHz",
+//         socket: "AM4",
+//         architecture: "Zen 3",
+//         tdp: 65,
+//         integratedGraphics: "",
+//       },
+//     ];
+//     for (const c of cpus) {
+//       if (!(await Product.findOne({ where: { name: c.name } }))) {
+//         const cpuProduct = new Product();
+//         cpuProduct.name = c.name;
+//         cpuProduct.price = c.price;
+//         cpuProduct.description = c.description;
+//         cpuProduct.stock = c.stock;
+//         cpuProduct.category = cpuCategory;
+//         await cpuProduct.save();
+//         const cpu = new CPU();
+//         cpu.product = cpuProduct;
+//         cpu.cores = c.cores;
+//         cpu.threads = c.threads;
+//         cpu.baseClock = c.baseClock;
+//         cpu.boostClock = c.boostClock;
+//         cpu.socket = c.socket;
+//         cpu.architecture = c.architecture;
+//         cpu.tdp = c.tdp;
+//         cpu.integratedGraphics = c.integratedGraphics;
+//         await cpu.save();
+//         console.log(`Added CPU: ${cpuProduct.name}`);
+//       }
+//     }
+//   }
+
+//   // GPU
+//   const gpuCategory = await Category.findOne({ where: { slug: "gpu" } });
+//   if (gpuCategory) {
+//     const gpus = [
+//       {
+//         name: "AMD Radeon RX 7900 XTX",
+//         price: 29990000,
+//         description: "AMD Radeon RX 7900 XTX 24GB GDDR6 Graphics Card",
+//         stock: 7,
+//         brand: "AMD",
+//         model: "Radeon RX 7900 XTX",
+//         vram: 24,
+//         chipset: "Navi 31",
+//         memoryType: "GDDR6",
+//         lengthMm: 287,
+//         tdp: 355,
+//       },
+//       {
+//         name: "NVIDIA GeForce RTX 4060 Ti",
+//         price: 15990000,
+//         description: "NVIDIA GeForce RTX 4060 Ti 8GB GDDR6 Graphics Card",
+//         stock: 8,
+//         brand: "NVIDIA",
+//         model: "GeForce RTX 4060 Ti",
+//         vram: 8,
+//         chipset: "AD106",
+//         memoryType: "GDDR6",
+//         lengthMm: 242,
+//         tdp: 160,
+//       },
+//       {
+//         name: "AMD Radeon RX 6700 XT",
+//         price: 11990000,
+//         description: "AMD Radeon RX 6700 XT 12GB GDDR6 Graphics Card",
+//         stock: 10,
+//         brand: "AMD",
+//         model: "Radeon RX 6700 XT",
+//         vram: 12,
+//         chipset: "Navi 22",
+//         memoryType: "GDDR6",
+//         lengthMm: 267,
+//         tdp: 230,
+//       },
+//     ];
+//     for (const g of gpus) {
+//       if (!(await Product.findOne({ where: { name: g.name } }))) {
+//         const gpuProduct = new Product();
+//         gpuProduct.name = g.name;
+//         gpuProduct.price = g.price;
+//         gpuProduct.description = g.description;
+//         gpuProduct.stock = g.stock;
+//         gpuProduct.category = gpuCategory;
+//         await gpuProduct.save();
+//         const gpu = new GPU();
+//         gpu.product = gpuProduct;
+//         gpu.brand = g.brand;
+//         gpu.model = g.model;
+//         gpu.vram = g.vram;
+//         gpu.chipset = g.chipset;
+//         gpu.memoryType = g.memoryType;
+//         gpu.lengthMm = g.lengthMm;
+//         gpu.tdp = g.tdp;
+//         await gpu.save();
+//         console.log(`Added GPU: ${gpuProduct.name}`);
+//       }
+//     }
+//   }
+
+//   // Monitor
+//   const monitorCategory = await Category.findOne({
+//     where: { slug: "monitor" },
+//   });
+//   if (monitorCategory) {
+//     const monitors = [
+//       {
+//         name: "Samsung Odyssey G7",
+//         price: 15990000,
+//         description: "Samsung Odyssey G7 32-inch 240Hz QHD Gaming Monitor",
+//         stock: 6,
+//         brand: "Samsung",
+//         model: "Odyssey G7",
+//         sizeInch: 32.0,
+//         resolution: "2560x1440",
+//         refreshRate: 240,
+//         panelType: "VA",
+//       },
+//       {
+//         name: "ASUS ROG Swift PG279Q",
+//         price: 12990000,
+//         description: "ASUS ROG Swift PG279Q 27-inch 1440p 165Hz Gaming Monitor",
+//         stock: 5,
+//         brand: "ASUS",
+//         model: "ROG Swift PG279Q",
+//         sizeInch: 27.0,
+//         resolution: "2560x1440",
+//         refreshRate: 165,
+//         panelType: "IPS",
+//       },
+//       {
+//         name: "AOC CU34G2X",
+//         price: 8990000,
+//         description: "AOC CU34G2X 34-inch Ultrawide Gaming Monitor",
+//         stock: 6,
+//         brand: "AOC",
+//         model: "CU34G2X",
+//         sizeInch: 34.0,
+//         resolution: "3440x1440",
+//         refreshRate: 144,
+//         panelType: "VA",
+//       },
+//     ];
+//     for (const m of monitors) {
+//       if (!(await Product.findOne({ where: { name: m.name } }))) {
+//         const monitorProduct = new Product();
+//         monitorProduct.name = m.name;
+//         monitorProduct.price = m.price;
+//         monitorProduct.description = m.description;
+//         monitorProduct.stock = m.stock;
+//         monitorProduct.category = monitorCategory;
+//         await monitorProduct.save();
+//         const monitor = new Monitor();
+//         monitor.product = monitorProduct;
+//         monitor.brand = m.brand;
+//         monitor.model = m.model;
+//         monitor.sizeInch = m.sizeInch;
+//         monitor.resolution = m.resolution;
+//         monitor.refreshRate = m.refreshRate;
+//         monitor.panelType = m.panelType;
+//         await monitor.save();
+//         console.log(`Added Monitor: ${monitorProduct.name}`);
+//       }
+//     }
+//   }
+
+//   // Motherboard
+//   const motherboardCategory = await Category.findOne({
+//     where: { slug: "motherboard" },
+//   });
+//   if (motherboardCategory) {
+//     const motherboards = [
+//       {
+//         name: "MSI MPG B650 Carbon WiFi",
+//         price: 5990000,
+//         description: "MSI MPG B650 Carbon WiFi AMD B650 ATX Motherboard",
+//         stock: 10,
+//         brand: "MSI",
+//         model: "MPG B650 Carbon WiFi",
+//         chipset: "AMD B650",
+//         socket: "AM5",
+//         formFactor: "ATX",
+//         ramSlots: 4,
+//         maxRam: 128,
+//         ramType: "DDR5",
+//       },
+//       {
+//         name: "ASUS TUF Gaming B760M-Plus WiFi",
+//         price: 4490000,
+//         description:
+//           "ASUS TUF Gaming B760M-Plus WiFi Intel B760 mATX Motherboard",
+//         stock: 8,
+//         brand: "ASUS",
+//         model: "TUF Gaming B760M-Plus WiFi",
+//         chipset: "Intel B760",
+//         socket: "LGA 1700",
+//         formFactor: "mATX",
+//         ramSlots: 4,
+//         maxRam: 128,
+//         ramType: "DDR4",
+//       },
+//       {
+//         name: "Gigabyte B760 Aorus Elite",
+//         price: 4990000,
+//         description: "Gigabyte B760 Aorus Elite Intel B760 ATX Motherboard",
+//         stock: 7,
+//         brand: "Gigabyte",
+//         model: "B760 Aorus Elite",
+//         chipset: "Intel B760",
+//         socket: "LGA 1700",
+//         formFactor: "ATX",
+//         ramSlots: 4,
+//         maxRam: 128,
+//         ramType: "DDR4",
+//       },
+//     ];
+//     for (const mb of motherboards) {
+//       if (!(await Product.findOne({ where: { name: mb.name } }))) {
+//         const mbProduct = new Product();
+//         mbProduct.name = mb.name;
+//         mbProduct.price = mb.price;
+//         mbProduct.description = mb.description;
+//         mbProduct.stock = mb.stock;
+//         mbProduct.category = motherboardCategory;
+//         await mbProduct.save();
+//         const motherboard = new Motherboard();
+//         motherboard.product = mbProduct;
+//         motherboard.brand = mb.brand;
+//         motherboard.model = mb.model;
+//         motherboard.chipset = mb.chipset;
+//         motherboard.socket = mb.socket;
+//         motherboard.formFactor = mb.formFactor;
+//         motherboard.ramSlots = mb.ramSlots;
+//         motherboard.maxRam = mb.maxRam;
+//         motherboard.ramType = mb.ramType;
+//         await motherboard.save();
+//         console.log(`Added Motherboard: ${mbProduct.name}`);
+//       }
+//     }
+//   }
+
+//   // PSU
+//   const psuCategory = await Category.findOne({ where: { slug: "psu" } });
+//   if (psuCategory) {
+//     const psus = [
+//       {
+//         name: "Seasonic Focus GX-750",
+//         price: 2990000,
+//         description: "Seasonic Focus GX-750 750W 80+ Gold Fully Modular PSU",
+//         stock: 8,
+//         brand: "Seasonic",
+//         model: "Focus GX-750",
+//         wattage: 750,
+//         efficiencyRating: "80+ Gold",
+//         modular: "Fully Modular",
+//       },
+//       {
+//         name: "Corsair RM1000x 1000W 80+ Gold",
+//         price: 4990000,
+//         description: "Corsair RM1000x 1000W 80+ Gold Fully Modular PSU",
+//         stock: 6,
+//         brand: "Corsair",
+//         model: "RM1000x",
+//         wattage: 1000,
+//         efficiencyRating: "80+ Gold",
+//         modular: "Fully Modular",
+//       },
+//       {
+//         name: "EVGA SuperNOVA 850 G5",
+//         price: 3990000,
+//         description: "EVGA SuperNOVA 850 G5 850W 80+ Gold Fully Modular PSU",
+//         stock: 7,
+//         brand: "EVGA",
+//         model: "SuperNOVA 850 G5",
+//         wattage: 850,
+//         efficiencyRating: "80+ Gold",
+//         modular: "Fully Modular",
+//       },
+//     ];
+//     for (const p of psus) {
+//       if (!(await Product.findOne({ where: { name: p.name } }))) {
+//         const psuProduct = new Product();
+//         psuProduct.name = p.name;
+//         psuProduct.price = p.price;
+//         psuProduct.description = p.description;
+//         psuProduct.stock = p.stock;
+//         psuProduct.category = psuCategory;
+//         await psuProduct.save();
+//         const psu = new PSU();
+//         psu.product = psuProduct;
+//         psu.brand = p.brand;
+//         psu.model = p.model;
+//         psu.wattage = p.wattage;
+//         psu.efficiencyRating = p.efficiencyRating;
+//         psu.modular = p.modular;
+//         await psu.save();
+//         console.log(`Added PSU: ${psuProduct.name}`);
+//       }
+//     }
+//   }
+
+//   // Drive
+//   const driveCategory = await Category.findOne({ where: { slug: "drive" } });
+//   if (driveCategory) {
+//     const drives = [
+//       {
+//         name: "WD Black SN850X 2TB",
+//         price: 5990000,
+//         description: "WD Black SN850X 2TB NVMe M.2 SSD",
+//         stock: 9,
+//         brand: "Western Digital",
+//         model: "Black SN850X",
+//         type: "SSD",
+//         capacityGb: 2000,
+//         interface: "NVMe M.2",
+//       },
+//       {
+//         name: "Samsung 970 EVO Plus 1TB",
+//         price: 2990000,
+//         description: "Samsung 970 EVO Plus 1TB NVMe M.2 SSD",
+//         stock: 10,
+//         brand: "Samsung",
+//         model: "970 EVO Plus",
+//         type: "SSD",
+//         capacityGb: 1000,
+//         interface: "NVMe M.2",
+//       },
+//       {
+//         name: "Crucial P5 Plus 2TB",
+//         price: 5990000,
+//         description: "Crucial P5 Plus 2TB NVMe M.2 SSD",
+//         stock: 7,
+//         brand: "Crucial",
+//         model: "P5 Plus",
+//         type: "SSD",
+//         capacityGb: 2000,
+//         interface: "NVMe M.2",
+//       },
+//     ];
+//     for (const d of drives) {
+//       if (!(await Product.findOne({ where: { name: d.name } }))) {
+//         const driveProduct = new Product();
+//         driveProduct.name = d.name;
+//         driveProduct.price = d.price;
+//         driveProduct.description = d.description;
+//         driveProduct.stock = d.stock;
+//         driveProduct.category = driveCategory;
+//         await driveProduct.save();
+//         const drive = new Drive();
+//         drive.product = driveProduct;
+//         drive.brand = d.brand;
+//         drive.model = d.model;
+//         drive.type = d.type;
+//         drive.capacityGb = d.capacityGb;
+//         drive.interface = d.interface;
+//         await drive.save();
+//         console.log(`Added Drive: ${driveProduct.name}`);
+//       }
+//     }
+//   }
+
+//   // Cooler
+//   const coolerCategory = await Category.findOne({ where: { slug: "cooler" } });
+//   if (coolerCategory) {
+//     const coolers = [
+//       {
+//         name: "Noctua NH-D15",
+//         price: 2490000,
+//         description: "Noctua NH-D15 Premium CPU Air Cooler",
+//         stock: 8,
+//         brand: "Noctua",
+//         model: "NH-D15",
+//         type: "Air",
+//         supportedSockets: "LGA 1700, AM4, AM5",
+//         fanSizeMm: 140,
+//       },
+//       {
+//         name: "Noctua NH-U12S",
+//         price: 1890000,
+//         description: "Noctua NH-U12S Premium CPU Air Cooler",
+//         stock: 8,
+//         brand: "Noctua",
+//         model: "NH-U12S",
+//         type: "Air",
+//         supportedSockets: "LGA 1700, AM4, AM5",
+//         fanSizeMm: 120,
+//       },
+//       {
+//         name: "be quiet! Dark Rock Pro 4",
+//         price: 2490000,
+//         description: "be quiet! Dark Rock Pro 4 Premium CPU Air Cooler",
+//         stock: 7,
+//         brand: "be quiet!",
+//         model: "Dark Rock Pro 4",
+//         type: "Air",
+//         supportedSockets: "LGA 1700, AM4, AM5",
+//         fanSizeMm: 120,
+//       },
+//     ];
+//     for (const c of coolers) {
+//       if (!(await Product.findOne({ where: { name: c.name } }))) {
+//         const coolerProduct = new Product();
+//         coolerProduct.name = c.name;
+//         coolerProduct.price = c.price;
+//         coolerProduct.description = c.description;
+//         coolerProduct.stock = c.stock;
+//         coolerProduct.category = coolerCategory;
+//         await coolerProduct.save();
+//         const cooler = new Cooler();
+//         cooler.product = coolerProduct;
+//         cooler.brand = c.brand;
+//         cooler.model = c.model;
+//         cooler.type = c.type;
+//         cooler.supportedSockets = c.supportedSockets;
+//         cooler.fanSizeMm = c.fanSizeMm;
+//         await cooler.save();
+//         console.log(`Added Cooler: ${coolerProduct.name}`);
+//       }
+//     }
+//   }
+
+//   // Case
+//   const caseCategory = await Category.findOne({ where: { slug: "case" } });
+//   if (caseCategory) {
+//     const cases = [
+//       {
+//         name: "NZXT H510 Elite",
+//         price: 3990000,
+//         description: "NZXT H510 Elite Mid-Tower ATX Case with Tempered Glass",
+//         stock: 7,
+//         brand: "NZXT",
+//         model: "H510 Elite",
+//         formFactorSupport: "ATX, mATX, ITX",
+//         hasRgb: true,
+//         sidePanelType: "Tempered Glass",
+//         maxGpuLengthMm: 381,
+//         psuType: "ATX",
+//       },
+//       {
+//         name: "Lian Li PC-O11 Dynamic",
+//         price: 4990000,
+//         description: "Lian Li PC-O11 Dynamic Mid-Tower ATX Case",
+//         stock: 8,
+//         brand: "Lian Li",
+//         model: "PC-O11 Dynamic",
+//         formFactorSupport: "ATX, mATX, ITX",
+//         hasRgb: false,
+//         sidePanelType: "Tempered Glass",
+//         maxGpuLengthMm: 420,
+//         psuType: "ATX",
+//       },
+//       {
+//         name: "Fractal Design Meshify C",
+//         price: 2990000,
+//         description: "Fractal Design Meshify C Mid-Tower ATX Case",
+//         stock: 10,
+//         brand: "Fractal Design",
+//         model: "Meshify C",
+//         formFactorSupport: "ATX, mATX, ITX",
+//         hasRgb: false,
+//         sidePanelType: "Tempered Glass",
+//         maxGpuLengthMm: 315,
+//         psuType: "ATX",
+//       },
+//       {
+//         name: "NZXT H7 Flow",
+//         price: 3990000,
+//         description: "NZXT H7 Flow Mid-Tower ATX Case",
+//         stock: 8,
+//         brand: "NZXT",
+//         model: "H7 Flow",
+//         formFactorSupport: "ATX, mATX, ITX",
+//         hasRgb: false,
+//         sidePanelType: "Tempered Glass",
+//         maxGpuLengthMm: 400,
+//         psuType: "ATX",
+//       },
+//     ];
+//     for (const c of cases) {
+//       if (!(await Product.findOne({ where: { name: c.name } }))) {
+//         const caseProduct = new Product();
+//         caseProduct.name = c.name;
+//         caseProduct.price = c.price;
+//         caseProduct.description = c.description;
+//         caseProduct.stock = c.stock;
+//         caseProduct.category = caseCategory;
+//         await caseProduct.save();
+//         const caseComponent = new Case();
+//         caseComponent.product = caseProduct;
+//         caseComponent.brand = c.brand;
+//         caseComponent.model = c.model;
+//         caseComponent.formFactorSupport = c.formFactorSupport;
+//         caseComponent.hasRgb = c.hasRgb;
+//         caseComponent.sidePanelType = c.sidePanelType;
+//         caseComponent.maxGpuLengthMm = c.maxGpuLengthMm;
+//         caseComponent.psuType = c.psuType;
+//         await caseComponent.save();
+//         console.log(`Added Case: ${caseProduct.name}`);
+//       }
+//     }
+//   }
+
+//   console.log(
+//     "Successfully added popularized sample products and components from Laptop.md"
+//   );
+// }

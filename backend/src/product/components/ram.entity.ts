@@ -1,8 +1,9 @@
 import { BaseEntity } from "@/common/BaseEntity";
-import { Column, Entity, JoinColumn, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne, OneToMany } from "typeorm";
 import { Product } from "../product.entity";
+import { Build } from "@/rfq/build.entity";
 
-@Entity('rams')
+@Entity("rams")
 export class RAM extends BaseEntity {
   @OneToOne(() => Product)
   @JoinColumn()
@@ -14,12 +15,15 @@ export class RAM extends BaseEntity {
   @Column()
   model: string;
 
-  @Column({name: 'capacity_gb'})
+  @Column({ name: "capacity_gb" })
   capacityGb: number;
 
-  @Column({name: 'speed_mhz'})
+  @Column({ name: "speed_mhz" })
   speedMhz: number;
 
   @Column({})
   type: string;
+
+  @OneToMany(() => Build, (build) => build.ram)
+  builds: Build[];
 }
