@@ -545,20 +545,10 @@ const CheckoutForm = ({
 
   try {
     return (
-      <div className={styles.checkoutContainer}>
-        <div className={styles.checkoutHeader}>
-          <h1>
-            Payment
-            <span className={styles.itemCount}>
-              ({cartItems.length} products)
-            </span>
-          </h1>
-          <button onClick={onBackToCart} className={styles.backButton}>
-            <ArrowLeftIcon />
-            Back to cart
-          </button>
-        </div>
+      <div className={styles.checkoutContainer} style={{ marginTop: '0', paddingTop: '0' }}>
+        {/* Đã xóa checkoutHeader */}
 
+        {/* Form & Cart Summary */}
         <div className={styles.checkoutContent}>
           <div className={styles.orderDetails}>
             <div className={styles.orderItems}>

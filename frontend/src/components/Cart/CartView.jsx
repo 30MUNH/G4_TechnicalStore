@@ -56,18 +56,7 @@ const CartView = ({
 
     return (
         <>
-        <div className={styles.cartView}>
-            <div className={styles.cartHeader}>
-                <h1>
-                    Shopping Cart
-                    <span className={styles.itemCount}>({cartItems.length} items in cart)</span>
-                </h1>
-                <button onClick={() => onViewOrderHistory(1)} className={styles.historyButton}>
-                    <HistoryIcon />
-                    Order History
-                </button>
-            </div>
-
+        <div className={styles.cartView} style={{ marginTop: '0', paddingTop: '0' }}>
             {cartItems.length === 0 ? (
                 <div className={styles.emptyCart}>
                     <EmptyCartIcon />

@@ -1,6 +1,5 @@
 .cartView {
   width: 100%;
-  margin-bottom: 10px;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -8,48 +7,10 @@
   background-color: #f8fafc;
 }
 
-.cartHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  background-color: rgb(153, 27, 27);
-  padding: 20px 40px;
-  color: #ffffff;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  width: 100%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.cartHeader h1 {
-  font-size: 32px;
-  font-weight: 600;
-  color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.cartHeader span {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: normal;
-}
-
 .itemCount {
   font-size: 16px;
   color: rgba(255, 255, 255, 0.8);
   font-weight: normal;
-}
-
-.headerButtons {
-  display: flex;
-  gap: 16px;
-  align-items: center;
 }
 
 .continueShoppingBtn {
@@ -78,27 +39,6 @@
   width: 18px;
   height: 18px;
   fill: currentColor;
-}
-
-.historyButton {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 20px;
-  background: #ffffff;
-  border: 1px solid rgb(245, 245, 245);
-  border-radius: 8px;
-  color: #090909;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.historyButton svg,
-.continueShoppingBtn svg {
-  width: 16px;
-  height: 16px;
 }
 
 .emptyCart {
@@ -176,11 +116,9 @@
   display: grid;
   grid-template-columns: 1fr 350px;
   gap: 40px;
-  margin-top: 100px;
-  max-width: 1400px;
+  max-width: 1440px;
   width: 100%;
-  margin-left: auto;
-  margin-right: auto;
+  align-items: start;
 }
 
 .cartItems {
@@ -424,7 +362,8 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   height: fit-content;
   position: sticky;
-  top: 120px;
+  top: 20px;
+  margin-top: 0;
 }
 
 .cartSummary h2 {
@@ -500,13 +439,6 @@
 @media (max-width: 768px) {
   .cartView {
     padding: 16px;
-  }
-
-  .cartHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 16px 20px;
   }
 
   .emptyCart {

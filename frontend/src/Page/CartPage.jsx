@@ -1,17 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CartView from '../components/Cart/CartView';
-import { OrderHistory } from '../components/Cart/OrderHistory';
 import { useCart } from '../contexts/CartContext';
-import { orderService } from '../services/orderService';
 import { useAuth } from '../contexts/AuthContext';
+import Header from '../components/header';
+import Footer from '../components/footer';
 
 const CartPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [showOrderHistory, setShowOrderHistory] = useState(false);
-    const [orders, setOrders] = useState([]);
-    const [orderError, setOrderError] = useState(null);
     const { isAuthenticated } = useAuth();
     const { 
         items, 
@@ -25,36 +22,7 @@ const CartPage = () => {
         refreshCart
     } = useCart();
 
-    const handleViewOrderHistory = async () => {
-        setShowOrderHistory(true);
-        setOrderError(null);
-        
-        if (!isAuthenticated()) {
-            setOrderError('Please login to view order history');
-            return;
-        }
-        
-        try {
-            const response = await orderService.getOrders();
-            
-            if (response.message === "Orders retrieved successfully") {
-                const orders = response.data || [];
-                setOrders(orders);
-            } else {
-                // Fallback for old response format
-                const orders = response.data?.data || [];
-                setOrders(orders);
-            }
-        } catch (err) {
-            console.error('❌ Failed to load order history:', err);
-            setOrderError(err.message || 'Failed to load order history');
-        }
-    };
 
-    const handleBackToCart = () => {
-        setShowOrderHistory(false);
-        setOrderError(null);
-    };
 
     // Handlers for CartView
     const handleUpdateQuantity = async (productId, newQuantity) => {
@@ -137,15 +105,14 @@ const CartPage = () => {
         }
     }, [isAuthenticated]);
 
-    // Check for showHistory parameter and auto-open order history
+    // Check for showHistory parameter and redirect to order history page
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
         if (searchParams.get('showHistory') === 'true') {
-            handleViewOrderHistory();
-            // Clean URL by removing the parameter
-            navigate('/cart', { replace: true });
+            // Navigate directly to order history page
+            navigate('/order-history');
         }
-    }, [location.search]);
+    }, [location.search, navigate]);
 
     // Remove loading screen - just show cart immediately
 
@@ -178,88 +145,33 @@ const CartPage = () => {
         );
     }
 
-    if (showOrderHistory) {
 
-        return (
-            <div style={{ margin: 0, padding: 0 }}>
-                {/* Header */}
-                <nav className="navbar" style={{
-                    background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
-                    padding: '1rem 2rem',
-                    boxShadow: '0 4px 20px rgba(30, 41, 59, 0.4)',
-                    margin: 0,
-                    borderBottom: '2px solid #0ea5e9'
-                }}>
-                    <div className="container-fluid">
-                        <div className="d-flex align-items-center w-100">
-                            <div className="text-white">
-                                <h1 style={{
-                                    fontSize: '1.5rem',
-                                    fontWeight: '700',
-                                    margin: 0,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.8rem'
-                                }}>
-                                    <span style={{ fontSize: '1.8rem' }}>📋</span>
-                                    Order History
-                                </h1>
-                                <p style={{
-                                    fontSize: '0.9rem',
-                                    opacity: '0.8',
-                                    margin: 0,
-                                    marginTop: '0.2rem',
-                                    marginLeft: '3.4rem'
-                                }}>
-                                    {orders.length === 0 ? 'No orders yet' : `${orders.length} orders`}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </nav>
-
-                <div className="container-fluid px-4 py-4" style={{
-                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
-                    minHeight: 'calc(100vh - 80px)'
-                }}>
-                    {orderError && (
-                        <div className="alert alert-danger" role="alert">
-                            {orderError}
-                        </div>
-                    )}
-                    <OrderHistory 
-                        orders={orders} 
-                        onBackToCart={handleBackToCart}
-                    onOrderUpdate={setOrders}
-                    />
-                </div>
-            </div>
-        );
-    }
 
     return (
-        <div style={{ minHeight: '80vh', paddingTop: '20px', paddingBottom: '20px' }}>
-            <div className="container">
-                <div className="row">
-                    <div className="col-md-12">
+        <>
+            <Header />
+            <div style={{ minHeight: '80vh', paddingTop: '10px', paddingBottom: '20px', marginTop: '10px' }}>
+                <div className="container">
+                    <div className="row">
+                        <div className="col-md-12">
 
-                        <CartView 
-                            cartItems={transformedCartItems}
-                            onUpdateQuantity={handleUpdateQuantity}
-                            onRemoveItem={handleRemoveItem}
-                            onCheckout={handleCheckout}
-                            onViewOrderHistory={handleViewOrderHistory}
-                            onContinueShopping={handleContinueShopping}
-                            subtotal={subtotal}
-                            shippingFee={shippingFee}
-                            totalAmount={finalTotal}
-                        />
+                            <CartView 
+                                cartItems={transformedCartItems}
+                                onUpdateQuantity={handleUpdateQuantity}
+                                onRemoveItem={handleRemoveItem}
+                                onCheckout={handleCheckout}
+                                onContinueShopping={handleContinueShopping}
+                                subtotal={subtotal}
+                                shippingFee={shippingFee}
+                                totalAmount={finalTotal}
+                                onViewOrderHistory={() => navigate('/order-history')}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
-
-
-        </div>
+            <Footer />
+        </>
     );
 };
 

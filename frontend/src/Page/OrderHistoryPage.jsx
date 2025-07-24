@@ -2,9 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OrderHistory } from '../components/Cart/OrderHistory.jsx';
 import { orderService } from '../services/orderService';
+import Header from '../components/header';
+import Footer from '../components/footer';
+import { useAuth } from '../contexts/AuthContext';
 
-export const OrderHistoryPage = () => {
+const OrderHistoryPage = () => {
     const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
     const [statistics, setStatistics] = useState(null);
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -16,39 +20,77 @@ export const OrderHistoryPage = () => {
     const [totalPages, setTotalPages] = useState(0);
 
     const fetchData = async (page = 1) => {
+        if (!isAuthenticated()) {
+            setError("Please log in to view your order history");
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
+            console.log("🔍 Fetching order data, page:", page);
+            
             // Fetch both statistics and orders in parallel
             const [statsResponse, ordersResponse] = await Promise.all([
                 orderService.getOrderStatistics(),
                 orderService.getOrders({ page }) // Không truyền limit để sử dụng giá trị mặc định
             ]);
 
+            console.log("📊 Order statistics response:", statsResponse);
+            console.log("📋 Orders response:", ordersResponse);
+
             // Handle statistics
-            if (statsResponse.message === "Order statistics retrieved successfully") {
+            if (statsResponse && statsResponse.message === "Order statistics retrieved successfully") {
                 setStatistics(statsResponse.statistics);
             }
 
-            // Handle orders with pagination data (nhưng hiển thị tất cả)
-            if (ordersResponse.message === "Orders retrieved successfully") {
-                if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
-                    setOrders(ordersResponse.data);
+            // Handle orders with nested structure API response
+            if (ordersResponse && ordersResponse.data) {
+                // Check for nested data structure: success, statusCode, data: { message, data, pagination }
+                if (ordersResponse.success === true && ordersResponse.data && ordersResponse.data.data && Array.isArray(ordersResponse.data.data)) {
+                    // Nested data.data array
+                    setOrders(ordersResponse.data.data);
+                    console.log("✅ Setting orders from nested data.data:", ordersResponse.data.data.length);
                     
-                    // Lưu thông tin phân trang cho UI
+                    // Pagination from data.pagination
+                    if (ordersResponse.data.pagination) {
+                        setTotalOrders(ordersResponse.data.pagination.total);
+                        setTotalPages(ordersResponse.data.pagination.totalPages);
+                    } else {
+                        setTotalOrders(ordersResponse.data.data.length);
+                        setTotalPages(Math.ceil(ordersResponse.data.data.length / 10));
+                    }
+                } 
+                // Regular structure: message, data array, pagination
+                else if (ordersResponse.message === "Orders retrieved successfully" && Array.isArray(ordersResponse.data)) {
+                    setOrders(ordersResponse.data);
+                    console.log("✅ Setting orders from direct data array:", ordersResponse.data.length);
+                    
+                    // Pagination from top-level
                     if (ordersResponse.pagination) {
                         setTotalOrders(ordersResponse.pagination.total);
                         setTotalPages(ordersResponse.pagination.totalPages);
+                    } else {
+                        setTotalOrders(ordersResponse.data.length);
+                        setTotalPages(Math.ceil(ordersResponse.data.length / 10));
                     }
-                } else if (Array.isArray(ordersResponse)) {
+                }
+                // Direct array response
+                else if (Array.isArray(ordersResponse)) {
                     setOrders(ordersResponse);
                     setTotalOrders(ordersResponse.length);
-                    setTotalPages(1);
-                } else {
+                    setTotalPages(Math.ceil(ordersResponse.length / 10));
+                    console.log("✅ Setting orders from direct array:", ordersResponse.length);
+                } 
+                // No valid data
+                else {
+                    console.warn("⚠️ No valid orders data structure found:", ordersResponse);
                     setOrders([]);
                     setTotalOrders(0);
                     setTotalPages(0);
                 }
             } else {
+                console.warn("⚠️ Invalid orders response:", ordersResponse);
                 setOrders([]);
                 setTotalOrders(0);
                 setTotalPages(0);
@@ -78,47 +120,12 @@ export const OrderHistoryPage = () => {
 
     return (
         <div style={{ margin: 0, padding: 0 }}>
-            {/* Header */}
-            <nav className="navbar" style={{
-                background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
-                padding: '1rem 2rem',
-                boxShadow: '0 4px 20px rgba(30, 41, 59, 0.4)',
-                margin: 0,
-                borderBottom: '2px solid #0ea5e9'
-            }}>
-                <div className="container-fluid">
-                    <div className="d-flex align-items-center w-100">
-                        <div className="text-white">
-                            <h1 style={{
-                                fontSize: '1.5rem',
-                                fontWeight: '700',
-                                margin: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.8rem'
-                            }}>
-                                <span style={{ fontSize: '1.8rem' }}>📋</span>
-                                Order History
-                            </h1>
-                            {!loading && !error && (
-                                <p style={{
-                                    fontSize: '0.9rem',
-                                    opacity: '0.8',
-                                    margin: 0,
-                                    marginTop: '0.2rem',
-                                    marginLeft: '3.4rem'
-                                }}>
-                                    {totalOrders === 0 ? 'No orders yet' : `(${totalOrders} orders)`}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </nav>
-
-            <div className="container-fluid px-4 py-4" style={{
+            <Header />
+            <div className="container-fluid " style={{
                 background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
-                minHeight: 'calc(100vh - 80px)'
+                minHeight: 'calc(100vh - 80px)',
+                marginTop: '20px',
+                padding: '20px'
             }}>
                 {error && (
                     <div className="alert alert-danger" role="alert">
@@ -138,51 +145,17 @@ export const OrderHistoryPage = () => {
                 ) : (
                     <OrderHistory 
                         orders={orders}
-                        onBackToCart={handleBackToCart}
                         onOrderUpdate={setOrders}
                         currentPage={currentPage}
                         totalPages={totalPages}
                         onPageChange={handlePageChange}
+                        totalOrders={totalOrders}
                     />
                 )}
-
-                {/* Back button */}
-                <div className="d-flex justify-content-center mt-4 mb-3">
-                    <div style={{ width: 'fit-content' }}>
-                        <button
-                            className="text-white d-flex align-items-center justify-content-center"
-                            style={{
-                                background: 'linear-gradient(135deg, #f97316 0%, #ea580c 50%, #dc2626 100%)',
-                                border: '2px solid rgba(255, 255, 255, 0.1)',
-                                padding: '0.8rem 1.5rem',
-                                borderRadius: '99px',
-                                fontWeight: '600',
-                                transition: 'all 0.3s ease',
-                                fontSize: '1rem',
-                                gap: '0.5rem',
-                                boxShadow: '0 4px 15px rgba(249, 115, 22, 0.3)',
-                                width: 'fit-content',
-                                maxWidth: '300px',
-                                whiteSpace: 'nowrap'
-                            }}
-                            onClick={() => navigate('/cart')}
-                            onMouseEnter={(e) => {
-                                e.target.style.transform = 'translateY(-2px)';
-                                e.target.style.boxShadow = '0 6px 20px rgba(249, 115, 22, 0.5)';
-                                e.target.style.background = 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.target.style.transform = 'translateY(0)';
-                                e.target.style.boxShadow = '0 4px 15px rgba(249, 115, 22, 0.3)';
-                                e.target.style.background = 'linear-gradient(135deg, #f97316 0%, #ea580c 50%, #dc2626 100%)';
-                            }}
-                        >
-                            <span style={{ fontSize: '1.1rem' }}>←</span>
-                            Back to cart
-                        </button>
-                    </div>
-                </div>
             </div>
-        </>
+            <Footer />
+        </div>
     );
 };
+
+export default OrderHistoryPage;

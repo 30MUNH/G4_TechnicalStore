@@ -40,6 +40,24 @@ export interface ApiResponse<T> {
 }
 
 export const accountService = {
+  async getRoles(): Promise<ApiResponse<IRole[]>> {
+    try {
+      const response = await api.get<IRole[]>("/auth/roles");
+      return {
+        success: true,
+        data: response.data,
+        message: "Roles retrieved successfully",
+      };
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      console.error(
+        "Get roles error:",
+        axiosError.response?.data || axiosError.message
+      );
+      throw error;
+    }
+  },
+
   async createAccount(
     accountData: CreateAccountDto
   ): Promise<ApiResponse<IAccount>> {

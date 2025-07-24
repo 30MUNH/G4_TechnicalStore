@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHeart, faPhone, faMapMarker, faShoppingCart, faTimes, faArrowCircleRight, faBars, faUser as faUserRegular } from '@fortawesome/free-solid-svg-icons';
+import { faHeart, faPhone, faMapMarker, faShoppingCart, faTimes, faHistory, faBars, faUser as faUserRegular } from '@fortawesome/free-solid-svg-icons';
 import { faEnvelope as faEnvelopeRegular } from '@fortawesome/free-regular-svg-icons';
 import '../Page/HomePage.css';
 import { useAuth } from '../contexts/AuthContext';
@@ -248,10 +248,20 @@ const Header = () => {
                   padding: '10px 16px',
                   borderRadius: 20,
                   background: 'rgba(255,255,255,0.08)',
-                  transition: 'background 0.2s',
+                  transition: 'all 0.3s ease',
                   textDecoration: 'none',
                   minWidth: 140,
                   gap: 8
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(209, 0, 36, 0.8)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}>
                   <FontAwesomeIcon icon={faShoppingCart} size="sm" />
                   <span style={{ whiteSpace: 'nowrap' }}>Your Cart</span>
@@ -284,12 +294,22 @@ const Header = () => {
                   padding: '10px 16px',
                   borderRadius: 20,
                   background: 'rgba(255,255,255,0.08)',
-                  transition: 'background 0.2s',
+                  transition: 'all 0.3s ease',
                   textDecoration: 'none',
                   minWidth: 140,
                   gap: 8
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(209, 0, 36, 0.8)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}>
-                  <FontAwesomeIcon icon={faArrowCircleRight} size="sm" />
+                  <FontAwesomeIcon icon={faHistory} size="sm" />
                   <span style={{ whiteSpace: 'nowrap' }}>Order History</span>
                 </Link>
                 {/* Login Button */}

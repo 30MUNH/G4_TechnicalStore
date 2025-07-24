@@ -6,6 +6,8 @@ import { orderService } from '../services/orderService';
 import { cartService } from '../services/cartService';
 import CheckoutForm from '../components/Cart/CheckoutForm';
 import './CheckoutPage.css';
+import Header from '../components/header';
+import Footer from '../components/footer';
 
 const CheckoutPage = () => {
     const navigate = useNavigate();
@@ -365,7 +367,8 @@ const CheckoutPage = () => {
 
     return (
         <>
-            <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', paddingTop: '20px', paddingBottom: '20px' }}>
+            <Header />
+            <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', paddingTop: '10px', paddingBottom: '20px', marginTop: '10px' }}>
                 <div className="container">
                     {/* Payment Message */}
                     {paymentMessage && (
@@ -408,6 +411,7 @@ const CheckoutPage = () => {
                     </div>
                 </div>
             </div>
+            <Footer />
         </>
     );
 };

@@ -30,12 +30,8 @@ const AccountManagement = () => {
 
   const itemsPerPage = 10;
 
-  // Available roles
-  const [availableRoles, setAvailableRoles] = useState([
-    { slug: "admin", name: "Admin" },
-    { slug: "staff", name: "Staff" },
-    { slug: "manager", name: "Manager" },
-  ]);
+  // Available roles - will be fetched from API
+  const [availableRoles, setAvailableRoles] = useState([]);
 
   // Notification function
   const showNotification = (message, type = "info") => {
@@ -52,6 +48,50 @@ const AccountManagement = () => {
         notification.parentNode.removeChild(notification);
       }
     }, 3000);
+  };
+
+  // Fetch roles from API
+  const fetchRoles = async () => {
+    try {
+      console.log("🔄 [AccountManagement] Starting fetchRoles...");
+      
+      const response = await accountService.getRoles();
+      console.log("📡 [AccountManagement] Roles API Response:", response);
+
+      if (response.success && response.data) {
+        // Make sure we're getting an array of roles
+        const rolesData = Array.isArray(response.data) ? response.data : 
+                          (response.data.data && Array.isArray(response.data.data)) ? 
+                          response.data.data : [];
+                          
+        // Map roles to the format needed by the component
+        const mappedRoles = rolesData.map(role => ({
+          id: role.id,
+          name: role.name.charAt(0).toUpperCase() + role.name.slice(1), 
+          slug: role.slug || role.name.toLowerCase() 
+        }));
+        
+        console.log("✅ [AccountManagement] Mapped roles:", mappedRoles);
+        
+        setAvailableRoles(mappedRoles);
+      } else {
+        console.error("❌ [AccountManagement] Roles API Failed:", response);
+        showNotification("Failed to load roles", "error");
+        // Nếu API thất bại, sử dụng danh sách vai trò mặc định (không có admin)
+        setAvailableRoles([
+          { id: 'staff-id', slug: "staff", name: "Staff" },
+          { id: 'manager-id', slug: "manager", name: "Manager" },
+        ]);
+      }
+    } catch (err) {
+      console.error("💥 [AccountManagement] Error fetching roles:", err);
+      showNotification("Failed to load roles", "error");
+      // Nếu API thất bại, sử dụng danh sách vai trò mặc định (không có admin)
+      setAvailableRoles([
+        { id: 'staff-id', slug: "staff", name: "Staff" },
+        { id: 'manager-id', slug: "manager", name: "Manager" },
+      ]);
+    }
   };
 
   // Fetch accounts from API
@@ -86,7 +126,7 @@ const AccountManagement = () => {
             account.isRegistered !== undefined ? account.isRegistered : true,
         }));
 
-        console.log("🔄 [AccountManagement] Mapped accounts data:", accountsData);
+        console.log("[AccountManagement] Mapped accounts data:", accountsData);
 
         setAccounts(accountsData);
         setTotalAccounts(accountsData.length);
@@ -111,7 +151,8 @@ const AccountManagement = () => {
   };
 
   useEffect(() => {
-    fetchAccounts();
+    // Fetch roles first, then accounts
+    fetchRoles().then(() => fetchAccounts());
   }, []);
 
   // Filter accounts
@@ -216,7 +257,20 @@ const AccountManagement = () => {
       closeModal();
     } catch (error) {
       console.error("Save error:", error);
-      showNotification("Operation failed", "error");
+      
+      // Xử lý lỗi cụ thể
+      if (error.response && error.response.data) {
+        const errorData = error.response.data;
+        
+        // Kiểm tra lỗi không tìm thấy vai trò
+        if (errorData.message && errorData.message.includes("Role not found")) {
+          showNotification(`Error: Role not found. Please select a valid role.`, "error");
+        } else {
+          showNotification(`Error: ${errorData.message || "Operation failed"}`, "error");
+        }
+      } else {
+        showNotification("Operation failed", "error");
+      }
     }
   };
 
@@ -411,12 +465,25 @@ const AccountForm = ({
   onSubmit,
   onCancel,
 }) => {
+  // Đảm bảo roleSlug mặc định hợp lệ dựa trên availableRoles
+  const getDefaultRoleSlug = () => {
+    // Nếu có vai trò từ dữ liệu ban đầu và vai trò đó tồn tại trong danh sách
+    if (initialData?.role?.slug && 
+        availableRoles.some(role => role.slug === initialData.role.slug)) {
+      return initialData.role.slug;
+    }
+    
+    // Ưu tiên staff nếu có, nếu không thì lấy vai trò đầu tiên trong danh sách
+    const staffRole = availableRoles.find(role => role.slug === "staff");
+    return staffRole ? staffRole.slug : (availableRoles[0]?.slug || "");
+  };
+
   const [formData, setFormData] = useState({
     username: initialData?.username || "",
     name: initialData?.name || "",
     password: "",
     phone: initialData?.phone || "",
-    roleSlug: initialData?.role?.slug || "staff",
+    roleSlug: getDefaultRoleSlug(),
   });
 
   const [errors, setErrors] = useState({});

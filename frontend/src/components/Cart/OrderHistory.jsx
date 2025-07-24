@@ -12,7 +12,6 @@ export const OrderHistory = ({
     currentPage = 1,
     totalPages = 1,
     onPageChange,
-    onBackToCart,
     onOrderUpdate 
 }) => {
     const [expandedOrders, setExpandedOrders] = useState(new Set());
@@ -116,16 +115,6 @@ export const OrderHistory = ({
             <div style={{ padding: '2rem', textAlign: 'center' }}>
                 <h3>⚠️ Lỗi dữ liệu đơn hàng</h3>
                 <p>Dữ liệu đơn hàng không hợp lệ. Vui lòng thử lại.</p>
-                <button onClick={onBackToCart} style={{ 
-                    padding: '10px 20px', 
-                    backgroundColor: '#007bff', 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                }}>
-                    ← Quay lại giỏ hàng
-                </button>
             </div>
         );
     }
@@ -191,12 +180,6 @@ export const OrderHistory = ({
             return formatted;
         } catch (error) {
             return `${amount || 0} VND`;
-        }
-    };
-
-    const handleBackToCart = () => {
-        if (typeof onBackToCart === 'function') {
-            onBackToCart();
         }
     };
 
@@ -314,21 +297,12 @@ export const OrderHistory = ({
 
     return (
         <div className={cartStyles.cartView}>
-            <div className={cartStyles.cartHeader}>
-                <h1>
-                    📋 Order history
-                </h1>
-                <button onClick={handleBackToCart} className={cartStyles.historyButton}>
-                    ← Back to cart
-                </button>
-            </div>
-
             {/* Advanced Filter Section */}
             <div style={{
                 background: 'white',
                 borderRadius: '12px',
-                padding: '24px',
-                margin: '20px 20px',
+                padding: '20px',
+                margin: '10px 10px',
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                 border: '1px solid #e5e7eb'
             }}>
@@ -489,13 +463,10 @@ export const OrderHistory = ({
                 <div className={cartStyles.emptyCart}>
                     <h2>🛒 No orders yet</h2>
                     <p>You don't have any orders in your history. Please shop and order now!</p>
-                    <button onClick={handleBackToCart} className={cartStyles.continueShoppingButton}>
-                        🛒 Back to cart
-                    </button>
                 </div>
             ) : (
                 <div style={{
-                    padding: '10px 20px 40px 10px',
+                    padding: '5px 10px 20px 10px',
                     width: '100%',
                     marginLeft: '0',
                     marginRight: '0'
@@ -503,7 +474,7 @@ export const OrderHistory = ({
                     <div style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '32px',
+                        gap: '20px',
                         alignItems: 'stretch',
                         maxWidth: '1300px'
                     }}>
@@ -514,7 +485,7 @@ export const OrderHistory = ({
                                 <div key={order.id} style={{
                                     background: 'white',
                                     borderRadius: '16px',
-                                    padding: '32px',
+                                    padding: '24px',
                                     boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
                                     width: '100%',
                                     transition: 'all 0.3s ease',
@@ -1101,7 +1072,6 @@ export const OrderHistory = ({
                     </div>
                 </div>
             )}
-
         </div>
     );
 }; 

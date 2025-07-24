@@ -75,12 +75,10 @@
   display: grid;
   grid-template-columns: 1fr 350px;
   gap: 40px;
-  padding: 40px;
-  margin-top: 100px;
+  padding: 20px;
   max-width: 1400px;
   width: 100%;
-  margin-left: auto;
-  margin-right: auto;
+  align-items: start;
 }
 
 .orderDetails {
@@ -309,6 +307,7 @@
   height: fit-content;
   position: sticky;
   top: 20px;
+  margin-top: 0;
 }
 
 .orderSummary h2 {
