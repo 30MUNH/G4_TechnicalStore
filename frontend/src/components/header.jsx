@@ -175,6 +175,24 @@ const Header = () => {
                 </Link>
                 {/* /Cart */}
 
+                {/* Order History */}
+                <Link to="/order-history" style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: '#fff',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  padding: '10px 16px',
+                  borderRadius: 20,
+                  background: 'rgba(255,255,255,0.08)',
+                  transition: 'background 0.2s',
+                  textDecoration: 'none',
+                  minWidth: 140,
+                  gap: 8
+                }}>
+                  <FontAwesomeIcon icon={faArrowCircleRight} size="sm" />
+                  <span style={{ whiteSpace: 'nowrap' }}>Order History</span>
+                </Link>
                 {/* Login Button */}
                 <div>
                   {isAuthenticated() ? (

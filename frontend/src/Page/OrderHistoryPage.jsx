@@ -83,45 +83,7 @@ export const OrderHistoryPage = () => {
     };
 
     return (
-        <div style={{ margin: 0, padding: 0 }}>
-            {/* Header */}
-            <nav className="navbar" style={{
-                background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
-                padding: '1rem 2rem',
-                boxShadow: '0 4px 20px rgba(30, 41, 59, 0.4)',
-                margin: 0,
-                borderBottom: '2px solid #0ea5e9'
-            }}>
-                <div className="container-fluid">
-                    <div className="d-flex align-items-center w-100">
-                        <div className="text-white">
-                            <h1 style={{
-                                fontSize: '1.5rem',
-                                fontWeight: '700',
-                                margin: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.8rem'
-                            }}>
-                                <span style={{ fontSize: '1.8rem' }}>📋</span>
-                                Order History
-                            </h1>
-                            {!loading && !error && (
-                                <p style={{
-                                    fontSize: '0.9rem',
-                                    opacity: '0.8',
-                                    margin: 0,
-                                    marginTop: '0.2rem',
-                                    marginLeft: '3.4rem'
-                                }}>
-                                    {totalOrders === 0 ? 'No orders yet' : `(${orders.length}/${totalOrders} orders)`}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </nav>
-
+        <>
             <div className="container-fluid px-4 py-4" style={{
                 background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
                 minHeight: 'calc(100vh - 80px)'
@@ -190,6 +152,6 @@ export const OrderHistoryPage = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };

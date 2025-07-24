@@ -362,49 +362,51 @@ const CheckoutPage = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', paddingTop: '20px', paddingBottom: '20px' }}>
-            <div className="container">
-                {/* Payment Message */}
-                {paymentMessage && (
-                    <div className="row">
-                        <div className="col-md-12">
-                            <div 
-                                className={`alert alert-${paymentMessage.type === 'success' ? 'success' : 'warning'} alert-dismissible fade show`}
-                                role="alert"
-                                style={{ marginBottom: '20px' }}
-                            >
-                                <strong>
-                                    {paymentMessage.type === 'success' ? '✅ ' : '⚠️ '}
-                                </strong>
-                                {paymentMessage.text}
-                                <button
-                                    type="button"
-                                    className="btn-close"
-                                    onClick={() => setPaymentMessage(null)}
-                                    aria-label="Close"
-                                ></button>
+        <>
+            <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', paddingTop: '20px', paddingBottom: '20px' }}>
+                <div className="container">
+                    {/* Payment Message */}
+                    {paymentMessage && (
+                        <div className="row">
+                            <div className="col-md-12">
+                                <div 
+                                    className={`alert alert-${paymentMessage.type === 'success' ? 'success' : 'warning'} alert-dismissible fade show`}
+                                    role="alert"
+                                    style={{ marginBottom: '20px' }}
+                                >
+                                    <strong>
+                                        {paymentMessage.type === 'success' ? '✅ ' : '⚠️ '}
+                                    </strong>
+                                    {paymentMessage.text}
+                                    <button
+                                        type="button"
+                                        className="btn-close"
+                                        onClick={() => setPaymentMessage(null)}
+                                        aria-label="Close"
+                                    ></button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-                
-                <div className="row">
-                    <div className="col-md-12">
-                        <CheckoutForm
-                            cartItems={transformedCartItems}
-                            subtotal={subtotal}
-                            shippingFee={shippingFee}
-                            totalAmount={finalTotal}
-                            onPlaceOrder={handleOrderSubmit}
-                            onBackToCart={handleBackToCart}
-                            isProcessing={submitting}
-                            error={orderError}
-                            isGuest={!isAuthenticated()}
-                        />
+                    )}
+                    
+                    <div className="row">
+                        <div className="col-md-12">
+                            <CheckoutForm
+                                cartItems={transformedCartItems}
+                                subtotal={subtotal}
+                                shippingFee={shippingFee}
+                                totalAmount={finalTotal}
+                                onPlaceOrder={handleOrderSubmit}
+                                onBackToCart={handleBackToCart}
+                                isProcessing={submitting}
+                                error={orderError}
+                                isGuest={!isAuthenticated()}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 
