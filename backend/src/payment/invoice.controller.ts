@@ -11,9 +11,11 @@ import {
 } from "routing-controllers";
 import { Service } from "typedi";
 import { InvoiceService } from "./invoice.service";
-import { Auth, Admin, Staff } from "@/middlewares/auth.middleware";
+import { Auth, Admin } from "@/middlewares/auth.middleware";
 import { AccountDetailsDto } from "@/auth/dtos/account.dto";
 import { JwtService } from "@/auth/jwt/jwt.service";
+import { Invoice } from "./invoice.entity";
+import { CheckAbility } from "@/middlewares/rbac/permission.decorator";
 
 @Service()
 @Controller("/invoices")
@@ -241,8 +243,9 @@ export class InvoiceController {
    * PUT /api/invoices/:id/paid
    */
   @Put("/:id/paid")
-  @UseBefore(Staff)
-  async markAsPaid(@Param("id") invoiceId: string) {
+  @UseBefore(Auth)
+  @CheckAbility("update", Invoice)
+  async markAsPaid(@Param("id") invoiceId: string, @Req() req: any) {
     try {
       const invoice = await this.invoiceService.markInvoiceAsPaid(invoiceId);
 

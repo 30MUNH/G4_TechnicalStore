@@ -42,10 +42,6 @@ export class Account extends NamedEntity {
   @OneToMany(() => SMSNotification, (smsnotification) => smsnotification.account)
   smsNotifications: SMSNotification[];
 
-  @OneToOne(() => Image)
-  @JoinColumn({ name: "image_id" })
-  image: Image;
-
   @OneToMany(() => Feedback, (feedback) => feedback.account)
   feedbacks: Feedback[];
 

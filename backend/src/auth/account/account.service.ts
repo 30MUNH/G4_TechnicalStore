@@ -4,6 +4,7 @@ import { Role } from "@/auth/role/role.entity";
 import {
   AccountNotFoundException,
   EntityNotFoundException,
+  ForbiddenException,
   PhoneAlreadyExistedException,
   TokenNotFoundException,
   UsernameAlreadyExistedException,
@@ -156,6 +157,7 @@ export class AccountService {
       },
     });
     if (!role) throw new EntityNotFoundException("Role");
+    if(role.name === "admin") throw new ForbiddenException("You do not have permission to create admin account.");
     const account = new Account();
     account.username = username;
     account.password = await bcrypt.hash(password, SALT_ROUNDS);
@@ -177,6 +179,7 @@ export class AccountService {
         },
       });
       if(!role) throw new EntityNotFoundException("Role");
+      if(role.name === "admin") throw new ForbiddenException("You do not have permission to change admin role.");
       account.role = role;
     }
     await account.save();
@@ -185,7 +188,17 @@ export class AccountService {
 
   async deleteAccount(username: string){
     const account = await this.findAccountByUsername(username);
+    if(account.role.name === "admin") throw new ForbiddenException("You do not have permission to delete admin account.");
     await account.softRemove();
+    return account;
+  }
+
+  async updateAdmin(username: string, request: UpdateAccountDto){
+    const account = await this.findAccountByUsername(username);
+    if(account.role.name !== "admin") throw new ForbiddenException("You do not have permission to update admin account.");
+    if(request.username) account.username = request.username;
+    if(request.phone) account.phone = request.phone;
+    await account.save();
     return account;
   }
 }
