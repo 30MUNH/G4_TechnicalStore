@@ -69,14 +69,10 @@ export class OrderController {
     async getOrders(
         @Req() req: any,
         @QueryParam("page") page: number = 1,
-        @QueryParam("limit") limit: number = 10
+        @QueryParam("limit") limit: number = 1000 // Đặt limit rất cao để lấy tất cả đơn hàng
     ) {
         const user = req.user as AccountDetailsDto;
         try {
-            // Validate pagination parameters
-            if (page < 1) page = 1;
-            if (limit < 1 || limit > 100) limit = 10;
-
             const orders = await this.orderService.getOrdersByUsername(
                 user.username, 
                 page, 

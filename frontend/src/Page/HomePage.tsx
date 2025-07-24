@@ -134,6 +134,13 @@ const HomePage: React.FC = () => {
         sessionStorage.removeItem('paymentSuccessMessage');
       }
     }
+
+    // Kiểm tra thêm cho trường hợp thanh toán COD
+    const codSuccessMsg = sessionStorage.getItem('codSuccessMessage');
+    if (codSuccessMsg) {
+      setPaymentSuccessMessage(codSuccessMsg);
+      sessionStorage.removeItem('codSuccessMessage');
+    }
   }, [location, navigate]);
 
   // Auto-hide payment success message after 5 seconds

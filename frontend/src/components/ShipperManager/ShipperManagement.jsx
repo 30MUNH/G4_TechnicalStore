@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Upload, 
   Plus, 
   X,
   Save,
@@ -29,6 +28,8 @@ const ShipperManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [createdDateFilter, setCreatedDateFilter] = useState("");
+  const [zoneFilter, setZoneFilter] = useState("all");
+  const [availableZones, setAvailableZones] = useState([]);
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -44,7 +45,6 @@ const ShipperManagement = () => {
   const [showWorkingZoneModal, setShowWorkingZoneModal] = useState(false);
   const [selectedShipperForZone, setSelectedShipperForZone] = useState(null);
   const [workingZones, setWorkingZones] = useState([]);
-  const [availableZones, setAvailableZones] = useState([]);
   const [loadingZones, setLoadingZones] = useState(false);
 
   const itemsPerPage = 5;
@@ -66,7 +66,7 @@ const ShipperManagement = () => {
     }, 3000);
   };
 
-  // Mock areas and calculate orders/rating for demo
+  // Mock areas and calculate orders for demo
   const mockAreas = ["Downtown", "Midtown", "Brooklyn", "Queens", "Bronx"];
   const mockVehicles = ["Motorcycle", "Small Truck"];
 
@@ -107,22 +107,6 @@ const ShipperManagement = () => {
               ? ((deliveredOrders / totalOrders) * 100).toFixed(1)
               : "0";
 
-          // Calculate rating from feedback if available, otherwise from delivery performance
-          let rating = "5.0"; // Default rating for new shippers
-          if (shipper.feedbacks && shipper.feedbacks.length > 0) {
-            // Calculate average rating from feedbacks (if feedback system is implemented)
-            const avgRating =
-              shipper.feedbacks.reduce(
-                (sum, feedback) => sum + (feedback.rating || 0),
-                0
-              ) / shipper.feedbacks.length;
-            rating = avgRating.toFixed(1);
-          } else if (totalOrders > 0) {
-            // Fallback: Calculate rating from delivery success rate (0-5 scale)
-            const successRate = deliveredOrders / totalOrders;
-            rating = (successRate * 5).toFixed(1);
-          }
-
           return {
             id: shipper.id,
             name: shipper.name || "N/A",
@@ -135,7 +119,6 @@ const ShipperManagement = () => {
             activeOrders,
             cancelledOrders,
             deliveryRate,
-            rating,
 
             // Status from database
             status: shipper.isRegistered ? "Active" : "Suspended",
@@ -174,6 +157,7 @@ const ShipperManagement = () => {
 
   useEffect(() => {
     fetchShippers();
+    fetchAvailableZones();
   }, []);
 
   // Fetch available working zones
@@ -236,8 +220,8 @@ const ShipperManagement = () => {
 
     const matchesStatus =
       statusFilter === "all" ||
-      (statusFilter === "active" && shipper.isRegistered) ||
-      (statusFilter === "inactive" && !shipper.isRegistered);
+      (statusFilter === "active" && shipper.isAvailable) ||
+      (statusFilter === "inactive" && !shipper.isAvailable);
 
     let matchesDate = true;
     if (createdDateFilter && shipper.createdAt) {
@@ -259,7 +243,14 @@ const ShipperManagement = () => {
       matchesDate = shipperDateOnly.getTime() === filterDateOnly.getTime();
     }
 
-    return matchesSearch && matchesStatus && matchesDate;
+    // Check if shipper works in the selected zone
+    let matchesZone = true;
+    if (zoneFilter !== 'all') {
+      matchesZone = shipper.workingZones && 
+        shipper.workingZones.includes(zoneFilter);
+    }
+
+    return matchesSearch && matchesStatus && matchesDate && matchesZone;
   });
 
   // Update pagination when filtered shippers change
@@ -520,13 +511,6 @@ const ShipperManagement = () => {
           </div>
 
           <div className={styles.headerActions}>
-            <button 
-              className={`${styles.actionButton} ${styles.exportButton}`}
-              onClick={handleExportData}
-            >
-              <Upload size={18} />
-              <span>Export Data</span>
-            </button>
             <button
               className={`${styles.actionButton} ${styles.addButton}`}
               onClick={() => openModal("add")}
@@ -543,9 +527,12 @@ const ShipperManagement = () => {
         searchTerm={searchTerm}
         statusFilter={statusFilter}
         createdDateFilter={createdDateFilter}
+        zoneFilter={zoneFilter}
         onSearchChange={setSearchTerm}
         onStatusChange={setStatusFilter}
         onDateChange={setCreatedDateFilter}
+        onZoneChange={setZoneFilter}
+        availableZones={availableZones}
       />
 
       {/* Shipper Cards */}
@@ -784,12 +771,6 @@ const ShipperForm = ({ mode, initialData, onSubmit, onCancel }) => {
               </span>
             </div>
             <div className={styles.viewField}>
-              <span className={styles.viewLabel}>Registered:</span>
-              <span className={styles.viewValue}>
-                {initialData?.isRegistered ? "Yes" : "No"}
-              </span>
-            </div>
-            <div className={styles.viewField}>
               <span className={styles.viewLabel}>Member Since:</span>
               <span className={styles.viewValue}>
                 {formatDate(initialData?.createdAt)}
@@ -799,14 +780,6 @@ const ShipperForm = ({ mode, initialData, onSubmit, onCancel }) => {
               <span className={styles.viewLabel}>Last Updated:</span>
               <span className={styles.viewValue}>
                 {formatDate(initialData?.updatedAt)}
-              </span>
-            </div>
-            <div className={styles.viewField}>
-              <span className={styles.viewLabel}>Rating:</span>
-              <span className={styles.viewValue}>
-                {initialData?.rating
-                  ? `⭐ ${initialData?.rating}/5.0`
-                  : "⭐ 5.0/5.0"}
               </span>
             </div>
             {/* New fields for automatic assignment */}
@@ -825,7 +798,7 @@ const ShipperForm = ({ mode, initialData, onSubmit, onCancel }) => {
             <div className={styles.viewField}>
               <span className={styles.viewLabel}>Daily Orders:</span>
               <span className={styles.viewValue}>
-                {initialData?.dailyOrderCount || 0} / {initialData?.maxDailyOrders || 10}
+                {initialData?.dailyOrderCount || 0} 
               </span>
             </div>
             <div className={styles.viewField}>

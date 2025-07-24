@@ -10,11 +10,10 @@ export const OrderHistoryPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
-    // Pagination states
+    // Pagination states for UI consistency but with a large limit
     const [currentPage, setCurrentPage] = useState(1);
     const [totalOrders, setTotalOrders] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const ordersPerPage = 10;
 
     const fetchData = async (page = 1) => {
         try {
@@ -22,10 +21,7 @@ export const OrderHistoryPage = () => {
             // Fetch both statistics and orders in parallel
             const [statsResponse, ordersResponse] = await Promise.all([
                 orderService.getOrderStatistics(),
-                orderService.getOrders({
-                    page: page,
-                    limit: ordersPerPage
-                })
+                orderService.getOrders({ page }) // Không truyền limit để sử dụng giá trị mặc định
             ]);
 
             // Handle statistics
@@ -33,27 +29,25 @@ export const OrderHistoryPage = () => {
                 setStatistics(statsResponse.statistics);
             }
 
-            // Handle orders with proper pagination data
+            // Handle orders with pagination data (nhưng hiển thị tất cả)
             if (ordersResponse.message === "Orders retrieved successfully") {
-                // Check if response has pagination structure
                 if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
                     setOrders(ordersResponse.data);
-                    setTotalOrders(ordersResponse.total || ordersResponse.data.length);
-                    setTotalPages(ordersResponse.totalPages || Math.ceil((ordersResponse.total || ordersResponse.data.length) / ordersPerPage));
-                } else if (Array.isArray(ordersResponse.data)) {
-                    setOrders(ordersResponse.data);
-                    setTotalOrders(ordersResponse.data.length);
-                    setTotalPages(Math.ceil(ordersResponse.data.length / ordersPerPage));
+                    
+                    // Lưu thông tin phân trang cho UI
+                    if (ordersResponse.pagination) {
+                        setTotalOrders(ordersResponse.pagination.total);
+                        setTotalPages(ordersResponse.pagination.totalPages);
+                    }
+                } else if (Array.isArray(ordersResponse)) {
+                    setOrders(ordersResponse);
+                    setTotalOrders(ordersResponse.length);
+                    setTotalPages(1);
                 } else {
                     setOrders([]);
                     setTotalOrders(0);
                     setTotalPages(0);
                 }
-            } else if (Array.isArray(ordersResponse)) {
-                // Fallback for direct array response
-                setOrders(ordersResponse);
-                setTotalOrders(ordersResponse.length);
-                setTotalPages(Math.ceil(ordersResponse.length / ordersPerPage));
             } else {
                 setOrders([]);
                 setTotalOrders(0);
@@ -73,7 +67,7 @@ export const OrderHistoryPage = () => {
         document.body.classList.add('order-history-page-active');
         return () => document.body.classList.remove('order-history-page-active');
     }, [currentPage]);
-
+    
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
@@ -83,7 +77,45 @@ export const OrderHistoryPage = () => {
     };
 
     return (
-        <>
+        <div style={{ margin: 0, padding: 0 }}>
+            {/* Header */}
+            <nav className="navbar" style={{
+                background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
+                padding: '1rem 2rem',
+                boxShadow: '0 4px 20px rgba(30, 41, 59, 0.4)',
+                margin: 0,
+                borderBottom: '2px solid #0ea5e9'
+            }}>
+                <div className="container-fluid">
+                    <div className="d-flex align-items-center w-100">
+                        <div className="text-white">
+                            <h1 style={{
+                                fontSize: '1.5rem',
+                                fontWeight: '700',
+                                margin: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.8rem'
+                            }}>
+                                <span style={{ fontSize: '1.8rem' }}>📋</span>
+                                Order History
+                            </h1>
+                            {!loading && !error && (
+                                <p style={{
+                                    fontSize: '0.9rem',
+                                    opacity: '0.8',
+                                    margin: 0,
+                                    marginTop: '0.2rem',
+                                    marginLeft: '3.4rem'
+                                }}>
+                                    {totalOrders === 0 ? 'No orders yet' : `(${totalOrders} orders)`}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
             <div className="container-fluid px-4 py-4" style={{
                 background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
                 minHeight: 'calc(100vh - 80px)'
@@ -105,17 +137,16 @@ export const OrderHistoryPage = () => {
                     </div>
                 ) : (
                     <OrderHistory 
-                        orders={orders} 
-                        totalOrders={totalOrders}
+                        orders={orders}
+                        onBackToCart={handleBackToCart}
+                        onOrderUpdate={setOrders}
                         currentPage={currentPage}
                         totalPages={totalPages}
                         onPageChange={handlePageChange}
-                        onBackToCart={handleBackToCart}
-                        onOrderUpdate={setOrders}
                     />
                 )}
 
-                {/* Nút quay lại */}
+                {/* Back button */}
                 <div className="d-flex justify-content-center mt-4 mb-3">
                     <div style={{ width: 'fit-content' }}>
                         <button

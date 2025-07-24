@@ -4,6 +4,7 @@ import { Plus, X, Save, User, Phone, Trash2, Shield } from "lucide-react";
 import AccountTable from "./AccountTable";
 import FilterBar from "./FilterBar";
 import styles from "./AccountManagement.module.css";
+import './AccountFormOverride.css'; // Import CSS override
 import { accountService } from "../../services/accountService";
 import { formatDate } from "../../utils/dateFormatter";
 
@@ -30,11 +31,11 @@ const AccountManagement = () => {
   const itemsPerPage = 10;
 
   // Available roles
-  const availableRoles = [
+  const [availableRoles, setAvailableRoles] = useState([
     { slug: "admin", name: "Admin" },
     { slug: "staff", name: "Staff" },
     { slug: "manager", name: "Manager" },
-  ];
+  ]);
 
   // Notification function
   const showNotification = (message, type = "info") => {

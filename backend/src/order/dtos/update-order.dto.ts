@@ -9,12 +9,13 @@ export enum OrderStatus {
 }
 
 export class UpdateOrderDto {
-    @IsEnum(OrderStatus)
+    @IsEnum(OrderStatus, { message: 'Trạng thái đơn hàng không hợp lệ' })
+    @IsNotEmpty({ message: 'Trạng thái đơn hàng không được để trống' })
     status: OrderStatus;
 
     @ValidateIf(o => o.status === OrderStatus.CANCELLED)
-    @IsString()
-    @IsNotEmpty()
-    @Length(10, 200, { message: 'Cancellation reason must be between 10 and 200 characters' })
+    @IsString({ message: 'Lý do hủy phải là chuỗi' })
+    @IsNotEmpty({ message: 'Lý do hủy không được để trống khi hủy đơn hàng' })
+    @Length(10, 200, { message: 'Lý do hủy phải từ 10-200 ký tự' })
     cancelReason?: string;
 } 

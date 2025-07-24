@@ -217,6 +217,8 @@ const CheckoutPage = () => {
                 });
             } else {
                 // COD - show success and redirect
+                // Không cần lưu vào sessionStorage vì đã hiển thị thông báo ở CheckoutForm
+                
                 navigate('/order-history', { 
                     state: { 
                         paymentSuccess: true,

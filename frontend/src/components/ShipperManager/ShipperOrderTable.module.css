@@ -3,6 +3,8 @@
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  max-width: 97%;
+  margin-left: 16px;
 }
 
 .tableWrapper {
@@ -25,6 +27,13 @@
   font-weight: 600;
   font-size: 1rem;
   letter-spacing: 0.025em;
+}
+
+/* Điều chỉnh tiêu đề status để thẳng hàng với trạng thái */
+.headerCell:nth-child(5) {
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .tableBody {
@@ -93,9 +102,9 @@
   font-size: 0.875rem;
   font-weight: 500;
   display: inline-block;
-  min-width: 100px;
-  width: 100px;
+  min-width: 90px;
   text-align: center;
+  width: 90px;
 }
 
 .statusSelect {
@@ -178,6 +187,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-left: 10px;
 }
 
 .actionButton {
@@ -343,22 +353,7 @@
   .status,
   .statusSelect {
     font-size: 0.75rem;
-    padding: 0.125rem 0;
-    min-width: 70px;
-    width: 70px;
+    padding: 0.125rem 0.5rem;
+    min-width: 90px;
   }
-
-  /* Đảm bảo tiêu đề STATUS cũng được căn giữa trên mobile */
-  .headerCell:nth-child(5) {
-    text-align: center;
-    padding-left: 0;
-    padding-right: 0;
-  }
-}
-
-/* Điều chỉnh tiêu đề STATUS để thẳng hàng với trạng thái */
-.headerCell:nth-child(5) {
-  text-align: center;
-  padding-left: 0;
-  padding-right: 0;
 }

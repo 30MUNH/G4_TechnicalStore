@@ -66,16 +66,6 @@ const FilterBar = ({
           placeholder="dd/mm/yyyy"
         />
 
-        {/* Shipper Filter */}
-        <select
-          className={styles.select}
-          value={shipperFilter}
-          onChange={(e) => onShipperChange(e.target.value)}
-        >
-          <option value="all">All Shippers</option>
-          <option value="with_shipper">With Shipper</option>
-          <option value="without_shipper">Without Shipper</option>
-        </select>
 
         {/* Amount Filter */}
         <select

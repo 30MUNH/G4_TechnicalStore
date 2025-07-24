@@ -27,18 +27,15 @@ export class CronJobService {
   private scheduleDailyOrderCountReset(): void {
     const task = cron.schedule("0 0 * * *", async () => {
       try {
-        console.log(`[CRON] Starting daily order count reset at ${new Date().toISOString()}`);
         await this.orderAssignmentService.resetDailyOrderCounts();
-        console.log(`[CRON] Daily order count reset completed successfully`);
       } catch (error) {
-        console.error(`[CRON] Daily order count reset failed:`, error);
+        // Error handling
       }
     }, {
       timezone: "Asia/Ho_Chi_Minh" // Múi giờ Việt Nam
     });
 
     this.cronJobs.push(task);
-    console.log(`[CRON] Scheduled daily order count reset (00:00 daily)`);
   }
 
   /**
@@ -48,13 +45,9 @@ export class CronJobService {
   private scheduleAutoAssignment(): void {
     const task = cron.schedule("*/30 * * * *", async () => {
       try {
-        console.log(`[CRON] Starting auto-assignment check at ${new Date().toISOString()}`);
         const unassignedOrders = await this.orderService.getUnassignedOrders();
         
-        console.log(`[CRON] Found ${unassignedOrders.length} unassigned orders`);
-        
         if (unassignedOrders.length === 0) {
-          console.log(`[CRON] No orders to assign, exiting`);
           return;
         }
 
@@ -62,17 +55,14 @@ export class CronJobService {
         const successCount = results.filter(r => r.success).length;
         const failCount = results.length - successCount;
         
-        console.log(`[CRON] Auto-assignment completed: ${successCount} succeeded, ${failCount} failed`);
-        
       } catch (error) {
-        console.error(`[CRON] Auto-assignment failed:`, error);
+        // Error handling
       }
     }, {
       timezone: "Asia/Ho_Chi_Minh"
     });
 
     this.cronJobs.push(task);
-    console.log(`[CRON] Scheduled auto-assignment (every 30 minutes)`);
   }
 
   /**

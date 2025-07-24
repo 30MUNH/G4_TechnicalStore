@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Upload, 
   Plus, 
   X,
   Save,
@@ -242,13 +241,7 @@ const OrderManagement = ({ role = 'admin' }) => {
           </div>
           
           <div className={styles.headerActions}>
-            <button 
-              className={`${styles.actionButton} ${styles.exportButton}`}
-              onClick={handleExportData}
-            >
-              <Upload size={18} />
-              <span>Export data</span>
-            </button>
+            {/* Removed Export Data button */}
           </div>
         </div>
       </div>
@@ -421,6 +414,7 @@ const OrderDetail = ({ order }) => (
 const getStatusClass = (status) => {
   switch (status) {
     case 'PENDING': return styles.statusPending;
+    case 'PENDING_EXTERNAL_SHIPPING': return styles.statusPending;
     case 'SHIPPING': return styles.statusShipping;
     case 'DELIVERED': return styles.statusDelivered;
     case 'CANCELLED': return styles.statusCancelled;

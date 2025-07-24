@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Upload,
   Plus,
   Eye,
   Edit,
@@ -9,7 +8,6 @@ import {
   ChevronRight,
   Search
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { productService } from '../../services/productService';
 import type { Product, Category } from '../../types/product';
 import ProductDetailAdminModal from './ProductDetailAdminModal';
@@ -101,20 +99,16 @@ const ProductManagement: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Fetch all products including out of stock
+        // 1. Fetch tất cả sản phẩm
         const productsData = await productService.getAllProductsIncludingOutOfStock();
-        console.log('Fetched products:', productsData);
-        setProducts(Array.isArray(productsData) ? productsData : []);
-        
-        // Lấy danh sách category
+        // 2. Fetch tất cả categories
         const categoriesData = await productService.getCategories();
-        console.log('Fetched categories:', categoriesData);
+        
+        setProducts(Array.isArray(productsData) ? productsData : []);
         setCategories(Array.isArray(categoriesData) ? categoriesData : []);
-
       } catch (err) {
         console.error('Error fetching data:', err);
-        setError('Failed to load products. Please try again.');
+        setError('Failed to load products. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -451,41 +445,6 @@ const ProductManagement: React.FC = () => {
     }
   };
 
-  const exportToExcel = () => {
-    try {
-      // Chuẩn bị dữ liệu để export
-      const exportData = products.map(product => ({
-        Name: product.name || '',
-        Image: product.images && product.images.length > 0 ? product.images[0].url : 'No Image',
-        Category: product.category?.name || 'Unknown',
-        Stock: product.stock || 0,
-        Price: product.price ? new Intl.NumberFormat('vi-VN', {
-          style: 'currency',
-          currency: 'VND'
-        }).format(product.price) : 'N/A'
-      }));
-
-      // Tạo workbook và worksheet
-      const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-
-      // Đặt tên cho worksheet
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
-
-      // Tạo tên file với timestamp
-      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-      const fileName = `products_export_${timestamp}.xlsx`;
-
-      // Export file
-      XLSX.writeFile(workbook, fileName);
-      
-      showNotification('Data exported successfully!', 'success');
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      showNotification('Failed to export data. Please try again.', 'error');
-    }
-  };
-
   if (loading) {
     return (
       <div className="p-6 bg-gray-50 min-h-full flex items-center justify-center">
@@ -523,17 +482,6 @@ const ProductManagement: React.FC = () => {
           </div>
           
           <div className="flex items-center space-x-3">
-            {/* <button className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all duration-200">
-              <Download size={18} className="text-white" />
-              <span className="text-white font-medium">Import Data</span>
-            </button> */}
-            <button 
-              className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all duration-200"
-              onClick={exportToExcel}
-            >
-              <Upload size={18} className="text-white" />
-              <span className="text-white font-medium">Export Data</span>
-            </button>
             <button className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-all duration-200" onClick={handleAddProduct}>
               <Plus size={18} className="text-white" />
               <span className="text-white font-medium">Add Product</span>
