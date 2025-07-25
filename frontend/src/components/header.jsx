@@ -48,10 +48,12 @@ const Header = () => {
     setIsSearching(true);
     try {
       const results = await productService.searchProducts(searchValue.trim());
-      console.log("SEARCH API RESULT:", results);
+      // Chỉ lấy sản phẩm active
+      const activeResults = Array.isArray(results) ? results.filter(p => p.isActive) : [];
+      console.log("SEARCH API RESULT:", activeResults);
       navigate('/all-products', { 
         state: { 
-          searchResults: results, 
+          searchResults: activeResults, 
           searchKeyword: searchValue.trim() 
         } 
       });

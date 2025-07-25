@@ -989,98 +989,183 @@ export class ProductService {
         }
 
         // Xoá các entity liên quan
-        // 1. Xoá component theo category
         if (product.category && product.category.name) {
           const categoryName = product.category.name.toLowerCase();
-          switch (categoryName) {
-            case "cpu": {
-              const { CPU } = await import("./components/cpu.entity");
-              await transactionalEntityManager.delete(CPU, { product: { id } });
-              break;
+          try {
+            switch (categoryName) {
+              case "cpu": {
+                const { CPU } = await import("./components/cpu.entity");
+                const { Build } = await import("@/rfq/build.entity");
+                const cpuRecord = await CPU.findOne({ where: { product: { id } } });
+                if (cpuRecord) {
+                  await transactionalEntityManager.delete(Build, { cpu: { id: cpuRecord.id } });
+                }
+                await transactionalEntityManager.delete(CPU, { product: { id } });
+                break;
+              }
+              case "ram": {
+                const { RAM } = await import("./components/ram.entity");
+                const { Build } = await import("@/rfq/build.entity");
+                const ramRecord = await RAM.findOne({ where: { product: { id } } });
+                if (ramRecord) {
+                  await transactionalEntityManager.delete(Build, { ram: { id: ramRecord.id } });
+                }
+                await transactionalEntityManager.delete(RAM, { product: { id } });
+                break;
+              }
+              case "gpu": {
+                const { GPU } = await import("./components/gpu.entity");
+                const { Build } = await import("@/rfq/build.entity");
+                const gpuRecord = await GPU.findOne({ where: { product: { id } } });
+                if (gpuRecord) {
+                  await transactionalEntityManager.delete(Build, { gpu: { id: gpuRecord.id } });
+                }
+                await transactionalEntityManager.delete(GPU, { product: { id } });
+                break;
+              }
+              case "psu": {
+                const { PSU } = await import("./components/psu.entity");
+                const { Build } = await import("@/rfq/build.entity");
+                const psuRecord = await PSU.findOne({ where: { product: { id } } });
+                if (psuRecord) {
+                  await transactionalEntityManager.delete(Build, { psu: { id: psuRecord.id } });
+                }
+                await transactionalEntityManager.delete(PSU, { product: { id } });
+                break;
+              }
+              case "drive": {
+                const { Drive } = await import("./components/drive.entity");
+                const { Build } = await import("@/rfq/build.entity");
+                const driveRecord = await Drive.findOne({ where: { product: { id } } });
+                if (driveRecord) {
+                  await transactionalEntityManager.delete(Build, { drive: { id: driveRecord.id } });
+                }
+                await transactionalEntityManager.delete(Drive, { product: { id } });
+                break;
+              }
+              case "cooler": {
+                const { Cooler } = await import("./components/cooler.entity");
+                const { Build } = await import("@/rfq/build.entity");
+                const coolerRecord = await Cooler.findOne({ where: { product: { id } } });
+                if (coolerRecord) {
+                  await transactionalEntityManager.delete(Build, { cooler: { id: coolerRecord.id } });
+                }
+                await transactionalEntityManager.delete(Cooler, { product: { id } });
+                break;
+              }
+              case "motherboard": {
+                const { Motherboard } = await import("./components/motherboard.entity");
+                const { Build } = await import("@/rfq/build.entity");
+                const mbRecord = await Motherboard.findOne({ where: { product: { id } } });
+                if (mbRecord) {
+                  await transactionalEntityManager.delete(Build, { motherboard: { id: mbRecord.id } });
+                }
+                await transactionalEntityManager.delete(Motherboard, { product: { id } });
+                break;
+              }
+              case "monitor": {
+                const { Monitor } = await import("./components/monitor.entity");
+                await transactionalEntityManager.delete(Monitor, { product: { id } });
+                break;
+              }
+              case "pc": {
+                const { PC } = await import("./components/pc.entity");
+                await transactionalEntityManager.delete(PC, { product: { id } });
+                break;
+              }
+              case "laptop": {
+                const { Laptop } = await import("./components/laptop/laptop.entity");
+                await transactionalEntityManager.delete(Laptop, { product: { id } });
+
+                // Xóa các bảng phụ của laptop
+                const { CPULaptop } = await import("./components/laptop/cpu-laptop.entity");
+                await transactionalEntityManager.delete(CPULaptop, { product: { id } });
+
+                const { DriveLaptop } = await import("./components/laptop/drive-laptop.entity");
+                await transactionalEntityManager.delete(DriveLaptop, { product: { id } });
+
+                const { GPULaptop } = await import("./components/laptop/gpu-laptop.entity");
+                await transactionalEntityManager.delete(GPULaptop, { product: { id } });
+
+                const { NetworkCardLaptop } = await import("./components/laptop/networdCard-laptop.entity");
+                await transactionalEntityManager.delete(NetworkCardLaptop, { product: { id } });
+
+                const { RAMLaptop } = await import("./components/laptop/ram-laptop.entity");
+                await transactionalEntityManager.delete(RAMLaptop, { product: { id } });
+
+                break;
+              }
+              case "case": {
+                const { Case } = await import("./components/case.entity");
+                await transactionalEntityManager.delete(Case, { product: { id } });
+                break;
+              }
+              case "mouse": {
+                const { Mouse } = await import("./components/mouse.entity");
+                await transactionalEntityManager.delete(Mouse, { product: { id } });
+                break;
+              }
+              case "keyboard": {
+                const { Keyboard } = await import("./components/keyboard.entity");
+                await transactionalEntityManager.delete(Keyboard, { product: { id } });
+                break;
+              }
+              case "network card": {
+                const { NetworkCard } = await import("./components/networkCard.entity");
+                await transactionalEntityManager.delete(NetworkCard, { product: { id } });
+                break;
+              }
+              case "headset": {
+                const { Headset } = await import("./components/headset.entity");
+                await transactionalEntityManager.delete(Headset, { product: { id } });
+                break;
+              }
+              default:
+                // No matching case for category: categoryName
             }
-            case "ram": {
-              const { RAM } = await import("./components/ram.entity");
-              await transactionalEntityManager.delete(RAM, { product: { id } });
-              break;
-            }
-            case "gpu": {
-              const { GPU } = await import("./components/gpu.entity");
-              await transactionalEntityManager.delete(GPU, { product: { id } });
-              break;
-            }
-            case "psu": {
-              const { PSU } = await import("./components/psu.entity");
-              await transactionalEntityManager.delete(PSU, { product: { id } });
-              break;
-            }
-            case "drive": {
-              const { Drive } = await import("./components/drive.entity");
-              await transactionalEntityManager.delete(Drive, {
-                product: { id },
-              });
-              break;
-            }
-            case "cooler": {
-              const { Cooler } = await import("./components/cooler.entity");
-              await transactionalEntityManager.delete(Cooler, {
-                product: { id },
-              });
-              break;
-            }
-            case "motherboard": {
-              const { Motherboard } = await import(
-                "./components/motherboard.entity"
-              );
-              await transactionalEntityManager.delete(Motherboard, {
-                product: { id },
-              });
-              break;
-            }
-            case "monitor": {
-              const { Monitor } = await import("./components/monitor.entity");
-              await transactionalEntityManager.delete(Monitor, {
-                product: { id },
-              });
-              break;
-            }
-            case "pc": {
-              const { PC } = await import("./components/pc.entity");
-              await transactionalEntityManager.delete(PC, { product: { id } });
-              break;
-            }
-            case "laptop": {
-              const { Laptop } = await import(
-                "./components/laptop/laptop.entity"
-              );
-              await transactionalEntityManager.delete(Laptop, {
-                product: { id },
-              });
-              break;
-            }
-            // Thêm các loại khác nếu có
+          } catch (err) {
+            // Error in switch-case: err
           }
         }
 
         // 2. Xoá ảnh
         const { Image } = await import("@/image/image.entity");
-        await transactionalEntityManager.delete(Image, { product: { id } });
+        try {
+          await transactionalEntityManager.delete(Image, { product: { id } });
+        } catch (err) {
+          // Error deleting Images: err
+        }
 
         // 3. Xoá feedback
         const { Feedback } = await import("@/feedback/feedback.entity");
-        await transactionalEntityManager.delete(Feedback, { product: { id } });
+        try {
+          await transactionalEntityManager.delete(Feedback, { product: { id } });
+        } catch (err) {
+          // Error deleting Feedback: err
+        }
 
         // 4. Xoá cartItem
         const { CartItem } = await import("@/Cart/cartItem.entity");
-        await transactionalEntityManager.delete(CartItem, { product: { id } });
+        try {
+          await transactionalEntityManager.delete(CartItem, { product: { id } });
+        } catch (err) {
+          // Error deleting CartItem: err
+        }
 
         // 5. Xoá orderDetail
         const { OrderDetail } = await import("@/order/orderDetail.entity");
-        await transactionalEntityManager.delete(OrderDetail, {
-          product: { id },
-        });
+        try {
+          await transactionalEntityManager.delete(OrderDetail, { product: { id } });
+        } catch (err) {
+          // Error deleting OrderDetail: err
+        }
 
         // 6. Xoá chính Product
-        await transactionalEntityManager.delete(Product, { id });
+        try {
+          await transactionalEntityManager.delete(Product, { id });
+        } catch (err) {
+          // Error deleting Product: err
+        }
 
         return true;
       }
