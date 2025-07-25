@@ -131,7 +131,7 @@ export class AccountController{
     @UseBefore(Auth)
     @CheckAbility("create", Account)
     async createAccount(@Body() body: CreateAccountDto, @Req() req: any){
-        const account = await this.accountService.createAccount(body.username, body.password, body.phone, body.roleSlug);
+        const account = await this.accountService.createAccount(body.username, body.password, body.name, body.phone, body.roleSlug);
         return account;
     }
 

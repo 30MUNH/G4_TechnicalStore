@@ -20,6 +20,9 @@ export class CreateAccountDto {
     phone: string;
 
     @IsString()
+    name: string;
+
+    @IsString()
     roleSlug: string;
 }
 
