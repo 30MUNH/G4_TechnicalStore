@@ -102,8 +102,8 @@ export class AccountController{
     }
 
     @Post('/forgot-password')
-    async forgotPassword(@BodyParam("phone") phone: string){
-        const account = await this.accountService.findAccountByPhone(phone);
+    async forgotPassword(@BodyParam("username") username: string){
+        const account = await this.accountService.findAccountByUsername(username);
         await this.otpService.sendOtp(account.phone);
         return "Check OTP message to reset password";
     }

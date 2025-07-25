@@ -1,43 +1,45 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User, Lock, ArrowLeft } from 'lucide-react';
-import FormCard from './FormCard';
-import OTPPopup from './OTPPopup';
-import styles from './ForgotPassword.module.css';
-import { authService } from '../../services/authService';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { User, Lock, ArrowLeft } from "lucide-react";
+import FormCard from "./FormCard";
+import OTPPopup from "./OTPPopup";
+import styles from "./ForgotPassword.module.css";
+import { authService, verifyOtpForCustomer } from "../../services/authService";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); 
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    username: '',
-    newPassword: '',
-    confirmPassword: ''
+    username: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingReset, setPendingReset] = useState(null);
   const [verifiedOTP, setVerifiedOTP] = useState(null);
   const [showOTPPopup, setShowOTPPopup] = useState(false);
+  const [otpError, setOtpError] = useState("");
 
   const validateField = (name, value) => {
     switch (name) {
-      case 'username':
-        if (!value.trim()) return 'Username is required';
-        if (value.length < 3) return 'Username must be at least 3 characters';
+      case "username":
+        if (!value.trim()) return "Username is required";
+        if (value.length < 3) return "Username must be at least 3 characters";
         return undefined;
-        
-      case 'newPassword':
-        if (!value.trim()) return 'Password is required';
-        if (value.length < 6) return 'Password must be at least 6 characters';
-        if (!/\d/.test(value)) return 'Password must contain at least one number';
+
+      case "newPassword":
+        if (!value.trim()) return "Password is required";
+        if (value.length < 6) return "Password must be at least 6 characters";
+        if (!/\d/.test(value))
+          return "Password must contain at least one number";
         return undefined;
-        
-      case 'confirmPassword':
-        if (!value.trim()) return 'Confirm password is required';
-        if (value !== formData.newPassword) return 'Passwords do not match';
+
+      case "confirmPassword":
+        if (!value.trim()) return "Confirm password is required";
+        if (value !== formData.newPassword) return "Passwords do not match";
         return undefined;
-        
+
       default:
         return undefined;
     }
@@ -45,24 +47,24 @@ const ForgotPassword = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
+
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
-    
+
     const error = validateField(name, value);
     if (error) {
-      setErrors(prev => ({ ...prev, [name]: error }));
+      setErrors((prev) => ({ ...prev, [name]: error }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (step === 1) {
-      const usernameError = validateField('username', formData.username);
+      const usernameError = validateField("username", formData.username);
       if (usernameError) {
         setErrors({ username: usernameError });
         return;
@@ -70,39 +72,55 @@ const ForgotPassword = () => {
 
       setIsSubmitting(true);
       try {
-        const response = await authService.requestPasswordReset(formData.username);
-        
+        const response = await authService.requestPasswordReset(
+          formData.username
+        );
+
         if (response && response.success) {
           setPendingReset(formData.username);
           setShowOTPPopup(true);
           setErrors({});
-        } else if (response && typeof response.message === 'string' && response.message.toLowerCase().includes('otp')) {
+        } else if (
+          response &&
+          typeof response.message === "string" &&
+          response.message.toLowerCase().includes("otp")
+        ) {
           setPendingReset(formData.username);
           setShowOTPPopup(true);
           setErrors({});
         } else {
-          throw new Error('Failed to send OTP');
+          throw new Error("Failed to send OTP");
         }
       } catch (error) {
-        setErrors({ username: error.response?.data?.message || 'Failed to send OTP. Please try again.' });
+        setErrors({
+          username:
+            error.response?.data?.message ||
+            "Failed to send OTP. Please try again.",
+        });
       } finally {
         setIsSubmitting(false);
       }
     } else if (step === 2) {
       // Validate password fields for step 2
-      const newPasswordError = validateField('newPassword', formData.newPassword);
-      const confirmPasswordError = validateField('confirmPassword', formData.confirmPassword);
-      
+      const newPasswordError = validateField(
+        "newPassword",
+        formData.newPassword
+      );
+      const confirmPasswordError = validateField(
+        "confirmPassword",
+        formData.confirmPassword
+      );
+
       if (newPasswordError || confirmPasswordError) {
         setErrors({
           newPassword: newPasswordError,
-          confirmPassword: confirmPasswordError
+          confirmPassword: confirmPasswordError,
         });
         return;
       }
 
       if (!verifiedOTP) {
-        setErrors({ general: 'OTP verification required' });
+        setErrors({ general: "OTP verification required" });
         return;
       }
 
@@ -111,23 +129,30 @@ const ForgotPassword = () => {
         const response = await authService.verifyResetOTP({
           username: pendingReset,
           otp: verifiedOTP,
-          newPassword: formData.newPassword
+          newPassword: formData.newPassword,
         });
 
         if (response && response.success) {
           // Store the username for login page
-          sessionStorage.setItem('lastResetUser', JSON.stringify({
-            username: formData.username,
-            timestamp: Date.now()
-          }));
-          
-          alert('Password has been reset successfully!');
-          navigate('/login');
+          sessionStorage.setItem(
+            "lastResetUser",
+            JSON.stringify({
+              username: formData.username,
+              timestamp: Date.now(),
+            })
+          );
+
+          alert("Password has been reset successfully!");
+          navigate("/login");
         } else {
-          throw new Error('Failed to reset password');
+          throw new Error("Failed to reset password");
         }
       } catch (error) {
-        setErrors({ general: error.response?.data?.message || 'Failed to reset password. Please try again.' });
+        setErrors({
+          general:
+            error.response?.data?.message ||
+            "Failed to reset password. Please try again.",
+        });
       } finally {
         setIsSubmitting(false);
       }
@@ -136,50 +161,69 @@ const ForgotPassword = () => {
 
   const handleVerifyOTP = async (otp) => {
     if (!pendingReset) {
-      setErrors({ general: 'No pending reset session' });
+      setErrors({ general: "No pending reset session" });
       return;
     }
-
-    // Store the verified OTP and move to step 2
-    setVerifiedOTP(otp);
-    setShowOTPPopup(false);
-    setStep(2);
-    setErrors({});
+    setOtpError("");
+    try {
+      // Call OTP verification API
+      const response = await verifyOtpForCustomer(pendingReset, otp);
+      const isVerified =
+        response &&
+        (response.success === true || response.code === 200) &&
+        response.data &&
+        response.data.verified &&
+        response.data.verified.data === true;
+      if (isVerified) {
+        // OTP is valid, proceed
+        setVerifiedOTP(otp);
+        setShowOTPPopup(false);
+        setStep(2);
+        setErrors({});
+      } else {
+        // OTP is invalid, show error in OTPPopup
+        setOtpError("OTP is incorrect or expired. Please try again.");
+      }
+    } catch (error) {
+      setOtpError(
+        error?.message || "OTP verification failed. Please try again."
+      );
+    }
   };
 
   const handleResendOTP = async () => {
     if (!pendingReset) {
-      setErrors({ general: 'No pending reset session' });
+      setErrors({ general: "No pending reset session" });
       return;
     }
 
     try {
       const response = await authService.resendOTP({
         username: pendingReset,
-        isForLogin: true
+        isForLogin: true,
       });
 
       if (response && response.success) {
-        setErrors({ general: 'New OTP sent to your phone' });
+        setErrors({ general: "New OTP sent to your phone" });
       } else {
-        throw new Error('Failed to resend OTP');
+        throw new Error("Failed to resend OTP");
       }
     } catch (error) {
-      setErrors({ general: 'Failed to resend OTP. Please try again.' });
+      setErrors({ general: "Failed to resend OTP. Please try again." });
     }
   };
 
   return (
     <FormCard>
-      <button 
-        type="button" 
-        onClick={() => navigate('/login')} 
+      <button
+        type="button"
+        onClick={() => navigate("/login")}
         className={styles.backArrowBtn}
         aria-label="Back to Sign In"
       >
         <ArrowLeft size={20} />
       </button>
-      
+
       <div className={styles.authHeader}>
         <h1 className={styles.authTitle}>Reset Password</h1>
         <p className={styles.authSubtitle}>
@@ -190,7 +234,10 @@ const ForgotPassword = () => {
 
       <form onSubmit={handleSubmit} className={styles.authForm}>
         {errors.general && (
-          <div className={styles.errorMessage} style={{ marginBottom: '1rem', textAlign: 'center' }}>
+          <div
+            className={styles.errorMessage}
+            style={{ marginBottom: "1rem", textAlign: "center" }}
+          >
             {errors.general}
           </div>
         )}
@@ -207,11 +254,15 @@ const ForgotPassword = () => {
                 placeholder="Enter your username"
                 value={formData.username}
                 onChange={handleInputChange}
-                className={`${styles.input} ${errors.username ? styles.error : ''}`}
+                className={`${styles.input} ${
+                  errors.username ? styles.error : ""
+                }`}
                 autoComplete="username"
               />
             </div>
-            {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
+            {errors.username && (
+              <span className={styles.errorMessage}>{errors.username}</span>
+            )}
           </div>
         )}
 
@@ -228,11 +279,17 @@ const ForgotPassword = () => {
                   placeholder="Enter new password"
                   value={formData.newPassword}
                   onChange={handleInputChange}
-                  className={`${styles.input} ${errors.newPassword ? styles.error : ''}`}
+                  className={`${styles.input} ${
+                    errors.newPassword ? styles.error : ""
+                  }`}
                   autoComplete="new-password"
                 />
               </div>
-              {errors.newPassword && <span className={styles.errorMessage}>{errors.newPassword}</span>}
+              {errors.newPassword && (
+                <span className={styles.errorMessage}>
+                  {errors.newPassword}
+                </span>
+              )}
             </div>
 
             <div className={styles.formGroup}>
@@ -246,11 +303,17 @@ const ForgotPassword = () => {
                   placeholder="Confirm new password"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className={`${styles.input} ${errors.confirmPassword ? styles.error : ''}`}
+                  className={`${styles.input} ${
+                    errors.confirmPassword ? styles.error : ""
+                  }`}
                   autoComplete="new-password"
                 />
               </div>
-              {errors.confirmPassword && <span className={styles.errorMessage}>{errors.confirmPassword}</span>}
+              {errors.confirmPassword && (
+                <span className={styles.errorMessage}>
+                  {errors.confirmPassword}
+                </span>
+              )}
             </div>
           </>
         )}
@@ -260,12 +323,12 @@ const ForgotPassword = () => {
           className={styles.submitBtn}
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Processing...' : (
-            step === 1 ? 'Send OTP' : 'Reset Password'
-          )}
+          {isSubmitting
+            ? "Processing..."
+            : step === 1
+            ? "Send OTP"
+            : "Reset Password"}
         </button>
-
-
       </form>
 
       {showOTPPopup && (
@@ -284,4 +347,4 @@ const ForgotPassword = () => {
   );
 };
 
-export default ForgotPassword; 
+export default ForgotPassword;

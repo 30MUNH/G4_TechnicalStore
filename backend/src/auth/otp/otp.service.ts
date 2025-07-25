@@ -20,6 +20,7 @@ export class OtpService {
     }
     const now = new Date(Date.now() - 14 * 60 * 60 * 1000);
     if (now.getTime() - otp.createdAt.getTime() > 3 * 60 * 1000) {
+      console.log("otp expired");
       return false;
     }
     otp.verified = true;
