@@ -230,7 +230,7 @@ const ProductManagement: React.FC = () => {
   // Khi thay đổi filter/sort, reset về trang 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [categoryFilter, statusFilter, priceSort, products]);
+  }, [categoryFilter, statusFilter, priceSort]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -362,6 +362,8 @@ const ProductManagement: React.FC = () => {
       const result = await productService.updateProduct(updatedProduct.id, updateData);
       if (result) {
         const productsData = await productService.getAllProductsIncludingOutOfStock();
+        const newTotalPages = Math.ceil(productsData.length / PRODUCTS_PER_PAGE);
+        setCurrentPage((prev) => Math.min(prev, newTotalPages === 0 ? 1 : newTotalPages));
         setProducts(Array.isArray(productsData) ? productsData : []);
         setShowEditModal(false);
         setEditingProduct(null);
@@ -387,28 +389,21 @@ const ProductManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteProduct = async (product: Product) => {
-    if (!window.confirm(`Are you sure you want to delete the product "${product.name}"?`)) return;
+  const handleRemoveProduct = async (product: Product) => {
+    if (!window.confirm(`Are you sure you want to permanently delete the product "${product.name}"? This action cannot be undone.`)) return;
     try {
-      const result = await productService.updateProduct(product.id, { isActive: false });
+      const result = await productService.removeProduct(product.id);
       if (result) {
         const productsData = await productService.getAllProductsIncludingOutOfStock();
+        const newTotalPages = Math.ceil(productsData.length / PRODUCTS_PER_PAGE);
+        setCurrentPage((prev) => Math.min(prev, newTotalPages === 0 ? 1 : newTotalPages));
         setProducts(Array.isArray(productsData) ? productsData : []);
-        showNotification('Product deleted (deactivated) successfully!', 'success');
+        showNotification('Product deleted permanently!', 'success');
       } else {
-        showNotification('Failed to deactivate product. Please try again!', 'error');
+        showNotification('Failed to delete product. Please try again!', 'error');
       }
-    } catch (err: any) {
-      const message = err?.response?.data?.error || err?.response?.data?.message || err?.message || '';
-      if (message.toLowerCase().includes('not found')) {
-        showNotification('Product not found. It may have already been deleted.', 'error');
-      } else if (message.toLowerCase().includes('network')) {
-        showNotification('Network error. Please try again later.', 'error');
-      } else if (message) {
-        showNotification(message, 'error');
-      } else {
-        showNotification('An unknown error occurred while deleting the product.', 'error');
-      }
+    } catch (err: unknown) {
+      showNotification('An unknown error occurred while deleting the product.', 'error');
     }
   };
 
@@ -421,6 +416,8 @@ const ProductManagement: React.FC = () => {
       const result = await productService.createProduct(newProduct);
       if (result) {
         const productsData = await productService.getAllProductsIncludingOutOfStock();
+        const newTotalPages = Math.ceil(productsData.length / PRODUCTS_PER_PAGE);
+        setCurrentPage((prev) => Math.min(prev, newTotalPages === 0 ? 1 : newTotalPages));
         setProducts(Array.isArray(productsData) ? productsData : []);
         setShowAddModal(false);
         showNotification('Product added successfully!', 'success');
@@ -442,6 +439,23 @@ const ProductManagement: React.FC = () => {
       } else {
         showNotification('An unknown error occurred while adding the product.', 'error');
       }
+    }
+  };
+
+  const handleToggleProductStatus = async (product: Product) => {
+    try {
+      const updated = await productService.updateProduct(product.id, { isActive: !product.isActive });
+      if (updated) {
+        const productsData = await productService.getAllProductsIncludingOutOfStock();
+        const newTotalPages = Math.ceil(productsData.length / PRODUCTS_PER_PAGE);
+        setCurrentPage((prev) => Math.min(prev, newTotalPages === 0 ? 1 : newTotalPages));
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        showNotification(`Product has been ${!product.isActive ? 'activated' : 'deactivated'} successfully!`, 'success');
+      } else {
+        showNotification('Failed to update product status. Please try again!', 'error');
+      }
+    } catch (err: any) {
+      showNotification('An error occurred while updating product status.', 'error');
     }
   };
 
@@ -500,7 +514,10 @@ const ProductManagement: React.FC = () => {
               placeholder="Search products..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
           
@@ -573,9 +590,18 @@ const ProductManagement: React.FC = () => {
                     <Edit size={16} className="mr-1" />
                     Edit
                   </button>
-                  <button className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors flex items-center justify-center" onClick={() => handleDeleteProduct(product)}>
-                    <Trash2 size={16} className="mr-1" />
-                    Delete
+                  <button
+                    className={`flex-1 ${product.isActive ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-500 hover:bg-gray-700'} text-white py-2 px-3 rounded-md transition-colors flex items-center justify-center`}
+                    onClick={() => handleToggleProductStatus(product)}
+                  >
+                    {product.isActive ? 'Active' : 'Deactive'}
+                  </button>
+                  <button
+                    className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors flex items-center justify-center"
+                    style={{ minWidth: 0, width: 'auto', paddingLeft: 12, paddingRight: 12 }}
+                    onClick={() => handleRemoveProduct(product)}
+                  >
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>

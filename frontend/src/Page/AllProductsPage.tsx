@@ -86,6 +86,8 @@ const AllProductsPage: React.FC = () => {
   // Filter, search, sort logic
   useEffect(() => {
     let filtered = [...products];
+    // Chỉ lấy sản phẩm active
+    filtered = filtered.filter((p) => p.isActive);
     // Filter by category
     if (filters.categories.length > 0) {
       filtered = filtered.filter((p) => {
