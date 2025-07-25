@@ -133,8 +133,8 @@ export class OrderController {
     ) {
         const user = req.user as AccountDetailsDto;
         
-        // Only allow admin, staff, shipper
-        if (!this.isAdmin(user) && !this.isStaff(user) && !this.isShipper(user)) {
+        // Only allow admin, manager, staff, shipper
+        if (!this.isAdmin(user) && !this.isManager(user) && !this.isStaff(user) && !this.isShipper(user)) {
             throw new HttpException(401, "Access denied to orders list");
         }
         
@@ -249,5 +249,10 @@ export class OrderController {
     // Helper method to check shipper role
     private isShipper(user: AccountDetailsDto): boolean {
         return user.role?.name?.toLowerCase().includes('shipper') || false;
+    }
+
+    // Helper method to check manager role
+    private isManager(user: AccountDetailsDto): boolean {
+        return user.role?.name?.toLowerCase().includes('manager') || false;
     }
 } 

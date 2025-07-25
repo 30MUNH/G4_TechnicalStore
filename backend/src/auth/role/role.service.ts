@@ -13,6 +13,7 @@ export class RoleService {
     if (admin == null) {
       const role = new Role();
       role.name = "admin";
+      role.slug = "admin";
       await role.save();
     }
     const manager = await Role.findOne({
@@ -23,6 +24,7 @@ export class RoleService {
     if(manager == null){
       const role = new Role();
       role.name = "manager";
+      role.slug = "manager";
       await role.save();
     }
     const staff = await Role.findOne({
@@ -33,6 +35,7 @@ export class RoleService {
     if(staff == null){
       const role = new Role();
       role.name = "staff";
+      role.slug = "staff";
       await role.save();
     }
     const customer = await Role.findOne({
@@ -43,6 +46,7 @@ export class RoleService {
     if(customer == null){
       const role = new Role();
       role.name = "customer";
+      role.slug = "customer";
       await role.save();
     }
     const shipper = await Role.findOne({
@@ -53,6 +57,7 @@ export class RoleService {
     if(shipper == null){
       const role = new Role();
       role.name = "shipper";
+      role.slug = "shipper";
       await role.save();
     }
   }
