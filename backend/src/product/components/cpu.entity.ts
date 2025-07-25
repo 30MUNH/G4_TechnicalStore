@@ -9,6 +9,9 @@ export class CPU extends BaseEntity {
   @JoinColumn()
   product: Product;
 
+  @Column({ nullable: true })
+  model: string;
+
   @Column()
   cores: number;
 

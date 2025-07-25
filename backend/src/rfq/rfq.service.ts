@@ -42,45 +42,58 @@ export class RFQService {
 
   async getBuilds(filter: BuildFilterDTO) {
     const where: any = { amount: LessThanOrEqual(filter.amount) };
-    // For each id, if present, fetch the entity and add to where
+    // For each id, if present, filter by the product id of the component
     if (filter.cpuId) {
-      where.cpu = { id: filter.cpuId };
+      where.cpu = { product: { id: filter.cpuId } };
     }
     if (filter.motherboardId) {
-      where.motherboard = { id: filter.motherboardId };
+      where.motherboard = { product: { id: filter.motherboardId } };
     }
     if (filter.ramId) {
-      where.ram = { id: filter.ramId };
+      where.ram = { product: { id: filter.ramId } };
     }
     if (filter.gpuId) {
-      where.gpu = { id: filter.gpuId };
+      where.gpu = { product: { id: filter.gpuId } };
     }
     if (filter.psuId) {
-      where.psu = { id: filter.psuId };
+      where.psu = { product: { id: filter.psuId } };
     }
     if (filter.driveId) {
-      where.drive = { id: filter.driveId };
+      where.drive = { product: { id: filter.driveId } };
     }
     if (filter.coolerId) {
-      where.cooler = { id: filter.coolerId };
+      where.cooler = { product: { id: filter.coolerId } };
     }
     if (filter.caseId) {
-      where.case = { id: filter.caseId };
+      where.case = { product: { id: filter.caseId } };
     }
-    const builds = await Build.find({
+    const [builds, count] = await Build.findAndCount({
       where,
       relations: [
         "cpu",
+        "cpu.product",
         "motherboard",
+        "motherboard.product",
         "ram",
+        "ram.product",
         "gpu",
+        "gpu.product",
         "psu",
+        "psu.product",
         "drive",
+        "drive.product",
         "cooler",
+        "cooler.product",
         "case",
+        "case.product",
       ],
+      order: {
+        amount: filter.order,
+      },
+      skip: filter.skip,
+      take: filter.take,
     });
-    return builds;
+    return { builds, count };
   }
 
   async rfqProcess(amount: number) {
@@ -89,11 +102,18 @@ export class RFQService {
     const mbDriveMap = new Map();
     const cpuCoolerMap = new Map();
     let buildCount = 0;
+    const MAX_BUILDS = 1000; // Safety limit
 
     // Fetch all CPUs
     const allCPUs = await CPU.find({ relations: ["product"] });
     console.log(`[DEBUG] CPUs found: ${allCPUs.length}`);
     for (const cpu of allCPUs) {
+      if (buildCount >= MAX_BUILDS) {
+        console.log(
+          `[DEBUG] Reached maximum builds limit (${MAX_BUILDS}), stopping.`
+        );
+        break;
+      }
       // Fetch only motherboards compatible with this CPU
       const motherboards = await Motherboard.find({
         where: { socket: cpu.socket },
@@ -103,6 +123,7 @@ export class RFQService {
         `[DEBUG] CPU ${cpu.id} (${cpu.socket}) compatible motherboards: ${motherboards.length}`
       );
       for (const mb of motherboards) {
+        if (buildCount >= MAX_BUILDS) break;
         // RAMs compatible with this motherboard (memoized)
         let compatibleRAMs = mbRamMap.get(mb.id);
         if (!compatibleRAMs) {
@@ -116,25 +137,32 @@ export class RFQService {
           `[DEBUG] Motherboard ${mb.id} (${mb.ramType}) compatible RAMs: ${compatibleRAMs.length}`
         );
         for (const ram of compatibleRAMs) {
+          if (buildCount >= MAX_BUILDS) break;
           // Drives compatible with this motherboard (memoized)
           let compatibleDrives = mbDriveMap.get(mb.id);
           if (!compatibleDrives) {
             const interfaces = mb.supportedDriveInterfaces
               ? this.parseDriveInterfaces(mb.supportedDriveInterfaces)
               : [];
-            compatibleDrives =
-              interfaces.length > 0
-                ? await Drive.find({
-                    where: { interface: In(interfaces) },
-                    relations: ["product"],
-                  })
-                : [];
+            const allDrives = await Drive.find({ relations: ["product"] });
+            if (interfaces.length > 0) {
+              compatibleDrives = allDrives.filter((drive) =>
+                interfaces.some(
+                  (iface) =>
+                    drive.interface &&
+                    drive.interface.toLowerCase().includes(iface.toLowerCase())
+                )
+              );
+            } else {
+              compatibleDrives = allDrives;
+            }
             mbDriveMap.set(mb.id, compatibleDrives);
           }
           console.log(
             `[DEBUG] Motherboard ${mb.id} compatible drives: ${compatibleDrives.length}`
           );
           for (const drive of compatibleDrives) {
+            if (buildCount >= MAX_BUILDS) break;
             // Cases compatible with this motherboard
             const cases = await Case.find({ relations: ["product"] });
             const compatibleCases = cases.filter((pcCase) =>
@@ -146,6 +174,7 @@ export class RFQService {
               `[DEBUG] Motherboard ${mb.id} compatible cases: ${compatibleCases.length}`
             );
             for (const pcCase of compatibleCases) {
+              if (buildCount >= MAX_BUILDS) break;
               // GPUs that fit in the case
               const gpus = await GPU.find({ relations: ["product"] });
               const compatibleGPUs = gpus.filter(
@@ -155,6 +184,7 @@ export class RFQService {
                 `[DEBUG] Case ${pcCase.id} compatible GPUs: ${compatibleGPUs.length}`
               );
               for (const gpu of compatibleGPUs) {
+                if (buildCount >= MAX_BUILDS) break;
                 // PSUs that fit the case and have enough wattage
                 const totalTdp = (cpu.tdp || 0) + (gpu.tdp || 0) + 100;
                 const psus = await PSU.find({ relations: ["product"] });
@@ -171,6 +201,7 @@ export class RFQService {
                   `[DEBUG] Case ${pcCase.id} compatible PSUs: ${compatiblePSUs.length}`
                 );
                 for (const psu of compatiblePSUs) {
+                  if (buildCount >= MAX_BUILDS) break;
                   // Coolers compatible with this CPU (memoized)
                   let compatibleCoolers = cpuCoolerMap.get(cpu.id);
                   if (!compatibleCoolers) {
@@ -188,6 +219,7 @@ export class RFQService {
                     `[DEBUG] CPU ${cpu.id} compatible coolers: ${compatibleCoolers.length}`
                   );
                   for (const cooler of compatibleCoolers) {
+                    if (buildCount >= MAX_BUILDS) break;
                     // Calculate total price
                     const totalPrice = [
                       pcCase,

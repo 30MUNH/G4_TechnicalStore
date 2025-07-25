@@ -10,11 +10,11 @@ export class RFQController {
 
   @Post("/builds")
   async getBuilds(@Body() filter: BuildFilterDTO) {
-    return this.rfqService.getBuilds(filter);
+    return this.rfqService.getBuilds(filter); // returns { builds, count }
   }
 
-  @Post("/run-buildmaker")
-  async runBuildmaker() {
-    return this.rfqService.rfqProcess(Number.MAX_SAFE_INTEGER);
-  }
+  //   @Post("/run-buildmaker")
+  //   async runBuildmaker() {
+  //     return this.rfqService.rfqProcess(Number.MAX_SAFE_INTEGER);
+  //   }
 }
