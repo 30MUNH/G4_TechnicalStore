@@ -36,4 +36,13 @@ export class BuildFilterDTO {
   @IsOptional()
   @IsString()
   caseId?: string;
+
+  @IsString()
+  order: "ASC" | "DESC";
+
+  @IsNumber()
+  skip: number;
+
+  @IsNumber()
+  take: number;
 }

@@ -1,6 +1,13 @@
-import './App.css'
-import 'bootstrap/dist/css/bootstrap.min.css';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import "./App.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import ContactUs from "./components/About/ContactUs.jsx";
 import Aboutus from "./components/About/Aboutus.jsx";
 import Login from "./components/Login/Login.jsx";
@@ -14,13 +21,14 @@ import VNPayPaymentPage from "./Page/VNPayPaymentPage.jsx";
 import OrderHistoryPage from "./Page/OrderHistoryPage.jsx";
 import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import Navigation from './components/Navigation';
-import Header from './components/header';
-import { Fragment, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import Navigation from "./components/Navigation";
+import Header from "./components/header";
+import { Fragment, useEffect } from "react";
+import type { ReactNode } from "react";
 import CustomerManagement from "./components/CustomerManager/CustomerManagement.jsx";
 import ShipperManagement from "./components/ShipperManager/ShipperManagement.jsx";
 import { AdminApp } from "./components/admin";
+import RequestForQuotaPage from "./Page/RequestForQuotaPage";
 
 function AuthBgWrapper({ children }: { children: ReactNode }) {
   return <div className="auth-bg-custom">{children}</div>;
@@ -35,19 +43,19 @@ function RoleBasedRedirect() {
   useEffect(() => {
     const checkRoleAndRedirect = async () => {
       // Chỉ kiểm tra khi đã đăng nhập và đang ở trang chủ
-      if (isAuthenticated() && user && location.pathname === '/') {
-        const isAdmin = user && (
-          user.role === 'admin' || 
-          user.role === 'manager' ||
-          (user.role && typeof user.role === 'object' && user.role.name && (
-            user.role.name === 'admin' || 
-            user.role.name === 'manager'
-          ))
-        );
+      if (isAuthenticated() && user && location.pathname === "/") {
+        const isAdmin =
+          user &&
+          (user.role === "admin" ||
+            user.role === "manager" ||
+            (user.role &&
+              typeof user.role === "object" &&
+              user.role.name &&
+              (user.role.name === "admin" || user.role.name === "manager")));
 
         if (isAdmin) {
-          console.log('🔄 Admin user detected, redirecting to admin dashboard');
-          navigate('/admin', { replace: true });
+          console.log("🔄 Admin user detected, redirecting to admin dashboard");
+          navigate("/admin", { replace: true });
         }
       }
     };
@@ -61,7 +69,13 @@ function RoleBasedRedirect() {
 }
 
 // Protected Route Component for admin access
-function ProtectedRoute({ children, requireAdmin = false }: { children: ReactNode, requireAdmin?: boolean }) {
+function ProtectedRoute({
+  children,
+  requireAdmin = false,
+}: {
+  children: ReactNode;
+  requireAdmin?: boolean;
+}) {
   const { user, isAuthenticated } = useAuth();
 
   if (!isAuthenticated()) {
@@ -83,14 +97,17 @@ function AuthNavigationHandler() {
 
   useEffect(() => {
     const handleAuthLogout = (event: CustomEvent) => {
-      const redirectTo = event.detail?.redirectTo || '/login';
+      const redirectTo = event.detail?.redirectTo || "/login";
       navigate(redirectTo, { replace: true });
     };
 
-    window.addEventListener('auth:logout', handleAuthLogout as EventListener);
-    
+    window.addEventListener("auth:logout", handleAuthLogout as EventListener);
+
     return () => {
-      window.removeEventListener('auth:logout', handleAuthLogout as EventListener);
+      window.removeEventListener(
+        "auth:logout",
+        handleAuthLogout as EventListener
+      );
     };
   }, [navigate]);
 
@@ -100,8 +117,6 @@ function AuthNavigationHandler() {
 // Tách logic route để dùng useLocation
 function AppContent() {
   const location = useLocation();
-
-  // Các route không muốn hiện header/navigation
   const hideHeaderAndNavRoutes = ["/login", "/signup", "/forgot-password", "/about", "/contact", "/cart", "/checkout", "/vnpay-payment", "/manage-customers", "/manage-shippers", "/admin", "/order-history"];
   const shouldHide = hideHeaderAndNavRoutes.includes(location.pathname);
 
@@ -120,29 +135,64 @@ function AppContent() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/vnpay-payment" element={<VNPayPaymentPage />} />
+        <Route
+          path="/login"
+          element={
+            <AuthBgWrapper>
+              <Login />
+            </AuthBgWrapper>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <AuthBgWrapper>
+              <SignUp />
+            </AuthBgWrapper>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <AuthBgWrapper>
+              <ForgotPassword />
+            </AuthBgWrapper>
+          }
+        />
+
+        <Route path="/request-for-quota" element={<RequestForQuotaPage />} />
+
+        <Route
+          path="/manage-customers"
+          element={
+            <ProtectedRoute requireAdmin={true}>
+              <CustomerManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage-shippers"
+          element={
+            <ProtectedRoute requireAdmin={true}>
+              <ShipperManagement />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/order-history" element={<OrderHistoryPage />} />
         <Route path="/login" element={<AuthBgWrapper><Login /></AuthBgWrapper>} />
         <Route path="/signup" element={<AuthBgWrapper><SignUp /></AuthBgWrapper>} />
         <Route path="/forgot-password" element={<AuthBgWrapper><ForgotPassword /></AuthBgWrapper>} />
 
-        <Route path="/manage-customers" element={
-          <ProtectedRoute requireAdmin={true}>
-            <CustomerManagement />
-          </ProtectedRoute>
-        } />
-        <Route path="/manage-shippers" element={
-          <ProtectedRoute requireAdmin={true}>
-            <ShipperManagement />
-          </ProtectedRoute>
-        } />
-        
         {/* Admin Dashboard Route */}
-        <Route path="/admin" element={
-          <ProtectedRoute requireAdmin={true}>
-            <AdminApp />
-          </ProtectedRoute>
-        } />
-        
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requireAdmin={true}>
+              <AdminApp />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Redirect any unknown paths to home page */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

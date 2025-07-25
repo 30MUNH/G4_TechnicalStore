@@ -187,7 +187,9 @@ export class OrderService {
 
                 // Update stock
                 const oldStock = product.stock;
-                product.stock -= cartItem.quantity;
+                if(product.name?.toLowerCase() !== "build"){
+                    product.stock -= cartItem.quantity;
+                }
                 await transactionalEntityManager.save(product);
             }
 
