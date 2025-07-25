@@ -6,7 +6,8 @@ import {
   Truck,
   ShoppingCart,
   ChevronRight,
-  Shield
+  Shield,
+  MessageSquare // Thêm dòng này
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -26,6 +27,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSec
     { id: 'accounts', label: 'Accounts', icon: Shield },
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
     { id: 'shippers', label: 'Shippers', icon: Truck },
+    { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquare }, // Thêm dòng này
   ];
 
   if (role === 'shipper') {

@@ -211,36 +211,24 @@ const Login = ({ onNavigate }) => {
           // Extract user data from response structure
           const userData = userProfile.data || userProfile;
 
-          // Check if user has admin/manager role
-          const isAdmin =
-            userData &&
-            (userData.role === "admin" ||
-              userData.role === "manager" ||
-              (userData.role &&
-                userData.role.name &&
-                (userData.role.name === "admin" ||
-                  userData.role.name === "manager")));
+          // Sửa logic kiểm tra role
+          const roleName = typeof userData.role === "object" ? userData.role.name : userData.role;
+          const isAdminOrStaffOrShipper =
+            roleName === "admin" ||
+            roleName === "manager" ||
+            roleName === "staff" ||
+            roleName === "shipper";
 
-          console.log("🔍 Is admin check:", {
-            userProfile,
-            userData,
-            role: userData?.role,
-            roleName: userData?.role?.name,
-            isAdmin,
-          });
-
-          if (isAdmin) {
-            // Redirect admin/manager to admin dashboard
-            console.log("🚀 Redirecting to admin dashboard");
+          if (isAdminOrStaffOrShipper) {
+            // Redirect all admin/manager/staff/shipper to admin dashboard
             navigate("/admin", {
               state: {
-                welcomeMessage: `Chào mừng Admin trở lại!`,
+                welcomeMessage: `Chào mừng ${roleName} trở lại!`,
                 loginTime: formatDateTime(new Date()),
               },
             });
           } else {
             // Redirect regular users to homepage
-            console.log("🏠 Redirecting to homepage");
             navigate("/", {
               state: {
                 welcomeMessage: `Chào mừng bạn trở lại!`,

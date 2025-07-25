@@ -13,9 +13,9 @@ const AdminHeader: React.FC = () => {
     <header className="bg-white shadow-lg border-b border-gray-200">
       <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center space-x-4">
-          <h2 className="text-2xl font-bold text-gray-800">
+          {/* <h2 className="text-2xl font-bold text-gray-800">
             System Management
-          </h2>
+          </h2> */}
         </div>
         
         <div className="flex items-center space-x-4">

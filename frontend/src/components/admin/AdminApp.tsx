@@ -10,6 +10,7 @@ import AccountManagement from '../AccountManager/AccountManagement.jsx';
 import ProductManagement from './ProductManagement';
 import ShipperManagement from '../ShipperManager/ShipperManagement.jsx';
 import OrderManagement from '../OrderManager/OrderManagement.jsx';
+import FeedbackManagement from './FeedbackManagement';
 
 function AdminApp() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -27,9 +28,11 @@ function AdminApp() {
       const isAdminFromCurrentUser = user && (
         user.role === 'admin' || 
         user.role === 'manager' ||
+        user.role === 'staff' ||
         (user.role && typeof user.role === 'object' && user.role.name && (
           user.role.name === 'admin' || 
-          user.role.name === 'manager'
+          user.role.name === 'manager' ||
+          user.role.name === 'staff'
         ))
       );
       const isShipperFromCurrentUser = user && (
@@ -38,7 +41,7 @@ function AdminApp() {
       );
 
       if (isAdminFromCurrentUser) {
-        // Admin/manager: allow
+        // Admin/manager/staff: allow
         return;
       }
       if (isShipperFromCurrentUser) {
@@ -54,9 +57,11 @@ function AdminApp() {
         const isAdmin = userData && (
           userData.role === 'admin' || 
           userData.role === 'manager' ||
+          userData.role === 'staff' ||
           (userData.role && userData.role.name && (
             userData.role.name === 'admin' || 
-            userData.role.name === 'manager'
+            userData.role.name === 'manager' ||
+            userData.role.name === 'staff'
           ))
         );
         const isShipper = userData && (
@@ -128,6 +133,8 @@ function AdminApp() {
         return <ShipperManagement />;
       case 'orders':
         return <OrderManagement role={role} />;
+      case 'feedbacks':
+        return <FeedbackManagement />;
       default:
         return <AdminDashboard />;
     }
