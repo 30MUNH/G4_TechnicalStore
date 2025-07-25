@@ -269,13 +269,13 @@ class ProductService {
     }
   }
 
-  async deleteProduct(id: string): Promise<boolean> {
+  async removeProduct(id: string): Promise<boolean> {
     try {
-      const response = await api.delete<ApiResponse<any>>(`/products/${id}`);
-      // Có thể kiểm tra response.data.success hoặc response.status === 200 tuỳ backend
-      return response.status === 200;
+      const response = await api.delete<ApiResponse<unknown>>(`/products/${id}`);
+      // Chấp nhận status 200, 201, 204 là thành công
+      return [200, 201, 204].includes(response.status);
     } catch (error) {
-      console.error("Error deleting product:", error);
+      console.error('Error removing product:', error);
       return false;
     }
   }
