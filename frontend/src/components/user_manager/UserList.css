@@ -1,4 +1,4 @@
-body{
+/* body{
   display: block;
 }
 .user-list-container {
@@ -202,4 +202,4 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(26px);
-}
+} */

@@ -150,7 +150,7 @@ export class AccountService {
     });
   }
 
-  async createAccount(username: string, password: string, phone: string, roleSlug: string){
+  async createAccount(username: string, password: string, name: string, phone: string, roleSlug: string){
     const role = await Role.findOne({
       where: {
         slug: roleSlug,
@@ -174,6 +174,7 @@ export class AccountService {
     account.username = username;
     account.password = await bcrypt.hash(password, SALT_ROUNDS);
     account.phone = phone;
+    account.name = name;
     account.role = role;
     account.isRegistered = true;
     await account.save();

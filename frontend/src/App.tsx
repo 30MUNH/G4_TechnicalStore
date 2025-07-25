@@ -18,6 +18,7 @@ import CartPage from "./Page/CartPage.jsx";
 import CheckoutPage from "./Page/CheckoutPage.jsx";
 import AllProductsPage from "./Page/AllProductsPage";
 import VNPayPaymentPage from "./Page/VNPayPaymentPage.jsx";
+import OrderHistoryPage from "./Page/OrderHistoryPage.jsx";
 import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Navigation from "./components/Navigation";
@@ -116,21 +117,7 @@ function AuthNavigationHandler() {
 // Tách logic route để dùng useLocation
 function AppContent() {
   const location = useLocation();
-
-  // Các route không muốn hiện header/navigation
-  const hideHeaderAndNavRoutes = [
-    "/login",
-    "/signup",
-    "/forgot-password",
-    "/about",
-    "/contact",
-    "/cart",
-    "/checkout",
-    "/vnpay-payment",
-    "/manage-customers",
-    "/manage-shippers",
-    "/admin",
-  ];
+  const hideHeaderAndNavRoutes = ["/login", "/signup", "/forgot-password", "/about", "/contact", "/cart", "/checkout", "/vnpay-payment", "/manage-customers", "/manage-shippers", "/admin", "/order-history"];
   const shouldHide = hideHeaderAndNavRoutes.includes(location.pathname);
 
   return (
@@ -191,6 +178,10 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        <Route path="/order-history" element={<OrderHistoryPage />} />
+        <Route path="/login" element={<AuthBgWrapper><Login /></AuthBgWrapper>} />
+        <Route path="/signup" element={<AuthBgWrapper><SignUp /></AuthBgWrapper>} />
+        <Route path="/forgot-password" element={<AuthBgWrapper><ForgotPassword /></AuthBgWrapper>} />
 
         {/* Admin Dashboard Route */}
         <Route
