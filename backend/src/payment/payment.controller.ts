@@ -40,9 +40,9 @@ export class PaymentController {
       
       // Try to get user from Authorization header if present
       const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
+      if (authHeader) {
         try {
-          const token = authHeader.substring(7);
+          const token = authHeader;
           const decodedToken = this.jwtService.verifyAccessToken(token);
           if (decodedToken && decodedToken.username) {
             username = decodedToken.username;

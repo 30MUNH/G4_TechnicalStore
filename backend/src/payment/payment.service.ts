@@ -56,7 +56,7 @@ export class PaymentService {
     }
     // If (!username && !order.customer) - guest paying for guest order - allowed
 
-    if (order.status !== OrderStatus.PENDING) {
+    if (order.status !== OrderStatus.PENDING && order.status !== OrderStatus.PENDING_EXTERNAL_SHIPPING) {
       throw new Error("Order is not in pending status");
     }
 
