@@ -97,7 +97,7 @@ const PrevArrow = ({
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { addToCart } = useCart();
+  const { addToCart, clearCart } = useCart();
   const { user, token } = useAuth();
   const [newProducts, setNewProducts] = useState<{
     laptops: Product[];
@@ -157,8 +157,10 @@ const HomePage: React.FC = () => {
       paymentSuccess?: boolean;
       message?: string;
     } | null;
+    let shouldClear = false;
     if (state && state.paymentSuccess && state.message) {
       setPaymentSuccessMessage(state.message);
+      shouldClear = true;
       // Clear the state
       navigate(location.pathname, { replace: true });
     } else {
@@ -166,6 +168,7 @@ const HomePage: React.FC = () => {
       const msg = sessionStorage.getItem("paymentSuccessMessage");
       if (msg) {
         setPaymentSuccessMessage(msg);
+        shouldClear = true;
         sessionStorage.removeItem("paymentSuccessMessage");
       }
     }
@@ -174,9 +177,14 @@ const HomePage: React.FC = () => {
     const codSuccessMsg = sessionStorage.getItem("codSuccessMessage");
     if (codSuccessMsg) {
       setPaymentSuccessMessage(codSuccessMsg);
+      shouldClear = true;
       sessionStorage.removeItem("codSuccessMessage");
     }
-  }, [location, navigate]);
+
+    if (shouldClear) {
+      clearCart();
+    }
+  }, [location, navigate, clearCart]);
 
   // Auto-hide payment success message after 5 seconds
   useEffect(() => {

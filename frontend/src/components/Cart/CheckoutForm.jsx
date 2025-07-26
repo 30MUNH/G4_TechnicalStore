@@ -66,7 +66,7 @@ const CheckoutForm = ({
 
   // OTP states for guest verification
   const [showOtpPopup, setShowOtpPopup] = useState(false);
-  const [otpError, setOtpError] = useState('');
+  const [otpError, setOtpError] = useState("");
   const [otpVerified, setOtpVerified] = useState(false);
   const [pendingOrderData, setPendingOrderData] = useState(null);
 
@@ -74,8 +74,7 @@ const CheckoutForm = ({
   const clearSavedFormData = () => {
     try {
       sessionStorage.removeItem("checkoutFormData");
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   // Early return for invalid props
@@ -345,8 +344,7 @@ const CheckoutForm = ({
         paymentMethod,
       };
       sessionStorage.setItem("checkoutFormData", JSON.stringify(dataToSave));
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   // Modify the handleInputChange function to validate as user types
@@ -507,19 +505,21 @@ const CheckoutForm = ({
         paymentMethod: orderData.paymentMethod,
         requireInvoice: true,
         isGuest: isGuest,
-        ...(isGuest ? {
-          guestInfo: {
-            fullName: orderData.fullName.trim(),
-            phone: orderData.phone.trim(),
-            email: orderData.email.trim()
-          },
-          guestCartItems: cartItems.map(item => ({
-            productId: item.product?.id || item.id,
-            quantity: item.quantity || 1,
-            price: item.product?.price || item.price || 0,
-            name: item.product?.name || item.name || 'Unknown Product'
-          }))
-        } : {})
+        ...(isGuest
+          ? {
+              guestInfo: {
+                fullName: orderData.fullName.trim(),
+                phone: orderData.phone.trim(),
+                email: orderData.email.trim(),
+              },
+              guestCartItems: cartItems.map((item) => ({
+                productId: item.product?.id || item.id,
+                quantity: item.quantity || 1,
+                price: item.product?.price || item.price || 0,
+                name: item.product?.name || item.name || "Unknown Product",
+              })),
+            }
+          : {}),
       };
 
       // Create order first, then redirect to VNPay
@@ -793,7 +793,10 @@ const CheckoutForm = ({
 
   try {
     return (
-      <div className={styles.checkoutContainer} style={{ marginTop: '0', paddingTop: '0' }}>
+      <div
+        className={styles.checkoutContainer}
+        style={{ marginTop: "0", paddingTop: "0" }}
+      >
         {/* Đã xóa checkoutHeader */}
 
         {/* Form & Cart Summary */}
@@ -870,7 +873,8 @@ const CheckoutForm = ({
                   <div className={styles.guestNotificationText}>
                     <strong>Bạn đang đặt hàng dưới dạng khách.</strong>
                     <br />
-                    Đơn hàng sẽ không hiển thị trong tài khoản. Bạn có thể tạo tài khoản sau để theo dõi đơn hàng dễ dàng hơn.
+                    Đơn hàng sẽ không hiển thị trong tài khoản. Bạn có thể tạo
+                    tài khoản sau để theo dõi đơn hàng dễ dàng hơn.
                   </div>
                 </div>
               )}
@@ -1077,8 +1081,10 @@ const CheckoutForm = ({
                   >
                     <div className={styles.paymentIconCompact}>💳</div>
                     <div className={styles.paymentInfoCompact}>
-                      <span className={styles.paymentTitle}>VNPay</span>
-                      <span className={styles.paymentDesc}>Online payment</span>
+                      <span className={styles.paymentTitle}>Card</span>
+                      <span className={styles.paymentDesc}>
+                        Pay by credit or debit card
+                      </span>
                     </div>
                   </label>
                 </div>
@@ -1118,7 +1124,7 @@ const CheckoutForm = ({
           isOpen={showOtpPopup}
           onClose={() => {
             setShowOtpPopup(false);
-            setOtpError('');
+            setOtpError("");
             setPendingOrderData(null);
           }}
           onVerify={handleVerifyOtpForGuest}

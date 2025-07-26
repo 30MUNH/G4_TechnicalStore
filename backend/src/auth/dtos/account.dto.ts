@@ -57,6 +57,10 @@ export class VerifyRegisterDto {
 export class UpdateAccountDto {
     @IsString()
     @IsOptional()
+    oldUsername?: string;
+
+    @IsString()
+    @IsOptional()
     username?: string;
 
     @IsString()
