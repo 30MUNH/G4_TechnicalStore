@@ -19,7 +19,8 @@ export const OrderHistory = ({
     const [selectedOrderId, setSelectedOrderId] = useState(null);
     const [cancelReason, setCancelReason] = useState('');
     const { exportToPDF } = useInvoiceExport();
-    const { cancelOrder, confirmOrderDelivery } = useOrders();
+    const { cancelOrder } = useOrders();
+    const [processingOrderIds, setProcessingOrderIds] = useState(new Set());
 
     // Filter states (cho client-side filtering bổ sung)
     const [statusFilter, setStatusFilter] = useState('all');
@@ -195,27 +196,6 @@ export const OrderHistory = ({
         setCancelReason('');
     };
 
-    // Hàm xử lý khi khách hàng xác nhận đã nhận hàng
-    const handleConfirmDelivery = async (orderId) => {
-        try {
-            await confirmOrderDelivery(orderId);
-            showNotification('✅ Cảm ơn bạn đã xác nhận đã nhận hàng!', 'success');
-            
-            // Cập nhật trạng thái đơn hàng ở local state
-            if (onOrderUpdate) {
-                onOrderUpdate((prevOrders) => 
-                    prevOrders.map(order => 
-                        order.id === orderId 
-                            ? { ...order, status: 'DELIVERED' }
-                            : order
-                    )
-                );
-            }
-        } catch (error) {
-            showNotification('❌ Không thể xác nhận nhận hàng. Vui lòng thử lại.', 'error');
-        }
-    };
-
     const handleCancelConfirm = async () => {
         if (!selectedOrderId || !cancelReason.trim()) {
             showNotification('⚠️ Vui lòng nhập lý do hủy đơn hàng', 'warning');
@@ -223,6 +203,9 @@ export const OrderHistory = ({
         }
 
         try {
+            // Set processing state for this order
+            setProcessingOrderIds(prev => new Set(prev).add(selectedOrderId));
+            
             // Call API to cancel order
             await cancelOrder(selectedOrderId, cancelReason);
             
@@ -237,7 +220,7 @@ export const OrderHistory = ({
                 );
             }
             
-            showNotification('✅ Order cancelled successfully!', 'success');
+            showNotification('✅ Đã hủy đơn hàng thành công!', 'success');
             
             // Close modal and reset states
             setShowCancelModal(false);
@@ -245,15 +228,23 @@ export const OrderHistory = ({
             setCancelReason('');
             
         } catch (error) {
+            console.error('Error cancelling order:', error);
             
             // Handle specific error cases
             if (error.message?.includes('account_locked')) {
-                showNotification('⚠️ Your account has been locked due to too many order cancellations. Please contact support.', 'error');
+                showNotification('⚠️ Tài khoản của bạn đã bị khóa do hủy đơn hàng quá nhiều lần. Vui lòng liên hệ hỗ trợ.', 'error');
             } else if (error.message?.includes('order_cannot_cancel')) {
-                showNotification('❌ Cannot cancel this order because it has passed the allowed time.', 'error');
+                showNotification('❌ Không thể hủy đơn hàng này vì đã quá thời gian cho phép.', 'error');
             } else {
-                showNotification('❌ An error occurred while cancelling the order. Please try again.', 'error');
+                showNotification('❌ Đã xảy ra lỗi khi hủy đơn hàng. Vui lòng thử lại.', 'error');
             }
+        } finally {
+            // Remove processing state for this order
+            setProcessingOrderIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(selectedOrderId);
+                return newSet;
+            });
         }
     };
 
@@ -266,11 +257,6 @@ export const OrderHistory = ({
     // Check if order can be cancelled (only pending orders)
     const canCancelOrder = (status) => {
         return status === 'PENDING';
-    };
-
-    // Check if order can be confirmed (only SHIPPING status)
-    const canConfirmDelivery = (status) => {
-        return status === 'SHIPPING';
     };
 
     // Filter orders based on filter criteria (client-side filtering for current page)
@@ -512,6 +498,7 @@ export const OrderHistory = ({
                     }}>
                         {filteredOrders.map((order) => {
                             const isExpanded = expandedOrders.has(order.id);
+                            const isProcessing = processingOrderIds.has(order.id);
 
                             return (
                                 <div key={order.id} style={{
@@ -521,8 +508,39 @@ export const OrderHistory = ({
                                     boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
                                     width: '100%',
                                     transition: 'all 0.3s ease',
-                                    border: '2px solid #f1f5f9'
+                                    border: '2px solid #f1f5f9',
+                                    opacity: isProcessing ? 0.7 : 1,
+                                    pointerEvents: isProcessing ? 'none' : 'auto'
                                 }}>
+                                    {isProcessing && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            bottom: 0,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                                            borderRadius: '16px',
+                                            zIndex: 10
+                                        }}>
+                                            <div style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: '10px'
+                                            }}>
+                                                <div className={styles.spinner}></div>
+                                                <span style={{
+                                                    fontWeight: 600,
+                                                    color: '#3b82f6'
+                                                }}>Đang xử lý...</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
                                     {/* Order Header */}
                                     <div style={{
                                         display: 'flex',
@@ -531,7 +549,8 @@ export const OrderHistory = ({
                                         paddingBottom: '1.5rem',
                                         borderBottom: '2px solid #e2e8f0',
                                         marginBottom: '1.5rem',
-                                        width: '100%'
+                                        width: '100%',
+                                        position: 'relative'
                                     }}>
                                         <div style={{ flex: 1, textAlign: 'left' }}>
                                             <h3 style={{ margin: '0 0 0.8rem 0', fontSize: '1.4rem', color: '#1f2937', fontWeight: '700', textAlign: 'left' }}>
@@ -567,8 +586,8 @@ export const OrderHistory = ({
                                                 </span>
                                             </div>
                                             
-                                                                        {/* Cancel Order Button - show for cancellable orders only */}
-                            {canCancelOrder(order.status) && (
+                                            {/* Cancel Order Button - show for cancellable orders only */}
+                                            {canCancelOrder(order.status) && (
                                                 <button
                                                     onClick={() => handleCancelOrder(order.id)}
                                                     style={{
@@ -593,39 +612,9 @@ export const OrderHistory = ({
                                                         e.target.style.backgroundColor = '#ef4444';
                                                         e.target.style.transform = 'translateY(0)';
                                                     }}
+                                                    disabled={isProcessing}
                                                 >
                                                     ❌ Cancel order
-                                                </button>
-                                            )}
-                                            
-                                            {/* Confirm Delivery Button - show for orders in SHIPPING status */}
-                                            {canConfirmDelivery(order.status) && (
-                                                <button
-                                                    onClick={() => handleConfirmDelivery(order.id)}
-                                                    style={{
-                                                        backgroundColor: '#059669',
-                                                        color: 'white',
-                                                        border: 'none',
-                                                        padding: '0.5rem 1rem',
-                                                        borderRadius: '0.5rem',
-                                                        fontSize: '0.85rem',
-                                                        fontWeight: '600',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s ease',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '0.5rem'
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        e.target.style.backgroundColor = '#047857';
-                                                        e.target.style.transform = 'translateY(-1px)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.target.style.backgroundColor = '#059669';
-                                                        e.target.style.transform = 'translateY(0)';
-                                                    }}
-                                                >
-                                                    ✅ Confirm Delivery
                                                 </button>
                                             )}
                                             
