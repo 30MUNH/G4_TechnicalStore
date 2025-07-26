@@ -27,16 +27,13 @@ function AdminApp() {
         return;
       }
 
-      if (!user) {
-        console.log('🔄 [AdminApp] No user yet, waiting...');
-        return;
-      }
+              if (!user) {
+          return;
+        }
 
-      try {
-        console.log('🔄 [AdminApp] Fetching user profile for role...');
-        const userProfile = await authService.getUserProfile();
-        const userData = userProfile.data || userProfile;
-        console.log('🔍 [AdminApp] Fetched user profile:', userData);
+                  try {
+              const userProfile = await authService.getUserProfile();
+              const userData = userProfile.data || userProfile;
         
         // Kiểm tra quyền truy cập
         let role = null;
@@ -48,10 +45,7 @@ function AdminApp() {
           }
         }
 
-        console.log('🔍 [AdminApp] Extracted role:', role);
-
         if (!role || !['admin', 'manager', 'staff', 'shipper'].includes(role)) {
-          console.log('❌ [AdminApp] Invalid role, redirecting to home');
           navigate('/', { replace: true });
           return;
         }
@@ -61,7 +55,6 @@ function AdminApp() {
           ...user, 
           role: userData.role 
         };
-        console.log('✅ [AdminApp] Updating user with role:', updatedUser);
         
         // Sử dụng login để update user với role
         const token = localStorage.getItem('authToken');
@@ -71,7 +64,6 @@ function AdminApp() {
         
         setHasChecked(true);
       } catch (error) {
-        console.error('❌ [AdminApp] Error fetching user profile:', error);
         navigate('/', { replace: true });
       }
     };
@@ -93,13 +85,8 @@ function AdminApp() {
   useEffect(() => {
     if (!role) return;
     
-    if (role === 'admin') {
-      // Admin: có thể truy cập tất cả, không cần redirect
-    } else if (role === 'manager') {
-      // Manager: chỉ có thể truy cập customers
-      if (activeSection !== 'customers') {
-        setActiveSection('customers');
-      }
+    if (role === 'admin' || role === 'manager') {
+      // Admin & Manager: có thể truy cập tất cả, không cần redirect
     } else if (role === 'shipper') {
       // Shipper: chỉ có thể truy cập shippers
       if (activeSection !== 'shippers') {
@@ -128,12 +115,11 @@ function AdminApp() {
     );
   }
 
-  console.log('🔍 [AdminApp] Rendering with user:', user);
-  console.log('🔍 [AdminApp] Rendering with role:', role);
+
 
   const renderContent = () => {
-    if (role === 'admin') {
-      // Admin: có thể truy cập tất cả các mục
+    if (role === 'admin' || role === 'manager') {
+      // Admin & Manager: có thể truy cập tất cả các mục
       switch (activeSection) {
         case 'dashboard':
           return <AdminDashboard />;
@@ -152,9 +138,6 @@ function AdminApp() {
         default:
           return <AdminDashboard />;
       }
-    } else if (role === 'manager') {
-      // Manager: chỉ render CustomerManagement
-      return <CustomerManagement />;
     } else if (role === 'shipper') {
       // Shipper: chỉ render ShipperManagement
       return <ShipperManagement />;

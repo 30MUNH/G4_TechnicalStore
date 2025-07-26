@@ -29,9 +29,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSec
   }
   role = role ? role.toLowerCase() : 'unknown';
 
-  console.log('🔍 [AdminSidebar] User role detected:', role);
-  console.log('🔍 [AdminSidebar] User object:', user);
-
   let menuItems: Array<{id: string, label: string, icon: any}> = [];
 
   if (role === 'admin') {
@@ -44,17 +41,20 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSec
       { id: 'shippers', label: 'Shippers', icon: Truck },
       { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquare },
     ];
-    console.log('✅ [AdminSidebar] Admin role - showing all menu items');
   } else if (role === 'manager') {
     menuItems = [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'products', label: 'Products', icon: Package },
       { id: 'customers', label: 'Customers', icon: Users },
+      { id: 'accounts', label: 'Accounts', icon: Shield },
+      { id: 'orders', label: 'Orders', icon: ShoppingCart },
+      { id: 'shippers', label: 'Shippers', icon: Truck },
+      { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquare },
     ];
-    console.log('✅ [AdminSidebar] Manager role - showing only Customers');
   } else if (role === 'shipper') {
     menuItems = [
       { id: 'shippers', label: 'Shippers', icon: Truck },
     ];
-    console.log('✅ [AdminSidebar] Shipper role - showing only Shippers');
   } else if (role === 'staff') {
     menuItems = [
       { id: 'products', label: 'Products', icon: Package },
@@ -63,14 +63,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSec
       { id: 'shippers', label: 'Shippers', icon: Truck },
       { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquare },
     ];
-    console.log('✅ [AdminSidebar] Staff role - showing limited menu items');
   } else {
     // Không xác định được role hoặc không có quyền
     menuItems = [];
-    console.log('❌ [AdminSidebar] Unknown or unauthorized role - no menu items');
   }
-
-  console.log('🔍 [AdminSidebar] Final menu items:', menuItems.map(item => item.label));
 
   return (
     <div className="w-64 bg-gradient-to-b from-red-900 via-red-800 to-black shadow-xl">

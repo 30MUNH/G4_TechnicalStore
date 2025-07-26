@@ -115,21 +115,12 @@ const Login = ({ onNavigate }) => {
     e.preventDefault();
 
     console.group("🔍 [DEBUG] Login Form Submission");
-    console.log("📥 Raw form data:", {
-      username: formData.username,
-      usernameLength: formData.username.length,
-      passwordLength: formData.password.length,
-      usernameType: typeof formData.username,
-    });
+
 
     const usernameError = validateField("username", formData.username);
     const passwordError = validateField("password", formData.password);
 
-    console.log("🔍 Validation results:", {
-      usernameError,
-      passwordError,
-      hasErrors: !!(usernameError || passwordError),
-    });
+
 
     if (usernameError || passwordError) {
       setErrors({
@@ -153,20 +144,11 @@ const Login = ({ onNavigate }) => {
         password: formData.password,
       };
 
-      console.log("📤 Sending login request:", {
-        username: loginData.username,
-        passwordLength: loginData.password.length,
-        originalInput: formData.username,
-      });
+
 
       const response = await authService.login(loginData);
 
-      console.log("📨 Login response received:", {
-        response,
-        responseType: typeof response,
-        responseLength:
-          typeof response === "string" ? response.length : "Not string",
-      });
+
 
       // Handle direct JWT token response (no OTP)
       const responseToken =
@@ -176,12 +158,7 @@ const Login = ({ onNavigate }) => {
         typeof responseToken === "string" &&
         responseToken.length > 10;
 
-      console.log("🔍 Token validation:", {
-        responseToken: responseToken?.substring(0, 20) + "...",
-        tokenType: typeof responseToken,
-        tokenLength: responseToken?.length,
-        isValidToken,
-      });
+
 
       if (isValidToken) {
         // console.log removed
@@ -206,7 +183,7 @@ const Login = ({ onNavigate }) => {
         // Fetch user profile to get role information
         try {
           const userProfile = await authService.getUserProfile();
-          console.log("🔍 User profile after login:", userProfile);
+
 
           // Extract user data from response structure
           const userData = userProfile.data || userProfile;

@@ -22,6 +22,11 @@ export class FeedbackController {
     return await this.feedbackService.getFeedbacksPaginated(page, pageSize);
   }
 
+  @Get("/product/:productId")
+  async getFeedbacksByProduct(@Param("productId") productId: string) {
+    return await this.feedbackService.getFeedbacksByProduct(productId);
+  }
+
   @Get("/export")
   async exportFeedbacks(@Res() res: Response) {
     const feedbacks = await this.feedbackService.getAllFeedbacks();

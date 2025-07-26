@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useCart } from "../../contexts/CartContext";
 import type { Product } from "../../types/product";
+import { feedbackService, type Feedback } from "../../services/feedbackService";
+import { formatDate } from "../../utils/dateFormatter";
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -45,8 +47,6 @@ const closeBtnStyle: React.CSSProperties = {
   color: "#888",
 };
 
-import { formatDate } from "../../utils/dateFormatter";
-
 const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   isOpen,
   onClose,
@@ -57,6 +57,8 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     message: string;
     type: "success" | "error";
   } | null>(null);
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [loadingFeedbacks, setLoadingFeedbacks] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -66,6 +68,30 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
   }, [isOpen, onClose]);
+
+  // Fetch feedbacks when product changes
+  useEffect(() => {
+    if (isOpen && product?.id) {
+      fetchFeedbacks();
+    }
+  }, [isOpen, product?.id]);
+
+  const fetchFeedbacks = async () => {
+    if (!product?.id) {
+      return;
+    }
+    
+    setLoadingFeedbacks(true);
+    try {
+      const productFeedbacks = await feedbackService.getFeedbacksByProduct(product.id);
+      setFeedbacks(Array.isArray(productFeedbacks) ? productFeedbacks : []);
+    } catch (error) {
+      console.error('Failed to fetch feedbacks:', error);
+      setFeedbacks([]);
+    } finally {
+      setLoadingFeedbacks(false);
+    }
+  };
 
   if (!isOpen || !product) return null;
 
@@ -504,6 +530,117 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     );
   };
 
+  const renderFeedbacks = () => {
+    if (loadingFeedbacks) {
+      return (
+        <div style={{ 
+          textAlign: "center", 
+          padding: "20px",
+          color: "#666"
+        }}>
+          Đang tải feedbacks...
+        </div>
+      );
+    }
+
+    if (!Array.isArray(feedbacks) || feedbacks.length === 0) {
+      return (
+        <div style={{ 
+          textAlign: "center", 
+          padding: "20px",
+          color: "#888",
+          fontStyle: "italic"
+        }}>
+          Chưa có feedback nào cho sản phẩm này
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ marginTop: "24px" }}>
+        <h4 style={{ 
+          margin: "0 0 16px 0", 
+          fontSize: "16px", 
+          fontWeight: "600",
+          color: "#333",
+          textAlign: "left"
+        }}>
+          Customer Reviews ({feedbacks.length})
+        </h4>
+        <div style={{ 
+          maxHeight: "200px", 
+          overflowY: "auto",
+          border: "1px solid #e0e0e0",
+          borderRadius: "8px",
+          padding: "12px"
+        }}>
+          {Array.isArray(feedbacks) ? feedbacks.map((feedback) => (
+            <div 
+              key={feedback.id} 
+              style={{ 
+                borderBottom: "1px solid #f0f0f0", 
+                paddingBottom: "12px", 
+                marginBottom: "12px",
+                lastChild: { borderBottom: "none", marginBottom: 0 }
+              }}
+            >
+              <div style={{ 
+                display: "flex", 
+                justifyContent: "space-between", 
+                alignItems: "flex-start",
+                marginBottom: "8px"
+              }}>
+                <div style={{ 
+                  fontWeight: "600", 
+                  color: "#333",
+                  fontSize: "14px"
+                }}>
+                  {feedback.account.name || feedback.account.username}
+                </div>
+                <div style={{ 
+                  fontSize: "12px", 
+                  color: "#888"
+                }}>
+                  {formatDate(feedback.createdAt)}
+                </div>
+              </div>
+              <div style={{ 
+                color: "#555", 
+                lineHeight: "1.4",
+                fontSize: "14px"
+              }}>
+                {feedback.content}
+              </div>
+              {feedback.images && feedback.images.length > 0 && (
+                <div style={{ 
+                  marginTop: "8px",
+                  display: "flex",
+                  gap: "8px",
+                  flexWrap: "wrap"
+                }}>
+                  {feedback.images.map((image) => (
+                    <img
+                      key={image.id}
+                      src={image.url}
+                      alt="Feedback"
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        objectFit: "cover",
+                        borderRadius: "4px",
+                        border: "1px solid #e0e0e0"
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )) : null}
+        </div>
+      </div>
+    );
+  };
+
   const handleAddToCart = async () => {
     if (!product.id) {
       setAddToCartStatus({
@@ -594,6 +731,10 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             {renderDetail()}
           </div>
         </div>
+        
+        {/* Feedbacks Section */}
+        {renderFeedbacks()}
+        
         {/* Add to Cart button */}
         <div
           style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}

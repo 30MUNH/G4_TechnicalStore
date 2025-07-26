@@ -57,7 +57,8 @@ const authRoutes = [
     '/account/resend-otp',
     '/account/forgot-password',
     '/account/verify-change-password',
-    '/products/categories/all'
+    '/products/categories/all',
+    '/feedbacks'
 ];
 
 api.interceptors.request.use(
