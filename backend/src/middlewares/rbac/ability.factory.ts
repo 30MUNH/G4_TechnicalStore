@@ -120,6 +120,8 @@ export function defineAbilityFor(role: string, user?: Account): AppAbility {
       });
       can("manage", Image);
       can("manage", Feedback);
+      can("read", Account, { phone: user?.phone });
+      can("update", Account, { phone: user?.phone });
       break;
     }
     case "manager": {
@@ -131,15 +133,20 @@ export function defineAbilityFor(role: string, user?: Account): AppAbility {
       can("update", Order, {
         status: { $in: ["PENDING", "SHIPPING", "DELIVERED"] } as any,
       });
+      can("read", Account, { phone: user?.phone });
+      can("update", Account, { phone: user?.phone });
       break;
     }
     case "customer": {
       can("read", Invoice);
       can("read", Feedback);
       can("create", Feedback);
-      can("update", Feedback, { account: { username: user?.username } });
-      can("delete", Feedback, { account: { username: user?.username } });
-      can("read", Order, { customer: { username: user?.username } });
+      can("update", Feedback, { account: { phone: user?.phone } });
+      can("delete", Feedback, { account: { phone: user?.phone } });
+      can("read", Order, { customer: { phone: user?.phone } });
+      can("read", Account, { phone: user?.phone });
+      can("update", Account, { phone: user?.phone });
+      can("delete", Account, { phone: user?.phone });
       break;
     }
     case "manager": {

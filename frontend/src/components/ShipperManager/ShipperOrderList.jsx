@@ -8,11 +8,11 @@ import { useAuth } from "../../contexts/AuthContext"; // Import useAuth hook
 const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) => {
   // Get auth context
   const { user } = useAuth();
-  const userRole = user?.role?.name?.toLowerCase() || 'user';
-  const isShipperRole = userRole === 'shipper';
-  const hasAdminPrivileges = userRole === 'admin' || userRole === 'manager';
-  const loggedInUsername = user?.username || '';
-  
+  const userRole = user?.role?.name?.toLowerCase() || "user";
+  const isShipperRole = userRole === "shipper";
+  const hasAdminPrivileges = userRole === "admin" || userRole === "manager";
+  const loggedInUsername = user?.username || "";
+
   // States
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,20 +34,33 @@ const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) 
 
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetail, setShowOrderDetail] = useState(false);
-  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
-  
+  const [notification, setNotification] = useState({
+    show: false,
+    message: "",
+    type: "",
+  });
+
   // Check if user has permission to view this shipper's orders
+
   // For shipper role, they can only view their own orders
   // For admin/manager, they can view all orders
   const hasPermission = hasAdminPrivileges || !isShipperRole || 
     (isShipperRole && (user?.id === shipperId || user?.username === shipperUsername));
     
+
+  const hasPermission =
+    hasAdminPrivileges ||
+    !isShipperRole ||
+    (isShipperRole &&
+      (user?.id === shipperId || user?.username === shipperName));
+
+
   // Add notification system
-  const showNotification = (message, type = 'info') => {
+  const showNotification = (message, type = "info") => {
     setNotification({ show: true, message, type });
     // Hide notification after 5 seconds
     setTimeout(() => {
-      setNotification({ show: false, message: '', type: '' });
+      setNotification({ show: false, message: "", type: "" });
     }, 5000);
   };
 
@@ -68,12 +81,25 @@ const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) 
     try {
       setLoading(true);
       setError("");
+
       setNotification({ show: false, message: '', type: '' });
       
       // Kiểm tra quyền truy cập
       if (!hasPermission) {
+
+
+      // Đảm bảo luôn cho phép shipper xem đơn hàng của chính họ
+      if (isShipperRole && shipperName === loggedInUsername) {
+        // Luôn cho phép xem đơn hàng của chính mình
+      }
+      // Kiểm tra quyền cho các trường hợp khác
+      else if (!hasPermission) {
+
         setError("You do not have permission to view these orders");
-        showNotification("You do not have permission to view these orders", "error");
+        showNotification(
+          "You do not have permission to view these orders",
+          "error"
+        );
         setLoading(false);
         return;
       }
@@ -94,7 +120,9 @@ const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) 
         const responseData = response.data || {};
         const ordersData = responseData.data || [];
         const total = responseData.pagination?.total || 0;
-        const totalPages = responseData.pagination?.totalPages || Math.ceil(total / pagination.limit);
+        const totalPages =
+          responseData.pagination?.totalPages ||
+          Math.ceil(total / pagination.limit);
 
         // Đảm bảo orders luôn là array
         setOrders(Array.isArray(ordersData) ? ordersData : []);
@@ -147,13 +175,22 @@ const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) 
 
       if (response.success) {
         await fetchOrders(); // Refresh list
-        showNotification(`Trạng thái đơn hàng #${orderId.substring(0, 8)} đã được cập nhật thành ${newStatus}`, 'success');
+        showNotification(
+          `Trạng thái đơn hàng #${orderId.substring(
+            0,
+            8
+          )} đã được cập nhật thành ${newStatus}`,
+          "success"
+        );
       } else {
         throw new Error(response.message || "Update failed");
       }
     } catch (err) {
       setError(err.message || "Failed to update status");
-      showNotification(`Không thể cập nhật trạng thái đơn hàng: ${err.message}`, 'error');
+      showNotification(
+        `Không thể cập nhật trạng thái đơn hàng: ${err.message}`,
+        "error"
+      );
     } finally {
       setLoading(false);
     }
@@ -171,13 +208,16 @@ const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) 
 
       if (response.success) {
         await fetchOrders(); // Refresh list
-        showNotification(`Đơn hàng #${orderId.substring(0, 8)} đã được xác nhận thành công`, 'success');
+        showNotification(
+          `Đơn hàng #${orderId.substring(0, 8)} đã được xác nhận thành công`,
+          "success"
+        );
       } else {
         throw new Error(response.message || "Confirmation failed");
       }
     } catch (err) {
       setError(err.message || "Failed to confirm order");
-      showNotification(`Không thể xác nhận đơn hàng: ${err.message}`, 'error');
+      showNotification(`Không thể xác nhận đơn hàng: ${err.message}`, "error");
     } finally {
       setLoading(false);
     }
@@ -205,7 +245,7 @@ const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) 
           <button
             className={styles.closeButton}
             onClick={onClose}
-            aria-label="Close" 
+            aria-label="Close"
           >
             ×
           </button>
@@ -223,7 +263,7 @@ const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) 
               className={styles.searchInput}
             />
           </div>
-          
+
           {/* Status filter */}
           <div className={styles.filterGroup}>
             <select
@@ -249,8 +289,6 @@ const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) 
               className={styles.filterSelect}
             />
           </div>
-
-          
         </div>
       </div>
 
@@ -264,7 +302,7 @@ const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) 
           <span>Loading...</span>
         </div>
       ) : (
-        <ShipperOrderTable 
+        <ShipperOrderTable
           orders={orders}
           currentPage={pagination.page}
           totalPages={pagination.totalPages || 1}

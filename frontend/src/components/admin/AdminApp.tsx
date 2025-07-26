@@ -23,7 +23,7 @@ function AdminApp() {
       if (hasChecked) return; // Tránh check lại nhiều lần
       
       if (!isAuthenticated()) {
-        navigate('/login', { replace: true });
+        navigate("/login", { replace: true });
         return;
       }
 
@@ -64,7 +64,7 @@ function AdminApp() {
         
         setHasChecked(true);
       } catch (error) {
-        navigate('/', { replace: true });
+        navigate("/", { replace: true });
       }
     };
 
@@ -144,9 +144,9 @@ function AdminApp() {
     } else if (role === 'staff') {
       // Staff: render theo activeSection nhưng giới hạn
       switch (activeSection) {
-        case 'products':
+        case "products":
           return <ProductManagement />;
-        case 'customers':
+        case "customers":
           return <CustomerManagement />;
         case 'orders':
           return <OrderManagement role={role} />;
@@ -163,16 +163,17 @@ function AdminApp() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <AdminSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex min-h-screen bg-gray-100">
+      <AdminSidebar
+        activeSection={activeSection}
+        setActiveSection={setActiveSection}
+      />
+      <div className="flex-1 flex flex-col">
         <AdminHeader />
-        <main className="flex-1 overflow-y-auto">
-          {renderContent()}
-        </main>
+        <main className="flex-1 p-6 overflow-y-auto">{renderContent()}</main>
       </div>
     </div>
   );
 }
 
-export default AdminApp; 
+export default AdminApp;

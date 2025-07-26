@@ -29,49 +29,6 @@ export class CreatePaymentDto {
   locale?: string = "vn";
 }
 
-export class VNPayReturnDto {
-  @IsString()
-  responseCode: string;
-
-  @IsString()
-  txnRef: string;
-
-  @IsString()
-  amount: string;
-
-  @IsString()
-  transactionNo: string;
-
-  @IsString()
-  secureHash: string;
-
-  @IsString()
-  orderInfo: string;
-
-  queryParams: any;
-}
-
-export class VNPayIPNDto {
-  @IsString()
-  responseCode: string;
-
-  @IsString()
-  txnRef: string;
-
-  @IsString()
-  amount: string;
-
-  @IsString()
-  transactionNo: string;
-
-  @IsString()
-  secureHash: string;
-
-  @IsString()
-  orderInfo: string;
-
-  queryParams: any;
-}
 
 export class PaymentStatusDto {
   orderId: string;
@@ -81,4 +38,15 @@ export class PaymentStatusDto {
   paymentMethod: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export class UpdatePaymentStatusDto {
+  @IsString()
+  orderId: string;
+
+  @IsString()
+  status: string;
+
+  @IsString()
+  method: string;
 }

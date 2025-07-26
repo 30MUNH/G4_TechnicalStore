@@ -157,4 +157,70 @@ export const accountService = {
       throw error;
     }
   },
+
+  async preChangePassword(oldPassword: string): Promise<ApiResponse<string>> {
+    try {
+      const response = await api.post<string>("/account/change-password", {
+        oldPassword,
+      });
+      return {
+        success: true,
+        data: response.data,
+        message: "OTP sent successfully",
+      };
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      console.error(
+        "Pre change password error:",
+        axiosError.response?.data || axiosError.message
+      );
+      throw error;
+    }
+  },
+
+  async verifyChangePassword(
+    username: string,
+    otp: string,
+    newPassword: string
+  ): Promise<ApiResponse<string>> {
+    try {
+      const response = await api.post<string>("/account/verify-change-password", {
+        username,
+        otp,
+        newPassword,
+      });
+      return {
+        success: true,
+        data: response.data,
+        message: "Password changed successfully",
+      };
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      console.error(
+        "Verify change password error:",
+        axiosError.response?.data || axiosError.message
+      );
+      throw error;
+    }
+  },
+
+  async verifyAccessToken(token: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await api.post<any>("/jwt/verify-access-token", {
+        token,
+      });
+      return {
+        success: true,
+        data: response.data,
+        message: "Token verified successfully",
+      };
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      console.error(
+        "Verify access token error:",
+        axiosError.response?.data || axiosError.message
+      );
+      throw error;
+    }
+  },
 };

@@ -23,6 +23,7 @@ export class Auth implements ExpressMiddlewareInterface {
     
     // Extract token from "Bearer [token]" format
     const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+    console.log(token);
     
     try {
       const payload = this.jwtService.verifyAccessToken(

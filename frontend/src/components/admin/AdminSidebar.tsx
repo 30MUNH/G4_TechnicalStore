@@ -1,8 +1,8 @@
-import React from 'react';
-import { 
-  LayoutDashboard, 
-  Package, 
-  Users, 
+import React from "react";
+import {
+  LayoutDashboard,
+  Package,
+  Users,
   Truck,
   ShoppingCart,
   ChevronRight,
@@ -16,7 +16,10 @@ interface AdminSidebarProps {
   setActiveSection: (section: string) => void;
 }
 
-const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSection }) => {
+const AdminSidebar: React.FC<AdminSidebarProps> = ({
+  activeSection,
+  setActiveSection,
+}) => {
   const { user } = useAuth();
   // Lấy role an toàn, không mặc định là 'admin' nếu không có role
   let role = null;
@@ -53,7 +56,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSec
     ];
   } else if (role === 'shipper') {
     menuItems = [
-      { id: 'shippers', label: 'Shippers', icon: Truck },
+      { id: "shippers", label: "Shippers", icon: Truck },
+      { id: "accounts", label: "Accounts", icon: Shield },
     ];
   } else if (role === 'staff') {
     menuItems = [
@@ -109,5 +113,4 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSec
   );
 };
 
-export default AdminSidebar; 
- 
+export default AdminSidebar;

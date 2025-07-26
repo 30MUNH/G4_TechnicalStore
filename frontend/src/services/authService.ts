@@ -26,6 +26,7 @@ interface RegisterData {
     phone: string;
     password: string;
     roleSlug?: string;
+    name: string;
 }
 
 interface VerifyRegisterData {
@@ -83,6 +84,25 @@ const formatPhoneNumber = (phone: string): string => {
     return '+84' + phoneNumber;
 };
 
+const formatPhoneNumber2 = (phone: string): string => {
+    // Remove all non-digits
+    let phoneNumber = phone.replace(/\D/g, '');
+    
+    // Remove leading 0 or 84 if present (for backward compatibility)
+    if (phoneNumber.startsWith('0')) {
+        phoneNumber = phoneNumber.substring(1);
+    } else if (phoneNumber.startsWith('84')) {
+        phoneNumber = phoneNumber.substring(2);
+    }
+    
+    // Validate length - should be exactly 9 digits
+    if (phoneNumber.length !== 9) {
+        throw new Error('Invalid phone number format. Must be exactly 9 digits');
+    }
+    
+    
+    return '0' + phoneNumber;
+};
 
 
 const handleAuthError = (error: AuthError): never => {
@@ -134,13 +154,14 @@ export const authService = {
         }
 
         // Format phone number
-        const formattedPhone = formatPhoneNumber(userData.phone);
+        const formattedPhone = formatPhoneNumber2(userData.phone);
 
         // Prepare request data
         const cleanedData = {
             username: userData.username.trim(),
             phone: formattedPhone,
             password: userData.password,
+            name: userData.name,
             roleSlug: 'customer-hmfuCdU' 
         };
 
@@ -160,7 +181,7 @@ export const authService = {
             const formattedData = {
                 username: verifyData.username,
                 password: verifyData.password,
-                phone: formatPhoneNumber(verifyData.phone),
+                phone: formatPhoneNumber2(verifyData.phone),
                 roleSlug: 'customer-hmfuCdU', 
                 otp: verifyData.otp
             };
