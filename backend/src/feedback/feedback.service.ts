@@ -37,4 +37,12 @@ export class FeedbackService {
     });
     return { data, total };
   }
+
+  async getFeedbacksByProduct(productId: string) {
+    return this.feedbackRepo.find({
+      where: { product: { id: productId } },
+      relations: ["account", "images"],
+      order: { createdAt: "DESC" },
+    });
+  }
 } 

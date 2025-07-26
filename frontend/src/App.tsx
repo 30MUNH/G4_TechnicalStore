@@ -55,10 +55,9 @@ function RoleBasedRedirect() {
           roleName === "staff" ||
           roleName === "shipper";
 
-        if (isAdminOrStaffOrShipper) {
-          console.log("🔄 Admin/Staff/Shipper user detected, redirecting to admin dashboard");
-          navigate("/admin", { replace: true });
-        }
+              if (isAdminOrStaffOrShipper) {
+        navigate("/admin", { replace: true });
+      }
       }
     };
 
