@@ -636,8 +636,8 @@ const CheckoutForm = ({
         errors.push("Họ tên không được để trống");
       } else if (fullName.length < 2) {
         errors.push(" Họ tên phải có ít nhất 2 ký tự");
-      } else if (fullName.length > 100) {
-        errors.push(" Họ tên không được vượt quá 100 ký tự");
+      } else if (fullName.length > 30) {
+        errors.push(" Họ tên không được vượt quá 30 ký tự");
       } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(fullName)) {
         errors.push("Họ tên chỉ được chứa chữ cái và khoảng trắng");
       }
@@ -652,10 +652,10 @@ const CheckoutForm = ({
         
         // Vietnamese phone number patterns
         const vietnamesePhonePatterns = [
-          /^0[3|5|7|8|9][0-9]{8}$/, // Mobile: 03x, 05x, 07x, 08x, 09x + 8 digits
-          /^0[2|3|4|5|6|7|8][0-9]{8}$/, // Landline: 02x, 03x, 04x, 05x, 06x, 07x, 08x + 8 digits
-          /^84[3|5|7|8|9][0-9]{8}$/, // International format for mobile
-          /^84[2|3|4|5|6|7|8][0-9]{8}$/ // International format for landline
+          /^0[3|5|7|8|9][0-9]{8}$/, 
+          /^0[2|3|4|5|6|7|8][0-9]{8}$/, 
+          /^84[3|5|7|8|9][0-9]{8}$/, 
+          /^84[2|3|4|5|6|7|8][0-9]{8}$/ 
         ];
 
         const isValidPhone = vietnamesePhonePatterns.some(pattern => pattern.test(cleanPhone));
@@ -718,14 +718,13 @@ const CheckoutForm = ({
     const validationErrors = validateCustomerInfo();
     
     if (validationErrors.length > 0) {
-      // Show first error, then show others after a delay
       showNotification(validationErrors[0], "warning");
       
       // Show additional errors if there are more
       if (validationErrors.length > 1) {
         setTimeout(() => {
           showNotification(`Còn ${validationErrors.length - 1} lỗi khác cần sửa`, "warning");
-        }, 2000);
+        }, 1000);
       }
       return;
     }
