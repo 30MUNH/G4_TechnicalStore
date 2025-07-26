@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Plus, 
   X,
-  Save,
-  User,
-  Phone,
   Calendar,
+  User,
   Trash2,
   XCircle,
   Eye,
-  Edit
 } from 'lucide-react';
 
 import OrderTable from './OrderTable';
@@ -36,26 +32,10 @@ const OrderManagement = ({ role = 'admin' }) => {
   
   // Modal states
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState('view'); // 'view', 'edit'
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
 
   const itemsPerPage = 10;
-
-  // Notification function
-  const showNotification = (message, type = 'info') => {
-    const notification = document.createElement('div');
-    notification.className = `${styles.notification} ${styles[`notification${type.charAt(0).toUpperCase() + type.slice(1)}`]}`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 3000);
-  };
 
   // Fetch orders from API with pagination and filters
   const fetchOrders = async (params = {}) => {
@@ -110,8 +90,7 @@ const OrderManagement = ({ role = 'admin' }) => {
   const safeOrders = Array.isArray(orders) ? orders : [];
 
   // Modal operations
-  const openModal = (mode, order = null) => {
-    setModalMode(mode);
+  const openModal = (order = null) => {
     setSelectedOrder(order);
     setShowModal(true);
   };
@@ -119,22 +98,6 @@ const OrderManagement = ({ role = 'admin' }) => {
   const closeModal = () => {
     setShowModal(false);
     setSelectedOrder(null);
-  };
-
-  // Status update operation
-  const handleStatusUpdate = async (orderId, newStatus) => {
-    try {
-      const response = await orderService.updateOrderStatus(orderId, { status: newStatus });
-      
-      if (response.success) {
-        showNotification('Update order status successfully', 'success');
-        await fetchOrders(); // Refresh the list
-      } else {
-        throw new Error(response.message || 'Cannot update order status');
-      }
-    } catch (error) {
-      showNotification(error.message || 'An error occurred', 'error');
-    }
   };
 
   const handleReject = async (id) => {
@@ -154,7 +117,6 @@ const OrderManagement = ({ role = 'admin' }) => {
       });
       
       if (response.success) {
-        showNotification('Reject order successfully', 'success');
         await fetchOrders(); // Refresh the list
       } else {
         throw new Error(response.message || 'Cannot reject order');
@@ -163,34 +125,7 @@ const OrderManagement = ({ role = 'admin' }) => {
       setShowRejectModal(false);
       setSelectedOrder(null);
     } catch (error) {
-      showNotification(error.message || 'An error occurred', 'error');
-    }
-  };
-
-  // Export operation
-  const handleExportData = async () => {
-    try {
-      const response = await orderService.exportOrders();
-      
-      if (response.success && response.data) {
-        // Create download link with proper Excel MIME type
-        const url = window.URL.createObjectURL(new Blob([response.data], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        }));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `orders_${new Date().toISOString().split('T')[0]}.xlsx`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-        
-        showNotification('Export data successfully', 'success');
-      } else {
-        throw new Error('Cannot export data');
-      }
-    } catch (error) {
-      showNotification('Cannot export data', 'error');
+      console.error('Failed to reject order:', error);
     }
   };
 
@@ -201,7 +136,6 @@ const OrderManagement = ({ role = 'admin' }) => {
     setShipperFilter('all');
     setAmountFilter('all');
     setCurrentPage(1);
-    showNotification('Cleared filters', 'info');
   };
 
   // Loading state
@@ -239,10 +173,6 @@ const OrderManagement = ({ role = 'admin' }) => {
             <h1 className={styles.title}>Order management</h1>
             <p className={styles.description}>Manage order information and status</p>
           </div>
-          
-          <div className={styles.headerActions}>
-            {/* Removed Export Data button */}
-          </div>
         </div>
       </div>
 
@@ -269,19 +199,17 @@ const OrderManagement = ({ role = 'admin' }) => {
         totalOrders={totalOrders}
         itemsPerPage={itemsPerPage}
         role={role}
-        onView={(order) => openModal('view', order)}
-        onStatusUpdate={handleStatusUpdate}
-        onReject={role !== 'shipper' ? handleReject : undefined}
+        onView={(order) => openModal(order)}
+        onReject={role === 'admin' ? handleReject : undefined}
         onPageChange={setCurrentPage}
       />
 
       {/* Modals */}
-      {showModal && modalMode === 'view' && selectedOrder && (
+      {showModal && selectedOrder && (
         <OrderDetailModal
           order={selectedOrder}
           open={showModal}
           onClose={closeModal}
-          onStatusChange={handleStatusUpdate}
           role={role}
         />
       )}
@@ -298,128 +226,6 @@ const OrderManagement = ({ role = 'admin' }) => {
       )}
     </div>
   );
-
-  // Helper function for modal title
-  function getModalTitle() {
-    switch (modalMode) {
-      case 'view': return 'Order details';
-      default: return '';
-    }
-  }
-};
-
-// Modal Component
-const Modal = ({ isOpen, title, onClose, children }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
-        <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>{title}</h2>
-          <button onClick={onClose} className={styles.closeButton}>
-            <X size={24} />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-};
-
-// Order Detail Component
-const OrderDetail = ({ order }) => (
-  <div className={styles.orderDetail}>
-    <div className={styles.orderHeader}>
-      <div className={styles.orderHeaderInfo}>
-        <h3 className={styles.orderHeaderName}>Order #{order.id}</h3>
-        <span className={`${styles.status} ${getStatusClass(order.status)}`}>
-          {order.status}
-        </span>
-      </div>
-    </div>
-
-    <div className={styles.orderDetailGrid}>
-      <div className={styles.detailField}>
-        <div className={styles.detailLabel}>
-          <User size={16} />
-          <span>Customer</span>
-        </div>
-        <div className={styles.detailValue}>{order.customer?.name || order.customer?.username}</div>
-      </div>
-      
-      <div className={styles.detailField}>
-        <div className={styles.detailLabel}>
-          <Calendar size={16} />
-          <span>Order date</span>
-        </div>
-        <div className={styles.detailValue}>
-          {new Date(order.orderDate).toLocaleDateString('vi-VN')}
-        </div>
-      </div>
-      
-      <div className={styles.detailField}>
-        <div className={styles.detailLabel}>
-          <span>Tổng tiền</span>
-        </div>
-        <div className={styles.detailValue}>
-          {order.totalAmount?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
-        </div>
-      </div>
-      
-      <div className={styles.detailField}>
-        <div className={styles.detailLabel}>
-          <span>Địa chỉ giao hàng</span>
-        </div>
-        <div className={styles.detailValue}>{order.shippingAddress}</div>
-      </div>
-
-      {order.note && (
-        <div className={styles.detailField}>
-          <div className={styles.detailLabel}>
-            <span>Ghi chú</span>
-          </div>
-          <div className={styles.detailValue}>{order.note}</div>
-        </div>
-      )}
-
-      {order.cancelReason && (
-        <div className={styles.detailField}>
-          <div className={styles.detailLabel}>
-            <span>Lý do hủy</span>
-          </div>
-          <div className={styles.detailValue}>{order.cancelReason}</div>
-        </div>
-      )}
-    </div>
-
-    {order.orderDetails && order.orderDetails.length > 0 && (
-      <div className={styles.orderProducts}>
-        <h4>Sản phẩm đã đặt</h4>
-        <div className={styles.productsList}>
-          {order.orderDetails.map((item, index) => (
-            <div key={index} className={styles.productItem}>
-              <span>{item.product?.name || 'Product'}</span>
-              <span>x{item.quantity}</span>
-              <span>{item.price?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-  </div>
-);
-
-// Helper function for status class
-const getStatusClass = (status) => {
-  switch (status) {
-    case 'PENDING': return styles.statusPending;
-    case 'PENDING_EXTERNAL_SHIPPING': return styles.statusPending;
-    case 'SHIPPING': return styles.statusShipping;
-    case 'DELIVERED': return styles.statusDelivered;
-    case 'CANCELLED': return styles.statusCancelled;
-    default: return styles.statusDefault;
-  }
 };
 
 // Reject Confirmation Component

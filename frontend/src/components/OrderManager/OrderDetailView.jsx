@@ -3,20 +3,8 @@ import { X, Calendar, MapPin, CreditCard, Package, Truck } from 'lucide-react';
 import styles from './OrderDetailModal.module.css';
 import { formatDateTime } from '../../utils/dateFormatter';
 
-const OrderDetailView = ({ order, open, onClose, onStatusChange, role = 'admin', showStatusUpdate = true }) => {
+const OrderDetailView = ({ order, open, onClose, role = 'admin', showStatusUpdate = true }) => {
   if (!open || !order) return null;
-
-  // Các trạng thái cho phép chuyển
-  const getStatusOptions = (currentStatus) => {
-    if (role === 'shipper') {
-      if (currentStatus === 'PENDING') return ['SHIPPING', 'CANCELLED'];  
-      if (currentStatus === 'SHIPPING') return ['DELIVERED', 'CANCELLED'];
-      return [];
-    }
-    return ['PENDING', 'SHIPPING', 'DELIVERED', 'CANCELLED'];
-  };
-
-  const statusOptions = getStatusOptions(order.status);
 
   const formatCurrency = (amount) => {
     try {
@@ -111,27 +99,6 @@ const OrderDetailView = ({ order, open, onClose, onStatusChange, role = 'admin',
                 <p>{order.shippingAddress}</p>
               </div>
             </div>
-
-            {/* Status Change */}
-            {showStatusUpdate && (role === 'admin' || role === 'staff' || (role === 'shipper' && statusOptions.length > 0)) && (
-              <div className={styles.section}>
-                <div className={styles.sectionHeader}>
-                  <CreditCard className={styles.sectionIcon} />
-                  <h3>Update status</h3>
-                </div>
-                <select
-                  className={styles.statusSelect}
-                  value={order.status}
-                  onChange={e => onStatusChange(order.id, e.target.value)}
-                  disabled={role === 'shipper' && statusOptions.length === 0}
-                >
-                  <option value={order.status}>{order.status}</option>
-                  {statusOptions.filter(opt => opt !== order.status).map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
 
           {/* Right Column - Products */}

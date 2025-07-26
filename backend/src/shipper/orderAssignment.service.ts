@@ -78,7 +78,7 @@ export class OrderAssignmentService {
       
       if (!isHanoi) {
         // Nếu không phải Hà Nội, chuyển sang đối tác thứ 3
-        order.status = OrderStatus.PENDING_EXTERNAL_SHIPPING;
+        order.status = OrderStatus.EXTERNAL;
         await order.save();
         
         const processingTime = Date.now() - startTime;
@@ -585,7 +585,7 @@ export class OrderAssignmentService {
         .where("order.shipper_id = :shipperId", { shipperId: shipper.id }) // Dùng shipper_id thay vì shipper.id
         .andWhere("order.orderDate >= :today", { today })
         .andWhere("order.status IN (:...statuses)", { 
-          statuses: [OrderStatus.PENDING, OrderStatus.SHIPPING] 
+          statuses: [OrderStatus.PENDING, OrderStatus.ASSIGNED, OrderStatus.CONFIRMED, OrderStatus.SHIPPING] 
         })
         .getCount();
 
@@ -594,11 +594,14 @@ export class OrderAssignmentService {
         throw new Error(`Shipper ${shipper.id} has reached maximum orders for today (${currentOrdersCount}/${currentShipper.maxOrdersPerDay})`);
       }
 
-      // 5. Assign order to shipper
+      // 5. Assign order to shipper and change status to ASSIGNED
       await transactionalEntityManager
         .createQueryBuilder()
         .update(Order)
-        .set({ shipper: currentShipper })
+        .set({ 
+          shipper: currentShipper,
+          status: OrderStatus.ASSIGNED
+        })
         .where("id = :orderId", { orderId: order.id })
         .execute();
 
@@ -626,7 +629,7 @@ export class OrderAssignmentService {
       .where("order.shipper_id = :shipperId", { shipperId }) // Sửa thành shipper_id
       .andWhere("order.orderDate >= :today", { today })
       .andWhere("order.status IN (:...statuses)", { 
-        statuses: [OrderStatus.PENDING, OrderStatus.SHIPPING] 
+        statuses: [OrderStatus.PENDING, OrderStatus.ASSIGNED, OrderStatus.CONFIRMED, OrderStatus.SHIPPING] 
       })
       .getCount();
 
@@ -651,7 +654,7 @@ export class OrderAssignmentService {
       .where("order.shipper_id = :shipperId", { shipperId }) // Sửa thành shipper_id
       .andWhere("order.orderDate >= :today", { today })
       .andWhere("order.status IN (:...statuses)", { 
-        statuses: [OrderStatus.PENDING, OrderStatus.SHIPPING] 
+        statuses: [OrderStatus.PENDING, OrderStatus.ASSIGNED, OrderStatus.CONFIRMED, OrderStatus.SHIPPING] 
       })
       .getCount();
   }
@@ -720,7 +723,7 @@ export class OrderAssignmentService {
         .where("order.shipper_id = :shipperId", { shipperId: shipper.id }) // Sửa thành shipper_id
         .andWhere("order.orderDate >= :today", { today })
         .andWhere("order.status IN (:...statuses)", { 
-          statuses: [OrderStatus.PENDING, OrderStatus.SHIPPING] 
+          statuses: [OrderStatus.PENDING, OrderStatus.ASSIGNED, OrderStatus.CONFIRMED, OrderStatus.SHIPPING] 
         })
         .getCount();
 

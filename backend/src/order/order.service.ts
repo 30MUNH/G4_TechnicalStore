@@ -33,11 +33,13 @@ export class OrderService {
 
     private validateOrderStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): boolean {
         const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-            [OrderStatus.PENDING]: [OrderStatus.SHIPPING, OrderStatus.CANCELLED],
+            [OrderStatus.PENDING]: [OrderStatus.ASSIGNED, OrderStatus.CANCELLED, OrderStatus.EXTERNAL],
+            [OrderStatus.ASSIGNED]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+            [OrderStatus.CONFIRMED]: [OrderStatus.SHIPPING, OrderStatus.CANCELLED],
             [OrderStatus.SHIPPING]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
             [OrderStatus.DELIVERED]: [], 
             [OrderStatus.CANCELLED]: [], 
-            [OrderStatus.PENDING_EXTERNAL_SHIPPING]: [OrderStatus.SHIPPING, OrderStatus.CANCELLED] // External shipping can transition to shipping or cancelled
+            [OrderStatus.EXTERNAL]: [OrderStatus.SHIPPING, OrderStatus.CANCELLED]
         };
 
         // Check if the status transition is valid
@@ -534,7 +536,7 @@ export class OrderService {
         await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
             // If order is being cancelled, restore product stock
             if (newStatus === OrderStatus.CANCELLED && 
-                [OrderStatus.PENDING, OrderStatus.SHIPPING, OrderStatus.PENDING_EXTERNAL_SHIPPING].includes(oldStatus)) {
+                [OrderStatus.PENDING, OrderStatus.ASSIGNED, OrderStatus.CONFIRMED, OrderStatus.SHIPPING, OrderStatus.EXTERNAL].includes(oldStatus)) {
                 
                 for (const orderDetail of order.orderDetails) {
                     const product = await transactionalEntityManager.findOne(Product, {
@@ -679,7 +681,7 @@ export class OrderService {
         await DbConnection.appDataSource.manager.transaction(async transactionalEntityManager => {
             // If order is being cancelled by shipper, restore product stock
             if (newStatus === OrderStatus.CANCELLED && 
-                [OrderStatus.PENDING, OrderStatus.SHIPPING, OrderStatus.PENDING_EXTERNAL_SHIPPING].includes(currentStatus)) {
+                [OrderStatus.PENDING, OrderStatus.ASSIGNED, OrderStatus.CONFIRMED, OrderStatus.SHIPPING, OrderStatus.EXTERNAL].includes(currentStatus)) {
                 
                 for (const orderDetail of order.orderDetails) {
                     const product = await transactionalEntityManager.findOne(Product, {
@@ -806,7 +808,7 @@ export class OrderService {
         // Mark order for manual assignment in database
         const order = await Order.findOne({ where: { id: orderId } });
         if (order) {
-            order.status = OrderStatus.PENDING_EXTERNAL_SHIPPING; // Set to pending external shipping
+            order.status = OrderStatus.EXTERNAL; // Đổi sang EXTERNAL
             order.shipper = null; // Clear auto-assigned shipper
             order.cancelReason = `Auto-assignment failed: ${reason}`; // Record failure reason
             await order.save();
@@ -834,7 +836,7 @@ export class OrderService {
                 order.note = `${originalNote}\n[Hệ thống] Phân công tự động thất bại: ${reason}\nCần Admin xem xét phân công (${new Date().toLocaleString('vi-VN')})`;
                 
                 // Không thay đổi trạng thái đơn hàng, để Admin quyết định
-                // order.status = OrderStatus.PENDING_EXTERNAL_SHIPPING;
+                // order.status = OrderStatus.EXTERNAL;
                 
                 await order.save();
             }

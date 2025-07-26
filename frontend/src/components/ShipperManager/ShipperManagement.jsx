@@ -14,8 +14,17 @@ import ShipperOrderList from "./ShipperOrderList";
 import styles from "./ShipperManagement.module.css";
 import { shipperService } from "../../services/shipperService";
 import { formatDate } from "../../utils/dateFormatter";
+import { useAuth } from "../../contexts/AuthContext"; // Import useAuth hook instead
 
 const ShipperManagement = () => {
+  // Access auth context using the hook
+  const { user } = useAuth();
+  
+  // Determine user role from context
+  const userRole = user?.role?.name?.toLowerCase() || 'user';
+  const isShipperRole = userRole === 'shipper';
+  const loggedInUsername = user?.username || '';
+
   // State management
   const [shippers, setShippers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,8 +47,7 @@ const ShipperManagement = () => {
 
   // Order list states
   const [showOrderList, setShowOrderList] = useState(false);
-  const [selectedShipperForOrders, setSelectedShipperForOrders] =
-    useState(null);
+  const [selectedShipperForOrders, setSelectedShipperForOrders] = useState(null);
 
   // New states for working zone management
   const [showWorkingZoneModal, setShowWorkingZoneModal] = useState(false);
@@ -141,9 +149,26 @@ const ShipperManagement = () => {
           };
         });
 
-        setShippers(shippersData);
-        setTotalShippers(shippersData.length);
-        setTotalPages(Math.ceil(shippersData.length / itemsPerPage));
+        // If user is a shipper, filter the list to only show their own data
+        let filteredShippersData = shippersData;
+        if (isShipperRole && loggedInUsername) {
+          filteredShippersData = shippersData.filter(
+            (shipper) => shipper.username === loggedInUsername
+          );
+          
+          console.log(`Filtering shippers for shipper user: ${loggedInUsername}`);
+          console.log(`Found ${filteredShippersData.length} matching records`);
+
+          // Auto show order list for shipper's own data
+          if (filteredShippersData.length === 1) {
+            setSelectedShipperForOrders(filteredShippersData[0]);
+            setShowOrderList(true);
+          }
+        }
+
+        setShippers(filteredShippersData);
+        setTotalShippers(filteredShippersData.length);
+        setTotalPages(Math.ceil(filteredShippersData.length / itemsPerPage));
       } else {
         throw new Error(response.data?.message || response.message || "Failed to fetch shippers");
       }
@@ -159,6 +184,14 @@ const ShipperManagement = () => {
     fetchShippers();
     fetchAvailableZones();
   }, []);
+
+  // Auto-open order list for shipper account when the component mounts
+  useEffect(() => {
+    if (isShipperRole && shippers.length === 1) {
+      setSelectedShipperForOrders(shippers[0]);
+      setShowOrderList(true);
+    }
+  }, [isShipperRole, shippers]);
 
   // Fetch available working zones
   const fetchAvailableZones = async () => {
@@ -212,6 +245,9 @@ const ShipperManagement = () => {
   // Filter shippers
   const filteredShippers = shippers.filter((shipper) => {
     if (!shipper) return false;
+
+    // If user is a shipper, they've already been filtered in fetchShippers
+    // No need for additional username filtering here
 
     const matchesSearch =
       shipper.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -284,11 +320,22 @@ const ShipperManagement = () => {
 
   // Order list operations
   const openOrderList = (shipper) => {
+    // If current user is a shipper, only allow viewing their own orders
+    if (isShipperRole && shipper.username !== loggedInUsername) {
+      showNotification("You don't have permission to view other shippers' orders", "error");
+      return;
+    }
+    
     setSelectedShipperForOrders(shipper);
     setShowOrderList(true);
   };
 
   const closeOrderList = () => {
+    // If user is a shipper, don't allow them to close their order list view
+    if (isShipperRole) {
+      return;
+    }
+    
     setShowOrderList(false);
     setSelectedShipperForOrders(null);
   };
@@ -498,6 +545,22 @@ const ShipperManagement = () => {
     );
   }
 
+  // Only allow admin/manager to add new shippers
+  const hasAdminPrivileges = userRole === 'admin' || userRole === 'manager';
+
+  // If user is a shipper and order list is open, just show the order list
+  if (isShipperRole && showOrderList && selectedShipperForOrders) {
+    return (
+      <div className={styles.container}>
+        <ShipperOrderList
+          shipperId={selectedShipperForOrders.id}
+          shipperName={selectedShipperForOrders.name}
+          onClose={closeOrderList}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       {/* Header */}
@@ -511,13 +574,15 @@ const ShipperManagement = () => {
           </div>
 
           <div className={styles.headerActions}>
-            <button
-              className={`${styles.actionButton} ${styles.addButton}`}
-              onClick={() => openModal("add")}
-            >
-              <Plus size={18} />
-              <span>Add Shipper</span>
-            </button>
+            {hasAdminPrivileges && (
+              <button
+                className={`${styles.actionButton} ${styles.addButton}`}
+                onClick={() => openModal("add")}
+              >
+                <Plus size={18} />
+                <span>Add Shipper</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -550,6 +615,7 @@ const ShipperManagement = () => {
         onManageWorkingZones={openWorkingZoneModal}
         onToggleAvailability={toggleAvailability}
         onUpdatePriority={updatePriority}
+        userRole={userRole} // Pass the user's role to ShipperCard
       />
 
       {/* Modal */}

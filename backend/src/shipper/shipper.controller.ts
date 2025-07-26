@@ -245,6 +245,34 @@ export class ShipperController {
     }
   }
 
+  @Put("/:shipperId/orders/:orderId/confirm")
+  @UseBefore(Auth)
+  async confirmOrderByShipper(
+    @Param("shipperId") shipperId: string,
+    @Param("orderId") orderId: string
+  ) {
+    try {
+      // Gọi service với status CONFIRMED đã xác định
+      const order = await this.orderService.updateOrderStatusByShipper(
+        orderId,
+        shipperId,
+        { status: 'CONFIRMED' }
+      );
+      
+      return {
+        success: true,
+        data: order,
+        message: "Order confirmed successfully"
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Failed to confirm order",
+        error: error.message || "Unknown error"
+      };
+    }
+  }
+
   @Get("/export")
   async exportShippers() {
     try {

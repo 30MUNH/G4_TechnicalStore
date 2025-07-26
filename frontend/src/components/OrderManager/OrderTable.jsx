@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Edit, XCircle, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, XCircle, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './OrderTable.module.css';
 
 const OrderTable = ({
@@ -10,7 +10,6 @@ const OrderTable = ({
   itemsPerPage = 10,
   role = 'admin',
   onView,
-  onStatusUpdate,
   onReject,
   onPageChange
 }) => {
@@ -33,16 +32,6 @@ const OrderTable = ({
 
   const formatCurrency = (amount) => {
     return amount?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
-  };
-
-  // Status options for admin and shipper
-  const getStatusOptions = (currentStatus) => {
-    if (role === 'shipper') {
-      if (currentStatus === 'PENDING') return ['SHIPPING', 'CANCELLED'];
-      if (currentStatus === 'SHIPPING') return ['DELIVERED', 'CANCELLED'];
-      return [];
-    }
-    return ['PENDING', 'SHIPPING', 'DELIVERED', 'CANCELLED'];
   };
 
   return (
@@ -75,7 +64,6 @@ const OrderTable = ({
               </tr>
             ) : (
               orders.map((order) => {
-                const statusOptions = getStatusOptions(order.status);
                 return (
                   <tr key={order.id} className={styles.tableRow}>
                     <td className={`${styles.tableCell} ${styles.orderId}`}>
@@ -98,25 +86,9 @@ const OrderTable = ({
                       {formatCurrency(order.totalAmount)}
                     </td>
                     <td className={styles.tableCell}>
-                      {(role === 'admin' || role === 'staff' || role === 'shipper') && statusOptions.length > 0 ? (
-                        <select
-                          className={`${styles.statusSelect} ${getStatusClass(order.status)}`}
-                          value={order.status}
-                          onChange={(e) => onStatusUpdate(order.id, e.target.value)}
-                          disabled={role === 'shipper' && statusOptions.length === 0}
-                        >
-                          <option value={order.status}>{order.status}</option>
-                          {statusOptions
-                            .filter(opt => opt !== order.status)
-                            .map(opt => (
-                              <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                        </select>
-                      ) : (
-                        <span className={`${styles.status} ${getStatusClass(order.status)}`}>
-                          {order.status}
-                        </span>
-                      )}
+                      <span className={`${styles.status} ${getStatusClass(order.status)}`}>
+                        {order.status}
+                      </span>
                     </td>
                     <td className={`${styles.tableCell} ${styles.shippingAddress}`}>
                       <span className={styles.addressText} title={order.shippingAddress}>
@@ -134,7 +106,7 @@ const OrderTable = ({
                         >
                           <Eye size={18} />
                         </button>
-                        {(role === 'admin' || role === 'staff') && onReject && order.status !== 'CANCELLED' && (
+                        {role === 'admin' && onReject && order.status !== 'CANCELLED' && (
                           <button
                             className={`${styles.actionButton} ${styles.rejectButton}`}
                             onClick={() => onReject(order.id)}

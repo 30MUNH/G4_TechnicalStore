@@ -127,7 +127,8 @@ const CheckoutForm = ({
   const [availableWards, setAvailableWards] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("cod"); // Default to Cash on Delivery
   const [isVNPayProcessing, setIsVNPayProcessing] = useState(false); // Local state for VNPAY processing
-  const [requireInvoice, setRequireInvoice] = useState(false); // VAT invoice checkbox state
+  // Always require VAT invoice
+  const requireInvoice = true;
 
   // Load saved form data on component mount
   React.useEffect(() => {
@@ -365,12 +366,12 @@ const CheckoutForm = ({
           `Số điện thoại: ${orderData.phone.trim()}`,
           `Email: ${orderData.email.trim()}`,
           `Số lượng sản phẩm: ${cartItems.length}`,
-          `Total amount: ${formatCurrency(requireInvoice ? totalAmount + (subtotal * 0.1) : totalAmount)}`,
-          requireInvoice ? "VAT Invoice Requested" : "No Invoice Required",
+          `Total amount: ${formatCurrency(totalAmount + (subtotal * 0.1))}`,
+          "VAT Invoice Included",
           "Phone Verified" // Add verification flag
         ].join(" | "),
         paymentMethod: orderData.paymentMethod,
-        requireInvoice: requireInvoice,
+        requireInvoice: true,
         isGuest: isGuest,
         ...(isGuest ? {
           guestInfo: {
@@ -408,7 +409,7 @@ const CheckoutForm = ({
           navigate("/vnpay-payment", {
             state: {
               orderData: orderData,
-              totalAmount: totalAmount,
+              totalAmount: totalAmount + (subtotal * 0.1),
               cartItems: cartItems,
             },
           });
@@ -512,7 +513,7 @@ const CheckoutForm = ({
     const orderData = {
       ...formData,
       paymentMethod: backendPaymentMethod, // Use mapped payment method
-      requireInvoice: requireInvoice,
+      requireInvoice: true, // Always require invoice
       shippingAddress: fullAddress, // Add explicit shipping address
       isGuest: isGuest, // Pass guest flag
     };
@@ -542,6 +543,10 @@ const CheckoutForm = ({
       return `${amount || 0} VND`;
     }
   };
+
+  // Calculate total with VAT
+  const vatAmount = subtotal * 0.1;
+  const finalTotal = totalAmount + vatAmount;
 
   try {
     return (
@@ -766,32 +771,15 @@ const CheckoutForm = ({
                 </span>
               </div>
               
-              {/* VAT Invoice Checkbox */}
-              <div className={styles.vatInvoiceSection}>
-                <label className={styles.vatInvoiceLabel}>
-                  <input
-                    type="checkbox"
-                    checked={requireInvoice}
-                    onChange={(e) => setRequireInvoice(e.target.checked)}
-                    className={styles.vatInvoiceCheckbox}
-                  />
-                  <span className={styles.vatInvoiceText}>
-                    Export VAT invoice (10%)
-                  </span>
-                </label>
+              {/* VAT Row - always show */}
+              <div className={styles.summaryRow}>
+                <span>VAT (10%)</span>
+                <span>{formatCurrency(vatAmount)}</span>
               </div>
-
-              {/* VAT Row - only show when checkbox is checked */}
-              {requireInvoice && (
-                <div className={styles.summaryRow}>
-                  <span>VAT (10%)</span>
-                  <span>{formatCurrency(subtotal * 0.1)}</span>
-                </div>
-              )}
 
               <div className={`${styles.summaryRow} ${styles.total}`}>
                 <span>Total</span>
-                <span>{formatCurrency(requireInvoice ? totalAmount + (subtotal * 0.1) : totalAmount)}</span>
+                <span>{formatCurrency(finalTotal)}</span>
               </div>
             </div>
 
@@ -864,8 +852,8 @@ const CheckoutForm = ({
               {isProcessing || isVNPayProcessing
                 ? "Processing..."
                 : paymentMethod === "vnpay"
-                ? `💳 Payment VNPay • ${formatCurrency(totalAmount)}`
-                : `💰 Order COD • ${formatCurrency(totalAmount)}`}
+                ? `💳 Payment VNPay • ${formatCurrency(finalTotal)}`
+                : `💰 Order COD • ${formatCurrency(finalTotal)}`}
             </button>
 
             {totalAmount > 1000000 && shippingFee === 0 && (

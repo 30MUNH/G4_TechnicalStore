@@ -19,7 +19,7 @@ export const OrderHistory = ({
     const [selectedOrderId, setSelectedOrderId] = useState(null);
     const [cancelReason, setCancelReason] = useState('');
     const { exportToPDF } = useInvoiceExport();
-    const { cancelOrder } = useOrders();
+    const { cancelOrder, confirmOrderDelivery } = useOrders();
 
     // Filter states (cho client-side filtering bổ sung)
     const [statusFilter, setStatusFilter] = useState('all');
@@ -135,12 +135,18 @@ export const OrderHistory = ({
         switch (status) {
             case 'PENDING':
                 return '#f59e0b'; // Orange - Pending
+            case 'ASSIGNED':
+                return '#3b82f6'; // Blue - Assigned
+            case 'CONFIRMED':
+                return '#0ea5e9'; // Light Blue - Confirmed
             case 'SHIPPING':
                 return '#8b5cf6'; // Purple - Shipping
             case 'DELIVERED':
                 return '#059669'; // Green - Delivered
             case 'CANCELLED':
                 return '#ef4444'; // Red - Cancelled
+            case 'EXTERNAL':
+                return '#64748b'; // Slate - External delivery
             // Fallback for lowercase values (backward compatibility)
             case 'pending':
                 return '#f59e0b';
@@ -187,6 +193,27 @@ export const OrderHistory = ({
         setSelectedOrderId(orderId);
         setShowCancelModal(true);
         setCancelReason('');
+    };
+
+    // Hàm xử lý khi khách hàng xác nhận đã nhận hàng
+    const handleConfirmDelivery = async (orderId) => {
+        try {
+            await confirmOrderDelivery(orderId);
+            showNotification('✅ Cảm ơn bạn đã xác nhận đã nhận hàng!', 'success');
+            
+            // Cập nhật trạng thái đơn hàng ở local state
+            if (onOrderUpdate) {
+                onOrderUpdate((prevOrders) => 
+                    prevOrders.map(order => 
+                        order.id === orderId 
+                            ? { ...order, status: 'DELIVERED' }
+                            : order
+                    )
+                );
+            }
+        } catch (error) {
+            showNotification('❌ Không thể xác nhận nhận hàng. Vui lòng thử lại.', 'error');
+        }
     };
 
     const handleCancelConfirm = async () => {
@@ -239,6 +266,11 @@ export const OrderHistory = ({
     // Check if order can be cancelled (only pending orders)
     const canCancelOrder = (status) => {
         return status === 'PENDING';
+    };
+
+    // Check if order can be confirmed (only SHIPPING status)
+    const canConfirmDelivery = (status) => {
+        return status === 'SHIPPING';
     };
 
     // Filter orders based on filter criteria (client-side filtering for current page)
@@ -563,6 +595,37 @@ export const OrderHistory = ({
                                                     }}
                                                 >
                                                     ❌ Cancel order
+                                                </button>
+                                            )}
+                                            
+                                            {/* Confirm Delivery Button - show for orders in SHIPPING status */}
+                                            {canConfirmDelivery(order.status) && (
+                                                <button
+                                                    onClick={() => handleConfirmDelivery(order.id)}
+                                                    style={{
+                                                        backgroundColor: '#059669',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        padding: '0.5rem 1rem',
+                                                        borderRadius: '0.5rem',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.5rem'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.backgroundColor = '#047857';
+                                                        e.target.style.transform = 'translateY(-1px)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.backgroundColor = '#059669';
+                                                        e.target.style.transform = 'translateY(0)';
+                                                    }}
+                                                >
+                                                    ✅ Confirm Delivery
                                                 </button>
                                             )}
                                             

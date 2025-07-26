@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, Req, UseBefore, QueryParam, 
 import { Service } from "typedi";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dtos/create-order.dto";
-import { UpdateOrderDto } from "./dtos/update-order.dto";
+import { UpdateOrderDto, OrderStatus } from "./dtos/update-order.dto";
 import { Auth } from "@/middlewares/auth.middleware";
 import { AccountDetailsDto } from "@/auth/dtos/account.dto";
 import { HttpException } from "@/exceptions/http-exceptions";
@@ -231,6 +231,38 @@ export class OrderController {
         } catch (error: any) {
             return {
                 message: "Failed to delete order",
+                error: error.message
+            };
+        }
+    }
+    
+    /**
+     * Khách hàng xác nhận đã nhận hàng thành công
+     * POST /orders/:id/confirm-delivery
+     */
+    @Post(":id/confirm-delivery")
+    @UseBefore(Auth)
+    async confirmOrderDelivery(@Param("id") id: string, @Req() req: any) {
+        const user = req.user as AccountDetailsDto;
+        try {
+            // Tạo update dto với trạng thái DELIVERED
+            const updateOrderDto: UpdateOrderDto = {
+                status: OrderStatus.DELIVERED
+            };
+            
+            const order = await this.orderService.updateOrderStatus(
+                id,
+                user.username,
+                updateOrderDto
+            );
+            
+            return {
+                message: "Order delivery confirmed successfully",
+                order
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to confirm order delivery",
                 error: error.message
             };
         }

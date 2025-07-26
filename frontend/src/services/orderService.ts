@@ -135,6 +135,18 @@ export const orderService = {
         }
     },
 
+    async confirmOrderDelivery(id: string) {
+        try {
+            const response = await api.post(`/orders/${id}/confirm-delivery`);
+            return response.data;
+        } catch (error) {
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Xác nhận đã nhận hàng thất bại';
+            throw new Error(errorMsg || 'Xác nhận đã nhận hàng thất bại');
+        }
+    },
+
     async getOrderStatistics() {
         try {
             const response = await api.get('/orders/statistics');
@@ -162,8 +174,6 @@ export const orderService = {
             const queryString = queryParams.toString();
             const url = `/shippers/${shipperId}/orders${queryString ? '?' + queryString : ''}`;
             
-            console.log('🚀 [ORDER_SERVICE] Fetching orders by shipper:', { shipperId, url, params });
-            
             const response = await api.get(url);
             return response.data;
         } catch (error) {
@@ -177,12 +187,6 @@ export const orderService = {
 
     async updateOrderStatusByShipper(shipperId: string, orderId: string, updateData: UpdateOrderByShipperDto) {
         try {
-            console.log('🚀 [ORDER_SERVICE] Updating order status by shipper:', { 
-                shipperId, 
-                orderId, 
-                updateData 
-            });
-            
             const response = await api.put(`/shippers/${shipperId}/orders/${orderId}/status`, updateData);
             return response.data;
         } catch (error) {
@@ -194,12 +198,23 @@ export const orderService = {
         }
     },
 
+    async confirmOrderByShipper(shipperId: string, orderId: string) {
+        try {
+            const response = await api.put(`/shippers/${shipperId}/orders/${orderId}/confirm`);
+            return response.data;
+        } catch (error) {
+            console.error('❌ [ORDER_SERVICE] Confirm order by shipper failed:', error);
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Xác nhận đơn hàng thất bại';
+            throw new Error(errorMsg || 'Xác nhận đơn hàng thất bại');
+        }
+    },
+
     // =============== ADMIN/STAFF METHODS ===============
     
     async getAllOrdersForAdmin(params = {}) {
         try {
-            console.log('🚀 [ORDER_SERVICE] Fetching all orders for admin:', params);
-            
             const queryParams = new URLSearchParams();
             Object.entries(params).forEach(([key, value]) => {
                 if (value !== undefined && value !== null && value !== '') {
@@ -223,8 +238,6 @@ export const orderService = {
 
     async deleteOrder(id: string) {
         try {
-            console.log('🚀 [ORDER_SERVICE] Deleting order:', id);
-            
             const response = await api.delete(`/orders/${id}`);
             return response.data;
         } catch (error) {
@@ -238,8 +251,6 @@ export const orderService = {
 
     async exportOrders() {
         try {
-            console.log('🚀 [ORDER_SERVICE] Exporting orders...');
-            
             const response = await api.get('/orders/export', {
                 responseType: 'blob',
             });
