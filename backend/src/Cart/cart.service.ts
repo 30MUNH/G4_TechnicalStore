@@ -17,9 +17,15 @@ export class CartService {
     if (quantity <= 0) {
       throw new BadRequestException(`${action === 'increase' ? 'Increase' : 'Decrease'} quantity must be greater than 0`);
     }
+  }
 
-    if (quantity > 99) {
-      throw new BadRequestException(`${action === 'increase' ? 'Increase' : 'Decrease'} quantity cannot exceed 99`);
+  private async validateQuantityAgainstStock(quantity: number, product: Product, action: 'increase' | 'decrease'): Promise<void> {
+    if (!product.isActive) {
+      throw new BadRequestException('This product is currently unavailable');
+    }
+
+    if (quantity > product.stock) {
+      throw new BadRequestException(`${action === 'increase' ? 'Increase' : 'Decrease'} quantity (${quantity}) cannot exceed available stock (${product.stock})`);
     }
   }
 
@@ -152,12 +158,11 @@ export class CartService {
 
         if (existingItem) {
           const newQuantity = existingItem.quantity + addToCartDto.quantity;
-          if (newQuantity > product.stock) {
-            throw new BadRequestException(`Cannot add. Total quantity (${newQuantity}) exceeds stock quantity (${product.stock})`);
-          }
+          await this.validateQuantityAgainstStock(newQuantity, product, 'increase');
           existingItem.quantity = newQuantity;
           await transactionalEntityManager.save(existingItem);
         } else {
+          await this.validateQuantityAgainstStock(addToCartDto.quantity, product, 'increase');
           const newItem = new CartItem();
           newItem.quantity = addToCartDto.quantity;
           newItem.cart = cart;
@@ -238,9 +243,9 @@ export class CartService {
         if (!product) throw new EntityNotFoundException('Product');
         if (!product.isActive) throw new BadRequestException('This product is currently unavailable');
 
-        if (item.quantity + amount > product.stock) {
-          throw new BadRequestException(`Cannot increase quantity. Only ${product.stock} products left in stock`);
-        }
+        // Validate against stock for the new total quantity
+        const newQuantity = item.quantity + amount;
+        await this.validateQuantityAgainstStock(newQuantity, product, 'increase');
         
         item.quantity += amount;
         await transactionalEntityManager.save(item);
@@ -291,6 +296,10 @@ export class CartService {
         
         if (!item) {
           throw new BadRequestException('Product not found in cart');
+        }
+        
+        if (item.quantity < amount) {
+          throw new BadRequestException(`Cannot decrease quantity. Current quantity: ${item.quantity}, trying to decrease: ${amount}`);
         }
         
         item.quantity -= amount;

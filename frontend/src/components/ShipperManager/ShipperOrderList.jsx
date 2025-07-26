@@ -65,7 +65,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
     { value: "SHIPPING", label: "Shipping" },
     { value: "DELIVERED", label: "Delivered" },
     { value: "CANCELLED", label: "Cancelled" },
-    { value: "PENDING_EXTERNAL_SHIPPING", label: "External Shipping" },
+    { value: "EXTERNAL", label: "External" },
   ];
 
   // Fetch orders
