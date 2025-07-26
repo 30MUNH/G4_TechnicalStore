@@ -66,7 +66,7 @@ const CheckoutForm = ({
 
   // OTP states for guest verification
   const [showOtpPopup, setShowOtpPopup] = useState(false);
-  const [otpError, setOtpError] = useState('');
+  const [otpError, setOtpError] = useState("");
   const [otpVerified, setOtpVerified] = useState(false);
   const [pendingOrderData, setPendingOrderData] = useState(null);
 
@@ -74,8 +74,7 @@ const CheckoutForm = ({
   const clearSavedFormData = () => {
     try {
       sessionStorage.removeItem("checkoutFormData");
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   // Early return for invalid props
@@ -249,8 +248,7 @@ const CheckoutForm = ({
         paymentMethod,
       };
       sessionStorage.setItem("checkoutFormData", JSON.stringify(dataToSave));
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const handleInputChange = (e) => {
@@ -321,7 +319,7 @@ const CheckoutForm = ({
       const result = await sendOtpForGuest(formData.phone);
       if (result.success) {
         setShowOtpPopup(true);
-        setOtpError('');
+        setOtpError("");
         showNotification("📱 OTP sent to your phone number", "success");
       } else {
         showNotification(result.message || "Failed to send OTP", "error");
@@ -337,9 +335,9 @@ const CheckoutForm = ({
       if (result.success) {
         setOtpVerified(true);
         setShowOtpPopup(false);
-        setOtpError('');
+        setOtpError("");
         showNotification("✅ Phone number verified successfully!", "success");
-        
+
         // If we have pending order data, proceed with order creation
         if (pendingOrderData) {
           processOrder(pendingOrderData);
@@ -365,26 +363,30 @@ const CheckoutForm = ({
           `Số điện thoại: ${orderData.phone.trim()}`,
           `Email: ${orderData.email.trim()}`,
           `Số lượng sản phẩm: ${cartItems.length}`,
-          `Total amount: ${formatCurrency(requireInvoice ? totalAmount + (subtotal * 0.1) : totalAmount)}`,
+          `Total amount: ${formatCurrency(
+            requireInvoice ? totalAmount + subtotal * 0.1 : totalAmount
+          )}`,
           requireInvoice ? "VAT Invoice Requested" : "No Invoice Required",
-          "Phone Verified" // Add verification flag
+          "Phone Verified", // Add verification flag
         ].join(" | "),
         paymentMethod: orderData.paymentMethod,
         requireInvoice: requireInvoice,
         isGuest: isGuest,
-        ...(isGuest ? {
-          guestInfo: {
-            fullName: orderData.fullName.trim(),
-            phone: orderData.phone.trim(),
-            email: orderData.email.trim()
-          },
-          guestCartItems: cartItems.map(item => ({
-            productId: item.product?.id || item.id,
-            quantity: item.quantity || 1,
-            price: item.product?.price || item.price || 0,
-            name: item.product?.name || item.name || 'Unknown Product'
-          }))
-        } : {})
+        ...(isGuest
+          ? {
+              guestInfo: {
+                fullName: orderData.fullName.trim(),
+                phone: orderData.phone.trim(),
+                email: orderData.email.trim(),
+              },
+              guestCartItems: cartItems.map((item) => ({
+                productId: item.product?.id || item.id,
+                quantity: item.quantity || 1,
+                price: item.product?.price || item.price || 0,
+                name: item.product?.name || item.name || "Unknown Product",
+              })),
+            }
+          : {}),
       };
 
       // Create order first, then redirect to VNPay
@@ -421,10 +423,13 @@ const CheckoutForm = ({
       // COD payment flow - pass order data to parent component
       // Clear saved form data when order is placed
       clearSavedFormData();
-      
+
       // Hiển thị thông báo thành công trước khi chuyển hướng
-      showNotification(" Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại cửa hàng chúng tôi.", "success");
-      
+      showNotification(
+        " Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại cửa hàng chúng tôi.",
+        "success"
+      );
+
       // Delay a bit để người dùng thấy thông báo thành công
       setTimeout(() => {
         onPlaceOrder(orderData);
@@ -463,7 +468,10 @@ const CheckoutForm = ({
     // Validate phone format (Vietnamese phone number)
     const phoneRegex = /^[0-9]{10,11}$/;
     if (!phoneRegex.test(formData.phone.trim())) {
-      showNotification("⚠️ Please enter a valid phone number (10-11 digits)", "warning");
+      showNotification(
+        "⚠️ Please enter a valid phone number (10-11 digits)",
+        "warning"
+      );
       return;
     }
 
@@ -488,25 +496,29 @@ const CheckoutForm = ({
     const commune = formData.commune.trim();
     const ward = formData.ward.trim();
     const city = formData.city.trim();
-    
+
     // Tạo địa chỉ đầy đủ theo định dạng chuẩn
     let fullAddress = addressDetail;
-    
+
     // Chỉ thêm thông tin từ dropdown nếu chưa có trong địa chỉ chi tiết
-    if (commune && !addressDetail.toLowerCase().includes(commune.toLowerCase())) {
+    if (
+      commune &&
+      !addressDetail.toLowerCase().includes(commune.toLowerCase())
+    ) {
       fullAddress += `, ${commune}`;
     }
-    
+
     if (ward && !addressDetail.toLowerCase().includes(ward.toLowerCase())) {
       fullAddress += `, ${ward}`;
     }
-    
+
     if (city && !addressDetail.toLowerCase().includes(city.toLowerCase())) {
       fullAddress += `, ${city}`;
     }
 
     // Map frontend payment method to backend expected values
-    const backendPaymentMethod = paymentMethod === 'cod' ? 'Cash on delivery' : 'Online payment';
+    const backendPaymentMethod =
+      paymentMethod === "cod" ? "Cash on delivery" : "Online payment";
 
     // Create order data with proper structure
     const orderData = {
@@ -545,7 +557,10 @@ const CheckoutForm = ({
 
   try {
     return (
-      <div className={styles.checkoutContainer} style={{ marginTop: '0', paddingTop: '0' }}>
+      <div
+        className={styles.checkoutContainer}
+        style={{ marginTop: "0", paddingTop: "0" }}
+      >
         {/* Đã xóa checkoutHeader */}
 
         {/* Form & Cart Summary */}
@@ -615,14 +630,15 @@ const CheckoutForm = ({
 
             <form onSubmit={handleSubmit} className={styles.shippingForm}>
               <h2>Customer information</h2>
-              
+
               {isGuest && (
                 <div className={styles.guestNotification}>
                   <div className={styles.guestNotificationIcon}>ℹ️</div>
                   <div className={styles.guestNotificationText}>
                     <strong>Bạn đang đặt hàng dưới dạng khách.</strong>
                     <br />
-                    Đơn hàng sẽ không hiển thị trong tài khoản. Bạn có thể tạo tài khoản sau để theo dõi đơn hàng dễ dàng hơn.
+                    Đơn hàng sẽ không hiển thị trong tài khoản. Bạn có thể tạo
+                    tài khoản sau để theo dõi đơn hàng dễ dàng hơn.
                   </div>
                 </div>
               )}
@@ -765,7 +781,7 @@ const CheckoutForm = ({
                   {shippingFee === 0 ? "Free" : formatCurrency(shippingFee)}
                 </span>
               </div>
-              
+
               {/* VAT Invoice Checkbox */}
               <div className={styles.vatInvoiceSection}>
                 <label className={styles.vatInvoiceLabel}>
@@ -791,7 +807,11 @@ const CheckoutForm = ({
 
               <div className={`${styles.summaryRow} ${styles.total}`}>
                 <span>Total</span>
-                <span>{formatCurrency(requireInvoice ? totalAmount + (subtotal * 0.1) : totalAmount)}</span>
+                <span>
+                  {formatCurrency(
+                    requireInvoice ? totalAmount + subtotal * 0.1 : totalAmount
+                  )}
+                </span>
               </div>
             </div>
 
@@ -839,8 +859,10 @@ const CheckoutForm = ({
                   >
                     <div className={styles.paymentIconCompact}>💳</div>
                     <div className={styles.paymentInfoCompact}>
-                      <span className={styles.paymentTitle}>VNPay</span>
-                      <span className={styles.paymentDesc}>Online payment</span>
+                      <span className={styles.paymentTitle}>Card</span>
+                      <span className={styles.paymentDesc}>
+                        Pay by credit or debit card
+                      </span>
                     </div>
                   </label>
                 </div>
@@ -864,7 +886,7 @@ const CheckoutForm = ({
               {isProcessing || isVNPayProcessing
                 ? "Processing..."
                 : paymentMethod === "vnpay"
-                ? `💳 Payment VNPay • ${formatCurrency(totalAmount)}`
+                ? `💳 Pay by Card • ${formatCurrency(totalAmount)}`
                 : `💰 Order COD • ${formatCurrency(totalAmount)}`}
             </button>
 
@@ -881,7 +903,7 @@ const CheckoutForm = ({
           isOpen={showOtpPopup}
           onClose={() => {
             setShowOtpPopup(false);
-            setOtpError('');
+            setOtpError("");
             setPendingOrderData(null);
           }}
           onVerify={handleVerifyOtpForGuest}

@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
+import React, {
+  useState,
+  useEffect,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
+import {
+  Plus,
   X,
   Save,
   User,
@@ -9,16 +14,16 @@ import {
   Trash2,
   XCircle,
   Eye,
-  Edit
-} from 'lucide-react';
+  Edit,
+} from "lucide-react";
 
-import OrderTable from './OrderTable';
-import FilterBar from './FilterBar';
-import OrderDetailModal from './OrderDetailModal';
-import styles from './OrderManagement.module.css';
-import { orderService } from '../../services/orderService';
+import OrderTable from "./OrderTable";
+import FilterBar from "./FilterBar";
+import OrderDetailModal from "./OrderDetailModal";
+import styles from "./OrderManagement.module.css";
+import { orderService } from "../../services/orderService";
 
-const OrderManagement = ({ role = 'admin' }) => {
+const OrderManagement = forwardRef(({ role = "admin", onFetchOrders }, ref) => {
   // State management
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,30 +31,32 @@ const OrderManagement = ({ role = 'admin' }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
-  
+
   // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('');
-  const [shipperFilter, setShipperFilter] = useState('all');
-  const [amountFilter, setAmountFilter] = useState('all');
-  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("");
+  const [shipperFilter, setShipperFilter] = useState("all");
+  const [amountFilter, setAmountFilter] = useState("all");
+
   // Modal states
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState('view'); // 'view', 'edit'
+  const [modalMode, setModalMode] = useState("view"); // 'view', 'edit'
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
 
   const itemsPerPage = 10;
 
   // Notification function
-  const showNotification = (message, type = 'info') => {
-    const notification = document.createElement('div');
-    notification.className = `${styles.notification} ${styles[`notification${type.charAt(0).toUpperCase() + type.slice(1)}`]}`;
+  const showNotification = (message, type = "info") => {
+    const notification = document.createElement("div");
+    notification.className = `${styles.notification} ${
+      styles[`notification${type.charAt(0).toUpperCase() + type.slice(1)}`]
+    }`;
     notification.textContent = message;
-    
+
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
       if (notification.parentNode) {
         notification.parentNode.removeChild(notification);
@@ -67,14 +74,14 @@ const OrderManagement = ({ role = 'admin' }) => {
         page: currentPage,
         limit: itemsPerPage,
         search: searchTerm,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
         date: dateFilter || undefined,
-        shipper: shipperFilter !== 'all' ? shipperFilter : undefined,
-        amount: amountFilter !== 'all' ? amountFilter : undefined,
-        ...params
+        shipper: shipperFilter !== "all" ? shipperFilter : undefined,
+        amount: amountFilter !== "all" ? amountFilter : undefined,
+        ...params,
       };
       const response = await orderService.getAllOrdersForAdmin(queryParams);
-      
+
       // Backend returns nested structure due to ResponseInterceptor:
       // { success: true, statusCode: 200, data: { message: "...", data: orders[], pagination: {...} } }
       if (response.data && response.data.data && response.data.pagination) {
@@ -85,13 +92,15 @@ const OrderManagement = ({ role = 'admin' }) => {
         setTotalPages(pagination.totalPages || 1);
       } else {
         // Fallback for simpler response format
-        const ordersArr = Array.isArray(response.data?.data) ? response.data.data : [];
+        const ordersArr = Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
         setOrders(ordersArr);
         setTotalOrders(ordersArr.length);
         setTotalPages(1);
       }
     } catch (err) {
-        setError('Cannot load orders: ' + err.message);
+      setError("Cannot load orders: " + err.message);
       setOrders([]);
       setTotalOrders(0);
       setTotalPages(1);
@@ -104,7 +113,18 @@ const OrderManagement = ({ role = 'admin' }) => {
   useEffect(() => {
     fetchOrders();
     // eslint-disable-next-line
-  }, [currentPage, searchTerm, statusFilter, dateFilter, shipperFilter, amountFilter]);
+  }, [
+    currentPage,
+    searchTerm,
+    statusFilter,
+    dateFilter,
+    shipperFilter,
+    amountFilter,
+  ]);
+
+  useImperativeHandle(ref, () => ({
+    fetchOrders,
+  }));
 
   // Ensure orders is always an array
   const safeOrders = Array.isArray(orders) ? orders : [];
@@ -124,46 +144,48 @@ const OrderManagement = ({ role = 'admin' }) => {
   // Status update operation
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
-      const response = await orderService.updateOrderStatus(orderId, { status: newStatus });
-      
+      const response = await orderService.updateOrderStatus(orderId, {
+        status: newStatus,
+      });
+
       if (response.success) {
-        showNotification('Update order status successfully', 'success');
+        showNotification("Update order status successfully", "success");
         await fetchOrders(); // Refresh the list
       } else {
-        throw new Error(response.message || 'Cannot update order status');
+        throw new Error(response.message || "Cannot update order status");
       }
     } catch (error) {
-      showNotification(error.message || 'An error occurred', 'error');
+      showNotification(error.message || "An error occurred", "error");
     }
   };
 
   const handleReject = async (id) => {
-    const order = orders.find(o => o.id === id);
+    const order = orders.find((o) => o.id === id);
     setSelectedOrder(order);
     setShowRejectModal(true);
   };
 
   const handleRejectConfirm = async () => {
     if (!selectedOrder) return;
-    
+
     try {
       // Reject order by changing status to "CANCELLED"
-      const response = await orderService.updateOrderStatus(selectedOrder.id, { 
-        status: 'CANCELLED',
-        cancelReason: 'Rejected by admin'
+      const response = await orderService.updateOrderStatus(selectedOrder.id, {
+        status: "CANCELLED",
+        cancelReason: "Rejected by admin",
       });
-      
+
       if (response.success) {
-        showNotification('Reject order successfully', 'success');
+        showNotification("Reject order successfully", "success");
         await fetchOrders(); // Refresh the list
       } else {
-        throw new Error(response.message || 'Cannot reject order');
+        throw new Error(response.message || "Cannot reject order");
       }
-      
+
       setShowRejectModal(false);
       setSelectedOrder(null);
     } catch (error) {
-      showNotification(error.message || 'An error occurred', 'error');
+      showNotification(error.message || "An error occurred", "error");
     }
   };
 
@@ -171,37 +193,42 @@ const OrderManagement = ({ role = 'admin' }) => {
   const handleExportData = async () => {
     try {
       const response = await orderService.exportOrders();
-      
+
       if (response.success && response.data) {
         // Create download link with proper Excel MIME type
-        const url = window.URL.createObjectURL(new Blob([response.data], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        }));
-        const link = document.createElement('a');
+        const url = window.URL.createObjectURL(
+          new Blob([response.data], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          })
+        );
+        const link = document.createElement("a");
         link.href = url;
-        link.setAttribute('download', `orders_${new Date().toISOString().split('T')[0]}.xlsx`);
+        link.setAttribute(
+          "download",
+          `orders_${new Date().toISOString().split("T")[0]}.xlsx`
+        );
         document.body.appendChild(link);
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
-        
-        showNotification('Export data successfully', 'success');
+
+        showNotification("Export data successfully", "success");
       } else {
-        throw new Error('Cannot export data');
+        throw new Error("Cannot export data");
       }
     } catch (error) {
-      showNotification('Cannot export data', 'error');
+      showNotification("Cannot export data", "error");
     }
   };
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
-    setDateFilter('');
-    setShipperFilter('all');
-    setAmountFilter('all');
+    setSearchTerm("");
+    setStatusFilter("all");
+    setDateFilter("");
+    setShipperFilter("all");
+    setAmountFilter("all");
     setCurrentPage(1);
-    showNotification('Cleared filters', 'info');
+    showNotification("Cleared filters", "info");
   };
 
   // Loading state
@@ -237,9 +264,11 @@ const OrderManagement = ({ role = 'admin' }) => {
         <div className={styles.headerContent}>
           <div className={styles.headerInfo}>
             <h1 className={styles.title}>Order management</h1>
-            <p className={styles.description}>Manage order information and status</p>
+            <p className={styles.description}>
+              Manage order information and status
+            </p>
           </div>
-          
+
           <div className={styles.headerActions}>
             {/* Removed Export Data button */}
           </div>
@@ -269,14 +298,14 @@ const OrderManagement = ({ role = 'admin' }) => {
         totalOrders={totalOrders}
         itemsPerPage={itemsPerPage}
         role={role}
-        onView={(order) => openModal('view', order)}
+        onView={(order) => openModal("view", order)}
         onStatusUpdate={handleStatusUpdate}
-        onReject={role !== 'shipper' ? handleReject : undefined}
+        onReject={role !== "shipper" ? handleReject : undefined}
         onPageChange={setCurrentPage}
       />
 
       {/* Modals */}
-      {showModal && modalMode === 'view' && selectedOrder && (
+      {showModal && modalMode === "view" && selectedOrder && (
         <OrderDetailModal
           order={selectedOrder}
           open={showModal}
@@ -302,11 +331,13 @@ const OrderManagement = ({ role = 'admin' }) => {
   // Helper function for modal title
   function getModalTitle() {
     switch (modalMode) {
-      case 'view': return 'Order details';
-      default: return '';
+      case "view":
+        return "Order details";
+      default:
+        return "";
     }
   }
-};
+});
 
 // Modal Component
 const Modal = ({ isOpen, title, onClose, children }) => {
@@ -345,28 +376,33 @@ const OrderDetail = ({ order }) => (
           <User size={16} />
           <span>Customer</span>
         </div>
-        <div className={styles.detailValue}>{order.customer?.name || order.customer?.username}</div>
+        <div className={styles.detailValue}>
+          {order.customer?.name || order.customer?.username}
+        </div>
       </div>
-      
+
       <div className={styles.detailField}>
         <div className={styles.detailLabel}>
           <Calendar size={16} />
           <span>Order date</span>
         </div>
         <div className={styles.detailValue}>
-          {new Date(order.orderDate).toLocaleDateString('vi-VN')}
+          {new Date(order.orderDate).toLocaleDateString("vi-VN")}
         </div>
       </div>
-      
+
       <div className={styles.detailField}>
         <div className={styles.detailLabel}>
           <span>Tổng tiền</span>
         </div>
         <div className={styles.detailValue}>
-          {order.totalAmount?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+          {order.totalAmount?.toLocaleString("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          })}
         </div>
       </div>
-      
+
       <div className={styles.detailField}>
         <div className={styles.detailLabel}>
           <span>Địa chỉ giao hàng</span>
@@ -399,9 +435,14 @@ const OrderDetail = ({ order }) => (
         <div className={styles.productsList}>
           {order.orderDetails.map((item, index) => (
             <div key={index} className={styles.productItem}>
-              <span>{item.product?.name || 'Product'}</span>
+              <span>{item.product?.name || "Product"}</span>
               <span>x{item.quantity}</span>
-              <span>{item.price?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</span>
+              <span>
+                {item.price?.toLocaleString("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                })}
+              </span>
             </div>
           ))}
         </div>
@@ -413,12 +454,18 @@ const OrderDetail = ({ order }) => (
 // Helper function for status class
 const getStatusClass = (status) => {
   switch (status) {
-    case 'PENDING': return styles.statusPending;
-    case 'PENDING_EXTERNAL_SHIPPING': return styles.statusPending;
-    case 'SHIPPING': return styles.statusShipping;
-    case 'DELIVERED': return styles.statusDelivered;
-    case 'CANCELLED': return styles.statusCancelled;
-    default: return styles.statusDefault;
+    case "PENDING":
+      return styles.statusPending;
+    case "PENDING_EXTERNAL_SHIPPING":
+      return styles.statusPending;
+    case "SHIPPING":
+      return styles.statusShipping;
+    case "DELIVERED":
+      return styles.statusDelivered;
+    case "CANCELLED":
+      return styles.statusCancelled;
+    default:
+      return styles.statusDefault;
   }
 };
 
@@ -432,7 +479,8 @@ const RejectConfirmation = ({ order, onConfirm, onClose }) => (
         </div>
         <h3 className={styles.deleteTitle}>Confirm reject order</h3>
         <p className={styles.deleteMessage}>
-          Are you sure you want to reject order "#{order.id}"? The order will be changed to "CANCELLED".
+          Are you sure you want to reject order "#{order.id}"? The order will be
+          changed to "CANCELLED".
         </p>
         <div className={styles.deleteActions}>
           <button onClick={onClose} className={styles.cancelButton}>

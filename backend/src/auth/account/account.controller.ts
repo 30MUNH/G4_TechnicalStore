@@ -7,6 +7,7 @@ import { Response } from 'express';
 import { OtpService } from "../otp/otp.service";
 import { Account } from "./account.entity";
 import { CheckAbility } from "@/middlewares/rbac/permission.decorator";
+import { ValidationException } from "@/exceptions/http-exceptions";
 
 @Service()
 @Controller("/account")
@@ -29,7 +30,7 @@ export class AccountController{
     @Post("/verify-register")
     async verifyRegister(@Body() body: VerifyRegisterDto, @Res() res: Response){
         const result = await this.otpService.verifyOtp(body.phone, body.otp);
-        if(!result) return "OTP is wrong or is expired";
+        if(!result) throw new ValidationException("OTP is wrong or is expired");
         const tokens = await this.accountService.finalizeRegistration(body.username, body.password, body.phone, body.roleSlug);
         res.cookie('refreshToken', tokens.newRefreshToken, {
             httpOnly: true,
@@ -60,9 +61,8 @@ export class AccountController{
     }
 
     @Post('/resend-otp')
-    async resendOtp(@BodyParam('username') username: string){
-        const account = await this.accountService.findAccountByUsername(username);
-        await this.otpService.sendOtp(account.phone);
+    async resendOtp(@BodyParam('phone') phone: string){
+        await this.otpService.sendOtp(phone);
         return "OTP resent";
     }
 
@@ -117,7 +117,9 @@ export class AccountController{
     @Post('/verify-otp')
     async verifyOtp(@BodyParam('username') username: string, @BodyParam('otp') otp: string){
         const account = await this.accountService.findAccountByUsername(username);
-        return this.otpService.verifyOtp(account.phone, otp);
+        const verify = await this.otpService.verifyOtp(account.phone, otp); 
+        if(!verify) throw new ValidationException("OTP is wrong or is expired");
+        return verify;
     }
 
     @Get('/all')

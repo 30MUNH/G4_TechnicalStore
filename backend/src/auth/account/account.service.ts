@@ -43,6 +43,7 @@ export class AccountService {
       }
     })) throw new PhoneAlreadyExistedException(HttpMessages._PHONE_EXISTED);
     account.password = await bcrypt.hash(request.password, SALT_ROUNDS);
+    account.name = request.name;
     account.role = role;
     return account;
   }

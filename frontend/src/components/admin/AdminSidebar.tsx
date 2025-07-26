@@ -1,46 +1,57 @@
-import React from 'react';
-import { 
-  LayoutDashboard, 
-  Package, 
-  Users, 
+import React from "react";
+import {
+  LayoutDashboard,
+  Package,
+  Users,
   Truck,
   ShoppingCart,
   ChevronRight,
-  Shield
-} from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+  Shield,
+} from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface AdminSidebarProps {
   activeSection: string;
   setActiveSection: (section: string) => void;
 }
 
-const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSection }) => {
+const AdminSidebar: React.FC<AdminSidebarProps> = ({
+  activeSection,
+  setActiveSection,
+}) => {
   const { user } = useAuth();
-  const role = typeof user?.role === 'object' && user?.role?.name ? user.role.name : (typeof user?.role === 'string' ? user.role : 'admin');
+  const role =
+    typeof user?.role === "object" && user?.role?.name
+      ? user.role.name
+      : typeof user?.role === "string"
+      ? user.role
+      : "admin";
 
   let menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'products', label: 'Products', icon: Package },
-    { id: 'customers', label: 'Customers', icon: Users },
-    { id: 'accounts', label: 'Accounts', icon: Shield },
-    { id: 'orders', label: 'Orders', icon: ShoppingCart },
-    { id: 'shippers', label: 'Shippers', icon: Truck },
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "products", label: "Products", icon: Package },
+    { id: "customers", label: "Customers", icon: Users },
+    { id: "accounts", label: "Accounts", icon: Shield },
+    { id: "orders", label: "Orders", icon: ShoppingCart },
+    { id: "shippers", label: "Shippers", icon: Truck },
   ];
 
-  if (role === 'shipper') {
+  if (role === "shipper") {
     // Only show Shippers for shipper role
+    menuItems = [{ id: "shippers", label: "Shippers", icon: Truck }];
+  } else if (role === "manager") {
+    // Manager: only Shippers and Accounts
     menuItems = [
-      { id: 'shippers', label: 'Shippers', icon: Truck },
+      { id: "shippers", label: "Shippers", icon: Truck },
+      { id: "accounts", label: "Accounts", icon: Shield },
     ];
-  } else if (role === 'staff') {
-    // Staff: show all except Dashboard
+  } else if (role === "staff") {
+    // Staff: all except Shippers and Accounts
     menuItems = [
-      { id: 'products', label: 'Products', icon: Package },
-      { id: 'customers', label: 'Customers', icon: Users },
-      { id: 'accounts', label: 'Accounts', icon: Shield },
-      { id: 'orders', label: 'Orders', icon: ShoppingCart },
-      { id: 'shippers', label: 'Shippers', icon: Truck },
+      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { id: "products", label: "Products", icon: Package },
+      { id: "customers", label: "Customers", icon: Users },
+      { id: "orders", label: "Orders", icon: ShoppingCart },
     ];
   }
 
@@ -52,21 +63,22 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSec
         </h1>
         <p className="text-red-200 text-sm mt-1">Hardware Management</p>
       </div>
-      
+
       <nav className="mt-6">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
-          
+
           return (
             <button
               key={item.id}
               onClick={() => setActiveSection(item.id)}
               className={`
                 w-full flex items-center justify-between px-6 py-4 text-left transition-all duration-200
-                ${isActive 
-                  ? 'bg-red-700 text-white border-r-4 border-red-400' 
-                  : 'text-red-100 hover:bg-red-800 hover:text-white'
+                ${
+                  isActive
+                    ? "bg-red-700 text-white border-r-4 border-red-400"
+                    : "text-red-100 hover:bg-red-800 hover:text-white"
                 }
               `}
             >
@@ -83,5 +95,4 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, setActiveSec
   );
 };
 
-export default AdminSidebar; 
- 
+export default AdminSidebar;

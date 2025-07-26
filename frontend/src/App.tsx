@@ -29,6 +29,7 @@ import CustomerManagement from "./components/CustomerManager/CustomerManagement.
 import ShipperManagement from "./components/ShipperManager/ShipperManagement.jsx";
 import { AdminApp } from "./components/admin";
 import RequestForQuotaPage from "./Page/RequestForQuotaPage";
+import UserDetailsPage from "./Page/UserDetailsPage.jsx";
 
 function AuthBgWrapper({ children }: { children: ReactNode }) {
   return <div className="auth-bg-custom">{children}</div>;
@@ -117,7 +118,20 @@ function AuthNavigationHandler() {
 // Tách logic route để dùng useLocation
 function AppContent() {
   const location = useLocation();
-  const hideHeaderAndNavRoutes = ["/login", "/signup", "/forgot-password", "/about", "/contact", "/cart", "/checkout", "/vnpay-payment", "/manage-customers", "/manage-shippers", "/admin", "/order-history"];
+  const hideHeaderAndNavRoutes = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/about",
+    "/contact",
+    "/cart",
+    "/checkout",
+    "/vnpay-payment",
+    "/manage-customers",
+    "/manage-shippers",
+    "/admin",
+    "/order-history",
+  ];
   const shouldHide = hideHeaderAndNavRoutes.includes(location.pathname);
 
   return (
@@ -161,6 +175,7 @@ function AppContent() {
         />
 
         <Route path="/request-for-quota" element={<RequestForQuotaPage />} />
+        <Route path="/user/details" element={<UserDetailsPage />} />
 
         <Route
           path="/manage-customers"
@@ -179,9 +194,30 @@ function AppContent() {
           }
         />
         <Route path="/order-history" element={<OrderHistoryPage />} />
-        <Route path="/login" element={<AuthBgWrapper><Login /></AuthBgWrapper>} />
-        <Route path="/signup" element={<AuthBgWrapper><SignUp /></AuthBgWrapper>} />
-        <Route path="/forgot-password" element={<AuthBgWrapper><ForgotPassword /></AuthBgWrapper>} />
+        <Route
+          path="/login"
+          element={
+            <AuthBgWrapper>
+              <Login />
+            </AuthBgWrapper>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <AuthBgWrapper>
+              <SignUp />
+            </AuthBgWrapper>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <AuthBgWrapper>
+              <ForgotPassword />
+            </AuthBgWrapper>
+          }
+        />
 
         {/* Admin Dashboard Route */}
         <Route

@@ -20,6 +20,7 @@ const ForgotPassword = () => {
   const [verifiedOTP, setVerifiedOTP] = useState(null);
   const [showOTPPopup, setShowOTPPopup] = useState(false);
   const [otpError, setOtpError] = useState("");
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   const validateField = (name, value) => {
     switch (name) {
@@ -141,9 +142,8 @@ const ForgotPassword = () => {
               timestamp: Date.now(),
             })
           );
-
-          alert("Password has been reset successfully!");
-          navigate("/login");
+          setShowSuccessDialog(true); // Show success dialog
+          return;
         } else {
           throw new Error("Failed to reset password");
         }
@@ -182,7 +182,7 @@ const ForgotPassword = () => {
         setErrors({});
       } else {
         // OTP is invalid, show error in OTPPopup
-        setOtpError("OTP is incorrect or expired. Please try again.");
+        setOtpError("OTP is wrong or is expired");
       }
     } catch (error) {
       setOtpError(
@@ -214,136 +214,184 @@ const ForgotPassword = () => {
   };
 
   return (
-    <FormCard>
-      <button
-        type="button"
-        onClick={() => navigate("/login")}
-        className={styles.backArrowBtn}
-        aria-label="Back to Sign In"
-      >
-        <ArrowLeft size={20} />
-      </button>
-
-      <div className={styles.authHeader}>
-        <h1 className={styles.authTitle}>Reset Password</h1>
-        <p className={styles.authSubtitle}>
-          {step === 1 && "Enter your username to reset password"}
-          {step === 2 && "Enter OTP code and your new password"}
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className={styles.authForm}>
-        {errors.general && (
-          <div
-            className={styles.errorMessage}
-            style={{ marginBottom: "1rem", textAlign: "center" }}
-          >
-            {errors.general}
-          </div>
-        )}
-
-        {step === 1 && (
-          <div className={styles.formGroup}>
-            <div className={styles.inputWrapper}>
-              <div className={styles.inputIcon}>
-                <User size={20} />
-              </div>
-              <input
-                type="text"
-                name="username"
-                placeholder="Enter your username"
-                value={formData.username}
-                onChange={handleInputChange}
-                className={`${styles.input} ${
-                  errors.username ? styles.error : ""
-                }`}
-                autoComplete="username"
-              />
-            </div>
-            {errors.username && (
-              <span className={styles.errorMessage}>{errors.username}</span>
-            )}
-          </div>
-        )}
-
-        {step === 2 && (
-          <>
-            <div className={styles.formGroup}>
-              <div className={styles.inputWrapper}>
-                <div className={styles.inputIcon}>
-                  <Lock size={20} />
-                </div>
-                <input
-                  type="password"
-                  name="newPassword"
-                  placeholder="Enter new password"
-                  value={formData.newPassword}
-                  onChange={handleInputChange}
-                  className={`${styles.input} ${
-                    errors.newPassword ? styles.error : ""
-                  }`}
-                  autoComplete="new-password"
-                />
-              </div>
-              {errors.newPassword && (
-                <span className={styles.errorMessage}>
-                  {errors.newPassword}
-                </span>
-              )}
-            </div>
-
-            <div className={styles.formGroup}>
-              <div className={styles.inputWrapper}>
-                <div className={styles.inputIcon}>
-                  <Lock size={20} />
-                </div>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  placeholder="Confirm new password"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className={`${styles.input} ${
-                    errors.confirmPassword ? styles.error : ""
-                  }`}
-                  autoComplete="new-password"
-                />
-              </div>
-              {errors.confirmPassword && (
-                <span className={styles.errorMessage}>
-                  {errors.confirmPassword}
-                </span>
-              )}
-            </div>
-          </>
-        )}
-
+    <>
+      <FormCard>
         <button
-          type="submit"
-          className={styles.submitBtn}
-          disabled={isSubmitting}
+          type="button"
+          onClick={() => navigate("/login")}
+          className={styles.backArrowBtn}
+          aria-label="Back to Sign In"
         >
-          {isSubmitting
-            ? "Processing..."
-            : step === 1
-            ? "Send OTP"
-            : "Reset Password"}
+          <ArrowLeft size={20} />
         </button>
-      </form>
 
-      {showOTPPopup && (
-        <OTPPopup
-          isOpen={showOTPPopup}
-          onClose={() => {
-            setShowOTPPopup(false);
-            setPendingReset(null);
-          }}
-          onVerify={handleVerifyOTP}
-          onResend={handleResendOTP}
-          error={errors.general}
-        />
-      )}
-    </FormCard>
+        <div className={styles.authHeader}>
+          <h1 className={styles.authTitle}>Reset Password</h1>
+          <p className={styles.authSubtitle}>
+            {step === 1 && "Enter your username to reset password"}
+            {step === 2 && "Enter OTP code and your new password"}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className={styles.authForm}>
+          {errors.general && (
+            <div
+              className={styles.errorMessage}
+              style={{ marginBottom: "1rem", textAlign: "center" }}
+            >
+              {errors.general}
+            </div>
+          )}
+
+          {step === 1 && (
+            <div className={styles.formGroup}>
+              <div className={styles.inputWrapper}>
+                <div className={styles.inputIcon}>
+                  <User size={20} />
+                </div>
+                <input
+                  type="text"
+                  name="username"
+                  placeholder="Enter your username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  className={`${styles.input} ${
+                    errors.username ? styles.error : ""
+                  }`}
+                  autoComplete="username"
+                />
+              </div>
+              {errors.username && (
+                <span className={styles.errorMessage}>{errors.username}</span>
+              )}
+            </div>
+          )}
+
+          {step === 2 && (
+            <>
+              <div className={styles.formGroup}>
+                <div className={styles.inputWrapper}>
+                  <div className={styles.inputIcon}>
+                    <Lock size={20} />
+                  </div>
+                  <input
+                    type="password"
+                    name="newPassword"
+                    placeholder="Enter new password"
+                    value={formData.newPassword}
+                    onChange={handleInputChange}
+                    className={`${styles.input} ${
+                      errors.newPassword ? styles.error : ""
+                    }`}
+                    autoComplete="new-password"
+                  />
+                </div>
+                {errors.newPassword && (
+                  <span className={styles.errorMessage}>
+                    {errors.newPassword}
+                  </span>
+                )}
+              </div>
+
+              <div className={styles.formGroup}>
+                <div className={styles.inputWrapper}>
+                  <div className={styles.inputIcon}>
+                    <Lock size={20} />
+                  </div>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    placeholder="Confirm new password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    className={`${styles.input} ${
+                      errors.confirmPassword ? styles.error : ""
+                    }`}
+                    autoComplete="new-password"
+                  />
+                </div>
+                {errors.confirmPassword && (
+                  <span className={styles.errorMessage}>
+                    {errors.confirmPassword}
+                  </span>
+                )}
+              </div>
+            </>
+          )}
+
+          <button
+            type="submit"
+            className={styles.submitBtn}
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? "Processing..."
+              : step === 1
+              ? "Send OTP"
+              : "Reset Password"}
+          </button>
+
+          {/* Success message and button below form */}
+          {showSuccessDialog && (
+            <div
+              style={{
+                marginTop: "2rem",
+                padding: "1.5rem",
+                background: "#e6ffed",
+                border: "1px solid #34d399",
+                borderRadius: "10px",
+                textAlign: "center",
+                color: "#065f46",
+                fontWeight: "bold",
+                fontSize: "1.2rem",
+              }}
+            >
+              <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>
+                Password Reset Successful!
+              </div>
+              <div
+                style={{
+                  marginBottom: "1rem",
+                  fontWeight: "normal",
+                  fontSize: "1rem",
+                }}
+              >
+                Your password has been reset successfully.
+              </div>
+              <button
+                style={{
+                  background: "#34d399",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "0.75rem 1.5rem",
+                  fontWeight: "bold",
+                  fontSize: "1rem",
+                  cursor: "pointer",
+                }}
+                onClick={() => navigate("/login")}
+              >
+                Go to Login
+              </button>
+            </div>
+          )}
+        </form>
+
+        {showOTPPopup && (
+          <OTPPopup
+            isOpen={showOTPPopup}
+            onClose={() => {
+              setShowOTPPopup(false);
+              setPendingReset(null);
+              setOtpError("");
+            }}
+            onVerify={handleVerifyOTP}
+            onResend={handleResendOTP}
+            error={otpError}
+          />
+        )}
+      </FormCard>
+    </>
   );
 };
 

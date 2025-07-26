@@ -140,6 +140,9 @@ export function defineAbilityFor(role: string, user?: Account): AppAbility {
       can("update", Feedback, { account: { username: user?.username } });
       can("delete", Feedback, { account: { username: user?.username } });
       can("read", Order, { customer: { username: user?.username } });
+      can("read", Account, { username: user?.username });
+      can("update", Account, { username: user?.username });
+      can("delete", Account, { username: user?.username });
       break;
     }
     case "manager": {

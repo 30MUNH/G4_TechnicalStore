@@ -1,6 +1,7 @@
 import { BodyParam, Controller, Get, Post } from "routing-controllers";
 import { Service } from "typedi";
 import { OtpService } from "./otp.service";
+import { ValidationException } from "@/exceptions/http-exceptions";
 
 @Service()
 @Controller("/otp")
@@ -19,6 +20,8 @@ export class OtpController {
 
     @Post("/verify")
     async verifyOtp(@BodyParam("phone") phone: string, @BodyParam("otp") otp: string) {
-        return await this.otpService.verifyOtp(phone, otp);
+        const verify = await this.otpService.verifyOtp(phone, otp);
+        if(!verify) throw new ValidationException("OTP is wrong or is expired");
+        return verify;
     }
 }
