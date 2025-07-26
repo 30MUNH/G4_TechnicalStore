@@ -41,18 +41,13 @@ const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) 
   });
 
   // Check if user has permission to view this shipper's orders
-
   // For shipper role, they can only view their own orders
   // For admin/manager, they can view all orders
-  const hasPermission = hasAdminPrivileges || !isShipperRole || 
-    (isShipperRole && (user?.id === shipperId || user?.username === shipperUsername));
-    
-
   const hasPermission =
     hasAdminPrivileges ||
     !isShipperRole ||
     (isShipperRole &&
-      (user?.id === shipperId || user?.username === shipperName));
+      (user?.id === shipperId || user?.username === shipperUsername));
 
 
   // Add notification system
@@ -81,25 +76,12 @@ const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) 
     try {
       setLoading(true);
       setError("");
-
       setNotification({ show: false, message: '', type: '' });
       
       // Kiểm tra quyền truy cập
       if (!hasPermission) {
-
-
-      // Đảm bảo luôn cho phép shipper xem đơn hàng của chính họ
-      if (isShipperRole && shipperName === loggedInUsername) {
-        // Luôn cho phép xem đơn hàng của chính mình
-      }
-      // Kiểm tra quyền cho các trường hợp khác
-      else if (!hasPermission) {
-
         setError("You do not have permission to view these orders");
-        showNotification(
-          "You do not have permission to view these orders",
-          "error"
-        );
+        showNotification("You do not have permission to view these orders", "error");
         setLoading(false);
         return;
       }
