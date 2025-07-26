@@ -57,7 +57,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   } else if (role === 'shipper') {
     menuItems = [
       { id: "shippers", label: "Shippers", icon: Truck },
-      { id: "accounts", label: "Accounts", icon: Shield },
     ];
   } else if (role === 'staff') {
     menuItems = [
