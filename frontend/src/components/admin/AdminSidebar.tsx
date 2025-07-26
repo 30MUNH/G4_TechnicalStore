@@ -7,8 +7,9 @@ import {
   ShoppingCart,
   ChevronRight,
   Shield,
-} from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
+  MessageSquare // Thêm dòng này
+} from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface AdminSidebarProps {
   activeSection: string;
@@ -20,39 +21,55 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   setActiveSection,
 }) => {
   const { user } = useAuth();
-  const role =
-    typeof user?.role === "object" && user?.role?.name
-      ? user.role.name
-      : typeof user?.role === "string"
-      ? user.role
-      : "admin";
+  // Lấy role an toàn, không mặc định là 'admin' nếu không có role
+  let role = null;
+  if (user?.role) {
+    if (typeof user.role === 'object' && user.role.name) {
+      role = user.role.name;
+    } else if (typeof user.role === 'string') {
+      role = user.role;
+    }
+  }
+  role = role ? role.toLowerCase() : 'unknown';
 
-  let menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "products", label: "Products", icon: Package },
-    { id: "customers", label: "Customers", icon: Users },
-    { id: "accounts", label: "Accounts", icon: Shield },
-    { id: "orders", label: "Orders", icon: ShoppingCart },
-    { id: "shippers", label: "Shippers", icon: Truck },
-  ];
+  let menuItems: Array<{id: string, label: string, icon: any}> = [];
 
-  if (role === "shipper") {
-    // Only show Shippers for shipper role
-    menuItems = [{ id: "shippers", label: "Shippers", icon: Truck }];
-  } else if (role === "manager") {
-    // Manager: only Shippers and Accounts
+  if (role === 'admin') {
+    menuItems = [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'products', label: 'Products', icon: Package },
+      { id: 'customers', label: 'Customers', icon: Users },
+      { id: 'accounts', label: 'Accounts', icon: Shield },
+      { id: 'orders', label: 'Orders', icon: ShoppingCart },
+      { id: 'shippers', label: 'Shippers', icon: Truck },
+      { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquare },
+    ];
+  } else if (role === 'manager') {
+    menuItems = [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'products', label: 'Products', icon: Package },
+      { id: 'customers', label: 'Customers', icon: Users },
+      { id: 'accounts', label: 'Accounts', icon: Shield },
+      { id: 'orders', label: 'Orders', icon: ShoppingCart },
+      { id: 'shippers', label: 'Shippers', icon: Truck },
+      { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquare },
+    ];
+  } else if (role === 'shipper') {
     menuItems = [
       { id: "shippers", label: "Shippers", icon: Truck },
       { id: "accounts", label: "Accounts", icon: Shield },
     ];
-  } else if (role === "staff") {
-    // Staff: all except Shippers and Accounts
+  } else if (role === 'staff') {
     menuItems = [
-      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { id: "products", label: "Products", icon: Package },
-      { id: "customers", label: "Customers", icon: Users },
-      { id: "orders", label: "Orders", icon: ShoppingCart },
+      { id: 'products', label: 'Products', icon: Package },
+      { id: 'customers', label: 'Customers', icon: Users },
+      { id: 'orders', label: 'Orders', icon: ShoppingCart },
+      { id: 'shippers', label: 'Shippers', icon: Truck },
+      { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquare },
     ];
+  } else {
+    // Không xác định được role hoặc không có quyền
+    menuItems = [];
   }
 
   return (
@@ -63,33 +80,34 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </h1>
         <p className="text-red-200 text-sm mt-1">Hardware Management</p>
       </div>
-
       <nav className="mt-6">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeSection === item.id;
-
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveSection(item.id)}
-              className={`
-                w-full flex items-center justify-between px-6 py-4 text-left transition-all duration-200
-                ${
-                  isActive
-                    ? "bg-red-700 text-white border-r-4 border-red-400"
-                    : "text-red-100 hover:bg-red-800 hover:text-white"
-                }
-              `}
-            >
-              <div className="flex items-center space-x-3">
-                <Icon size={20} />
-                <span className="font-medium">{item.label}</span>
-              </div>
-              {isActive && <ChevronRight size={16} className="text-red-400" />}
-            </button>
-          );
-        })}
+        {menuItems.length === 0 ? (
+          <div className="text-red-200 px-6 py-4">No permission</div>
+        ) : (
+          menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={`
+                  w-full flex items-center justify-between px-6 py-4 text-left transition-all duration-200
+                  ${isActive 
+                    ? 'bg-red-700 text-white border-r-4 border-red-400' 
+                    : 'text-red-100 hover:bg-red-800 hover:text-white'
+                  }
+                `}
+              >
+                <div className="flex items-center space-x-3">
+                  <Icon size={20} />
+                  <span className="font-medium">{item.label}</span>
+                </div>
+                {isActive && <ChevronRight size={16} className="text-red-400" />}
+              </button>
+            );
+          })
+        )}
       </nav>
     </div>
   );

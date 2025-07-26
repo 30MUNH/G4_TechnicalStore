@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, Req, UseBefore, QueryParam, 
 import { Service } from "typedi";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dtos/create-order.dto";
-import { UpdateOrderDto } from "./dtos/update-order.dto";
+import { UpdateOrderDto, OrderStatus } from "./dtos/update-order.dto";
 import { Auth } from "@/middlewares/auth.middleware";
 import { AccountDetailsDto } from "@/auth/dtos/account.dto";
 import { HttpException } from "@/exceptions/http-exceptions";
@@ -133,8 +133,8 @@ export class OrderController {
     ) {
         const user = req.user as AccountDetailsDto;
         
-        // Only allow admin, staff, shipper
-        if (!this.isAdmin(user) && !this.isStaff(user) && !this.isShipper(user)) {
+        // Only allow admin, manager, staff, shipper
+        if (!this.isAdmin(user) && !this.isManager(user) && !this.isStaff(user) && !this.isShipper(user)) {
             throw new HttpException(401, "Access denied to orders list");
         }
         
@@ -235,6 +235,38 @@ export class OrderController {
             };
         }
     }
+    
+    /**
+     * Khách hàng xác nhận đã nhận hàng thành công
+     * POST /orders/:id/confirm-delivery
+     */
+    @Post(":id/confirm-delivery")
+    @UseBefore(Auth)
+    async confirmOrderDelivery(@Param("id") id: string, @Req() req: any) {
+        const user = req.user as AccountDetailsDto;
+        try {
+            // Tạo update dto với trạng thái DELIVERED
+            const updateOrderDto: UpdateOrderDto = {
+                status: OrderStatus.DELIVERED
+            };
+            
+            const order = await this.orderService.updateOrderStatus(
+                id,
+                user.username,
+                updateOrderDto
+            );
+            
+            return {
+                message: "Order delivery confirmed successfully",
+                order
+            };
+        } catch (error: any) {
+            return {
+                message: "Failed to confirm order delivery",
+                error: error.message
+            };
+        }
+    }
 
     // Helper method to check admin role
     private isAdmin(user: AccountDetailsDto): boolean {
@@ -249,5 +281,10 @@ export class OrderController {
     // Helper method to check shipper role
     private isShipper(user: AccountDetailsDto): boolean {
         return user.role?.name?.toLowerCase().includes('shipper') || false;
+    }
+
+    // Helper method to check manager role
+    private isManager(user: AccountDetailsDto): boolean {
+        return user.role?.name?.toLowerCase().includes('manager') || false;
     }
 } 

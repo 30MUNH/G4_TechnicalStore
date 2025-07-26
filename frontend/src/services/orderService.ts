@@ -137,19 +137,29 @@ export const orderService = {
     }
   },
 
-  async updateOrderStatus(id: string, updateOrderDto: UpdateOrderDto) {
-    try {
-      const response = await api.patch(`/orders/${id}/status`, updateOrderDto);
-      return response.data;
-    } catch (error) {
-      const errorMsg =
-        error instanceof Error && "response" in error
-          ? (error as { response?: { data?: { message?: string } } }).response
-              ?.data?.message
-          : "Cập nhật trạng thái đơn hàng thất bại";
-      throw new Error(errorMsg || "Cập nhật trạng thái đơn hàng thất bại");
-    }
-  },
+    async updateOrderStatus(id: string, updateOrderDto: UpdateOrderDto) {
+        try {
+            const response = await api.patch(`/orders/${id}/status`, updateOrderDto);
+            return response.data;
+        } catch (error) {
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Cập nhật trạng thái đơn hàng thất bại';
+            throw new Error(errorMsg || 'Cập nhật trạng thái đơn hàng thất bại');
+        }
+    },
+
+    async confirmOrderDelivery(id: string) {
+        try {
+            const response = await api.post(`/orders/${id}/confirm-delivery`);
+            return response.data;
+        } catch (error) {
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Xác nhận đã nhận hàng thất bại';
+            throw new Error(errorMsg || 'Xác nhận đã nhận hàng thất bại');
+        }
+    },
 
   async getOrderStatistics() {
     try {
@@ -180,75 +190,56 @@ export const orderService = {
       if (params.page) queryParams.append("page", params.page.toString());
       if (params.limit) queryParams.append("limit", params.limit.toString());
 
-      const queryString = queryParams.toString();
-      const url = `/shippers/${shipperId}/orders${
-        queryString ? "?" + queryString : ""
-      }`;
-
-      console.log("🚀 [ORDER_SERVICE] Fetching orders by shipper:", {
-        shipperId,
-        url,
-        params,
-      });
-
-      const response = await api.get(url);
-      return response.data;
-    } catch (error) {
-      console.error("❌ [ORDER_SERVICE] Get orders by shipper failed:", error);
-      const errorMsg =
-        error instanceof Error && "response" in error
-          ? (error as { response?: { data?: { message?: string } } }).response
-              ?.data?.message
-          : "Không thể lấy danh sách đơn hàng của shipper";
-      throw new Error(
-        errorMsg || "Không thể lấy danh sách đơn hàng của shipper"
-      );
-    }
-  },
-
-  async updateOrderStatusByShipper(
-    shipperId: string,
-    orderId: string,
-    updateData: UpdateOrderByShipperDto
-  ) {
-    try {
-      console.log("🚀 [ORDER_SERVICE] Updating order status by shipper:", {
-        shipperId,
-        orderId,
-        updateData,
-      });
-
-      const response = await api.put(
-        `/shippers/${shipperId}/orders/${orderId}/status`,
-        updateData
-      );
-      return response.data;
-    } catch (error) {
-      console.error(
-        "❌ [ORDER_SERVICE] Update order status by shipper failed:",
-        error
-      );
-      const errorMsg =
-        error instanceof Error && "response" in error
-          ? (error as { response?: { data?: { message?: string } } }).response
-              ?.data?.message
-          : "Cập nhật trạng thái đơn hàng thất bại";
-      throw new Error(errorMsg || "Cập nhật trạng thái đơn hàng thất bại");
-    }
-  },
-
-  // =============== ADMIN/STAFF METHODS ===============
-
-  async getAllOrdersForAdmin(params = {}) {
-    try {
-      console.log("🚀 [ORDER_SERVICE] Fetching all orders for admin:", params);
-
-      const queryParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== "") {
-          queryParams.append(key, value.toString());
+            const queryString = queryParams.toString();
+            const url = `/shippers/${shipperId}/orders${queryString ? '?' + queryString : ''}`;
+            
+            const response = await api.get(url);
+            return response.data;
+        } catch (error) {
+            console.error('❌ [ORDER_SERVICE] Get orders by shipper failed:', error);
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Không thể lấy danh sách đơn hàng của shipper';
+            throw new Error(errorMsg || 'Không thể lấy danh sách đơn hàng của shipper');
         }
-      });
+    },
+
+    async updateOrderStatusByShipper(shipperId: string, orderId: string, updateData: UpdateOrderByShipperDto) {
+        try {
+            const response = await api.put(`/shippers/${shipperId}/orders/${orderId}/status`, updateData);
+            return response.data;
+        } catch (error) {
+            console.error('❌ [ORDER_SERVICE] Update order status by shipper failed:', error);
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Cập nhật trạng thái đơn hàng thất bại';
+            throw new Error(errorMsg || 'Cập nhật trạng thái đơn hàng thất bại');
+        }
+    },
+
+    async confirmOrderByShipper(shipperId: string, orderId: string) {
+        try {
+            const response = await api.put(`/shippers/${shipperId}/orders/${orderId}/confirm`);
+            return response.data;
+        } catch (error) {
+            console.error('❌ [ORDER_SERVICE] Confirm order by shipper failed:', error);
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Xác nhận đơn hàng thất bại';
+            throw new Error(errorMsg || 'Xác nhận đơn hàng thất bại');
+        }
+    },
+
+    // =============== ADMIN/STAFF METHODS ===============
+    
+    async getAllOrdersForAdmin(params = {}) {
+        try {
+            const queryParams = new URLSearchParams();
+            Object.entries(params).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '') {
+                    queryParams.append(key, value.toString());
+                }
+            });
 
       const queryString = queryParams.toString();
       const url = `/orders/admin${queryString ? "?" + queryString : ""}`;
@@ -269,58 +260,36 @@ export const orderService = {
     }
   },
 
-  async deleteOrder(id: string) {
-    try {
-      console.log("🚀 [ORDER_SERVICE] Deleting order:", id);
+    async deleteOrder(id: string) {
+        try {
+            const response = await api.delete(`/orders/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error('❌ [ORDER_SERVICE] Delete order failed:', error);
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Xóa đơn hàng thất bại';
+            throw new Error(errorMsg || 'Xóa đơn hàng thất bại');
+        }
+    },
 
-      const response = await api.delete(`/orders/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error("❌ [ORDER_SERVICE] Delete order failed:", error);
-      const errorMsg =
-        error instanceof Error && "response" in error
-          ? (error as { response?: { data?: { message?: string } } }).response
-              ?.data?.message
-          : "Xóa đơn hàng thất bại";
-      throw new Error(errorMsg || "Xóa đơn hàng thất bại");
+    async exportOrders() {
+        try {
+            const response = await api.get('/orders/export', {
+                responseType: 'blob',
+            });
+            
+            return {
+                success: true,
+                data: response.data,
+                message: 'Export successful',
+            };
+        } catch (error) {
+            console.error('❌ [ORDER_SERVICE] Export orders failed:', error);
+            const errorMsg = error instanceof Error && 'response' in error 
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message 
+                : 'Xuất dữ liệu thất bại';
+            throw new Error(errorMsg || 'Xuất dữ liệu thất bại');
+        }
     }
-  },
-
-  async exportOrders() {
-    try {
-      console.log("🚀 [ORDER_SERVICE] Exporting orders...");
-
-      const response = await api.get("/orders/export", {
-        responseType: "blob",
-      });
-
-      return {
-        success: true,
-        data: response.data,
-        message: "Export successful",
-      };
-    } catch (error) {
-      console.error("❌ [ORDER_SERVICE] Export orders failed:", error);
-      const errorMsg =
-        error instanceof Error && "response" in error
-          ? (error as { response?: { data?: { message?: string } } }).response
-              ?.data?.message
-          : "Xuất dữ liệu thất bại";
-      throw new Error(errorMsg || "Xuất dữ liệu thất bại");
-    }
-  },
-
-  async updatePaymentStatus(orderId: string, status: string, method: string) {
-    try {
-      const response = await api.post("/payment/update-payment-status", {
-        orderId,
-        status,
-        method,
-      });
-      return response.data;
-    } catch (error) {
-      console.error("❌ [ORDER_SERVICE] Update payment status failed:", error);
-      throw new Error("Failed to update payment status");
-    }
-  },
-};
+}; 

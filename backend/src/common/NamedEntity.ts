@@ -12,9 +12,7 @@ export abstract class NamedEntity extends BaseEntity {
   @BeforeUpdate()
   generateSlug() {
     if (this.name) {
-      const baseSlug = slugify(this.name);
-      const salt = randomSalt();
-      this.slug = `${baseSlug}-${salt}`;
+      this.slug = this.name.toLowerCase();
     }
   }
 }

@@ -529,6 +529,16 @@
   color: #f59e0b;
 }
 
+.statusAssigned {
+  background-color: #dbeafe;
+  color: #3b82f6;
+}
+
+.statusConfirmed {
+  background-color: #e0f2fe;
+  color: #0ea5e9;
+}
+
 .statusProcessing {
   background-color: #fef3c7;
   color: #f59e0b;

@@ -10,7 +10,11 @@ import {
   UsernameAlreadyExistedException,
 } from "@/exceptions/http-exceptions";
 import * as bcrypt from "bcrypt";
-import { CreateAccountDto, CredentialsDto, UpdateAccountDto } from "../dtos/account.dto";
+import {
+  CreateAccountDto,
+  CredentialsDto,
+  UpdateAccountDto,
+} from "../dtos/account.dto";
 import { JwtService } from "../jwt/jwt.service";
 import { RefreshToken } from "../jwt/refreshToken.entity";
 import { MoreThan } from "typeorm";
@@ -30,18 +34,24 @@ export class AccountService {
     if (role == null) throw new EntityNotFoundException("Role");
     const account = new Account();
     account.username = request.username;
-    if(await Account.findOne({
-      where: {
-        username: request.username,
-      }
-    })) throw new UsernameAlreadyExistedException(HttpMessages._USERNAME_EXISTED);
+    if (
+      await Account.findOne({
+        where: {
+          username: request.username,
+        },
+      })
+    )
+      throw new UsernameAlreadyExistedException(HttpMessages._USERNAME_EXISTED);
     const phone = "0" + request.phone.slice(-9);
     account.phone = phone;
-    if(await Account.findOne({
-      where: {
-        phone,
-      }
-    })) throw new PhoneAlreadyExistedException(HttpMessages._PHONE_EXISTED);
+    if (
+      await Account.findOne({
+        where: {
+          phone,
+        },
+      })
+    )
+      throw new PhoneAlreadyExistedException(HttpMessages._PHONE_EXISTED);
     account.password = await bcrypt.hash(request.password, SALT_ROUNDS);
     account.name = request.name;
     account.role = role;
@@ -84,11 +94,13 @@ export class AccountService {
       await Promise.all(accounts.map((account) => account.softRemove()));
   }
 
-  async login(credentials: CredentialsDto): Promise<{newRefreshToken: string, accessToken: string}> {
+  async login(
+    credentials: CredentialsDto
+  ): Promise<{ newRefreshToken: string; accessToken: string }> {
     const account = await this.findAccountByUsername(credentials.username);
     if (!(await bcrypt.compare(credentials.password, account.password)))
       throw new AccountNotFoundException();
-    
+
     const token = await RefreshToken.findOne({
       where: {
         account,
@@ -116,7 +128,7 @@ export class AccountService {
       where: {
         username,
       },
-      relations: ['role'],
+      relations: ["role"],
     });
     if (!account) throw new AccountNotFoundException();
     return account;
@@ -145,13 +157,19 @@ export class AccountService {
     return account;
   }
 
-  async getAccounts(){
+  async getAccounts() {
     return await Account.find({
-      relations: ['role'],
+      relations: ["role"],
     });
   }
 
-  async createAccount(username: string, password: string, name: string, phone: string, roleSlug: string){
+  async createAccount(
+    username: string,
+    password: string,
+    name: string,
+    phone: string,
+    roleSlug: string
+  ) {
     const role = await Role.findOne({
       where: {
         slug: roleSlug,
@@ -163,14 +181,19 @@ export class AccountService {
         username,
       },
     });
-    if(checkUsername) throw new UsernameAlreadyExistedException(HttpMessages._USERNAME_EXISTED);
+    if (checkUsername)
+      throw new UsernameAlreadyExistedException(HttpMessages._USERNAME_EXISTED);
     const checkPhone = await Account.findOne({
       where: {
         phone,
       },
     });
-    if(checkPhone) throw new PhoneAlreadyExistedException(HttpMessages._PHONE_EXISTED);
-    if(role.name === "admin") throw new ForbiddenException("You do not have permission to create admin account.");
+    if (checkPhone)
+      throw new PhoneAlreadyExistedException(HttpMessages._PHONE_EXISTED);
+    if (role.name === "admin")
+      throw new ForbiddenException(
+        "You do not have permission to create admin account."
+      );
     const account = new Account();
     account.username = username;
     account.password = await bcrypt.hash(password, SALT_ROUNDS);
@@ -182,38 +205,47 @@ export class AccountService {
     return account;
   }
 
-  async updateAccount(username: string, request: UpdateAccountDto){
+  async updateAccount(username: string, request: UpdateAccountDto) {
     const account = await this.findAccountByUsername(username);
-    if(request.username) account.username = request.username;
-    if(request.phone) account.phone = request.phone;
-    if(request.name) account.name = request.name;
-    if(request.roleSlug) {
+    if (request.username) account.username = request.username;
+    if (request.phone) account.phone = request.phone;
+    if (request.name) account.name = request.name;
+    if (request.roleSlug) {
       const role = await Role.findOne({
         where: {
           slug: request.roleSlug,
         },
       });
-      if(!role) throw new EntityNotFoundException("Role");
-      if(role.name === "admin") throw new ForbiddenException("You do not have permission to change admin role.");
+      if (!role) throw new EntityNotFoundException("Role");
+      if (role.name === "admin")
+        throw new ForbiddenException(
+          "You do not have permission to change to admin role."
+        );
       account.role = role;
     }
     await account.save();
     return account;
   }
 
-  async deleteAccount(username: string){
+  async deleteAccount(username: string) {
     const account = await this.findAccountByUsername(username);
-    if(account.role.name === "admin") throw new ForbiddenException("You do not have permission to delete admin account.");
+    if (account.role.name === "admin")
+      throw new ForbiddenException(
+        "You do not have permission to delete admin account."
+      );
     await account.softRemove();
     return account;
   }
 
-  async updateAdmin(username: string, request: UpdateAccountDto){
+  async updateAdmin(username: string, request: UpdateAccountDto) {
     const account = await this.findAccountByUsername(username);
-    if(account.role.name !== "admin") throw new ForbiddenException("You do not have permission to update admin account.");
-    if(request.username) account.username = request.username;
-    if(request.phone) account.phone = request.phone;
-    if(request.name) account.name = request.name;
+    if (account.role.name !== "admin")
+      throw new ForbiddenException(
+        "You do not have permission to update admin account."
+      );
+    if (request.username) account.username = request.username;
+    if (request.phone) account.phone = request.phone;
+    if (request.name) account.name = request.name;
     await account.save();
     return account;
   }

@@ -80,7 +80,7 @@ const ProductManagement: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const PRODUCTS_PER_PAGE = 12;
+  const PRODUCTS_PER_PAGE = 10;
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -117,21 +117,7 @@ const ProductManagement: React.FC = () => {
     fetchData();
   }, []);
 
-  const getStatusColor = (stock: number) => {
-    if (stock > 0) {
-      return 'bg-green-100 text-green-800';
-    } else {
-      return 'bg-red-100 text-red-800';
-    }
-  };
 
-  const getStatusText = (stock: number) => {
-    if (stock > 0) {
-      return 'In Stock';
-    } else {
-      return 'Out of Stock';
-    }
-  };
 
   const getCategoryColor = (categoryName: string) => {
     switch (categoryName?.toLowerCase()) {
@@ -371,8 +357,9 @@ const ProductManagement: React.FC = () => {
       } else {
         showNotification('Failed to update product. Please try again!', 'error');
       }
-    } catch (err: any) {
-      const message = err?.response?.data?.error || err?.response?.data?.message || err?.message || '';
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string; message?: string } }; message?: string };
+      const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || '';
       if (message.toLowerCase().includes('already exists')) {
         showNotification('Product name already exists. Please choose another name.', 'error');
       } else if (message.includes('Price must be greater than 0')) {
@@ -424,8 +411,9 @@ const ProductManagement: React.FC = () => {
       } else {
         showNotification('Failed to add product. Please try again!', 'error');
       }
-    } catch (err: any) {
-      const message = err?.response?.data?.error || err?.response?.data?.message || err?.message || '';
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string; message?: string } }; message?: string };
+      const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || '';
       if (message.toLowerCase().includes('already exists')) {
         showNotification('Product name already exists. Please choose another name.', 'error');
       } else if (message.includes('Price must be greater than 0')) {
@@ -454,7 +442,7 @@ const ProductManagement: React.FC = () => {
       } else {
         showNotification('Failed to update product status. Please try again!', 'error');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       showNotification('An error occurred while updating product status.', 'error');
     }
   };
@@ -554,60 +542,108 @@ const ProductManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Product Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
-        {paginatedProducts.map((product) => (
-          <div key={product.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow flex flex-col h-full">
-            {(product.images && product.images.length > 0 && product.images[0].url) ? (
-              <img 
-                src={product.images[0].url} 
-                alt={product.name}
-                className="w-full h-60 object-contain"
-                style={{ background: '#f8f8f8', objectFit: 'contain', maxHeight: 240 }}
-              />
-            ) : (
-              <div className="w-full h-60 bg-gray-200 flex items-center justify-center">
-                <span className="text-gray-500 text-sm">No Image</span>
-              </div>
-            )}
-            <div className="flex-1 flex flex-col justify-between p-4">
-              <h3 className="font-semibold text-gray-900 mb-2 text-center text-xl line-clamp-2">{product.name}</h3>
-              <div className="flex flex-col gap-2 mt-auto">
-                <div className="flex items-center justify-between mb-1">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(product.category?.name || '')}`}>{product.category?.name || 'Unknown'}</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(product.stock)}`}>{getStatusText(product.stock)}</span>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-lg font-bold text-red-600">{formatPrice(product.price)}</span>
-                  <span className="text-sm text-gray-600">Stock: {product.stock}</span>
-                </div>
-                <div className="flex items-center space-x-2 mt-2">
-                  <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-md transition-colors flex items-center justify-center" onClick={() => handleViewProduct(product)}>
-                    <Eye size={16} className="mr-1" />
-                    View
-                  </button>
-                  <button className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-3 rounded-md transition-colors flex items-center justify-center" onClick={() => handleEditProduct(product)}>
-                    <Edit size={16} className="mr-1" />
-                    Edit
-                  </button>
-                  <button
-                    className={`flex-1 ${product.isActive ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-500 hover:bg-gray-700'} text-white py-2 px-3 rounded-md transition-colors flex items-center justify-center`}
-                    onClick={() => handleToggleProductStatus(product)}
-                  >
-                    {product.isActive ? 'Active' : 'Deactive'}
-                  </button>
-                  <button
-                    className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors flex items-center justify-center"
-                    style={{ minWidth: 0, width: 'auto', paddingLeft: 12, paddingRight: 12 }}
-                    onClick={() => handleRemoveProduct(product)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* Product Table */}
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-4 py-4 text-left text-lg font-semibold text-gray-600 uppercase tracking-wider w-28">Image</th>
+                <th className="px-4 py-4 text-left text-lg font-semibold text-gray-600 uppercase tracking-wider w-96">Product Name</th>
+                <th className="px-4 py-4 text-center text-lg font-semibold text-gray-600 uppercase tracking-wider w-40">Category</th>
+                <th className="px-4 py-4 text-left text-lg font-semibold text-gray-600 uppercase tracking-wider w-28">Stock</th>
+                <th className="px-4 py-4 text-left text-lg font-semibold text-gray-600 uppercase tracking-wider w-40">Price</th>
+                <th className="px-4 py-4 text-left text-lg font-semibold text-gray-600 uppercase tracking-wider w-64">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {paginatedProducts.map((product) => (
+                <tr key={product.id} className="hover:bg-gray-50">
+                  {/* Image */}
+                  <td className="px-4 py-4 whitespace-nowrap w-28">
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                      {(product.images && product.images.length > 0 && product.images[0].url) ? (
+                        <img 
+                          src={product.images[0].url} 
+                          alt={product.name}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <span className="text-gray-400 text-lg">No Image</span>
+                      )}
+                    </div>
+                  </td>
+                  
+                  {/* Product Name */}
+                  <td className="px-4 py-4 text-left w-96">
+                    <p className="text-xl font-semibold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
+                      {product.name}
+                    </p>
+                  </td>
+                  
+                  {/* Category */}
+                  <td className="px-4 py-4 whitespace-nowrap w-40 text-center">
+                    <span className={`px-4 py-2 rounded-full text-base font-medium ${getCategoryColor(product.category?.name || '')}`}>
+                      {product.category?.name || 'Unknown'}
+                    </span>
+                  </td>
+                  
+                  {/* Stock */}
+                  <td className="px-4 py-4 whitespace-nowrap w-28">
+                    <div className="flex items-center">
+                      <span className={`w-3 h-3 rounded-full mr-3 ${product.stock > 0 ? 'bg-green-400' : 'bg-red-400'}`}></span>
+                      <span className="text-xl font-semibold text-gray-900">{product.stock}</span>
+                    </div>
+                  </td>
+                  
+                  {/* Price */}
+                  <td className="px-4 py-4 whitespace-nowrap w-40 text-left">
+                    <span className="text-xl font-bold text-red-600">
+                      {formatPrice(product.price)}
+                    </span>
+                  </td>
+                  
+                  {/* Actions */}
+                  <td className="px-4 py-4 whitespace-nowrap w-64">
+                    <div className="flex items-center space-x-3">
+                      <button 
+                        className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-md transition-colors h-12 w-12 flex items-center justify-center"
+                        onClick={() => handleViewProduct(product)}
+                        title="View Details"
+                      >
+                        <Eye size={18} />
+                      </button>
+                      
+                      <button 
+                        className="bg-yellow-600 hover:bg-yellow-700 text-white p-3 rounded-md transition-colors h-12 w-12 flex items-center justify-center"
+                        onClick={() => handleEditProduct(product)}
+                        title="Edit Product"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      
+                      <button
+                        className={`${product.isActive ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-500 hover:bg-gray-700'} text-white px-4 py-2 rounded-md transition-colors text-base font-medium h-12 flex items-center justify-center`}
+                        onClick={() => handleToggleProductStatus(product)}
+                        title={product.isActive ? 'Deactivate' : 'Activate'}
+                      >
+                        {product.isActive ? 'Active' : 'Inactive'}
+                      </button>
+                      
+                      <button
+                        className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-md transition-colors h-12 w-12 flex items-center justify-center"
+                        onClick={() => handleRemoveProduct(product)}
+                        title="Delete Product"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* No products message */}

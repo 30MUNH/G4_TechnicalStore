@@ -50,15 +50,16 @@ const checkRegistrationFlow = () => {
 };
 
 const authRoutes = [
-  "/account/login",
-  "/account/verify-login",
-  "/account/register",
-  "/account/verify-register",
-  "/account/verify-registration",
-  "/account/resend-otp",
-  "/account/forgot-password",
-  "/account/verify-change-password",
-  "/products/categories/all",
+    '/account/login',
+    '/account/verify-login',
+    '/account/register',
+    '/account/verify-register',
+    '/account/verify-registration',
+    '/account/resend-otp',
+    '/account/forgot-password',
+    '/account/verify-change-password',
+    '/products/categories/all',
+    '/feedbacks'
 ];
 
 api.interceptors.request.use(

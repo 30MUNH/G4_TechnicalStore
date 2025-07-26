@@ -1,7 +1,8 @@
-import { Controller, Post, Req, Res } from "routing-controllers";
+import { BodyParam, Controller, Post, Req, Res } from "routing-controllers";
 import { Service } from "typedi";
 import { JwtService } from "./jwt.service";
 import { Request, Response } from "express";
+import { HttpException } from "@/exceptions/http-exceptions";
 
 @Service()
 @Controller("/jwt")
@@ -40,4 +41,13 @@ export class JwtController {
       return res.status(401).json({ message: "Invalid refresh token" });
     }
   }
+
+  @Post("/verify-access-token")
+  async verifyAccessToken(@BodyParam("token") token: string) {
+    token = token.startsWith('Bearer ') ? token.substring(7) : token;
+    const result = this.jwtService.verifyAccessToken(token);
+    if (!result) throw new HttpException(401, "Invalid access token");
+    return result;
+  }
+
 }

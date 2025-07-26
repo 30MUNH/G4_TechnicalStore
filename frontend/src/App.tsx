@@ -45,19 +45,20 @@ function RoleBasedRedirect() {
     const checkRoleAndRedirect = async () => {
       // Chỉ kiểm tra khi đã đăng nhập và đang ở trang chủ
       if (isAuthenticated() && user && location.pathname === "/") {
-        const isAdmin =
-          user &&
-          (user.role === "admin" ||
-            user.role === "manager" ||
-            (user.role &&
-              typeof user.role === "object" &&
-              user.role.name &&
-              (user.role.name === "admin" || user.role.name === "manager")));
+        const roleName = user
+          ? typeof user.role === "object"
+            ? user.role.name
+            : user.role
+          : null;
+        const isAdminOrStaffOrShipper =
+          roleName === "admin" ||
+          roleName === "manager" ||
+          roleName === "staff" ||
+          roleName === "shipper";
 
-        if (isAdmin) {
-          console.log("🔄 Admin user detected, redirecting to admin dashboard");
-          navigate("/admin", { replace: true });
-        }
+              if (isAdminOrStaffOrShipper) {
+        navigate("/admin", { replace: true });
+      }
       }
     };
 

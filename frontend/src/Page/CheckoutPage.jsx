@@ -43,7 +43,7 @@ const CheckoutPage = () => {
         }
     }, [location, navigate]);
 
-    // Auto-hide payment message after 5 seconds
+    
     useEffect(() => {
         if (paymentMessage) {
             const timer = setTimeout(() => {
@@ -81,7 +81,7 @@ const CheckoutPage = () => {
     // Check cart but don't block rendering  
     useEffect(() => {
         if (!items || items.length === 0) {
-            // Don't redirect immediately - let them see empty state
+            
         }
     }, [items]);
 
