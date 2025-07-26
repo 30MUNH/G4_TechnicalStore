@@ -66,7 +66,6 @@ const FilterBar = ({
           placeholder="dd/mm/yyyy"
         />
 
-
         {/* Amount Filter */}
         <select
           className={styles.select}

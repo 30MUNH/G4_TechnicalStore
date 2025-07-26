@@ -1,11 +1,13 @@
 import { IsString, IsEnum, IsOptional, ValidateIf, IsNotEmpty, Length } from 'class-validator';
 
 export enum OrderStatus {
-    PENDING = 'PENDING',
-    SHIPPING = 'SHIPPING',
-    DELIVERED = 'DELIVERED',
-    CANCELLED = 'CANCELLED',
-    PENDING_EXTERNAL_SHIPPING = 'PENDING_EXTERNAL_SHIPPING' // Đơn hàng chờ giao qua đối tác
+    PENDING = 'PENDING',       // Đơn hàng mới tạo
+    ASSIGNED = 'ASSIGNED',     // Đã phân công shipper, chờ xác nhận
+    CONFIRMED = 'CONFIRMED',   // Shipper đã xác nhận nhận đơn
+    SHIPPING = 'SHIPPING',     // Đang giao hàng
+    DELIVERED = 'DELIVERED',   // Đã giao hàng
+    CANCELLED = 'CANCELLED',   // Đã hủy
+    EXTERNAL = 'EXTERNAL'      // Đơn giao qua đối tác 
 }
 
 export class UpdateOrderDto {

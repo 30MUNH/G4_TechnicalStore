@@ -15,10 +15,14 @@ const ShipperCard = ({
   onPageChange,
   onManageWorkingZones,
   onToggleAvailability,
-  onUpdatePriority
+  onUpdatePriority,
+  userRole = 'user' // Default to basic user role if not provided
 }) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalShippers);
+
+  // Check if user has admin privileges (admin or manager roles)
+  const hasAdminPrivileges = userRole === 'admin' || userRole === 'manager';
 
   const getAvailabilityClass = (isAvailable) => {
     return isAvailable ? styles.available : styles.unavailable;
@@ -126,6 +130,7 @@ const ShipperCard = ({
             </div>
 
             <div className={styles.cardActions}>
+              {/* View button - always visible for all roles */}
               <button
                 className={`${styles.actionButton} ${styles.viewButton}`}
                 onClick={() => onView(shipper)}
@@ -133,6 +138,8 @@ const ShipperCard = ({
                 <Eye className={styles.actionIcon} />
                 View
               </button>
+              
+              {/* Orders button - always visible for all roles */}
               <button
                 className={`${styles.actionButton} ${styles.ordersButton}`}
                 onClick={() => onViewOrders(shipper)}
@@ -141,28 +148,39 @@ const ShipperCard = ({
                 <List className={styles.actionIcon} />
                 Orders
               </button>
-              <button
-                className={`${styles.actionButton} ${styles.zonesButton}`}
-                onClick={() => onManageWorkingZones(shipper)}
-                title="Manage Working Zones"
-              >
-                <MapPin className={styles.actionIcon} />
-                Zones
-              </button>
-              <button
-                className={`${styles.actionButton} ${styles.editButton}`}
-                onClick={() => onEdit(shipper)}
-              >
-                <Edit className={styles.actionIcon} />
-                Edit
-              </button>
-              <button
-                className={`${styles.actionButton} ${styles.deleteButton}`}
-                onClick={() => onDelete(shipper.id)}
-              >
-                <Trash2 className={styles.actionIcon} />
-                Delete
-              </button>
+              
+              {/* Admin-only actions */}
+              {hasAdminPrivileges && (
+                <>
+                  {/* Zones button - only visible for admin/manager */}
+                  <button
+                    className={`${styles.actionButton} ${styles.zonesButton}`}
+                    onClick={() => onManageWorkingZones(shipper)}
+                    title="Manage Working Zones"
+                  >
+                    <MapPin className={styles.actionIcon} />
+                    Zones
+                  </button>
+                  
+                  {/* Edit button - only visible for admin/manager */}
+                  <button
+                    className={`${styles.actionButton} ${styles.editButton}`}
+                    onClick={() => onEdit(shipper)}
+                  >
+                    <Edit className={styles.actionIcon} />
+                    Edit
+                  </button>
+                  
+                  {/* Delete button - only visible for admin/manager */}
+                  <button
+                    className={`${styles.actionButton} ${styles.deleteButton}`}
+                    onClick={() => onDelete(shipper.id)}
+                  >
+                    <Trash2 className={styles.actionIcon} />
+                    Delete
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ))}

@@ -79,6 +79,21 @@ export const useOrders = () => {
         return updateOrderStatus(orderId, 'CANCELLED', cancelReason);
     };
 
+    const confirmOrderDelivery = async (orderId) => {
+        try {
+            setLoading(true);
+            const response = await orderService.confirmOrderDelivery(orderId);
+            await fetchOrders(); // Refresh orders list
+            return response.order;
+        } catch (err) {
+            setError('Failed to confirm order delivery');
+            console.error('Error confirming order delivery:', err);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const getOrderById = async (orderId) => {
         try {
             setLoading(true);
@@ -117,6 +132,7 @@ export const useOrders = () => {
         createOrder,
         updateOrderStatus,
         cancelOrder,
+        confirmOrderDelivery,
         getOrderById,
         getOrdersByStatus,
         getOrderStatistics,

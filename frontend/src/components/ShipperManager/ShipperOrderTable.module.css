@@ -150,8 +150,38 @@
 }
 
 .statusPending {
-  background-color: #fff7ed;
-  color: #fb923c;
+  background-color: #f59e0b;
+  color: white;
+}
+
+.statusAssigned {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.statusConfirmed {
+  background-color: #0ea5e9;
+  color: white;
+}
+
+.statusShipping {
+  background-color: #8b5cf6;
+  color: white;
+}
+
+.statusDelivered {
+  background-color: #059669;
+  color: white;
+}
+
+.statusCancelled {
+  background-color: #ef4444;
+  color: white;
+}
+
+.statusDefault {
+  background-color: #6b7280;
+  color: white;
 }
 
 .statusProcessing.statusSelect {
@@ -187,7 +217,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-left: 10px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .actionButton {
@@ -208,7 +239,28 @@
 
 .viewButton:hover {
   color: #1d4ed8;
-  background-color: #eff6ff;
+  background-color: #bfdbfe;
+}
+
+.confirmButton {
+  background-color: #059669;
+  color: white;
+  padding: 6px 12px !important;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  transition: background-color 0.2s;
+}
+
+.confirmButton:hover {
+  background-color: #047857;
+}
+
+.buttonText {
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .editButton {
