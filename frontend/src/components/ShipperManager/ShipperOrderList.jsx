@@ -5,7 +5,7 @@ import { OrderDetailView } from "../OrderManager";
 import ShipperOrderTable from "./ShipperOrderTable";
 import { useAuth } from "../../contexts/AuthContext"; // Import useAuth hook
 
-const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
+const ShipperOrderList = ({ shipperId, shipperName, shipperUsername, onClose }) => {
   // Get auth context
   const { user } = useAuth();
   const userRole = user?.role?.name?.toLowerCase() || "user";
@@ -41,11 +41,19 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
   });
 
   // Check if user has permission to view this shipper's orders
+
+  // For shipper role, they can only view their own orders
+  // For admin/manager, they can view all orders
+  const hasPermission = hasAdminPrivileges || !isShipperRole || 
+    (isShipperRole && (user?.id === shipperId || user?.username === shipperUsername));
+    
+
   const hasPermission =
     hasAdminPrivileges ||
     !isShipperRole ||
     (isShipperRole &&
       (user?.id === shipperId || user?.username === shipperName));
+
 
   // Add notification system
   const showNotification = (message, type = "info") => {
@@ -74,12 +82,19 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
       setLoading(true);
       setError("");
 
+      setNotification({ show: false, message: '', type: '' });
+      
+      // Kiểm tra quyền truy cập
+      if (!hasPermission) {
+
+
       // Đảm bảo luôn cho phép shipper xem đơn hàng của chính họ
       if (isShipperRole && shipperName === loggedInUsername) {
         // Luôn cho phép xem đơn hàng của chính mình
       }
       // Kiểm tra quyền cho các trường hợp khác
       else if (!hasPermission) {
+
         setError("You do not have permission to view these orders");
         showNotification(
           "You do not have permission to view these orders",
@@ -135,7 +150,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
     } else {
       setError("No shipper ID provided");
     }
-  }, [shipperId, filters, pagination.page, pagination.limit]);
+  }, [shipperId, filters.status, filters.search, filters.sort, filters.orderDate, pagination.page, pagination.limit]);
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -143,7 +158,9 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
   };
 
   const handlePageChange = (newPage) => {
-    setPagination((prev) => ({ ...prev, page: newPage }));
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination((prev) => ({ ...prev, page: newPage }));
+    }
   };
 
   // Handle status update
@@ -264,12 +281,12 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
 
           {/* Order Date filter - date picker */}
           <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Order Date</label>
             <input
               type="date"
               value={filters.orderDate}
               onChange={(e) => handleFilterChange("orderDate", e.target.value)}
               className={styles.filterSelect}
-              placeholder="Order date"
             />
           </div>
         </div>
@@ -296,6 +313,7 @@ const ShipperOrderList = ({ shipperId, shipperName, onClose }) => {
           onStatusUpdate={handleStatusUpdate}
           onConfirm={handleConfirmOrder}
           onPageChange={handlePageChange}
+          loading={loading}
         />
       )}
 

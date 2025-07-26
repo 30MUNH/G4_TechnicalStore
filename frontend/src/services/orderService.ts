@@ -38,11 +38,20 @@ export interface UpdateOrderDto {
 }
 
 export interface GetOrdersByShipperParams {
+
+    status?: string;
+    search?: string;
+    sort?: string;
+    orderDate?: string;
+    page?: number;
+    limit?: number;
+
   status?: string;
   search?: string;
   sort?: string;
   page?: number;
   limit?: number;
+
 }
 
 export interface UpdateOrderByShipperDto {
@@ -175,6 +184,20 @@ export const orderService = {
     }
   },
 
+
+    // =============== SHIPPER-SPECIFIC METHODS ===============
+    
+    async getOrdersByShipper(shipperId: string, params: GetOrdersByShipperParams = {}) {
+        try {
+            const queryParams = new URLSearchParams();
+            
+            if (params.status) queryParams.append('status', params.status);
+            if (params.search) queryParams.append('search', params.search);
+            if (params.sort) queryParams.append('sort', params.sort);
+            if (params.orderDate) queryParams.append('orderDate', params.orderDate);
+            if (params.page) queryParams.append('page', params.page.toString());
+            if (params.limit) queryParams.append('limit', params.limit.toString());
+
   // =============== SHIPPER-SPECIFIC METHODS ===============
 
   async getOrdersByShipper(
@@ -189,6 +212,7 @@ export const orderService = {
       if (params.sort) queryParams.append("sort", params.sort);
       if (params.page) queryParams.append("page", params.page.toString());
       if (params.limit) queryParams.append("limit", params.limit.toString());
+
 
             const queryString = queryParams.toString();
             const url = `/shippers/${shipperId}/orders${queryString ? '?' + queryString : ''}`;
