@@ -555,6 +555,7 @@ const ShipperManagement = () => {
         <ShipperOrderList
           shipperId={selectedShipperForOrders.id}
           shipperName={selectedShipperForOrders.name}
+          shipperUsername={selectedShipperForOrders.username}
           onClose={closeOrderList}
         />
       </div>
@@ -637,6 +638,7 @@ const ShipperManagement = () => {
             <ShipperOrderList
               shipperId={selectedShipperForOrders.id}
               shipperName={selectedShipperForOrders.name}
+              shipperUsername={selectedShipperForOrders.username}
               onClose={closeOrderList}
             />
           </div>

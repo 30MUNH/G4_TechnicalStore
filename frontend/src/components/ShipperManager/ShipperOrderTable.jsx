@@ -13,9 +13,10 @@ const ShipperOrderTable = ({
   onStatusUpdate,
   onReject,
   onConfirm,
-  onPageChange
+  onPageChange,
+  loading = false
 }) => {
-  const indexOfFirstItem = (currentPage - 1) * itemsPerPage + 1;
+  const indexOfFirstItem = totalOrders > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
   const indexOfLastItem = Math.min(currentPage * itemsPerPage, totalOrders);
 
   // Determine if a table should be shown
@@ -131,7 +132,7 @@ const ShipperOrderTable = ({
                           className={`${styles.statusSelect} ${getStatusClass(order.status)}`}
                           value={order.status}
                           onChange={(e) => onStatusUpdate(order.id, e.target.value)}
-                          disabled={role === 'shipper' && statusOptions.length === 0}
+                          disabled={loading || (role === 'shipper' && statusOptions.length === 0)}
                         >
                           <option value={order.status}>{order.status}</option>
                           {statusOptions
@@ -170,6 +171,7 @@ const ShipperOrderTable = ({
                             className={`${styles.actionButton} ${styles.confirmButton}`}
                             onClick={() => onConfirm(order.id)}
                             title="Confirm Order"
+                            disabled={loading}
                           >
                             <CheckCircle size={18} />
                             <span className={styles.buttonText}>Confirm</span>
@@ -182,6 +184,7 @@ const ShipperOrderTable = ({
                             className={`${styles.actionButton} ${styles.rejectButton}`}
                             onClick={() => onReject(order.id)}
                             title="Reject Order"
+                            disabled={loading}
                           >
                             <XCircle size={18} />
                           </button>
