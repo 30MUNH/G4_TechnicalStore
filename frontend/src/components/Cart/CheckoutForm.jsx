@@ -130,6 +130,101 @@ const CheckoutForm = ({
   // Always require VAT invoice
   const requireInvoice = true;
 
+  // Add these state variables after the other useState declarations
+  const [fieldErrors, setFieldErrors] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+    address: "",
+    city: "",
+    ward: "",
+    commune: "",
+  });
+
+  // Add this function to validate individual fields
+  const validateField = (name, value) => {
+    let error = "";
+    
+    switch (name) {
+      case "fullName":
+        if (!value.trim()) {
+          error = "Họ tên không được để trống";
+        } else if (value.trim().length < 2) {
+          error = "Họ tên phải có ít nhất 2 ký tự";
+        } else if (value.trim().length > 100) {
+          error = "Họ tên không được vượt quá 100 ký tự";
+        } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(value.trim())) {
+          error = "Họ tên chỉ được chứa chữ cái và khoảng trắng";
+        }
+        break;
+        
+      case "phone":
+        if (!value.trim()) {
+          error = "Số điện thoại không được để trống";
+        } else {
+          const cleanPhone = value.trim().replace(/\D/g, '');
+          const vietnamesePhonePatterns = [
+            /^0[3|5|7|8|9][0-9]{8}$/, // Mobile
+            /^0[2|3|4|5|6|7|8][0-9]{8}$/, // Landline
+            /^84[3|5|7|8|9][0-9]{8}$/, // International mobile
+            /^84[2|3|4|5|6|7|8][0-9]{8}$/ // International landline
+          ];
+          
+          const isValidPhone = vietnamesePhonePatterns.some(pattern => pattern.test(cleanPhone));
+          if (!isValidPhone) {
+            error = "Số điện thoại không hợp lệ (VD: 0912345678)";
+          }
+        }
+        break;
+        
+      case "email":
+        if (!value.trim()) {
+          error = "Email không được để trống";
+        } else {
+          const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+          if (!emailRegex.test(value.trim())) {
+            error = "Email không hợp lệ (VD: example@email.com)";
+          } else if (value.trim().length > 254) {
+            error = "Email không được vượt quá 254 ký tự";
+          }
+        }
+        break;
+        
+      case "address":
+        if (!value.trim()) {
+          error = "Địa chỉ không được để trống";
+        } else if (value.trim().length < 10) {
+          error = "Địa chỉ phải có ít nhất 10 ký tự";
+        } else if (value.trim().length > 200) {
+          error = "Địa chỉ không được vượt quá 200 ký tự";
+        }
+        break;
+        
+      case "city":
+        if (!value.trim()) {
+          error = "Vui lòng chọn Tỉnh/Thành phố";
+        }
+        break;
+        
+      case "ward":
+        if (!value.trim()) {
+          error = "Vui lòng chọn Quận/Huyện";
+        }
+        break;
+        
+      case "commune":
+        if (!value.trim()) {
+          error = "Vui lòng chọn Phường/Xã";
+        }
+        break;
+        
+      default:
+        break;
+    }
+    
+    return error;
+  };
+
   // Load saved form data on component mount
   React.useEffect(() => {
     const savedData = getSavedFormData();
@@ -254,6 +349,7 @@ const CheckoutForm = ({
     }
   };
 
+  // Modify the handleInputChange function to validate as user types
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     const newFormData = {
@@ -261,9 +357,18 @@ const CheckoutForm = ({
       [name]: value,
     };
     setFormData(newFormData);
+    
+    // Validate the field and update error state
+    const error = validateField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+    
     saveFormData(newFormData);
   };
 
+  // Modify the handleProvinceChange function to include validation
   const handleProvinceChange = (e) => {
     const provinceName = e.target.value;
     setSelectedProvince(provinceName);
@@ -275,6 +380,16 @@ const CheckoutForm = ({
       commune: "",
     };
     setFormData(newFormData);
+    
+    // Validate the field and update error state
+    const error = validateField("city", provinceName);
+    setFieldErrors(prev => ({
+      ...prev,
+      city: error,
+      ward: "",
+      commune: ""
+    }));
+    
     saveFormData(newFormData);
 
     if (provinces[provinceName]) {
@@ -286,11 +401,21 @@ const CheckoutForm = ({
     }
   };
 
+  // Modify the handleDistrictChange function to include validation
   const handleDistrictChange = (e) => {
     const districtName = e.target.value;
     setSelectedDistrict(districtName);
     const newFormData = { ...formData, ward: districtName, commune: "" };
     setFormData(newFormData);
+    
+    // Validate the field and update error state
+    const error = validateField("ward", districtName);
+    setFieldErrors(prev => ({
+      ...prev,
+      ward: error,
+      commune: ""
+    }));
+    
     saveFormData(newFormData);
 
     if (
@@ -303,10 +428,19 @@ const CheckoutForm = ({
     }
   };
 
+  // Modify the handleWardChange function to include validation
   const handleWardChange = (e) => {
     const wardName = e.target.value;
     const newFormData = { ...formData, commune: wardName };
     setFormData(newFormData);
+    
+    // Validate the field and update error state
+    const error = validateField("commune", wardName);
+    setFieldErrors(prev => ({
+      ...prev,
+      commune: error
+    }));
+    
     saveFormData(newFormData);
   };
 
@@ -323,7 +457,7 @@ const CheckoutForm = ({
       if (result.success) {
         setShowOtpPopup(true);
         setOtpError('');
-        showNotification("📱 OTP sent to your phone number", "success");
+        showNotification("OTP sent to your phone number", "success");
       } else {
         showNotification(result.message || "Failed to send OTP", "error");
       }
@@ -339,8 +473,8 @@ const CheckoutForm = ({
         setOtpVerified(true);
         setShowOtpPopup(false);
         setOtpError('');
-        showNotification("✅ Phone number verified successfully!", "success");
-        
+        showNotification("Phone number verified successfully!", "success");
+
         // If we have pending order data, proceed with order creation
         if (pendingOrderData) {
           processOrder(pendingOrderData);
@@ -368,7 +502,7 @@ const CheckoutForm = ({
           `Số lượng sản phẩm: ${cartItems.length}`,
           `Total amount: ${formatCurrency(totalAmount + (subtotal * 0.1))}`,
           "VAT Invoice Included",
-          "Phone Verified" // Add verification flag
+          "Phone Verified" 
         ].join(" | "),
         paymentMethod: orderData.paymentMethod,
         requireInvoice: true,
@@ -419,110 +553,220 @@ const CheckoutForm = ({
           setIsVNPayProcessing(false);
         });
     } else {
-      // COD payment flow - pass order data to parent component
-      // Clear saved form data when order is placed
-      clearSavedFormData();
+      // COD payment flow - create order first, then show success notification
+      const orderRequest = {
+        shippingAddress: orderData.shippingAddress,
+        note: [
+          `Khách hàng: ${orderData.fullName.trim()}`,
+          `Số điện thoại: ${orderData.phone.trim()}`,
+          `Email: ${orderData.email.trim()}`,
+          `Số lượng sản phẩm: ${cartItems.length}`,
+          `Total amount: ${formatCurrency(totalAmount + (subtotal * 0.1))}`,
+          "VAT Invoice Included",
+          ...(isGuest && otpVerified ? ["Phone Verified"] : [])
+        ].join(" | "),
+        paymentMethod: orderData.paymentMethod,
+        requireInvoice: true,
+        isGuest: isGuest,
+        ...(isGuest ? {
+          guestInfo: {
+            fullName: orderData.fullName.trim(),
+            phone: orderData.phone.trim(),
+            email: orderData.email.trim()
+          },
+          guestCartItems: cartItems.map(item => ({
+            productId: item.product?.id || item.id,
+            quantity: item.quantity || 1,
+            price: item.product?.price || item.price || 0,
+            name: item.product?.name || item.name || 'Unknown Product'
+          }))
+        } : {})
+      };
       
-      // Hiển thị thông báo thành công trước khi chuyển hướng
-      showNotification(" Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại cửa hàng chúng tôi.", "success");
+      // Set processing state
+      const processingState = isProcessing;
+      if (!processingState) {
+        onPlaceOrder({ ...orderData, processing: true });
+      }
       
-      // Delay a bit để người dùng thấy thông báo thành công
-      setTimeout(() => {
-        onPlaceOrder(orderData);
-      }, 1000);
+      // Create order with COD payment method
+      orderService
+        .createOrder(orderRequest)
+        .then((response) => {
+          // Clear saved form data when order is successfully placed
+          clearSavedFormData();
+          
+          // Get the order data with ID
+          const createdOrderData = response.data?.id
+            ? response.data
+            : response.data?.data;
+            
+          if (!createdOrderData?.id) {
+            showNotification(
+              "Đặt hàng thất bại - không nhận được mã đơn hàng",
+              "error"
+            );
+            return;
+          }
+          
+          // Show success notification
+          showNotification("Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại cửa hàng chúng tôi.", "success");
+          
+          // Pass the created order data to parent component
+          setTimeout(() => {
+            onPlaceOrder(createdOrderData);
+          }, 2000); // Reduced timeout to 2 seconds
+        })
+        .catch((error) => {
+          showNotification(error.message || "Đặt hàng thất bại", "error");
+        });
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validate required fields
-    if (
-      !formData.fullName?.trim() ||
-      !formData.phone?.trim() ||
-      !formData.email?.trim() ||
-      !formData.address?.trim() ||
-      !formData.city?.trim() ||
-      !formData.ward?.trim() ||
-      !formData.commune?.trim()
-    ) {
-      showNotification("⚠️ Please fill in all shipping information", "warning");
+    // validation function
+    const validateCustomerInfo = () => {
+      const errors = [];
+
+      // 1. Full Name Validation
+      const fullName = formData.fullName?.trim();
+      if (!fullName) {
+        errors.push("Họ tên không được để trống");
+      } else if (fullName.length < 2) {
+        errors.push(" Họ tên phải có ít nhất 2 ký tự");
+      } else if (fullName.length > 100) {
+        errors.push(" Họ tên không được vượt quá 100 ký tự");
+      } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(fullName)) {
+        errors.push("Họ tên chỉ được chứa chữ cái và khoảng trắng");
+      }
+
+      // 2. Phone Number Validation (Vietnamese format)
+      const phone = formData.phone?.trim();
+      if (!phone) {
+        errors.push("Số điện thoại không được để trống");
+      } else {
+        // Remove all non-digit characters
+        const cleanPhone = phone.replace(/\D/g, '');
+        
+        // Vietnamese phone number patterns
+        const vietnamesePhonePatterns = [
+          /^0[3|5|7|8|9][0-9]{8}$/, // Mobile: 03x, 05x, 07x, 08x, 09x + 8 digits
+          /^0[2|3|4|5|6|7|8][0-9]{8}$/, // Landline: 02x, 03x, 04x, 05x, 06x, 07x, 08x + 8 digits
+          /^84[3|5|7|8|9][0-9]{8}$/, // International format for mobile
+          /^84[2|3|4|5|6|7|8][0-9]{8}$/ // International format for landline
+        ];
+
+        const isValidPhone = vietnamesePhonePatterns.some(pattern => pattern.test(cleanPhone));
+        
+        if (!isValidPhone) {
+          errors.push("Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại Việt Nam hợp lệ (VD: 0123456789)");
+        }
+      }
+
+      // 3. Email Validation
+      const email = formData.email?.trim();
+      if (!email) {
+        errors.push("Email không được để trống");
+      } else {
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email)) {
+          errors.push("Email không hợp lệ. Vui lòng nhập email đúng định dạng (VD: example@email.com)");
+        } else if (email.length > 254) {
+          errors.push("Email không được vượt quá 254 ký tự");
+        }
+      }
+
+      // 4. Address Validation
+      const address = formData.address?.trim();
+      if (!address) {
+        errors.push(" Địa chỉ không được để trống");
+      } else if (address.length < 10) {
+        errors.push("Địa chỉ phải có ít nhất 10 ký tự");
+      } else if (address.length > 200) {
+        errors.push(" Địa chỉ không được vượt quá 200 ký tự");
+      }
+
+      // 5. Province/City Validation
+      const city = formData.city?.trim();
+      if (!city) {
+        errors.push(" Vui lòng chọn Tỉnh/Thành phố");
+      }
+
+      // 6. District/County Validation
+      const ward = formData.ward?.trim();
+      if (!ward) {
+        errors.push(" Vui lòng chọn Quận/Huyện");
+      }
+
+      // 7. Commune/Ward Validation
+      const commune = formData.commune?.trim();
+      if (!commune) {
+        errors.push(" Vui lòng chọn Phường/Xã");
+      }
+
+      // 8. Payment Method Validation
+      if (!paymentMethod) {
+        errors.push("Vui lòng chọn phương thức thanh toán");
+      }
+
+      return errors;
+    };
+
+    // Run validation
+    const validationErrors = validateCustomerInfo();
+    
+    if (validationErrors.length > 0) {
+      // Show first error, then show others after a delay
+      showNotification(validationErrors[0], "warning");
+      
+      // Show additional errors if there are more
+      if (validationErrors.length > 1) {
+        setTimeout(() => {
+          showNotification(`Còn ${validationErrors.length - 1} lỗi khác cần sửa`, "warning");
+        }, 2000);
+      }
       return;
     }
 
-    // Validate field lengths
-    if (formData.fullName.trim().length > 100) {
-      showNotification("⚠️ Full name cannot exceed 100 characters", "warning");
-      return;
-    }
-
-    if (formData.address.trim().length > 200) {
-      showNotification("⚠️ Address cannot exceed 200 characters", "warning");
-      return;
-    }
-
-    // Validate phone format (Vietnamese phone number)
-    const phoneRegex = /^[0-9]{10,11}$/;
-    if (!phoneRegex.test(formData.phone.trim())) {
-      showNotification("⚠️ Please enter a valid phone number (10-11 digits)", "warning");
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email.trim())) {
-      showNotification("⚠️ Please enter a valid email address", "warning");
-      return;
-    }
-
-    if (!paymentMethod) {
-      showNotification(
-        "⚠️ Please select payment method (COD or VNPay)",
-        "warning"
-      );
-      return;
-    }
-
-    // Build the full address - Cải tiến để tránh trùng lặp
-    // Kiểm tra xem địa chỉ chi tiết đã có thông tin phường/quận/thành phố chưa
+    // Build the full address - Improved to avoid duplication
     const addressDetail = formData.address.trim();
     const commune = formData.commune.trim();
     const ward = formData.ward.trim();
     const city = formData.city.trim();
-    
-    // Tạo địa chỉ đầy đủ theo định dạng chuẩn
+
+    // Create full address in standard format
     let fullAddress = addressDetail;
-    
-    // Chỉ thêm thông tin từ dropdown nếu chưa có trong địa chỉ chi tiết
+
+    // Only add dropdown information if not already in the detailed address
     if (commune && !addressDetail.toLowerCase().includes(commune.toLowerCase())) {
       fullAddress += `, ${commune}`;
     }
-    
+
     if (ward && !addressDetail.toLowerCase().includes(ward.toLowerCase())) {
       fullAddress += `, ${ward}`;
     }
-    
+
     if (city && !addressDetail.toLowerCase().includes(city.toLowerCase())) {
       fullAddress += `, ${city}`;
     }
 
-    // Map frontend payment method to backend expected values
     const backendPaymentMethod = paymentMethod === 'cod' ? 'Cash on delivery' : 'Online payment';
 
     // Create order data with proper structure
     const orderData = {
       ...formData,
-      paymentMethod: backendPaymentMethod, // Use mapped payment method
-      requireInvoice: true, // Always require invoice
-      shippingAddress: fullAddress, // Add explicit shipping address
-      isGuest: isGuest, // Pass guest flag
+      paymentMethod: backendPaymentMethod, 
+      requireInvoice: true, 
+      shippingAddress: fullAddress, 
+      isGuest: isGuest, 
     };
 
     // For guest users, require OTP verification before processing order
     if (isGuest && !otpVerified) {
-      // Store order data for later processing after OTP verification
-      setPendingOrderData(orderData);
-      // Send OTP to guest's phone number
+
+      setPendingOrderData(orderData);  
       handleSendOtpForGuest();
       return;
     }
@@ -620,7 +864,7 @@ const CheckoutForm = ({
 
             <form onSubmit={handleSubmit} className={styles.shippingForm}>
               <h2>Customer information</h2>
-              
+
               {isGuest && (
                 <div className={styles.guestNotification}>
                   <div className={styles.guestNotificationIcon}>ℹ️</div>
@@ -643,6 +887,7 @@ const CheckoutForm = ({
                   required
                   placeholder="Enter full name"
                 />
+                {fieldErrors.fullName && <p className={styles.errorMessage}>{fieldErrors.fullName}</p>}
               </div>
 
               <div className={styles.formGroup}>
@@ -656,6 +901,7 @@ const CheckoutForm = ({
                   required
                   placeholder="0123 456 789"
                 />
+                {fieldErrors.phone && <p className={styles.errorMessage}>{fieldErrors.phone}</p>}
               </div>
 
               <div className={styles.formGroup}>
@@ -669,6 +915,7 @@ const CheckoutForm = ({
                   required
                   placeholder="email@example.com"
                 />
+                {fieldErrors.email && <p className={styles.errorMessage}>{fieldErrors.email}</p>}
               </div>
 
               <div className={styles.addressSection}>
@@ -685,6 +932,7 @@ const CheckoutForm = ({
                     required
                     placeholder="House number, street name"
                   />
+                  {fieldErrors.address && <p className={styles.errorMessage}>{fieldErrors.address}</p>}
                 </div>
 
                 <div className={styles.formRow}>
@@ -732,6 +980,7 @@ const CheckoutForm = ({
                         </option>
                       ))}
                     </select>
+                    {fieldErrors.ward && <p className={styles.errorMessage}>{fieldErrors.ward}</p>}
                   </div>
                 </div>
 
@@ -752,6 +1001,7 @@ const CheckoutForm = ({
                       </option>
                     ))}
                   </select>
+                  {fieldErrors.commune && <p className={styles.errorMessage}>{fieldErrors.commune}</p>}
                 </div>
               </div>
             </form>
@@ -764,18 +1014,19 @@ const CheckoutForm = ({
                 <span>Subtotal ({cartItems.length} products)</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
+              {/* VAT Row - always show */}
+              <div className={styles.summaryRow}>
+                <span>VAT (10%)</span>
+                <span>{formatCurrency(vatAmount)}</span>
+              </div>
               <div className={styles.summaryRow}>
                 <span>Shipping fee</span>
                 <span>
                   {shippingFee === 0 ? "Free" : formatCurrency(shippingFee)}
                 </span>
               </div>
-              
-              {/* VAT Row - always show */}
-              <div className={styles.summaryRow}>
-                <span>VAT (10%)</span>
-                <span>{formatCurrency(vatAmount)}</span>
-              </div>
+
+
 
               <div className={`${styles.summaryRow} ${styles.total}`}>
                 <span>Total</span>
@@ -839,11 +1090,10 @@ const CheckoutForm = ({
 
             <button
               type="button"
-              className={`${styles.placeOrderButton} ${
-                paymentMethod === "vnpay"
+              className={`${styles.placeOrderButton} ${paymentMethod === "vnpay"
                   ? styles.vnpayButton
                   : styles.codButton
-              }`}
+                }`}
               onClick={handleSubmit}
               disabled={
                 cartItems.length === 0 || isProcessing || isVNPayProcessing
@@ -852,8 +1102,8 @@ const CheckoutForm = ({
               {isProcessing || isVNPayProcessing
                 ? "Processing..."
                 : paymentMethod === "vnpay"
-                ? `💳 Payment VNPay • ${formatCurrency(finalTotal)}`
-                : `💰 Order COD • ${formatCurrency(finalTotal)}`}
+                  ? `💳 Payment VNPay • ${formatCurrency(finalTotal)}`
+                  : `💰 Order COD • ${formatCurrency(finalTotal)}`}
             </button>
 
             {totalAmount > 1000000 && shippingFee === 0 && (
